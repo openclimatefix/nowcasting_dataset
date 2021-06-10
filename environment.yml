@@ -1,0 +1,33 @@
+name: nowcasting_dataset
+channels:
+  - pytorch
+  - pvlib
+  - conda-forge
+dependencies:
+  - python>=3.8
+
+  # Scientific Python
+  - numpy
+  - pandas
+  - matplotlib
+  - zarr
+  - xarray
+  - ipykernel
+  
+  # Cloud & distributed compute
+  - gcsfs
+  - dask
+  - python-graphviz  # For visualising dask graphs
+  
+  # Machine learning
+  - pytorch::pytorch  # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
+
+  # PV & Geospatial
+  - pvlib
+  - pyproj
+
+  # Development tools
+  - pytest
+  - flake8
+  - jedi
+  - mypy

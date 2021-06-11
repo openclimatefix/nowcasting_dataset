@@ -1,16 +1,17 @@
-from typing import Optional
+from numbers import Number
 import pandas as pd
 from nowcasting_dataset.example import Example
-from pathlib import Path
+from nowcasting_dataset.square import Square
 from dataclasses import dataclass
 
 
 @dataclass
-class DataSource():
+class DataSource:
     """Abstract base class."""
-    image_size_pixels: Optional[int] = 128
 
-    def open(self, filename: Path):
+    image_size: Square  #: Defines the image size of each example.
+
+    def open(self):
         """Open the data source, if necessary.
 
         Called from each worker process.  Useful for data sources where the
@@ -30,8 +31,8 @@ class DataSource():
             start: pd.Timestamp,
             end: pd.Timestamp,
             t0: pd.Timestamp,
-            x: float,  #: Centre, in OSGB coordinates.
-            y: float  #: Centre, in OSGB coordinates.
+            x_meters: Number,  #: Centre, in OSGB coordinates.
+            y_meters: Number  #: Centre, in OSGB coordinates.
     ) -> Example:
         """Must be overridden by child classes."""
         raise NotImplementedError()

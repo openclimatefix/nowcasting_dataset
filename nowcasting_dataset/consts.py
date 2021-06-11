@@ -19,7 +19,5 @@ PV_METADATA_FILENAME = PV_PATH / 'UK_PV_metadata.csv'
 # Numerical weather predictions
 NWP_ZARR = BUCKET / 'NWP/UK_Met_Office/UKV_zarr'
 
-
 # Typing
 Array = Union[xr.DataArray, np.ndarray]
-

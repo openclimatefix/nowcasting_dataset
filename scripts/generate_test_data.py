@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from nowcasting_dataset import consts
-from nowcasting_dataset import utils
 import pandas as pd
 from pathlib import Path
 import numcodecs
+import xarray as xr
 
 
 START = pd.Timestamp('2019-01-01T12:00')
@@ -16,7 +16,7 @@ OUTPUT_PATH = (
 def generate_satellite_test_data():
     output_filename = OUTPUT_PATH / 'sat_data.zarr'
     print('Writing satellite tests data to', output_filename)
-    sat_data = utils.open_zarr_on_gcp(consts.SAT_DATA_ZARR)
+    sat_data = xr.open_zarr(consts.SAT_DATA_ZARR, consolidated=True)
     sat_data = sat_data.sel(variable=['HRV'], time=slice(START, END))
     encoding = {'stacked_eumetsat_data': {
         'compressor': numcodecs.Blosc(cname="zstd", clevel=5)}}

@@ -49,13 +49,15 @@ class SatelliteDataSource(DataSource):
         return pd.DatetimeIndex(sat_data.time.values)
 
 
-def open_sat_data(filename: Union[str, Path]) -> xr.DataArray:
+def open_sat_data(
+        filename: Union[str, Path],
+        consolidated: bool=True) -> xr.DataArray:
     """Lazily opens the Zarr store on Google Cloud Storage (GCS).
 
     Selects the High Resolution Visible (HRV) satellite channel.
     """
     _LOG.debug('Opening satellite data: %s', filename)
-    dataset = utils.open_zarr_on_gcp(filename)
+    dataset = xr.open_zarr(filename, consolidated=consolidated)
     data_array = dataset['stacked_eumetsat_data']
 
     # The 'time' dimension is at 04, 09, ..., 59 minutes past the hour.

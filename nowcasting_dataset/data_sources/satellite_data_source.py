@@ -1,8 +1,7 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import consts
-from nowcasting_dataset import utils
-from typing import Union, Iterable
+from typing import Union, Iterable, Optional
 from numbers import Number
 import xarray as xr
 from pathlib import Path
@@ -31,12 +30,13 @@ class SatelliteDataSource(DataSource):
             self,
             start: datetime.datetime,
             end: datetime.datetime,
-            t0: datetime.datetime,
             x_meters: Number,
-            y_meters: Number) -> Example:
+            y_meters: Number,
+            t0: Optional[datetime.datetime] = None) -> Example:
         del t0  # t0 is not used in this method!
-        bounding_box = self._image_size.bounding_box_centered_on(
+        bounding_box = self.image_size.bounding_box_centered_on(
             x_meters=x_meters, y_meters=y_meters)
+        # TODO: Will the returned image always be the exact right size?
         selected_sat_data = self.sat_data.sel(
             time=slice(start, end),
             x=slice(bounding_box.left, bounding_box.right),
@@ -51,10 +51,15 @@ class SatelliteDataSource(DataSource):
 
 def open_sat_data(
         filename: Union[str, Path],
-        consolidated: bool=True) -> xr.DataArray:
-    """Lazily opens the Zarr store on Google Cloud Storage (GCS).
+        consolidated: bool = True) -> xr.DataArray:
+    """Lazily opens the Zarr store.
 
-    Selects the High Resolution Visible (HRV) satellite channel.
+    Adds 1 minute to the 'time' coordinates, so the timestamps
+    are at 00, 05, ..., 55 past the hour.
+
+    Args:
+        filename: Cloud URL or local path.
+        consolidated: Whether or not the Zarr metadata is consolidated.
     """
     _LOG.debug('Opening satellite data: %s', filename)
     dataset = xr.open_zarr(filename, consolidated=consolidated)

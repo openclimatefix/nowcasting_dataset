@@ -3,6 +3,8 @@ import pandas as pd
 from nowcasting_dataset.example import Example
 from nowcasting_dataset.square import Square
 from dataclasses import dataclass
+import datetime
+from typing import Optional
 
 
 @dataclass
@@ -28,11 +30,10 @@ class DataSource:
 
     def get_example(
             self,
-            start: pd.Timestamp,
-            end: pd.Timestamp,
-            t0: pd.Timestamp,
+            start: datetime.datetime,
+            end: datetime.datetime,
             x_meters: Number,  #: Centre, in OSGB coordinates.
-            y_meters: Number  #: Centre, in OSGB coordinates.
-    ) -> Example:
+            y_meters: Number,  #: Centre, in OSGB coordinates.
+            t0: Optional[datetime.datetime] = None) -> Example:
         """Must be overridden by child classes."""
         raise NotImplementedError()

@@ -17,7 +17,13 @@ _LOG = logging.getLogger('nowcasting_dataset')
 class SatelliteDataSource(DataSource):
     """
     Attributes:
-      sat_data: xr.DataArray of satellite data.
+      sat_data: xr.DataArray of satellite data, opened by open().
+        x is left-to-right.
+        y is top-to-bottom.
+      filename: Filename of the satellite data Zarr.
+      channels: List of satellite channels to load.
+      image_size: Instance of Square, which defines the size of each sample.
+        (Inherited from DataSource super-class).
     """
     filename: Union[str, Path] = consts.SAT_DATA_ZARR
     channels: Iterable[str] = ('HRV', )
@@ -36,11 +42,17 @@ class SatelliteDataSource(DataSource):
         del t0  # t0 is not used in this method!
         bounding_box = self.image_size.bounding_box_centered_on(
             x_meters=x_meters, y_meters=y_meters)
-        # TODO: Will the returned image always be the exact right size?
         selected_sat_data = self.sat_data.sel(
             time=slice(start, end),
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom))
+
+        # selected_sat_data is likely to have 1 too many pixels in x and y
+        # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
+        selected_sat_data = selected_sat_data.isel(
+            x=slice(0, self.image_size.size_pixels),
+            y=slice(0, self.image_size.size_pixels))
+
         return Example(sat_data=selected_sat_data)
 
     def available_timestamps(self) -> pd.DatetimeIndex:
@@ -58,8 +70,8 @@ def open_sat_data(
     are at 00, 05, ..., 55 past the hour.
 
     Args:
-        filename: Cloud URL or local path.
-        consolidated: Whether or not the Zarr metadata is consolidated.
+      filename: Cloud URL or local path.
+      consolidated: Whether or not the Zarr metadata is consolidated.
     """
     _LOG.debug('Opening satellite data: %s', filename)
     dataset = xr.open_zarr(filename, consolidated=consolidated)

@@ -16,7 +16,6 @@ def sat_data_source(use_cloud_data: bool):
         filename = consts.SAT_DATA_ZARR
     else:
         filename = Path(__file__).parent.absolute() / 'data' / 'sat_data.zarr'
-    print('\nLoading', filename)
     return SatelliteDataSource(
         image_size=square, filename=filename)
 
@@ -38,13 +37,31 @@ def test_available_timestamps(sat_data_source):
     assert np.all(np.diff(timestamps.astype(int)) > 0)
 
 
-def test_get_sample(sat_data_source):
+@pytest.mark.parametrize(
+    "x, y, left, right, top, bottom",
+    [
+        (0, 0, -128_000, 126_000, 128_000, -126_000),
+        (10, 0, -126_000, 128_000, 128_000, -126_000),
+        (30, 0, -126_000, 128_000, 128_000, -126_000),
+        (1000, 0, -126_000, 128_000, 128_000, -126_000),
+        (0, 1000, -128_000, 126_000, 128_000, -126_000),
+        (1000, 1000, -126_000, 128_000, 128_000, -126_000),
+        (2000, 2000, -126_000, 128_000, 130_000, -124_000),
+        (2000, 1000, -126_000, 128_000, 128_000, -126_000),
+        (2001, 2001, -124_000, 130_000, 130_000, -124_000),
+    ]
+)
+def test_get_sample(sat_data_source, x, y, left, right, top, bottom):
     sat_data_source.open()
+    start = pd.Timestamp('2019-01-01T13:00')
+    end = pd.Timestamp('2019-01-01T14:00')
     sample = sat_data_source.get_sample(
-        start=pd.Timestamp('2019-01-01T13:00'),
-        end=pd.Timestamp('2019-01-01T14:00'),
-        x_meters=0,
-        y_meters=0)
+        start=start, end=end, x_meters=x, y_meters=y)
     sat_data = sample['sat_data']
+    assert left == sat_data.x.values[0]
+    assert right == sat_data.x.values[-1]
+    # sat_data.y is top-to-bottom.
+    assert top == sat_data.y.values[0]
+    assert bottom == sat_data.y.values[-1]
     assert len(sat_data.x) == IMAGE_SIZE_PIXELS
     assert len(sat_data.y) == IMAGE_SIZE_PIXELS

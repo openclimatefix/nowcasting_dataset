@@ -1,0 +1,2 @@
+class NowcastingDataset():
+    pass

@@ -21,6 +21,7 @@ dependencies:
   
   # Machine learning
   - pytorch::pytorch  # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
+  - pytorch-lightning
 
   # PV & Geospatial
   - pvlib

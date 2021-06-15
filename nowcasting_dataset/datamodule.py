@@ -17,6 +17,14 @@ with warnings.catch_warnings():
 
 @dataclass
 class NowcastingDataModule(pl.LightningDataModule):
+    """
+    Attributes (additional to the dataclass attributes):
+      sat_data_source: SatelliteDataSource
+      data_sources: List[DataSource]
+      total_seq_len: int  #: Total Number of timesteps.
+      dt_index: pd.DatetimeIndex  #: Filtered datetime index.
+      contiguous_segments: List[Segment]
+    """
     batch_size: int = 8
     history_len: int = 1  #: Number of timesteps of 'history', including 'now'.
     forecast_len: int = 1  #: Number of timesteps of forecast.

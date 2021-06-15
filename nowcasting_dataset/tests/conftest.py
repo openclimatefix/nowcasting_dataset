@@ -1,5 +1,7 @@
 """Configure PyTest"""
 import pytest
+from pathlib import Path
+from nowcasting_dataset import consts
 
 
 def pytest_addoption(parser):
@@ -11,3 +13,11 @@ def pytest_addoption(parser):
 @pytest.fixture
 def use_cloud_data(request):
     return request.config.getoption("--use_cloud_data")
+
+
+@pytest.fixture
+def sat_filename(use_cloud_data: bool) -> Path:
+    if use_cloud_data:
+        return consts.SAT_FILENAME
+    else:
+        return Path(__file__).parent.absolute() / 'data' / 'sat_data.zarr'

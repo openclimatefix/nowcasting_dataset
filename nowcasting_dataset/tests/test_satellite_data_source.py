@@ -10,14 +10,9 @@ IMAGE_SIZE_PIXELS = 128
 
 
 @pytest.fixture
-def sat_data_source(use_cloud_data: bool):
+def sat_data_source(sat_filename: Path):
     square = Square(size_pixels=IMAGE_SIZE_PIXELS, meters_per_pixel=2000)
-    if use_cloud_data:
-        filename = consts.SAT_DATA_ZARR
-    else:
-        filename = Path(__file__).parent.absolute() / 'data' / 'sat_data.zarr'
-    return SatelliteDataSource(
-        image_size=square, filename=filename)
+    return SatelliteDataSource(image_size=square, filename=sat_filename)
 
 
 def test_satellite_data_source_init(sat_data_source):
@@ -65,3 +60,13 @@ def test_get_sample(sat_data_source, x, y, left, right, top, bottom):
     assert bottom == sat_data.y.values[-1]
     assert len(sat_data.x) == IMAGE_SIZE_PIXELS
     assert len(sat_data.y) == IMAGE_SIZE_PIXELS
+
+
+def test_geospatial_border(sat_data_source):
+    border = sat_data_source.geospatial_border()
+    correct_border = [
+        (-110000, 1094000),
+        (-110000, -58000),
+        (730000, 1094000),
+        (730000, -58000)]
+    np.testing.assert_array_equal(border, correct_border)

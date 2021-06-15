@@ -1,8 +1,12 @@
 import pandas as pd
-from typing import Iterable, Tuple, List
+import numpy as np
+from typing import Iterable, Tuple, List, NamedTuple
 import pvlib
 from nowcasting_dataset import geospatial
 import warnings
+
+
+FIVE_MINUTES = pd.Timedelta('5 minutes')
 
 
 def select_daylight_timestamps(
@@ -40,7 +44,6 @@ def select_daylight_timestamps(
     return dt_index[mask]
 
 
-# TODO: Write test!
 def intersection_of_datetimeindexes(
         indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
     assert len(indexes) > 0
@@ -48,3 +51,56 @@ def intersection_of_datetimeindexes(
     for index in indexes[1:]:
         intersection = intersection.intersection(index)
     return intersection
+
+
+class Segment(NamedTuple):
+    """Represents the start and end datetimes of a segment of contiguous samples
+
+    The Segment covers the range [start, end].
+    """
+    start: pd.Timestamp
+    end: pd.Timestamp
+
+    def duration(self) -> pd.Timedelta:
+        return self.end - self.start
+
+
+def get_contiguous_segments(
+        dt_index: pd.DatetimeIndex,
+        min_timesteps: int = 12,
+        max_gap: pd.Timedelta = FIVE_MINUTES) -> List[Segment]:
+    """Chunk datetime index into contiguous segments, each at least
+    min_timesteps long.
+
+    max_gap defines the threshold for what constitutes a 'gap' between
+    contiguous segments.
+
+    Throw away any timesteps in a sequence shorter than min_timesteps long.
+    """
+    assert len(dt_index) > 0
+    assert min_timesteps > 1
+
+    gap_mask = np.diff(dt_index) > max_gap
+    gap_indices = np.argwhere(gap_mask)[:, 0]
+
+    # gap_indicies are the indices into dt_index for the timestep immediately
+    # *before* the gap.  e.g. if the datetimes at 12:00, 12:05, 18:00, 18:05
+    # then gap_indicies will be [1].  So we add 1 to gap_indices to get
+    # segment_boundaries, an index into dt_index which identifies the _start_
+    # of each segment.
+    segment_boundaries = gap_indices + 1
+
+    # Capture the last segment of dt_index.
+    segment_boundaries = np.concatenate((segment_boundaries, [len(dt_index)]))
+
+    segments: List[Segment] = []
+    start_i = 0
+    for next_start_i in segment_boundaries:
+        n_timesteps = next_start_i - start_i
+        if n_timesteps >= min_timesteps:
+            end_i = next_start_i - 1
+            segment = Segment(start=dt_index[start_i], end=dt_index[end_i])
+            segments.append(segment)
+        start_i = next_start_i
+
+    return segments

@@ -36,3 +36,20 @@ def test_intersection_of_datetimeindexes():
     np.testing.assert_array_equal(
         intersection,
         pd.date_range('2010-01-01 12:00', '2010-01-02', freq='H'))
+
+
+def test_get_contiguous_segments():
+    dt_index1 = pd.date_range('2010-01-01', '2010-01-02', freq='5 min')
+    segments = nd_time.get_contiguous_segments(dt_index1)
+    assert len(segments) == 1
+    assert segments[0].start == dt_index1[0]
+    assert segments[0].end == dt_index1[-1]
+
+    dt_index2 = pd.date_range('2010-02-01', '2010-02-02', freq='5 min')
+    dt_index_union = dt_index1.union(dt_index2)
+    segments = nd_time.get_contiguous_segments(dt_index_union)
+    assert len(segments) == 2
+    assert segments[0].start == dt_index1[0]
+    assert segments[0].end == dt_index1[-1]
+    assert segments[1].start == dt_index2[0]
+    assert segments[1].end == dt_index2[-1]

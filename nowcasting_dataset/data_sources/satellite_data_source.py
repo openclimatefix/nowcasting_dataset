@@ -1,7 +1,7 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import consts
-from typing import Union, Iterable, Optional
+from typing import Union, Iterable, Optional, List, Tuple
 from numbers import Number
 import xarray as xr
 from pathlib import Path
@@ -9,6 +9,7 @@ import pandas as pd
 import datetime
 import logging
 from dataclasses import dataclass
+import itertools
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
@@ -17,20 +18,35 @@ _LOG = logging.getLogger('nowcasting_dataset')
 class SatelliteDataSource(DataSource):
     """
     Attributes:
-      sat_data: xr.DataArray of satellite data, opened by open().
+      _sat_data: xr.DataArray of satellite data, opened by open().
         x is left-to-right.
         y is top-to-bottom.
+        Access using public sat_data property.
       filename: Filename of the satellite data Zarr.
       channels: List of satellite channels to load.
       image_size: Instance of Square, which defines the size of each sample.
         (Inherited from DataSource super-class).
     """
-    filename: Union[str, Path] = consts.SAT_DATA_ZARR
+    filename: Union[str, Path] = consts.SAT_FILENAME
     channels: Iterable[str] = ('HRV', )
 
+    def __post_init__(self):
+        self._sat_data = None
+
+    @property
+    def sat_data(self):
+        if self._sat_data is None:
+            raise RuntimeError(
+                'Please run `open()` before accessing sat_data!')
+        return self._sat_data
+
     def open(self) -> None:
-        sat_data = open_sat_data(filename=self.filename)
-        self.sat_data = sat_data.sel(variable=list(self.channels))
+        # We don't want to open_sat_data in __init__.
+        # If we did that, then we couldn't copy SatelliteDataSource
+        # instances into separate processes.  Instead,
+        # call open() _after_ creating separate processes.
+        sat_data = self._open_sat_data()
+        self._sat_data = sat_data.sel(variable=list(self.channels))
 
     def get_sample(
             self,
@@ -57,8 +73,26 @@ class SatelliteDataSource(DataSource):
 
     def available_timestamps(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available timestamps"""
-        sat_data = open_sat_data(filename=self.filename)
+        sat_data = self._open_sat_data()
         return pd.DatetimeIndex(sat_data.time.values)
+
+    def geospatial_border(self) -> List[Tuple[Number, Number]]:
+        """Get 'corner' coordinates for a rectangle within the boundary of the
+        satellite imagery.
+
+        Returns List of 2-tuples of the x and y coordinates of each corner,
+        in OSGB projection.
+        """
+        GEO_BORDER: int = 64  #: In same geo projection and units as sat_data.
+        sat_data = self._open_sat_data()
+        return [
+            (sat_data.x.values[x], sat_data.y.values[y])
+            for x, y in itertools.product(
+                [GEO_BORDER, -GEO_BORDER],
+                [GEO_BORDER, -GEO_BORDER])]
+
+    def _open_sat_data(self):
+        return open_sat_data(filename=self.filename)
 
 
 def open_sat_data(

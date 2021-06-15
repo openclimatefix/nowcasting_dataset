@@ -1,15 +1,40 @@
-import pytorch_lightning as pl
+from typing import Union, List, Tuple
+from numbers import Number
+from pathlib import Path
+import pandas as pd
+import itertools
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
+from nowcasting_dataset import utils
+from nowcasting_dataset import consts
+from nowcasting_dataset import square
+from dataclasses import dataclass
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import pytorch_lightning as pl
 
 
+@dataclass
 class NowcastingDataModule(pl.LightningDataModule):
+    batch_size: int = 8
+    history_len: int = 1  #: Number of timesteps of 'history', including 'now'.
+    forecast_len: int = 1  #: Number of timesteps of forecast.
+    sat_filename: Union[str, Path] = consts.SAT_FILENAME
+    image_size_pixels: int = 128
+    meters_per_pixel: int = 2000
 
-    def __init__(self, batch_size: int = 8):
-        self.batch_size = batch_size
+    def __post_init__(self):
+        super().__init__()
+        self.total_seq_len = self.history_len + self.forecast_len
 
-    def prepare_data(self):
-        self.sat_data_source = data_sources.SatelliteDataSource()
+    def prepare_data(self) -> None:
+        # Satellite data!
+        image_size = square.Square(
+            size_pixels=self.image_size_pixels,
+            meters_per_pixel=self.meters_per_pixel)
+        self.sat_data_source = data_sources.SatelliteDataSource(
+            filename=self.sat_filename, image_size=image_size)
         self.data_sources = [self.sat_data_source]
 
     def setup(self):
@@ -55,12 +80,34 @@ class NowcastingDataModule(pl.LightningDataModule):
           1. [Video of June 2019](https://www.youtube.com/watch?v=IOp-tj-IJpk)
           2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
+        self._check_has_prepared_data()
+        # TODO: Split into train and val date ranges!
+        self.dt_index = self._get_daylight_datetime_index()
+        self.contiguous_segments = nd_time.get_contiguous_segments(
+            dt_index=self.dt_index, min_timesteps=self.total_seq_len * 2)
+
+    def _get_daylight_datetime_index(self) -> pd.DatetimeIndex:
+        """Compute the datetime index.
+
+        Returns the intersection of the datetime indicies of all the
+        data_sources; filtered by daylight hours."""
+        self._check_has_prepared_data()
+
         available_timestamps = [
             data_source.available_timestamps()
             for data_source in self.data_sources]
-        datetime_index = nd_time.intersection_of_datetimeindexes(
+        dt_index = nd_time.intersection_of_datetimeindexes(
             available_timestamps)
+        del available_timestamps  # save memory
 
-        # TODO: Continue... Get boundaries from sat data.
-        # Use that with nd_time.daylight to get daylight hours.
-        # Then split into train and val date ranges.
+        border_locations = self.sat_data_source.geospatial_border()
+        dt_index = nd_time.select_daylight_timestamps(
+            dt_index=dt_index, locations=border_locations)
+
+        assert len(dt_index) > 2
+        assert utils.is_monotonically_increasing(dt_index)
+        return dt_index
+
+    def _check_has_prepared_data(self):
+        if not self.has_prepared_data:
+            raise RuntimeError('Must run prepare_data() first!')

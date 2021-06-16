@@ -135,6 +135,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         return dict(
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
+            worker_init_fn=dataset.worker_init_fn,
 
             # Disable automatic batching because NowcastingDataset.__iter__
             # returns complete batches

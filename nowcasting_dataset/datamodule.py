@@ -1,13 +1,13 @@
-from typing import Union, List, Tuple
-from numbers import Number
+from typing import Union
 from pathlib import Path
 import pandas as pd
-import itertools
+import torch
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset import consts
 from nowcasting_dataset import square
+from nowcasting_dataset import dataset
 from dataclasses import dataclass
 import warnings
 with warnings.catch_warnings():
@@ -31,6 +31,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     image_size_pixels: int = 128
     meters_per_pixel: int = 2000
+    pin_memory: bool = True  # Passed to DataLoader.
+    num_workers: int = 4  # Passed to DataLoader.
 
     def __post_init__(self):
         super().__init__()
@@ -89,10 +91,53 @@ class NowcastingDataModule(pl.LightningDataModule):
           2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
         self._check_has_prepared_data()
-        # TODO: Split into train and val date ranges!
         self.dt_index = self._get_daylight_datetime_index()
-        self.contiguous_segments = nd_time.get_contiguous_segments(
+        contiguous_segments = nd_time.get_contiguous_segments(
             dt_index=self.dt_index, min_timesteps=self.total_seq_len * 2)
+
+        # TODO: Instead of contiguous_segments, instead
+        # just have a dt_index which lists all the valid start dates.
+        
+        # Split contiguous_segments into train and test. Split at day boundary.
+        # TODO: Better way to split into train and val date ranges!
+        assert len(contiguous_segments) > 5
+        split = len(contiguous_segments) // 5
+        assert split > 0
+        split = len(contiguous_segments) - split
+        self.train_contiguous_segments = contiguous_segments[:split]
+        self.val_contiguous_segments = contiguous_segments[split:]
+
+        # Create datasets
+        common_dataset_params = dict(
+            batch_size=self.batch_size,
+            history_len=self.history_len,
+            forecast_len=self.forecast_len,
+            data_sources=self.data_sources,
+            dt_index=self.dt_index)
+        self.train_dataset = dataset.NowcastingDataset(
+            contiguous_segments=self.train_contiguous_segments,
+            **common_dataset_params)
+        self.val_dataset = dataset.NowcastingDataset(
+            contiguous_segments=self.val_contiguous_segments,
+            **common_dataset_params)
+
+    def train_dataloader(self) -> torch.utils.data.DataLoader:
+        return torch.utils.data.DataLoader(
+            self.train_dataset, **self._common_dataloader_params())
+
+    def val_dataloader(self) -> torch.utils.data.DataLoader:
+        return torch.utils.data.DataLoader(
+            self.val_dataset, **self._common_dataloader_params())
+
+    def _common_dataloader_params(self):
+        return dict(
+            pin_memory=self.pin_memory,
+            num_workers=self.num_workers,
+
+            # Disable automatic batching because NowcastingDataset.__iter__
+            # returns complete batches
+            batch_size=None,
+            batch_sampler=None)
 
     def _get_daylight_datetime_index(self) -> pd.DatetimeIndex:
         """Compute the datetime index.
@@ -101,6 +146,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         data_sources; filtered by daylight hours."""
         self._check_has_prepared_data()
 
+        # Get the intersection of datetimes from all data sources.
         available_timestamps = [
             data_source.available_timestamps()
             for data_source in self.data_sources]
@@ -108,10 +154,12 @@ class NowcastingDataModule(pl.LightningDataModule):
             available_timestamps)
         del available_timestamps  # save memory
 
+        # Select datetimes that have at least some sunlight
         border_locations = self.sat_data_source.geospatial_border()
         dt_index = nd_time.select_daylight_timestamps(
             dt_index=dt_index, locations=border_locations)
 
+        # Sanity check
         assert len(dt_index) > 2
         assert utils.is_monotonically_increasing(dt_index)
         return dt_index

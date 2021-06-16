@@ -91,34 +91,36 @@ class NowcastingDataModule(pl.LightningDataModule):
           2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
         self._check_has_prepared_data()
-        self.dt_index = self._get_daylight_datetime_index()
-        contiguous_segments = nd_time.get_contiguous_segments(
-            dt_index=self.dt_index, min_timesteps=self.total_seq_len * 2)
-
-        # TODO: Instead of contiguous_segments, instead
+        dt_index = self._get_daylight_datetime_index()
+        # TODO: IMPORTANT! Instead of contiguous_segments, instead
         # just have a dt_index which lists all the valid start dates.
-        
-        # Split contiguous_segments into train and test. Split at day boundary.
+        # For each contiguous_segment, remove the last total_seq_len datetimes,
+        # and then check the resulting segment is large enough.
+        # Check get_contiguous_segments() to see if it can be simplified.
+        #         contiguous_segments = nd_time.get_contiguous_segments(
+        #    dt_index=self.dt_index, min_timesteps=self.total_seq_len * 2)
+
+        # Split dt_index into train and test.
         # TODO: Better way to split into train and val date ranges!
-        assert len(contiguous_segments) > 5
-        split = len(contiguous_segments) // 5
+        # Split at day boundary, at least.
+        assert len(dt_index) > 5
+        split = len(dt_index) // 5
         assert split > 0
-        split = len(contiguous_segments) - split
-        self.train_contiguous_segments = contiguous_segments[:split]
-        self.val_contiguous_segments = contiguous_segments[split:]
+        split = len(dt_index) - split
+        self.train_dt_index = dt_index[:split]
+        self.val_dt_index = dt_index[split:]
 
         # Create datasets
         common_dataset_params = dict(
             batch_size=self.batch_size,
             history_len=self.history_len,
             forecast_len=self.forecast_len,
-            data_sources=self.data_sources,
-            dt_index=self.dt_index)
+            data_sources=self.data_sources)
         self.train_dataset = dataset.NowcastingDataset(
-            contiguous_segments=self.train_contiguous_segments,
+            start_dt_index=self.train_dt_index,
             **common_dataset_params)
         self.val_dataset = dataset.NowcastingDataset(
-            contiguous_segments=self.val_contiguous_segments,
+            start_dt_index=self.val_dt_index,
             **common_dataset_params)
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:

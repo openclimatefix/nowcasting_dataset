@@ -30,8 +30,8 @@ class Example(TypedDict):
     # METADATA
     pv_system_id: int
     pv_system_row_number: int  #: Guaranteed to be in the range [0, len(pv_metadata)]
-    pv_location_x: float
-    pv_location_y: float
+    x_meters_center: float  #: OSGB coordinates for center of the image.
+    y_meters_center: float
 
     # Datetimes
     # At 5-minute timings like 00, 05, 10, ...;

@@ -104,3 +104,8 @@ def get_contiguous_segments(
         start_i = next_start_i
 
     return segments
+
+
+def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:
+    assert n_timesteps >= 0
+    return pd.Timedelta(n_timesteps * 5, unit='minutes')

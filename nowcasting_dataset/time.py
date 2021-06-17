@@ -105,7 +105,7 @@ def get_start_dt_index(
             start_dt_index.append(dt_index[start_i:end_i])
         start_i = next_start_i
 
-    return pd.DatetimeIndex(np.concat(start_dt_index))
+    return pd.DatetimeIndex(np.concatenate(start_dt_index))
 
 
 def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:

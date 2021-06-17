@@ -25,7 +25,11 @@ def sat_filename(use_cloud_data: bool) -> Path:
     if use_cloud_data:
         return consts.SAT_FILENAME
     else:
-        return Path(__file__).parent.absolute() / 'data' / 'sat_data.zarr'
+        filename = (
+            Path(__file__).parent.absolute() /
+            'nowcasting_dataset' / 'tests' / 'data' / 'sat_data.zarr')
+        assert filename.exists()
+        return filename
 
 
 @pytest.fixture

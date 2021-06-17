@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from typing import List
 import nowcasting_dataset
-from nowcasting_dataset import data_sources
+from nowcasting_dataset import data_sources, utils
 from nowcasting_dataset import time as nd_time
 from dataclasses import dataclass
 import torch
@@ -26,10 +26,12 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             self.total_seq_len - 1)
         self.history_duration = nd_time.timesteps_to_duration(
             self.history_len - 1)
+        self._per_worker_init_has_run = False
 
     def per_worker_init(self, worker_id: int) -> None:
         """Called by worker_init_fn on each copy of NowcastingDataset after
         the worker process has been spawned."""
+        utils.set_fsspec_for_multiprocess()
         # Each worker must have a different seed for its random number gen.
         # Otherwise all the workers will output exactly the same data!
         self.worker_id = worker_id
@@ -40,8 +42,12 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         for data_source in self.data_sources:
             data_source.open()
 
+        self._per_worker_init_has_run = True
+
     def __iter__(self):
         """Yields a complete batch at a time."""
+        if not self._per_worker_init_has_run:
+            raise RuntimeError('per_worker_init() must be run!')
         while True:
             yield self._get_batch()
 

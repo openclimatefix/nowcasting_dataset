@@ -96,18 +96,16 @@ def get_start_dt_index(
     # Capture the last segment of dt_index.
     segment_boundaries = np.concatenate((segment_boundaries, [len(dt_index)]))
 
-    start_dt_index = dt_index.copy()
+    start_dt_index = []
     start_i = 0
     for next_start_i in segment_boundaries:
         n_timesteps = next_start_i - start_i
         if n_timesteps >= min_timesteps:
-            end_i = next_start_i - 1
-            del start_dt_index[end_i-total_seq_len:end_i]
-        else:
-            del start_dt_index[start_i:next_start_i]
+            end_i = next_start_i - 1 - total_seq_len
+            start_dt_index.append(dt_index[start_i:end_i])
         start_i = next_start_i
 
-    return start_dt_index
+    return pd.concat(start_dt_index)
 
 
 def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:

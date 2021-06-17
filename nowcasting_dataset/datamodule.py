@@ -35,6 +35,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def __post_init__(self):
         super().__init__()
+        self.total_seq_len = self.history_len + self.forecast_len
 
     def prepare_data(self) -> None:
         # Satellite data!
@@ -90,23 +91,25 @@ class NowcastingDataModule(pl.LightningDataModule):
         """
         self._check_has_prepared_data()
         dt_index = self._get_daylight_datetime_index()
+        start_dt_index = nd_time.get_start_dt_index(
+            dt_index=dt_index, total_seq_len=self.total_seq_len)
+        del dt_index
+
         # TODO: IMPORTANT! Instead of contiguous_segments, instead
         # just have a dt_index which lists all the valid start dates.
         # For each contiguous_segment, remove the last total_seq_len datetimes,
         # and then check the resulting segment is large enough.
         # Check get_contiguous_segments() to see if it can be simplified.
-        #         contiguous_segments = nd_time.get_contiguous_segments(
-        #    dt_index=self.dt_index, min_timesteps=self.total_seq_len * 2)
 
         # Split dt_index into train and test.
         # TODO: Better way to split into train and val date ranges!
         # Split at day boundary, at least.
-        assert len(dt_index) > 5
-        split = len(dt_index) // 5
+        assert len(start_dt_index) > 5
+        split = len(start_dt_index) // 5
         assert split > 0
-        split = len(dt_index) - split
-        self.train_dt_index = dt_index[:split]
-        self.val_dt_index = dt_index[split:]
+        split = len(start_dt_index) - split
+        self.train_dt_index = start_dt_index[:split]
+        self.val_dt_index = start_dt_index[split:]
 
         # Create datasets
         common_dataset_params = dict(
@@ -134,6 +137,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
             worker_init_fn=dataset.worker_init_fn,
+            prefetch_factor=16,
 
             # Disable automatic batching because NowcastingDataset.__iter__
             # returns complete batches

@@ -56,21 +56,23 @@ def intersection_of_datetimeindexes(
 class Segment(NamedTuple):
     """Represents the start and end datetimes of a segment of contiguous samples
 
-    The Segment covers the range [start, end].
+    The Segment covers the range [start_dt, end_dt].
     """
-    start: pd.Timestamp
-    end: pd.Timestamp
+    start_dt: pd.Timestamp
+    end_dt: pd.Timestamp
 
     def duration(self) -> pd.Timedelta:
-        return self.end - self.start
+        return self.end_dt - self.start_dt
 
 
-def get_contiguous_segments(
+def get_start_dt_index(
         dt_index: pd.DatetimeIndex,
-        min_timesteps: int = 12,
-        max_gap: pd.Timedelta = FIVE_MINUTES) -> List[Segment]:
-    """Chunk datetime index into contiguous segments, each at least
-    min_timesteps long.
+        total_seq_len: int = 6,
+        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+    """Returns a datetime index of valid start datetimes.
+
+    Valid start datetimes are those where there is certain to be
+    at least total_seq_len contiguous timesteps ahead.
 
     max_gap defines the threshold for what constitutes a 'gap' between
     contiguous segments.
@@ -78,6 +80,7 @@ def get_contiguous_segments(
     Throw away any timesteps in a sequence shorter than min_timesteps long.
     """
     assert len(dt_index) > 0
+    min_timesteps = total_seq_len * 2
     assert min_timesteps > 1
 
     gap_mask = np.diff(dt_index) > max_gap
@@ -93,19 +96,21 @@ def get_contiguous_segments(
     # Capture the last segment of dt_index.
     segment_boundaries = np.concatenate((segment_boundaries, [len(dt_index)]))
 
-    segments: List[Segment] = []
+    start_dt_index = dt_index.copy()
     start_i = 0
     for next_start_i in segment_boundaries:
         n_timesteps = next_start_i - start_i
         if n_timesteps >= min_timesteps:
             end_i = next_start_i - 1
-            segment = Segment(start=dt_index[start_i], end=dt_index[end_i])
-            segments.append(segment)
+            del start_dt_index[end_i-total_seq_len:end_i]
+        else:
+            del start_dt_index[start_i:next_start_i]
         start_i = next_start_i
 
-    return segments
+    return start_dt_index
 
 
 def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:
     assert n_timesteps >= 0
     return pd.Timedelta(n_timesteps * 5, unit='minutes')
+

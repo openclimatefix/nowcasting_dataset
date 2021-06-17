@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from typing import List
 import nowcasting_dataset
-from nowcasting_dataset import data_sources, utils
+from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
 from dataclasses import dataclass
 import torch
@@ -31,7 +31,6 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     def per_worker_init(self, worker_id: int) -> None:
         """Called by worker_init_fn on each copy of NowcastingDataset after
         the worker process has been spawned."""
-        utils.set_fsspec_for_multiprocess()
         # Each worker must have a different seed for its random number gen.
         # Otherwise all the workers will output exactly the same data!
         self.worker_id = worker_id

@@ -1,6 +1,6 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
-from nowcasting_dataset import consts
+from nowcasting_dataset import consts, utils
 from typing import Union, Iterable, Optional, List, Tuple
 from numbers import Number
 import xarray as xr
@@ -108,6 +108,7 @@ def open_sat_data(
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
     _LOG.debug('Opening satellite data: %s', filename)
+    utils.set_fsspec_for_multiprocess()
     dataset = xr.open_zarr(filename, consolidated=consolidated)
     data_array = dataset['stacked_eumetsat_data']
 

@@ -21,7 +21,6 @@ class NowcastingDataModule(pl.LightningDataModule):
     Attributes (additional to the dataclass attributes):
       sat_data_source: SatelliteDataSource
       data_sources: List[DataSource]
-      total_seq_len: int  #: Total Number of timesteps.
       dt_index: pd.DatetimeIndex  #: Filtered datetime index.
       contiguous_segments: List[Segment]
     """
@@ -36,7 +35,6 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def __post_init__(self):
         super().__init__()
-        self.total_seq_len = self.history_len + self.forecast_len
 
     def prepare_data(self) -> None:
         # Satellite data!

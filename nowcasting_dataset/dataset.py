@@ -23,9 +23,9 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             torch.utils.data._utils.collate.default_collate)
         self.total_seq_len = self.history_len + self.forecast_len
         self.total_seq_duration = nd_time.timesteps_to_duration(
-            self.total_seq_len)
+            self.total_seq_len - 1)
         self.history_duration = nd_time.timesteps_to_duration(
-            self.history_len)
+            self.history_len - 1)
 
     def per_worker_init(self, worker_id: int) -> None:
         """Called by worker_init_fn on each copy of NowcastingDataset after
@@ -48,26 +48,24 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     def _get_batch(self):
         examples = []
         for _ in range(self.batch_size):
-            examples.append(self._get_example())
+            example = self._get_example()
+            example = nowcasting_dataset.example.to_numpy(example)
+            examples.append(example)
         batch_delayed = self._colate_fn(examples)
-        return dask.compute(batch_delayed)
+        return dask.compute(batch_delayed)[0]
 
     def _get_example(self) -> nowcasting_dataset.example.Example:
         start_dt = self.rng.choice(self.start_dt_index)
+        start_dt = pd.Timestamp(start_dt)
         end_dt = start_dt + self.total_seq_duration
         t0_dt = start_dt + self.history_duration
         x_meters = y_meters = 20_000  # TODO: Change this hard-coding!
         example = nowcasting_dataset.example.Example(
-            start_datetime=start_dt,
-            end_datetime=end_dt,
-            t0_datetime=t0_dt)
+            start_dt=start_dt, end_dt=end_dt, t0_dt=t0_dt)
         for data_source in self.data_sources:
             example_from_source = data_source.get_sample(
-                start=start_dt,
-                end=end_dt,
-                t0=t0_dt,
-                x_meters_center=x_meters,
-                y_meters_center=y_meters)
+                start_dt=start_dt, end_dt=end_dt, t0_dt=t0_dt,
+                x_meters_center=x_meters, y_meters_center=y_meters)
             example.update(example_from_source)
         return example
 

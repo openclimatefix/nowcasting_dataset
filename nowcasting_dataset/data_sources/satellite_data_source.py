@@ -50,16 +50,16 @@ class SatelliteDataSource(DataSource):
 
     def get_sample(
             self,
-            start: datetime.datetime,
-            end: datetime.datetime,
-            x_meters: Number,
-            y_meters: Number,
-            t0: Optional[datetime.datetime] = None) -> Example:
-        del t0  # t0 is not used in this method!
+            start_dt: datetime.datetime,
+            end_dt: datetime.datetime,
+            x_meters_center: Number,
+            y_meters_center: Number,
+            t0_dt: Optional[datetime.datetime] = None) -> Example:
+        del t0_dt  # t0 is not used in this method!
         bounding_box = self.image_size.bounding_box_centered_on(
-            x_meters=x_meters, y_meters=y_meters)
+            x_meters=x_meters_center, y_meters=y_meters_center)
         selected_sat_data = self.sat_data.sel(
-            time=slice(start, end),
+            time=slice(start_dt, end_dt),
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom))
 

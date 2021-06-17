@@ -30,10 +30,10 @@ class DataSource:
 
     def get_example(
             self,
-            start: datetime.datetime,
-            end: datetime.datetime,
+            start_dt: datetime.datetime,
+            end_dt: datetime.datetime,
             x_meters: Number,  #: Centre, in OSGB coordinates.
             y_meters: Number,  #: Centre, in OSGB coordinates.
-            t0: Optional[datetime.datetime] = None) -> Example:
+            t0_dt: Optional[datetime.datetime] = None) -> Example:
         """Must be overridden by child classes."""
         raise NotImplementedError()

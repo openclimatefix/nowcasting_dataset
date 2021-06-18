@@ -95,12 +95,6 @@ class NowcastingDataModule(pl.LightningDataModule):
             dt_index=dt_index, total_seq_len=self.total_seq_len)
         del dt_index
 
-        # TODO: IMPORTANT! Instead of contiguous_segments, instead
-        # just have a dt_index which lists all the valid start dates.
-        # For each contiguous_segment, remove the last total_seq_len datetimes,
-        # and then check the resulting segment is large enough.
-        # Check get_contiguous_segments() to see if it can be simplified.
-
         # Split dt_index into train and test.
         # TODO: Better way to split into train and val date ranges!
         # Split at day boundary, at least.

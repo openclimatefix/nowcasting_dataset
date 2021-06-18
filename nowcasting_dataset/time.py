@@ -9,8 +9,8 @@ import warnings
 FIVE_MINUTES = pd.Timedelta('5 minutes')
 
 
-def select_daylight_timestamps(
-        dt_index: pd.DatetimeIndex,
+def select_daylight_datetimes(
+        datetimes: pd.DatetimeIndex,
         locations: Iterable[Tuple[float, float]],
         ghi_threshold: float = 10) -> pd.DatetimeIndex:
     """Returns datetimes for which the global horizontal irradiance
@@ -34,14 +34,14 @@ def select_daylight_timestamps(
             # deprecated alias for the builtin `object`."
             # See https://github.com/PyTables/PyTables/issues/898
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            clearsky = location.get_clearsky(dt_index)
+            clearsky = location.get_clearsky(datetimes)
         ghi = clearsky['ghi']
         ghi_for_all_locations.append(ghi)
 
     ghi_for_all_locations = pd.concat(ghi_for_all_locations, axis='columns')
     max_ghi = ghi_for_all_locations.max(axis='columns')
     mask = max_ghi > ghi_threshold
-    return dt_index[mask]
+    return datetimes[mask]
 
 
 def intersection_of_datetimeindexes(
@@ -54,9 +54,10 @@ def intersection_of_datetimeindexes(
 
 
 def get_start_datetimes(
-        dt_index: pd.DatetimeIndex,
-        total_seq_len: int = 6,
-        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+        datetimes: pd.DatetimeIndex,
+        total_seq_len: int,
+        max_gap: pd.Timedelta = FIVE_MINUTES
+) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
@@ -70,11 +71,11 @@ def get_start_datetimes(
 
     Throw away any timesteps in a sequence shorter than min_timesteps long.
     """
-    assert len(dt_index) > 0
+    assert len(datetimes) > 0
     min_timesteps = total_seq_len * 2
     assert min_timesteps > 1
 
-    gap_mask = np.diff(dt_index) > max_gap
+    gap_mask = np.diff(datetimes) > max_gap
     gap_indices = np.argwhere(gap_mask)[:, 0]
 
     # gap_indicies are the indices into dt_index for the timestep immediately
@@ -85,7 +86,7 @@ def get_start_datetimes(
     segment_boundaries = gap_indices + 1
 
     # Capture the last segment of dt_index.
-    segment_boundaries = np.concatenate((segment_boundaries, [len(dt_index)]))
+    segment_boundaries = np.concatenate((segment_boundaries, [len(datetimes)]))
 
     start_dt_index = []
     start_i = 0
@@ -93,10 +94,23 @@ def get_start_datetimes(
         n_timesteps = next_start_i - start_i
         if n_timesteps >= min_timesteps:
             end_i = next_start_i + 1 - total_seq_len
-            start_dt_index.append(dt_index[start_i:end_i])
+            start_dt_index.append(datetimes[start_i:end_i])
         start_i = next_start_i
 
     return pd.DatetimeIndex(np.concatenate(start_dt_index))
+
+
+def get_t0_datetimes(
+        datetimes: pd.DatetimeIndex,
+        total_seq_len: int,
+        history_len: int,
+        max_gap: pd.Timedelta = FIVE_MINUTES
+) -> pd.DatetimeIndex:
+    start_datetimes = get_start_datetimes(
+        datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap)
+    history_dur = timesteps_to_duration(history_len)
+    t0_datetimes = start_datetimes + history_dur
+    return t0_datetimes
 
 
 def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:

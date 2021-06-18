@@ -6,7 +6,6 @@ from numbers import Number
 import xarray as xr
 from pathlib import Path
 import pandas as pd
-import datetime
 import logging
 from dataclasses import dataclass
 import itertools
@@ -31,6 +30,7 @@ class SatelliteDataSource(DataSource):
     channels: Iterable[str] = ('HRV', )
 
     def __post_init__(self):
+        super().__post_init__()
         self._sat_data = None
 
     @property
@@ -50,14 +50,15 @@ class SatelliteDataSource(DataSource):
 
     def get_sample(
             self,
-            start_dt: datetime.datetime,
-            end_dt: datetime.datetime,
             x_meters_center: Number,
             y_meters_center: Number,
-            t0_dt: Optional[datetime.datetime] = None) -> Example:
+            t0_dt: pd.Timestamp
+    ) -> Example:
+        start_dt = self._get_start_dt(t0_dt)
+        end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in this method!
         bounding_box = self.image_size.bounding_box_centered_on(
-            x_meters=x_meters_center, y_meters=y_meters_center)
+            x_meters_center=x_meters_center, y_meters_center=y_meters_center)
         selected_sat_data = self.sat_data.sel(
             time=slice(start_dt, end_dt),
             x=slice(bounding_box.left, bounding_box.right),
@@ -71,8 +72,8 @@ class SatelliteDataSource(DataSource):
 
         return Example(sat_data=selected_sat_data)
 
-    def available_timestamps(self) -> pd.DatetimeIndex:
-        """Returns a complete list of all available timestamps"""
+    def datetime_index(self) -> pd.DatetimeIndex:
+        """Returns a complete list of all available datetimes"""
         sat_data = self._open_sat_data()
         return pd.DatetimeIndex(sat_data.time.values)
 

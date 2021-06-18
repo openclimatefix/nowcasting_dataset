@@ -12,12 +12,12 @@ def test_open(sat_data_source):
     assert sat_data_source.sat_data is not None
 
 
-def test_available_timestamps(sat_data_source):
-    timestamps = sat_data_source.available_timestamps()
-    assert isinstance(timestamps, pd.DatetimeIndex)
-    assert len(timestamps) > 0
-    assert len(np.unique(timestamps)) == len(timestamps)
-    assert np.all(np.diff(timestamps.astype(int)) > 0)
+def test_datetime_index(sat_data_source):
+    datetimes = sat_data_source.datetime_index()
+    assert isinstance(datetimes, pd.DatetimeIndex)
+    assert len(datetimes) > 0
+    assert len(np.unique(datetimes)) == len(datetimes)
+    assert np.all(np.diff(datetimes.astype(int)) > 0)
 
 
 @pytest.mark.parametrize(
@@ -36,10 +36,9 @@ def test_available_timestamps(sat_data_source):
 )
 def test_get_sample(sat_data_source, x, y, left, right, top, bottom):
     sat_data_source.open()
-    start_dt = pd.Timestamp('2019-01-01T13:00')
-    end_dt = pd.Timestamp('2019-01-01T14:00')
+    t0_dt = pd.Timestamp('2019-01-01T13:00')
     sample = sat_data_source.get_sample(
-        start_dt=start_dt, end_dt=end_dt, x_meters_center=x, y_meters_center=y)
+        t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
     sat_data = sample['sat_data']
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]

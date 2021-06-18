@@ -34,17 +34,11 @@ class Example(TypedDict):
     y_meters_center: float
 
     # Datetimes (abbreviated to "dt")
-    # The date range of the example is [start_date, end_dt].
     # At 5-minutes past the hour {0, 5, ..., 55}
     # *not* the {4, 9, ..., 59} timings of the satellite imagery.
     # Datetimes become Unix epochs (UTC) represented as int64 just before being
     # passed into the ML model.
-    start_dt: Union[pd.Timestamp, int]
-    end_dt: Union[pd.Timestamp, int]
-
-    #: t0_dt is 'now', the most recent observation.
-    # For an example timeseries with only 1 timestep of history,
-    # t0_dt will equal start_dt
+    # t0_dt is 'now', the most recent observation.
     t0_dt: Union[pd.Timestamp, int]
 
 

@@ -36,4 +36,7 @@ def sat_filename(use_cloud_data: bool) -> Path:
 def sat_data_source(sat_filename: Path):
     square = Square(
         size_pixels=pytest.IMAGE_SIZE_PIXELS, meters_per_pixel=2000)
-    return SatelliteDataSource(image_size=square, filename=sat_filename)
+    return SatelliteDataSource(
+        image_size=square, filename=sat_filename,
+        history_len=0, forecast_len=1
+    )

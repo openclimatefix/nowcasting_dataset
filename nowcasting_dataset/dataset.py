@@ -16,20 +16,13 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     batch_size: int
     #: Number of times to re-use each timestep. Must exactly divide batch_size.
     n_samples_per_timestep: int
-    history_len: int
-    forecast_len: int
     data_sources: List[data_sources.DataSource]
-    start_dt_index: pd.DatetimeIndex  #: Valid start times for examples.
+    t0_datetimes: pd.DatetimeIndex  #: Valid t0 datetimes.
 
     def __post_init__(self):
         super().__init__()
         self._colate_fn = dask.delayed(
             torch.utils.data._utils.collate.default_collate)
-        self.total_seq_len = self.history_len + self.forecast_len
-        self.total_seq_duration = nd_time.timesteps_to_duration(
-            self.total_seq_len - 1)
-        self.history_duration = nd_time.timesteps_to_duration(
-            self.history_len - 1)
         self._per_worker_init_has_run = False
         self._n_timesteps_per_batch = (
             self.batch_size // self.n_samples_per_timestep)
@@ -38,7 +31,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         if self.batch_size % self.n_samples_per_timestep != 0:
             raise ValueError(
                 'n_crops_per_timestep must exactly divide batch_size!')
-        if len(self.start_dt_index) < self._n_timesteps_per_batch:
+        if len(self.t0_datetimes) < self._n_timesteps_per_batch:
             raise ValueError(
                 f'start_dt_index only has {len(self.start_dt_index)}'
                 ' timestamps.'
@@ -68,11 +61,11 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
     def _get_batch(self):
         # Pick datetimes
-        start_datetimes = self.rng.choice(
-            self.start_dt_index,
+        t0_datetimes = self.rng.choice(
+            self.t0_datetimes,
             size=self._n_timesteps_per_batch,
             replace=False)
-        start_datetimes = pd.DatetimeIndex(start_datetimes)
+        t0_datetimes = pd.DatetimeIndex(t0_datetimes)
 
         # Pick locations.
         # TODO: Do this properly, using PV locations!
@@ -85,10 +78,10 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             (250_000, 250_000)][:self.n_samples_per_timestep]
 
         examples = []
-        for start_dt, location in product(start_datetimes, locations):
+        for t0_dt, location in product(t0_datetimes, locations):
             x_meters_center, y_meters_center = location
             example = self._get_example(
-                start_dt=start_dt,
+                t0_dt=t0_dt,
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)
             example = nowcasting_dataset.example.to_numpy(example)
@@ -98,17 +91,14 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
     def _get_example(
             self,
-            start_dt: pd.Timestamp,
+            t0_dt: pd.Timestamp,
             x_meters_center: Number,
             y_meters_center: Number) -> nowcasting_dataset.example.Example:
 
-        end_dt = start_dt + self.total_seq_duration
-        t0_dt = start_dt + self.history_duration
-        example = nowcasting_dataset.example.Example(
-            start_dt=start_dt, end_dt=end_dt, t0_dt=t0_dt)
+        example = nowcasting_dataset.example.Example(t0_dt=t0_dt)
         for data_source in self.data_sources:
             example_from_source = data_source.get_sample(
-                start_dt=start_dt, end_dt=end_dt, t0_dt=t0_dt,
+                t0_dt=t0_dt,
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)
             example.update(example_from_source)

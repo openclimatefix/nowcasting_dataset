@@ -18,10 +18,12 @@ class Square:
         self._half_size_meters = size_meters / 2
 
     def bounding_box_centered_on(
-            self, x_meters: Number, y_meters: Number) -> BoundingBox:
-
+            self,
+            x_meters_center: Number,
+            y_meters_center: Number
+    ) -> BoundingBox:
         return BoundingBox(
-            top=y_meters + self._half_size_meters,
-            bottom=y_meters - self._half_size_meters,
-            left=x_meters - self._half_size_meters,
-            right=x_meters + self._half_size_meters)
+            top=y_meters_center + self._half_size_meters,
+            bottom=y_meters_center - self._half_size_meters,
+            left=x_meters_center - self._half_size_meters,
+            right=x_meters_center + self._half_size_meters)

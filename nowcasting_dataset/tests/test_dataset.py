@@ -1,25 +1,27 @@
 import pandas as pd
 import numpy as np
 from nowcasting_dataset.dataset import NowcastingDataset
+import nowcasting_dataset.time as nd_time
 import pytest
 
 
 @pytest.fixture
 def dataset(sat_data_source):
-    # TODO: Use better approach to getting start_dt_index!
-    start_dt_index = sat_data_source.available_timestamps()[:-2]
+    all_datetimes = sat_data_source.datetime_index()
+    t0_datetimes = nd_time.get_t0_datetimes(
+        datetimes=all_datetimes, total_seq_len=2,
+        history_len=0)
     return NowcastingDataset(
-        batch_size=8, history_len=1, forecast_len=1,
+        batch_size=8,
         n_samples_per_timestep=2,
         data_sources=[sat_data_source],
-        start_dt_index=start_dt_index)
+        t0_datetimes=t0_datetimes)
 
 
 def test_post_init(dataset: NowcastingDataset):
-    assert dataset.total_seq_len == 2
-    assert dataset.total_seq_duration == pd.Timedelta('5 minutes')
-    assert dataset.history_duration == pd.Timedelta('0 minutes')
     assert dataset._colate_fn is not None
+    assert dataset._n_timesteps_per_batch == 4
+    assert not dataset._per_worker_init_has_run
 
 
 def test_per_worker_init(dataset: NowcastingDataset):

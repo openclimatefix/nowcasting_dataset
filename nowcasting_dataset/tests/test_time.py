@@ -4,14 +4,15 @@ import pandas as pd
 import numpy as np
 
 
-def test_select_daylight_timestamps():
-    dt_index = pd.date_range("2020-01-01 00:00", "2020-01-02 00:00", freq="H")
+def test_select_daylight_datetimes():
+    datetimes = pd.date_range("2020-01-01 00:00", "2020-01-02 00:00", freq="H")
     locations = [(0, 0), (20_000, 20_000)]
-    daylight_index = nd_time.select_daylight_timestamps(
-        dt_index=dt_index, locations=locations)
-    correct_daylight_index = pd.date_range(
+    daylight_datetimes = nd_time.select_daylight_datetimes(
+        datetimes=datetimes, locations=locations)
+    correct_daylight_datetimes = pd.date_range(
         "2020-01-01 09:00", "2020-01-01 16:00", freq="H")
-    np.testing.assert_array_equal(daylight_index, correct_daylight_index)
+    np.testing.assert_array_equal(
+        daylight_datetimes, correct_daylight_datetimes)
 
 
 def test_intersection_of_datetimeindexes():
@@ -63,3 +64,9 @@ def test_get_start_datetimes_2(total_seq_len):
     correct_start_datetimes = dt_index1[:1-total_seq_len].union(
         dt_index2[:1-total_seq_len])
     np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)
+
+
+def test_timesteps_to_duration():
+    assert nd_time.timesteps_to_duration(0) == pd.Timedelta(0)
+    assert nd_time.timesteps_to_duration(1) == pd.Timedelta('5T')
+    assert nd_time.timesteps_to_duration(12) == pd.Timedelta('1H')

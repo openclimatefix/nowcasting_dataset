@@ -21,17 +21,19 @@ class NowcastingDataModule(pl.LightningDataModule):
     Attributes (additional to the dataclass attributes):
       sat_data_source: SatelliteDataSource
       data_sources: List[DataSource]
-      dt_index: pd.DatetimeIndex  #: Filtered datetime index.
-      contiguous_segments: List[Segment]
+      train_t0_datetimes: pd.DatetimeIndex
+      val_t0_datetimes: pd.DatetimeIndex
     """
     batch_size: int = 8
-    history_len: int = 1  #: Number of timesteps of 'history', including 'now'.
-    forecast_len: int = 1  #: Number of timesteps of forecast.
+    history_len: int = 2  #: Number of timesteps of history, not including t0.
+    forecast_len: int = 12  #: Number of timesteps of forecast.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     image_size_pixels: int = 128
     meters_per_pixel: int = 2000
-    pin_memory: bool = True  # Passed to DataLoader.
-    num_workers: int = 4  # Passed to DataLoader.
+    pin_memory: bool = True  #: Passed to DataLoader.
+    num_workers: int = 16  #: Passed to DataLoader.
+    prefetch_factor: int = 64  #: Passed to DataLoader.
+    n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
 
     def __post_init__(self):
         super().__init__()
@@ -43,7 +45,11 @@ class NowcastingDataModule(pl.LightningDataModule):
             size_pixels=self.image_size_pixels,
             meters_per_pixel=self.meters_per_pixel)
         self.sat_data_source = data_sources.SatelliteDataSource(
-            filename=self.sat_filename, image_size=image_size)
+            filename=self.sat_filename,
+            image_size=image_size,
+            history_len=self.history_len,
+            forecast_len=0
+        )
         self.data_sources = [self.sat_data_source]
 
     def setup(self):
@@ -90,32 +96,35 @@ class NowcastingDataModule(pl.LightningDataModule):
           2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
         self._check_has_prepared_data()
-        dt_index = self._get_daylight_datetime_index()
-        start_dt_index = nd_time.get_start_dt_index(
-            dt_index=dt_index, total_seq_len=self.total_seq_len)
-        del dt_index
+        all_datetimes = self._get_datetimes()
+        t0_datetimes = nd_time.get_t0_datetimes(
+            datetimes=all_datetimes, total_seq_len=self.total_seq_len,
+            history_len=self.history_len)
+        del all_datetimes
 
         # Split dt_index into train and test.
         # TODO: Better way to split into train and val date ranges!
-        # Split at day boundary, at least.
-        assert len(start_dt_index) > 5
-        split = len(start_dt_index) // 5
+        # Split at day boundary, at least. Maybe take every first day
+        # of the month for validation? Need to be careful to make sure the
+        # validation dataset always takes exactly the same PV panels and
+        # datetimes when sampling.
+        assert len(t0_datetimes) > 5
+        split = len(t0_datetimes) // 5
         assert split > 0
-        split = len(start_dt_index) - split
-        self.train_dt_index = start_dt_index[:split]
-        self.val_dt_index = start_dt_index[split:]
+        split = len(t0_datetimes) - split
+        self.train_t0_datetimes = t0_datetimes[:split]
+        self.val_t0_datetimes = t0_datetimes[split:]
 
         # Create datasets
         common_dataset_params = dict(
             batch_size=self.batch_size,
-            history_len=self.history_len,
-            forecast_len=self.forecast_len,
-            data_sources=self.data_sources)
+            data_sources=self.data_sources,
+            n_samples_per_timestep=self.n_samples_per_timestep)
         self.train_dataset = dataset.NowcastingDataset(
-            start_dt_index=self.train_dt_index,
+            t0_datetimes=self.train_t0_datetimes,
             **common_dataset_params)
         self.val_dataset = dataset.NowcastingDataset(
-            start_dt_index=self.val_dt_index,
+            t0_datetimes=self.val_t0_datetimes,
             **common_dataset_params)
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
@@ -131,14 +140,14 @@ class NowcastingDataModule(pl.LightningDataModule):
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
             worker_init_fn=dataset.worker_init_fn,
-            prefetch_factor=16,
+            prefetch_factor=self.prefetch_factor,
 
             # Disable automatic batching because NowcastingDataset.__iter__
             # returns complete batches
             batch_size=None,
             batch_sampler=None)
 
-    def _get_daylight_datetime_index(self) -> pd.DatetimeIndex:
+    def _get_datetimes(self) -> pd.DatetimeIndex:
         """Compute the datetime index.
 
         Returns the intersection of the datetime indicies of all the
@@ -146,17 +155,17 @@ class NowcastingDataModule(pl.LightningDataModule):
         self._check_has_prepared_data()
 
         # Get the intersection of datetimes from all data sources.
-        available_timestamps = [
-            data_source.available_timestamps()
+        all_datetime_indexes = [
+            data_source.datetime_index()
             for data_source in self.data_sources]
-        dt_index = nd_time.intersection_of_datetimeindexes(
-            available_timestamps)
-        del available_timestamps  # save memory
+        datetimes = nd_time.intersection_of_datetimeindexes(
+            all_datetime_indexes)
+        del all_datetime_indexes  # save memory
 
         # Select datetimes that have at least some sunlight
         border_locations = self.sat_data_source.geospatial_border()
-        dt_index = nd_time.select_daylight_timestamps(
-            dt_index=dt_index, locations=border_locations)
+        dt_index = nd_time.select_daylight_datetimes(
+            datetimes=datetimes, locations=border_locations)
 
         # Sanity check
         assert len(dt_index) > 2

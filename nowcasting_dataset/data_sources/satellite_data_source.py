@@ -1,13 +1,13 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
-from nowcasting_dataset import consts, utils
+from nowcasting_dataset import consts, utils, square
 from typing import Union, Iterable, Optional, List, Tuple
 from numbers import Number
 import xarray as xr
 from pathlib import Path
 import pandas as pd
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 import itertools
 
 _LOG = logging.getLogger('nowcasting_dataset')
@@ -28,10 +28,15 @@ class SatelliteDataSource(DataSource):
     """
     filename: Union[str, Path] = consts.SAT_FILENAME
     channels: Iterable[str] = ('HRV', )
+    image_size_pixels: InitVar[int] = 128
+    meters_per_pixel: InitVar[int] = 2_000
 
-    def __post_init__(self):
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__()
         self._sat_data = None
+        self._square = square.Square(
+            size_pixels=image_size_pixels, 
+            meters_per_pixel=meters_per_pixel)
 
     @property
     def sat_data(self):
@@ -57,7 +62,7 @@ class SatelliteDataSource(DataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in this method!
-        bounding_box = self.image_size.bounding_box_centered_on(
+        bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center)
         selected_sat_data = self.sat_data.sel(
             time=slice(start_dt, end_dt),
@@ -67,8 +72,8 @@ class SatelliteDataSource(DataSource):
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_sat_data = selected_sat_data.isel(
-            x=slice(0, self.image_size.size_pixels),
-            y=slice(0, self.image_size.size_pixels))
+            x=slice(0, self._square.size_pixels),
+            y=slice(0, self._square.size_pixels))
 
         return Example(sat_data=selected_sat_data)
 

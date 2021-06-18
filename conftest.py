@@ -2,7 +2,6 @@
 import pytest
 from pathlib import Path
 from nowcasting_dataset import consts
-from nowcasting_dataset import Square
 from nowcasting_dataset.data_sources import SatelliteDataSource
 
 
@@ -34,9 +33,8 @@ def sat_filename(use_cloud_data: bool) -> Path:
 
 @pytest.fixture
 def sat_data_source(sat_filename: Path):
-    square = Square(
-        size_pixels=pytest.IMAGE_SIZE_PIXELS, meters_per_pixel=2000)
     return SatelliteDataSource(
-        image_size=square, filename=sat_filename,
+        image_size_pixels=pytest.IMAGE_SIZE_PIXELS, 
+        filename=sat_filename,
         history_len=0, forecast_len=1
     )

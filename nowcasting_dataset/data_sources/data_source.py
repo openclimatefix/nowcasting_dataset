@@ -12,7 +12,6 @@ class DataSource:
     """Abstract base class.
 
     Attributes:
-      image_size: Defines the image size of each example.
       history_len: Number of timesteps of history to include in each example.
         Does NOT include t0.  That is, if history_len = 0 then the example
         will start at t0.
@@ -22,7 +21,6 @@ class DataSource:
         will consist of a single timestep at t0.
     """
 
-    image_size: Square
     history_len: int
     forecast_len: int
 

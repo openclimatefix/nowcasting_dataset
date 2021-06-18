@@ -6,7 +6,6 @@ from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset import consts
-from nowcasting_dataset import square
 from nowcasting_dataset import dataset
 from dataclasses import dataclass
 import warnings
@@ -41,14 +40,13 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def prepare_data(self) -> None:
         # Satellite data!
-        image_size = square.Square(
-            size_pixels=self.image_size_pixels,
-            meters_per_pixel=self.meters_per_pixel)
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
-            image_size=image_size,
+            image_size_pixels=self.image_size_pixels,
+            meters_per_pixel=self.meters_per_pixel,
             history_len=self.history_len,
-            forecast_len=0
+            forecast_len=0,  # OpticalFlow will create the future images.
+            
         )
         self.data_sources = [self.sat_data_source]
 
@@ -104,10 +102,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         # Split dt_index into train and test.
         # TODO: Better way to split into train and val date ranges!
-        # Split at day boundary, at least. Maybe take every first day
-        # of the month for validation? Need to be careful to make sure the
-        # validation dataset always takes exactly the same PV panels and
-        # datetimes when sampling.
+        # See https://github.com/openclimatefix/nowcasting_dataset/issues/7
         assert len(t0_datetimes) > 5
         split = len(t0_datetimes) // 5
         assert split > 0

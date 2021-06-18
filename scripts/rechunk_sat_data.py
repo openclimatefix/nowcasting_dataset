@@ -41,8 +41,7 @@ def main():
         target_options=encoding,
         temp_store=temp_store)
 
-    with ProgressBar():
-        rechunk_plan.execute()
+    rechunk_plan.execute()
 
 
 if __name__ == '__main__':

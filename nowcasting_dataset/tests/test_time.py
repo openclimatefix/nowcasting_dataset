@@ -1,3 +1,4 @@
+import pytest
 from nowcasting_dataset import time as nd_time
 import pandas as pd
 import numpy as np
@@ -38,19 +39,27 @@ def test_intersection_of_datetimeindexes():
         pd.date_range('2010-01-01 12:00', '2010-01-02', freq='H'))
 
 
-# TODO: Change to test_start_dt_index!
-def test_get_contiguous_segments():
+@pytest.mark.parametrize(
+    "total_seq_len",
+    [2, 3, 12]
+)
+def test_get_start_datetimes_1(total_seq_len):
     dt_index1 = pd.date_range('2010-01-01', '2010-01-02', freq='5 min')
-    segments = nd_time.get_contiguous_segments(dt_index1)
-    assert len(segments) == 1
-    assert segments[0].start == dt_index1[0]
-    assert segments[0].end == dt_index1[-1]
+    start_datetimes = nd_time.get_start_datetimes(
+        dt_index1, total_seq_len=total_seq_len)
+    np.testing.assert_array_equal(start_datetimes, dt_index1[:1-total_seq_len])
 
+
+@pytest.mark.parametrize(
+    "total_seq_len",
+    [2, 3, 12]
+)
+def test_get_start_datetimes_2(total_seq_len):
+    dt_index1 = pd.date_range('2010-01-01', '2010-01-02', freq='5 min')
     dt_index2 = pd.date_range('2010-02-01', '2010-02-02', freq='5 min')
-    dt_index_union = dt_index1.union(dt_index2)
-    segments = nd_time.get_contiguous_segments(dt_index_union)
-    assert len(segments) == 2
-    assert segments[0].start == dt_index1[0]
-    assert segments[0].end == dt_index1[-1]
-    assert segments[1].start == dt_index2[0]
-    assert segments[1].end == dt_index2[-1]
+    dt_index = dt_index1.union(dt_index2)
+    start_datetimes = nd_time.get_start_datetimes(
+        dt_index, total_seq_len=total_seq_len)
+    correct_start_datetimes = dt_index1[:1-total_seq_len].union(
+        dt_index2[:1-total_seq_len])
+    np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)

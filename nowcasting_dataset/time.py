@@ -53,7 +53,7 @@ def intersection_of_datetimeindexes(
     return intersection
 
 
-def get_start_dt_index(
+def get_start_datetimes(
         dt_index: pd.DatetimeIndex,
         total_seq_len: int = 6,
         max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
@@ -92,7 +92,7 @@ def get_start_dt_index(
     for next_start_i in segment_boundaries:
         n_timesteps = next_start_i - start_i
         if n_timesteps >= min_timesteps:
-            end_i = next_start_i - 1 - total_seq_len
+            end_i = next_start_i + 1 - total_seq_len
             start_dt_index.append(dt_index[start_i:end_i])
         start_i = next_start_i
 
@@ -102,4 +102,3 @@ def get_start_dt_index(
 def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:
     assert n_timesteps >= 0
     return pd.Timedelta(n_timesteps * 5, unit='minutes')
-

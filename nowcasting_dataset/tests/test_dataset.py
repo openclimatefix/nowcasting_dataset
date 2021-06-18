@@ -10,6 +10,7 @@ def dataset(sat_data_source):
     start_dt_index = sat_data_source.available_timestamps()[:-2]
     return NowcastingDataset(
         batch_size=8, history_len=1, forecast_len=1,
+        n_samples_per_timestep=2,
         data_sources=[sat_data_source],
         start_dt_index=start_dt_index)
 

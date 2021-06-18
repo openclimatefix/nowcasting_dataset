@@ -53,18 +53,6 @@ def intersection_of_datetimeindexes(
     return intersection
 
 
-class Segment(NamedTuple):
-    """Represents the start and end datetimes of a segment of contiguous samples
-
-    The Segment covers the range [start_dt, end_dt].
-    """
-    start_dt: pd.Timestamp
-    end_dt: pd.Timestamp
-
-    def duration(self) -> pd.Timedelta:
-        return self.end_dt - self.start_dt
-
-
 def get_start_dt_index(
         dt_index: pd.DatetimeIndex,
         total_seq_len: int = 6,
@@ -73,6 +61,9 @@ def get_start_dt_index(
 
     Valid start datetimes are those where there is certain to be
     at least total_seq_len contiguous timesteps ahead.
+
+    For each contiguous_segment, remove the last total_seq_len datetimes,
+    and then check the resulting segment is large enough.
 
     max_gap defines the threshold for what constitutes a 'gap' between
     contiguous segments.

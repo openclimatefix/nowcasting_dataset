@@ -38,6 +38,7 @@ def test_intersection_of_datetimeindexes():
         pd.date_range('2010-01-01 12:00', '2010-01-02', freq='H'))
 
 
+# TODO: Change to test_start_dt_index!
 def test_get_contiguous_segments():
     dt_index1 = pd.date_range('2010-01-01', '2010-01-02', freq='5 min')
     segments = nd_time.get_contiguous_segments(dt_index1)

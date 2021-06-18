@@ -97,7 +97,7 @@ class SatelliteDataSource(DataSource):
 
 def open_sat_data(
         filename: Union[str, Path],
-        consolidated: bool = True) -> xr.DataArray:
+        consolidated: bool = False) -> xr.DataArray:
     """Lazily opens the Zarr store.
 
     Adds 1 minute to the 'time' coordinates, so the timestamps

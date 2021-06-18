@@ -20,9 +20,9 @@ def generate_satellite_test_data():
     sat_data = sat_data.sel(variable=['HRV'], time=slice(START, END))
     encoding = {'stacked_eumetsat_data': {
         'compressor': numcodecs.Blosc(cname="zstd", clevel=5)}}
-    sat_data = sat_data.chunk({'time': 36, 'y': 704, 'x': 548, 'variable': 1})
+    sat_data = sat_data.chunk({'time': 1, 'y': 704, 'x': 548, 'variable': 1})
     sat_data.to_zarr(
-        output_filename, mode='w', consolidated=True, encoding=encoding)
+        output_filename, mode='w', consolidated=False, encoding=encoding)
 
 
 if __name__ == '__main__':

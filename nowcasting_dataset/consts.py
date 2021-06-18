@@ -10,7 +10,7 @@ BUCKET = Path('solar-pv-nowcasting-data')
 
 # Satellite data
 SAT_FILENAME = 'gs://' + str(
-    BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16')
+    BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr')
 
 # Solar PV data
 PV_PATH = BUCKET / 'PV/PVOutput.org'

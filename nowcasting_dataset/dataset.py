@@ -1,7 +1,9 @@
 import dask
 import pandas as pd
 import numpy as np
+from numbers import Number
 from typing import List
+import itertools
 import nowcasting_dataset
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
@@ -12,6 +14,7 @@ import torch
 @dataclass
 class NowcastingDataset(torch.utils.data.IterableDataset):
     batch_size: int
+    n_samples_per_timestep: int #: Number of times to re-use each timestep.  Must exactly divide batch_size.
     history_len: int
     forecast_len: int
     data_sources: List[data_sources.DataSource]
@@ -27,6 +30,15 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         self.history_duration = nd_time.timesteps_to_duration(
             self.history_len - 1)
         self._per_worker_init_has_run = False
+        self._n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
+
+        # Sanity checks.
+        if self.batch_size % self.n_samples_per_timestep != 0:
+            raise ValueError('n_crops_per_timestep must exactly divide batch_size!')
+        if len(self.start_dt_index) < self._n_timesteps_per_batch:
+            raise ValueError(
+                f'start_dt_index only has {len(self.start_dt_index)} timestamps.'
+                f'  Must have at least {self._n_timesteps_per_batch}!')
 
     def per_worker_init(self, worker_id: int) -> None:
         """Called by worker_init_fn on each copy of NowcastingDataset after
@@ -51,26 +63,46 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             yield self._get_batch()
 
     def _get_batch(self):
+        # Pick datetimes
+        start_datetimes = self.rng.choice(
+            self.start_dt_index, 
+            size=self._n_timesteps_per_batch,
+            replace=False)
+        start_datetimes = pd.DatetimeIndex(start_datetimes)
+        
+        # Pick locations.
+        # TODO: Do this properly, using PV locations!
+        # Locations is a list of 2-tuples (<x_meters_center, y_meters_center>).
+        # The length of locations is self.n_samples_per_timesteps
+        locations = [(20_000, 40_000), (500_000, 600_000), (100_000, 100_000), (250_000, 250_000)]
+        
         examples = []
-        for _ in range(self.batch_size):
-            example = self._get_example()
+        for start_dt, location in itertools.product(start_datetimes, locations):
+            x_meters_center, y_meters_center = location
+            example = self._get_example(
+                start_dt=start_dt,
+                x_meters_center=x_meters_center,
+                y_meters_center=y_meters_center)
             example = nowcasting_dataset.example.to_numpy(example)
             examples.append(example)
         batch_delayed = self._colate_fn(examples)
         return dask.compute(batch_delayed)[0]
 
-    def _get_example(self) -> nowcasting_dataset.example.Example:
-        start_dt = self.rng.choice(self.start_dt_index)
-        start_dt = pd.Timestamp(start_dt)
+    def _get_example(
+        self, 
+        start_dt: pd.Timestamp, 
+        x_meters_center: Number, 
+        y_meters_center: Number) -> nowcasting_dataset.example.Example:
+        
         end_dt = start_dt + self.total_seq_duration
         t0_dt = start_dt + self.history_duration
-        x_meters = y_meters = 20_000  # TODO: Change this hard-coding!
         example = nowcasting_dataset.example.Example(
             start_dt=start_dt, end_dt=end_dt, t0_dt=t0_dt)
         for data_source in self.data_sources:
             example_from_source = data_source.get_sample(
                 start_dt=start_dt, end_dt=end_dt, t0_dt=t0_dt,
-                x_meters_center=x_meters, y_meters_center=y_meters)
+                x_meters_center=x_meters_center, 
+                y_meters_center=y_meters_center)
             example.update(example_from_source)
         return example
 

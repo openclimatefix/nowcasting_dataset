@@ -118,6 +118,12 @@ def open_sat_data(
     """
     _LOG.debug('Opening satellite data: %s', filename)
     utils.set_fsspec_for_multiprocess()
+    
+    # We load using chunks=None so xarray *doesn't* use Dask to
+    # load the Zarr chunks from disk.  Using Dask to load the data
+    # seems to slow things down a lot if the Zarr store has more than
+    # about a million chunks.  We use Dask.delayed in get_sample() though!
+    # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
     dataset = xr.open_dataset(
         filename, engine='zarr', consolidated=consolidated, chunks=None, mode='r')
     data_array = dataset['stacked_eumetsat_data']

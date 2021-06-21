@@ -45,7 +45,7 @@ class DataSource:
         """Returns a complete list of all available datetimes."""
         raise NotImplementedError()
 
-    def pick_locations(self, t0_datetimes: pd.DatetimeIndex, n_locations: int) -> List[Tuple[Number, Number]]:
+    def pick_locations_for_batch(self, t0_datetimes: pd.DatetimeIndex, n_locations: int) -> List[Tuple[Number, Number]]:
         """Picks n_locations locations for time periods defined by t0_datetimes.
         
         Returns: Locations: A list of 2-tuples (<x_meters_center, y_meters_center> in OSGB coordinates)

@@ -13,6 +13,10 @@ import torch
 
 @dataclass
 class NowcastingDataset(torch.utils.data.IterableDataset):
+    """
+    The first data_source will be used to select the geo locations each batch.
+    """
+    
     batch_size: int
     #: Number of times to re-use each timestep. Must exactly divide batch_size.
     n_samples_per_timestep: int
@@ -68,7 +72,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = pd.DatetimeIndex(t0_datetimes)
 
         # Pick locations.
-        locations = self.data_sources[0].pick_locations(
+        locations = self.data_sources[0].pick_locations_for_batch(
             t0_datetimes, n_locations=self.n_samples_per_timestep)
 
         # Loop to construct batch.

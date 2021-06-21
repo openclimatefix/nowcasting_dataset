@@ -22,12 +22,13 @@ class SatelliteDataSource(DataSource):
         y is top-to-bottom.
         Access using public sat_data property.
       filename: Filename of the satellite data Zarr.
-      channels: List of satellite channels to load.
-      image_size: Instance of Square, which defines the size of each sample.
-        (Inherited from DataSource super-class).
+      consolidated: Whether or not the Zarr store is consolidated.
+      channels: List of satellite channels to load. If None then don't filter by channels.
+      image_size_pixels: Size of the width and height of the image crop returned by get_sample().
     """
     filename: Union[str, Path] = consts.SAT_FILENAME
-    channels: Iterable[str] = ('HRV', )
+    consolidated: bool = True
+    channels: Optional[Iterable[str]] = None
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
 
@@ -50,8 +51,9 @@ class SatelliteDataSource(DataSource):
         # If we did that, then we couldn't copy SatelliteDataSource
         # instances into separate processes.  Instead,
         # call open() _after_ creating separate processes.
-        sat_data = self._open_sat_data()
-        self._sat_data = sat_data.sel(variable=list(self.channels))
+        self._sat_data = self._open_sat_data()
+        if self.channels is not None:
+            self._sat_data = self._sat_data.sel(variable=list(self.channels))
 
     def get_sample(
             self,
@@ -98,7 +100,7 @@ class SatelliteDataSource(DataSource):
                 [GEO_BORDER, -GEO_BORDER])]
 
     def _open_sat_data(self):
-        return open_sat_data(filename=self.filename)
+        return open_sat_data(filename=self.filename, consolidated=self.consolidated)
 
 
 def open_sat_data(

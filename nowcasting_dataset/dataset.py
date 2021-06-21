@@ -60,7 +60,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             yield self._get_batch()
 
     def _get_batch(self):
-        # Pick datetimes
+        # Pick datetimes.
         t0_datetimes = self.rng.choice(
             self.t0_datetimes,
             size=self._n_timesteps_per_batch,
@@ -68,15 +68,10 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = pd.DatetimeIndex(t0_datetimes)
 
         # Pick locations.
-        # TODO: Do this properly, using PV locations!
-        # Locations is a list of 2-tuples (<x_meters_center, y_meters_center>).
-        # The length of locations is self.n_samples_per_timesteps
-        locations = [
-            (20_000, 40_000),
-            (500_000, 600_000),
-            (100_000, 100_000),
-            (250_000, 250_000)][:self.n_samples_per_timestep]
+        locations = self.data_sources[0].pick_locations(
+            t0_datetimes, n_locations=self.n_samples_per_timestep)
 
+        # Loop to construct batch.
         examples = []
         for t0_dt, location in product(t0_datetimes, locations):
             x_meters_center, y_meters_center = location

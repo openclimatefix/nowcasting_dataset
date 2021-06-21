@@ -4,7 +4,7 @@ from nowcasting_dataset.example import Example
 from nowcasting_dataset.square import Square
 import nowcasting_dataset.time as nd_time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List, Tuple
 
 
 @dataclass
@@ -44,6 +44,19 @@ class DataSource:
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
         raise NotImplementedError()
+
+    def pick_locations(self, t0_datetimes: pd.DatetimeIndex, n_locations: int) -> List[Tuple[Number, Number]]:
+        """Picks n_locations locations for time periods defined by t0_datetimes.
+        
+        Returns: Locations: A list of 2-tuples (<x_meters_center, y_meters_center> in OSGB coordinates)
+        """
+        # TODO: Do this properly, using PV locations!
+        locations = [
+            (20_000, 40_000),
+            (500_000, 600_000),
+            (100_000, 100_000),
+            (250_000, 250_000)]
+        return locations[:n_locations]
 
     def get_example(
             self,

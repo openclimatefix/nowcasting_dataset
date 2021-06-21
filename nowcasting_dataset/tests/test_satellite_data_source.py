@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
+import dask
 
 
 def test_satellite_data_source_init(sat_data_source):
@@ -39,6 +40,7 @@ def test_get_sample(sat_data_source, x, y, left, right, top, bottom):
     t0_dt = pd.Timestamp('2019-01-01T13:00')
     sample = sat_data_source.get_sample(
         t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    sample = dask.compute(sample)[0]
     sat_data = sample['sat_data']
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]

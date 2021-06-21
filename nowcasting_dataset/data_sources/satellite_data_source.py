@@ -9,6 +9,7 @@ import pandas as pd
 import logging
 from dataclasses import dataclass, InitVar
 import itertools
+import dask
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
@@ -28,7 +29,7 @@ class SatelliteDataSource(DataSource):
     """
     filename: Union[str, Path] = consts.SAT_FILENAME
     consolidated: bool = True
-    channels: Optional[Iterable[str]] = None
+    channels: Optional[Iterable[str]] = ('HRV', )
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
 
@@ -66,14 +67,14 @@ class SatelliteDataSource(DataSource):
         del t0_dt  # t0 is not used in this method!
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center)
-        selected_sat_data = self.sat_data.sel(
+        selected_sat_data = dask.delayed(self.sat_data.sel)(
             time=slice(start_dt, end_dt),
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom))
-
+        
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
-        selected_sat_data = selected_sat_data.isel(
+        selected_sat_data = dask.delayed(selected_sat_data.isel)(
             x=slice(0, self._square.size_pixels),
             y=slice(0, self._square.size_pixels))
 
@@ -117,8 +118,11 @@ def open_sat_data(
     """
     _LOG.debug('Opening satellite data: %s', filename)
     utils.set_fsspec_for_multiprocess()
-    dataset = xr.open_zarr(filename, consolidated=consolidated)
+    dataset = xr.open_dataset(
+        filename, engine='zarr', consolidated=consolidated, chunks=None, mode='r')
     data_array = dataset['stacked_eumetsat_data']
+    
+    del dataset
 
     # The 'time' dimension is at 04, 09, ..., 59 minutes past the hour.
     # To make it easier to align the satellite data with other data sources

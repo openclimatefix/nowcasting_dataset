@@ -1,0 +1,156 @@
+from nowcasting_dataset.data_sources.data_source import DataSource
+from nowcasting_dataset.example import Example
+from nowcasting_dataset import geospatial, utils
+from dataclasses import dataclass
+import pandas as pd
+import numpy as np
+import torch
+from numbers import Number
+from typing import List, Tuple, Union
+from pathlib import Path
+import io
+import gcsfs
+import xarray as xr
+
+
+@dataclass
+class PVDataSource(DataSource):
+
+    metadata_filename: Union[str, Path]
+
+    def __post_init__(self):
+        seed = torch.initial_seed()
+        self.rng = np.random.default_rng(seed=seed)
+        # self.load()  # TODO: Re-enable after testing!
+
+    def load(self):
+        self._load_metadata()
+        self._load_pv_power()
+        self.pv_metadata, self.pv_power = align_pv_system_ids(
+            self.pv_metadata, self.pv_power)
+
+    def _load_metadata(self):
+        pv_metadata = pd.read_csv(
+            self.metadata_filename, index_col='system_id')
+        pv_metadata.dropna(
+            subset=['longitude', 'latitude'], how='any', inplace=True)
+
+        pv_metadata['location_x'], pv_metadata['location_y'] = (
+            geospatial.wgs84_to_osgb(
+                pv_metadata['latitude'], pv_metadata['longitude']))
+
+        # Remove PV systems outside the geospatial boundary of the
+        # satellite data:
+        GEO_BOUNDARY_OSGB = {
+            'WEST': -238_000, 'EAST': 856_000,
+            'NORTH': 1_222_000, 'SOUTH': -184_000}
+        self.pv_metadata = pv_metadata[
+            (pv_metadata.location_x >= GEO_BOUNDARY_OSGB['WEST']) &
+            (pv_metadata.location_x <= GEO_BOUNDARY_OSGB['EAST']) &
+            (pv_metadata.location_y <= GEO_BOUNDARY_OSGB['NORTH']) &
+            (pv_metadata.location_y >= GEO_BOUNDARY_OSGB['SOUTH'])]
+
+    def _load_pv_power(self):
+        pv_power = load_solar_pv_data_from_gcs(self.filename)
+
+        # A bit of hand-crafted cleaning
+        pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
+        pv_power.dropna(axis='columns', inplace=True, how='all')
+
+        pv_power = utils.scale_to_0_to_1(pv_power)
+        pv_power = drop_pv_systems_which_produce_overnight(pv_power)
+
+        # Resample to 5-minutely and interpolate up to 15 minutes ahead.
+        pv_power = pv_power.resample('5T').interpolate(method='time', limit=3)
+        self.pv_power = pv_power
+
+    def get_sample(
+            self,
+            x_meters_center: Number,
+            y_meters_center: Number,
+            t0_dt: pd.Timestamp) -> Example:
+        start_dt = self._get_start_dt(t0_dt)
+        end_dt = self._get_end_dt(t0_dt)
+        del t0_dt  # t0 is not used in this method!
+        selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(
+            axis='columns', how='any')
+        # Select just one PV system
+        selected_pv_power = selected_pv_power.dropna(axis='columns', how='any')
+        pv_system_ids = selected_pv_power.columns
+        pv_system_id = self.rng.choice(pv_system_ids)
+        selected_pv_power = selected_pv_power[pv_system_id]
+
+        # Get metadata for PV system
+        metadata_for_pv_system = self.pv_metadata.loc[pv_system_id]
+
+        # Save data into the Sample dict...
+        return Example(
+            pv_system_id=pv_system_id,
+            pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
+            pv_yield=selected_pv_power.values,
+            pv_location_x=metadata_for_pv_system.location_x,
+            pv_location_y=metadata_for_pv_system.location_y)
+
+    def pick_locations_for_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex,
+            n_locations: int) -> List[Tuple[Number, Number]]:
+        pass
+        # TODO!
+
+
+def load_solar_pv_data_from_gcs(filename: Union[str, Path]) -> pd.DataFrame:
+    gcs = gcsfs.GCSFileSystem(access='read_only')
+
+    # It is possible to simplify the code below and do xr.open_dataset(file)
+    # in the first 'with' block, and delete the second 'with' block.
+    # But that takes 6 minutes to load the data, where as loading into memory
+    # first and then loading from memory takes 23 seconds!
+    with gcs.open(filename, mode='rb') as file:
+        file_bytes = file.read()
+
+    with io.BytesIO(file_bytes) as file:
+        pv_power = xr.open_dataset(file)
+        pv_power_df = pv_power.to_dataframe()
+
+    # Save memory
+    del file_bytes
+    del pv_power
+
+    # Process the data a little
+    pv_power_df = pv_power_df.dropna(axis='columns', how='all')
+    pv_power_df = pv_power_df.clip(lower=0, upper=5E7)
+    # Convert the pv_system_id column names from strings to ints:
+    pv_power_df.columns = [np.int32(col) for col in pv_power_df.columns]
+
+    return (
+        pv_power_df
+        .tz_localize('Europe/London')
+        .tz_convert('UTC')
+        .tz_convert(None))
+
+
+def align_pv_system_ids(
+        pv_metadata: pd.DataFrame,
+        pv_power: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Only pick PV systems for which we have metadata."""
+    pv_system_ids = pv_metadata.index.intersection(pv_power.columns)
+    pv_system_ids = np.sort(pv_system_ids)
+    pv_power = pv_power[pv_system_ids]
+    pv_metadata = pv_metadata.loc[pv_system_ids]
+    return pv_metadata, pv_power
+
+
+def drop_pv_systems_which_produce_overnight(
+        pv_power: pd.DataFrame) -> pd.DataFrame:
+    """Drop systems which produce power over night."""
+    # TODO: Of these bad systems, 24647, 42656, 42807, 43081, 51247, 59919
+    # might have some salvagable data?
+    NIGHT_YIELD_THRESHOLD = 0.4
+    night_hours = [22, 23, 0, 1, 2]
+    pv_data_at_night = pv_power.loc[pv_power.index.hour.isin(night_hours)]
+    pv_above_threshold_at_night = (
+        pv_data_at_night > NIGHT_YIELD_THRESHOLD).any()
+    bad_systems = pv_power.columns[pv_above_threshold_at_night]
+    print(len(bad_systems), 'bad systems found.')
+    return pv_power.drop(columns=bad_systems)

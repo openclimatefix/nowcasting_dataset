@@ -11,14 +11,14 @@ import zarr
 BUCKET = Path('solar-pv-nowcasting-data')
 SAT_PATH = BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/'
 SOURCE_SAT_FILENAME = 'gs://' + str(SAT_PATH / 'all_zarr_int16')
-TARGET_SAT_FILENAME = SAT_PATH / 'all_zarr_int16_single_timestep_just_hrv.zarr'
+TARGET_SAT_FILENAME = SAT_PATH / 'all_zarr_int16_single_timestep_quarter_geospatial.zarr'
 TEMP_STORE_FILENAME = SAT_PATH / 'temp.zarr'
 
 
 def main():
     source_sat_dataset = xr.open_zarr(SOURCE_SAT_FILENAME, consolidated=True)
     #source_sat_dataset = source_sat_dataset.isel(time=slice(0, 3600))
-    source_sat_dataset = source_sat_dataset.sel(variable='HRV')
+    #source_sat_dataset = source_sat_dataset.sel(variable='HRV')
     
     gcs = gcsfs.GCSFileSystem()
     target_store = gcs.get_mapper(TARGET_SAT_FILENAME)
@@ -27,9 +27,9 @@ def main():
     target_chunks = {
         'stacked_eumetsat_data': {
             "time": 1,
-            "y": 704,
-            "x": 548,
-            #"variable": 1
+            "y": 704 // 2,
+            "x": 548 // 2,
+            "variable": 1
         }}
 
     encoding = {
@@ -40,7 +40,7 @@ def main():
     rechunk_plan = rechunker.rechunk(
         source=source_sat_dataset,
         target_chunks=target_chunks,
-        max_mem="2GB",
+        max_mem="1GB",
         target_store=target_store,
         target_options=encoding,
         temp_store=temp_store)

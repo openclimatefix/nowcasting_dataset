@@ -1,13 +1,13 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
-from nowcasting_dataset import consts, utils, square
+from nowcasting_dataset import utils
 from typing import Union, Iterable, Optional, List, Tuple
 from numbers import Number
 import xarray as xr
 from pathlib import Path
 import pandas as pd
 import logging
-from dataclasses import dataclass, InitVar
+from dataclasses import dataclass
 import itertools
 import dask
 
@@ -22,23 +22,16 @@ class SatelliteDataSource(DataSource):
         x is left-to-right.
         y is top-to-bottom.
         Access using public sat_data property.
-      filename: Filename of the satellite data Zarr.
       consolidated: Whether or not the Zarr store is consolidated.
-      channels: List of satellite channels to load. If None then don't filter by channels.
-      image_size_pixels: Size of the width and height of the image crop returned by get_sample().
+      channels: List of satellite channels to load. If None then don't filter
+        by channels.
     """
-    filename: Union[str, Path] = consts.SAT_FILENAME
     consolidated: bool = True
     channels: Optional[Iterable[str]] = ('HRV', )
-    image_size_pixels: InitVar[int] = 128
-    meters_per_pixel: InitVar[int] = 2_000
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        super().__post_init__()
+        super().__post_init__(image_size_pixels, meters_per_pixel)
         self._sat_data = None
-        self._square = square.Square(
-            size_pixels=image_size_pixels, 
-            meters_per_pixel=meters_per_pixel)
 
     @property
     def sat_data(self):
@@ -71,7 +64,7 @@ class SatelliteDataSource(DataSource):
             time=slice(start_dt, end_dt),
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom))
-        
+
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_sat_data = dask.delayed(selected_sat_data.isel)(
@@ -101,7 +94,8 @@ class SatelliteDataSource(DataSource):
                 [GEO_BORDER, -GEO_BORDER])]
 
     def _open_sat_data(self):
-        return open_sat_data(filename=self.filename, consolidated=self.consolidated)
+        return open_sat_data(
+            filename=self.filename, consolidated=self.consolidated)
 
 
 def open_sat_data(
@@ -118,16 +112,16 @@ def open_sat_data(
     """
     _LOG.debug('Opening satellite data: %s', filename)
     utils.set_fsspec_for_multiprocess()
-    
+
     # We load using chunks=None so xarray *doesn't* use Dask to
     # load the Zarr chunks from disk.  Using Dask to load the data
     # seems to slow things down a lot if the Zarr store has more than
     # about a million chunks.  We use Dask.delayed in get_sample() though!
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
     dataset = xr.open_dataset(
-        filename, engine='zarr', consolidated=consolidated, chunks=None, mode='r')
+        filename, engine='zarr', consolidated=consolidated,
+        chunks=None, mode='r')
     data_array = dataset['stacked_eumetsat_data']
-    
     del dataset
 
     # The 'time' dimension is at 04, 09, ..., 59 minutes past the hour.

@@ -20,3 +20,12 @@ def is_monotonically_increasing(a: Array) -> bool:
         a = a.astype(int)
     a = np.asarray(a)
     return np.all(np.diff(a) > 0)
+
+
+def scale_to_0_to_1(a: Array) -> Array:
+    """Scale to the range [0, 1]."""
+    a = a - a.min()
+    a = a / a.max()
+    np.testing.assert_almost_equal(a.min().min(), 0.0)
+    np.testing.assert_almost_equal(a.max().max(), 1.0)
+    return a

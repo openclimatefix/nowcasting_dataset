@@ -15,6 +15,7 @@ OSGB = 27700
 WGS84 = 4326
 
 _osgb_to_lat_lon = pyproj.Transformer.from_crs(crs_from=OSGB, crs_to=WGS84)
+_lat_lon_to_osgb = pyproj.Transformer.from_crs(crs_from=WGS84, crs_to=OSGB)
 
 
 def osgb_to_lat_lon(x: Number, y: Number) -> Tuple[Number, Number]:
@@ -25,3 +26,12 @@ def osgb_to_lat_lon(x: Number, y: Number) -> Tuple[Number, Number]:
         British National Grid, coordinates.
     """
     return _osgb_to_lat_lon.transform(x, y)
+
+
+def lat_lon_to_osgb(lat: Number, lon: Number) -> Tuple[Number, Number]:
+    """Returns 2-tuple of x (east-west), y (north-south).
+
+    Args:
+      lat, lon: Location is WGS84 coordinates.
+    """
+    return _lat_lon_to_osgb.transform(lat, lon)

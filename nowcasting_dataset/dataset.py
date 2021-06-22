@@ -16,7 +16,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     """
     The first data_source will be used to select the geo locations each batch.
     """
-    
+
     batch_size: int
     #: Number of times to re-use each timestep. Must exactly divide batch_size.
     n_samples_per_timestep: int

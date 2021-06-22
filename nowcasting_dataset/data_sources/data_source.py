@@ -1,10 +1,11 @@
 from numbers import Number
 import pandas as pd
 from nowcasting_dataset.example import Example
-from nowcasting_dataset.square import Square
+from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
-from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from dataclasses import dataclass, InitVar
+from typing import List, Tuple, Union
+from pathlib import Path
 
 
 @dataclass
@@ -12,6 +13,7 @@ class DataSource:
     """Abstract base class.
 
     Attributes:
+      filename: Filename of the data source.
       history_len: Number of timesteps of history to include in each example.
         Does NOT include t0.  That is, if history_len = 0 then the example
         will start at t0.
@@ -19,16 +21,23 @@ class DataSource:
         Does NOT include t0.  If forecast_len = 0 then the example will end
         at t0.  If both history_len and forecast_len are 0, then the example
         will consist of a single timestep at t0.
+      image_size_pixels: Size of the width and height of the image crop
+        returned by get_sample().
     """
-
+    filename: Union[str, Path]
     history_len: int
     forecast_len: int
+    image_size_pixels: InitVar[int] = 128
+    meters_per_pixel: InitVar[int] = 2_000
 
-    def __post_init__(self):
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         assert self.history_len >= 0
         assert self.forecast_len >= 0
         self._history_dur = nd_time.timesteps_to_duration(self.history_len)
         self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len)
+        self._square = square.Square(
+            size_pixels=image_size_pixels,
+            meters_per_pixel=meters_per_pixel)
 
     def open(self):
         """Open the data source, if necessary.
@@ -36,8 +45,8 @@ class DataSource:
         Called from each worker process.  Useful for data sources where the
         underlying data source cannot be forked (like Zarr on GCP!).
 
-        Data sources which can be forked safely will open
-        the underlying data source in __init__().
+        Data sources which can be forked safely should call open()
+        from __init__().
         """
         pass
 
@@ -45,10 +54,14 @@ class DataSource:
         """Returns a complete list of all available datetimes."""
         raise NotImplementedError()
 
-    def pick_locations_for_batch(self, t0_datetimes: pd.DatetimeIndex, n_locations: int) -> List[Tuple[Number, Number]]:
+    def pick_locations_for_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex,
+            n_locations: int) -> List[Tuple[Number, Number]]:
         """Picks n_locations locations for time periods defined by t0_datetimes.
-        
-        Returns: Locations: A list of 2-tuples (<x_meters_center, y_meters_center> in OSGB coordinates)
+
+        Returns: Locations: A list of 2-tuples
+          (<x_meters_center, y_meters_center> in OSGB coordinates).
         """
         # TODO: Do this properly, using PV locations!
         locations = [

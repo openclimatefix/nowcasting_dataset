@@ -27,8 +27,8 @@ class DataSource:
     filename: Union[str, Path]
     history_len: int
     forecast_len: int
-    image_size_pixels: InitVar[int] = 128
-    meters_per_pixel: InitVar[int] = 2_000
+    image_size_pixels: InitVar[int]
+    meters_per_pixel: InitVar[int]
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         assert self.history_len >= 0

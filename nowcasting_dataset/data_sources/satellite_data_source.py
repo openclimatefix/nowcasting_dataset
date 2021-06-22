@@ -7,7 +7,7 @@ import xarray as xr
 from pathlib import Path
 import pandas as pd
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 import itertools
 import dask
 
@@ -28,6 +28,8 @@ class SatelliteDataSource(DataSource):
     """
     consolidated: bool = True
     channels: Optional[Iterable[str]] = ('HRV', )
+    image_size_pixels: InitVar[int] = 128
+    meters_per_pixel: InitVar[int] = 2_000
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)

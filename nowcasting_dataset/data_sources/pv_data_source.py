@@ -1,7 +1,7 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import geospatial, utils
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 import pandas as pd
 import numpy as np
 import torch
@@ -15,10 +15,10 @@ import xarray as xr
 
 @dataclass
 class PVDataSource(DataSource):
-
     metadata_filename: Union[str, Path]
 
-    def __post_init__(self):
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        super().__post_init__(image_size_pixels, meters_per_pixel)
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         # self.load()  # TODO: Re-enable after testing!

@@ -1,2 +1,3 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.satellite_data_source import SatelliteDataSource
+from nowcasting_dataset.data_sources.pv_data_source import PVDataSource

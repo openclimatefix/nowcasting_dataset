@@ -36,7 +36,7 @@ class PVDataSource(DataSource):
             subset=['longitude', 'latitude'], how='any', inplace=True)
 
         pv_metadata['location_x'], pv_metadata['location_y'] = (
-            geospatial.wgs84_to_osgb(
+            geospatial.lat_lon_to_osgb(
                 pv_metadata['latitude'], pv_metadata['longitude']))
 
         # Remove PV systems outside the geospatial boundary of the

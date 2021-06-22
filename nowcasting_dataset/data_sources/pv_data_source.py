@@ -72,31 +72,32 @@ class PVDataSource(DataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in this method!
-        selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(
-            axis='columns', how='any')
-        # Select just one PV system
-        selected_pv_power = selected_pv_power.dropna(axis='columns', how='any')
+
+        pv_system_ids = self.pv_metadata.index[
+            np.isclose(self.pv_metadata.location_x, x_meters_center) &
+            np.isclose(self.pv_metadata.location_y, y_meters_center)]
+
+        selected_pv_power = self.pv_power[pv_system_ids][start_dt:end_dt]
+        selected_pv_power.dropna(axis='columns', how='any', inplace=True)
+
+        # Select just one PV system (the locations in PVOutput.org are quite
+        # approximate, so it's not uncommon to have multiple PV systems
+        # at a single lat, lon.
         pv_system_ids = selected_pv_power.columns
         pv_system_id = self.rng.choice(pv_system_ids)
         selected_pv_power = selected_pv_power[pv_system_id]
 
-        # Get metadata for PV system
-        metadata_for_pv_system = self.pv_metadata.loc[pv_system_id]
-
-        # Save data into the Sample dict...
+        # Save data into the Example dict...
         return Example(
             pv_system_id=pv_system_id,
             pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
-            pv_yield=selected_pv_power.values,
-            pv_location_x=metadata_for_pv_system.location_x,
-            pv_location_y=metadata_for_pv_system.location_y)
+            pv_yield=selected_pv_power.values)
 
     def pick_locations_for_batch(
             self,
             t0_datetimes: pd.DatetimeIndex,
             n_locations: int) -> List[Tuple[Number, Number]]:
-        pass
-        # TODO!
+        raise NotImplementedError()  # TODO!
 
 
 def load_solar_pv_data_from_gcs(filename: Union[str, Path]) -> pd.DataFrame:

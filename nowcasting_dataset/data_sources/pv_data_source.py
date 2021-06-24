@@ -61,7 +61,9 @@ class PVDataSource(DataSource):
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
+        # TODO: Cubic interpolation?
         pv_power = pv_power.resample('5T').interpolate(method='time', limit=3)
+        pv_power.dropna(axis='columns', how='all', inplace=True)
         self.pv_power = pv_power
 
     def get_sample(
@@ -73,16 +75,29 @@ class PVDataSource(DataSource):
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in this method!
 
+        # If x_meters_center and y_meters_center have been chosen
+        # by PVDataSource.pick_locations_for_batch() then we just have
+        # to find the pv_system_ids at that exact location.  This is
+        # super-fast (a few hundred microseconds).  We use np.isclose
+        # instead of the equality operator because floats.
         pv_system_ids = self.pv_metadata.index[
             np.isclose(self.pv_metadata.location_x, x_meters_center) &
             np.isclose(self.pv_metadata.location_y, y_meters_center)]
+        if len(pv_system_ids) == 0:
+            # TODO: Implement finding PV systems closest to x_meters_center,
+            # y_meters_center.  This will probably be quite slow, so always
+            # try finding an exact match first (which is super-fast).
+            raise NotImplementedError(
+                "Not yet implemented the ability to find PV systems *nearest*"
+                " (but not at the identical location to) x_meters_center and"
+                " y_meters_center.")
 
         selected_pv_power = self.pv_power[pv_system_ids][start_dt:end_dt]
         selected_pv_power.dropna(axis='columns', how='any', inplace=True)
 
         # Select just one PV system (the locations in PVOutput.org are quite
-        # approximate, so it's not uncommon to have multiple PV systems
-        # at a single lat, lon.
+        # approximate, so it's quite common to have multiple PV systems
+        # at the same nominal lat lon.
         pv_system_ids = selected_pv_power.columns
         pv_system_id = self.rng.choice(pv_system_ids)
         selected_pv_power = selected_pv_power[pv_system_id]

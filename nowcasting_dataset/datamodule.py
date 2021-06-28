@@ -63,8 +63,11 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         self.data_sources = [self.pv_data_source, self.sat_data_source]
 
-    def setup(self):
+    def setup(self, stage='fit'):
         """Split data, etc.
+
+        Args:
+          stage: {'fit', 'predict', 'test', 'validate'} This code ignores this.
 
         ## Selecting daytime data.
 
@@ -106,6 +109,7 @@ class NowcastingDataModule(pl.LightningDataModule):
           1. [Video of June 2019](https://www.youtube.com/watch?v=IOp-tj-IJpk)
           2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
+        del stage
         self._check_has_prepared_data()
         all_datetimes = self._get_datetimes()
         t0_datetimes = nd_time.get_t0_datetimes(

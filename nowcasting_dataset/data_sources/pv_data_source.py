@@ -146,6 +146,10 @@ class PVDataSource(DataSource):
 
         return locations
 
+    def datetime_index(self) -> pd.DatetimeIndex:
+        """Returns a complete list of all available datetimes."""
+        return self.pv_power.index
+
 
 def load_solar_pv_data_from_gcs(
         filename: Union[str, Path],

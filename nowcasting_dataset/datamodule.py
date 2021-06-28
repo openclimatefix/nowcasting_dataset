@@ -18,11 +18,14 @@ with warnings.catch_warnings():
 class NowcastingDataModule(pl.LightningDataModule):
     """
     Attributes (additional to the dataclass attributes):
+      pv_data_source: PVDataSource
       sat_data_source: SatelliteDataSource
       data_sources: List[DataSource]
       train_t0_datetimes: pd.DatetimeIndex
       val_t0_datetimes: pd.DatetimeIndex
     """
+    pv_power_filename: Union[str, Path]
+    pv_metadata_filename: Union[str, Path]
     batch_size: int = 8
     history_len: int = 2  #: Number of timesteps of history, not including t0.
     forecast_len: int = 12  #: Number of timesteps of forecast.
@@ -39,16 +42,26 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.total_seq_len = self.history_len + self.forecast_len
 
     def prepare_data(self) -> None:
-        # Satellite data!
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
             image_size_pixels=self.image_size_pixels,
             meters_per_pixel=self.meters_per_pixel,
             history_len=self.history_len,
-            forecast_len=0,  # OpticalFlow will create the future images.
-            
-        )
-        self.data_sources = [self.sat_data_source]
+            forecast_len=self.forecast_len)
+
+        sat_datetimes = self.sat_data_source.datetime_index()
+
+        self.pv_data_source = data_sources.PVDataSource(
+            filename=self.pv_power_filename,
+            metadata_filename=self.pv_metadata_filename,
+            start_dt=sat_datetimes[0],
+            end_dt=sat_datetimes[-1],
+            history_len=self.history_len,
+            forecast_len=self.forecast_len,
+            image_size_pixels=self.image_size_pixels,
+            meters_per_pixel=self.meters_per_pixel)
+
+        self.data_sources = [self.pv_data_source, self.sat_data_source]
 
     def setup(self):
         """Split data, etc.

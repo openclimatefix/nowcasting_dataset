@@ -1,12 +1,13 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import geospatial, utils
-from dataclasses import dataclass, InitVar
+from dataclasses import dataclass
 import pandas as pd
 import numpy as np
 import torch
 from numbers import Number
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
+import datetime
 from pathlib import Path
 import io
 import gcsfs
@@ -16,6 +17,8 @@ import xarray as xr
 @dataclass
 class PVDataSource(DataSource):
     metadata_filename: Union[str, Path]
+    start_dt: Optional[datetime.datetime] = None
+    end_dt: Optional[datetime.datetime] = None
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -51,7 +54,8 @@ class PVDataSource(DataSource):
             (pv_metadata.location_y >= GEO_BOUNDARY_OSGB['SOUTH'])]
 
     def _load_pv_power(self):
-        pv_power = load_solar_pv_data_from_gcs(self.filename)
+        pv_power = load_solar_pv_data_from_gcs(
+            self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
         # A bit of hand-crafted cleaning
         pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
@@ -115,7 +119,10 @@ class PVDataSource(DataSource):
         raise NotImplementedError()  # TODO!
 
 
-def load_solar_pv_data_from_gcs(filename: Union[str, Path]) -> pd.DataFrame:
+def load_solar_pv_data_from_gcs(
+        filename: Union[str, Path],
+        start_dt: Optional[datetime.datetime] = None,
+        end_dt: Optional[datetime.datetime] = None) -> pd.DataFrame:
     gcs = gcsfs.GCSFileSystem(access='read_only')
 
     # It is possible to simplify the code below and do
@@ -128,6 +135,7 @@ def load_solar_pv_data_from_gcs(filename: Union[str, Path]) -> pd.DataFrame:
 
     with io.BytesIO(file_bytes) as file:
         pv_power = xr.open_dataset(file, engine='h5netcdf')
+        pv_power = pv_power.sel(datetime=slice(start_dt, end_dt))
         pv_power_df = pv_power.to_dataframe()
 
     # Save memory

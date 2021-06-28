@@ -114,8 +114,13 @@ class PVDataSource(DataSource):
 
     def pick_locations_for_batch(
             self,
-            t0_datetimes: pd.DatetimeIndex,
-            n_locations: int) -> List[Tuple[Number, Number]]:
+            t0_datetimes: pd.DatetimeIndex) -> List[Tuple[Number, Number]]:
+        """Find a valid geographical location for each t0_datetime.
+
+        Returns:  Outer list has one entry per t0_datetime.  Each 2-tuple is
+            geographical location (<x_meters_center, y_meters_center> in
+            OSGB coordinates.
+        """
         raise NotImplementedError()  # TODO!
 
 

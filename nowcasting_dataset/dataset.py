@@ -3,10 +3,8 @@ import pandas as pd
 import numpy as np
 from numbers import Number
 from typing import List
-from itertools import product
 import nowcasting_dataset
 from nowcasting_dataset import data_sources
-from nowcasting_dataset import time as nd_time
 from dataclasses import dataclass
 import torch
 
@@ -69,15 +67,16 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             self.t0_datetimes,
             size=self._n_timesteps_per_batch,
             replace=False)
+        # Duplicate these random datetimes.
+        t0_datetimes = list(t0_datetimes) * self.n_samples_per_timestep
         t0_datetimes = pd.DatetimeIndex(t0_datetimes)
 
         # Pick locations.
-        locations = self.data_sources[0].pick_locations_for_batch(
-            t0_datetimes, n_locations=self.n_samples_per_timestep)
+        locations = self.data_sources[0].pick_locations_for_batch(t0_datetimes)
 
         # Loop to construct batch.
         examples = []
-        for t0_dt, location in product(t0_datetimes, locations):
+        for t0_dt, location in zip(t0_datetimes, locations):
             x_meters_center, y_meters_center = location
             example = self._get_example(
                 t0_dt=t0_dt,

@@ -1,5 +1,6 @@
 from numbers import Number
 import pandas as pd
+import numpy as np
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
@@ -56,20 +57,21 @@ class DataSource:
 
     def pick_locations_for_batch(
             self,
-            t0_datetimes: pd.DatetimeIndex,
-            n_locations: int) -> List[Tuple[Number, Number]]:
-        """Picks n_locations locations for time periods defined by t0_datetimes.
+            t0_datetimes: pd.DatetimeIndex) -> List[Tuple[Number, Number]]:
+        """Find a valid geographical location for each t0_datetime.
 
-        Returns: Locations: A list of 2-tuples
-          (<x_meters_center, y_meters_center> in OSGB coordinates).
+        Returns:  Outer list has one entry per t0_datetime.  Each 2-tuple is
+            geographical location (<x_meters_center, y_meters_center> in
+            OSGB coordinates.
         """
         # TODO: Do this properly, using PV locations!
         locations = [
-            (20_000, 40_000),
-            (500_000, 600_000),
-            (100_000, 100_000),
-            (250_000, 250_000)]
-        return locations[:n_locations]
+            20_000, 40_000,
+            500_000, 600_000,
+            100_000, 100_000,
+            250_000, 250_000]
+
+        return np.random.choice(locations, size=(len(t0_datetimes), 2))
 
     def get_example(
             self,

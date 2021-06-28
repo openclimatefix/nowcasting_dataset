@@ -118,15 +118,16 @@ class PVDataSource(DataSource):
 def load_solar_pv_data_from_gcs(filename: Union[str, Path]) -> pd.DataFrame:
     gcs = gcsfs.GCSFileSystem(access='read_only')
 
-    # It is possible to simplify the code below and do xr.open_dataset(file)
+    # It is possible to simplify the code below and do
+    # xr.open_dataset(file, engine='h5netcdf')
     # in the first 'with' block, and delete the second 'with' block.
-    # But that takes 6 minutes to load the data, where as loading into memory
+    # But that takes 1 minute to load the data, where as loading into memory
     # first and then loading from memory takes 23 seconds!
     with gcs.open(filename, mode='rb') as file:
         file_bytes = file.read()
 
     with io.BytesIO(file_bytes) as file:
-        pv_power = xr.open_dataset(file)
+        pv_power = xr.open_dataset(file, engine='h5netcdf')
         pv_power_df = pv_power.to_dataframe()
 
     # Save memory

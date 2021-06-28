@@ -13,6 +13,7 @@ dependencies:
   - zarr
   - xarray
   - ipykernel
+  - h5netcdf  # For opening NetCDF files from cloud buckets.
   
   # Cloud & distributed compute
   - gcsfs

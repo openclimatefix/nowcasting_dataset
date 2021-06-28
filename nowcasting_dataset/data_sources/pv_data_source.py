@@ -59,7 +59,10 @@ class PVDataSource(DataSource):
 
         # A bit of hand-crafted cleaning
         pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
-        pv_power.dropna(axis='columns', inplace=True, how='all')
+
+        # Drop columns and rows with all NaNs.
+        pv_power.dropna(axis='columns', how='all', inplace=True)
+        pv_power.dropna(axis='index', how='all', inplace=True)
 
         pv_power = utils.scale_to_0_to_1(pv_power)
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
@@ -67,7 +70,7 @@ class PVDataSource(DataSource):
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
         # TODO: Cubic interpolation?
         pv_power = pv_power.resample('5T').interpolate(method='time', limit=3)
-        pv_power.dropna(axis='columns', how='all', inplace=True)
+        pv_power.dropna(axis='index', how='all', inplace=True)
         self.pv_power = pv_power
 
     def get_sample(
@@ -121,7 +124,27 @@ class PVDataSource(DataSource):
             geographical location (<x_meters_center, y_meters_center> in
             OSGB coordinates.
         """
-        raise NotImplementedError()  # TODO!
+        locations = []
+        for t0_datetime in t0_datetimes:
+            start_dt = self._get_start_dt(t0_datetime)
+            end_dt = self._get_end_dt(t0_datetime)
+            available_pv_data = self.pv_power.loc[start_dt:end_dt]
+
+            # Select just one PV system
+            available_pv_data = available_pv_data.dropna(
+                axis='columns', how='any')
+            pv_system_ids = available_pv_data.columns
+            assert len(pv_system_ids) > 0
+            pv_system_id = self.rng.choice(pv_system_ids)
+
+            # Get metadata for PV system
+            metadata_for_pv_system = self.pv_metadata.loc[pv_system_id]
+            location = (
+                metadata_for_pv_system.location_x,
+                metadata_for_pv_system.location_y)
+            locations.append(location)
+
+        return locations
 
 
 def load_solar_pv_data_from_gcs(

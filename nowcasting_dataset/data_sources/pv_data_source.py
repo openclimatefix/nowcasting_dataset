@@ -24,7 +24,7 @@ class PVDataSource(DataSource):
         super().__post_init__(image_size_pixels, meters_per_pixel)
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
-        # self.load()  # TODO: Re-enable after testing!
+        self.load()
 
     def load(self):
         self._load_metadata()

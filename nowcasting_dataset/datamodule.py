@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 from pathlib import Path
 import pandas as pd
 import torch
@@ -24,11 +24,11 @@ class NowcastingDataModule(pl.LightningDataModule):
       train_t0_datetimes: pd.DatetimeIndex
       val_t0_datetimes: pd.DatetimeIndex
     """
-    pv_power_filename: Union[str, Path]
-    pv_metadata_filename: Union[str, Path]
+    pv_power_filename: Optional[Union[str, Path]] = None
+    pv_metadata_filename: Optional[Union[str, Path]] = None
     batch_size: int = 8
     history_len: int = 2  #: Number of timesteps of history, not including t0.
-    forecast_len: int = 12  #: Number of timesteps of forecast.
+    forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     image_size_pixels: int = 128
     meters_per_pixel: int = 2000
@@ -39,7 +39,8 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def __post_init__(self):
         super().__init__()
-        self.total_seq_len = self.history_len + self.forecast_len
+        # Plus 1 because neither history_len nor forecast_len include t0.
+        self._total_seq_len = self.history_len + self.forecast_len + 1
 
     def prepare_data(self) -> None:
         self.sat_data_source = data_sources.SatelliteDataSource(
@@ -48,20 +49,23 @@ class NowcastingDataModule(pl.LightningDataModule):
             meters_per_pixel=self.meters_per_pixel,
             history_len=self.history_len,
             forecast_len=self.forecast_len)
+        
+        self.data_sources = [self.sat_data_source]
 
-        sat_datetimes = self.sat_data_source.datetime_index()
+        if self.pv_power_filename is not None:
+            sat_datetimes = self.sat_data_source.datetime_index()
 
-        self.pv_data_source = data_sources.PVDataSource(
-            filename=self.pv_power_filename,
-            metadata_filename=self.pv_metadata_filename,
-            start_dt=sat_datetimes[0],
-            end_dt=sat_datetimes[-1],
-            history_len=self.history_len,
-            forecast_len=self.forecast_len,
-            image_size_pixels=self.image_size_pixels,
-            meters_per_pixel=self.meters_per_pixel)
+            self.pv_data_source = data_sources.PVDataSource(
+                filename=self.pv_power_filename,
+                metadata_filename=self.pv_metadata_filename,
+                start_dt=sat_datetimes[0],
+                end_dt=sat_datetimes[-1],
+                history_len=self.history_len,
+                forecast_len=self.forecast_len,
+                image_size_pixels=self.image_size_pixels,
+                meters_per_pixel=self.meters_per_pixel)
 
-        self.data_sources = [self.pv_data_source, self.sat_data_source]
+            self.data_sources = [self.pv_data_source, self.sat_data_source]
 
     def setup(self, stage='fit'):
         """Split data, etc.
@@ -113,11 +117,11 @@ class NowcastingDataModule(pl.LightningDataModule):
         self._check_has_prepared_data()
         all_datetimes = self._get_datetimes()
         t0_datetimes = nd_time.get_t0_datetimes(
-            datetimes=all_datetimes, total_seq_len=self.total_seq_len,
+            datetimes=all_datetimes, total_seq_len=self._total_seq_len,
             history_len=self.history_len)
         del all_datetimes
 
-        # Split dt_index into train and test.
+        # Split t0_datetimes into train and test.
         # TODO: Better way to split into train and val date ranges!
         # See https://github.com/openclimatefix/nowcasting_dataset/issues/7
         assert len(t0_datetimes) > 5

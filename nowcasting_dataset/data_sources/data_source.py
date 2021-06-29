@@ -34,6 +34,8 @@ class DataSource:
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         assert self.history_len >= 0
         assert self.forecast_len >= 0
+        # Plus 1 because neither history_len nor forecast_len include t0.
+        self._total_seq_len = self.history_len + self.forecast_len + 1
         self._history_dur = nd_time.timesteps_to_duration(self.history_len)
         self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len)
         self._square = square.Square(

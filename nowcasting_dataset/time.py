@@ -56,8 +56,7 @@ def intersection_of_datetimeindexes(
 def get_start_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
-        max_gap: pd.Timedelta = FIVE_MINUTES
-) -> pd.DatetimeIndex:
+        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
@@ -104,8 +103,7 @@ def get_t0_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
         history_len: int,
-        max_gap: pd.Timedelta = FIVE_MINUTES
-) -> pd.DatetimeIndex:
+        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
     start_datetimes = get_start_datetimes(
         datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap)
     history_dur = timesteps_to_duration(history_len)

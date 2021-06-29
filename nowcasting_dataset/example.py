@@ -52,5 +52,10 @@ def to_numpy(example: Example) -> Example:
     for key in DATETIME_ITEMS:
         if key in example:
             example[key] = int(example[key].timestamp())
+            
+    PANDAS_ITEMS = ('pv_yield', )
+    for key in PANDAS_ITEMS:
+        if key in example:
+            example[key] = example[key].values
 
     return example

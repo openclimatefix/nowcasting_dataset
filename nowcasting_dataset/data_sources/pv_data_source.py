@@ -12,6 +12,7 @@ from pathlib import Path
 import io
 import gcsfs
 import xarray as xr
+import dask.dataframe as dd
 
 
 @dataclass
@@ -71,7 +72,7 @@ class PVDataSource(DataSource):
         # TODO: Cubic interpolation?
         pv_power = pv_power.resample('5T').interpolate(method='time', limit=3)
         pv_power.dropna(axis='index', how='all', inplace=True)
-        self.pv_power = pv_power
+        self.pv_power = dd.from_pandas(pv_power, npartitions=3)
 
     def get_sample(
             self,
@@ -106,14 +107,14 @@ class PVDataSource(DataSource):
         # approximate, so it's quite common to have multiple PV systems
         # at the same nominal lat lon.
         pv_system_ids = selected_pv_power.columns
-        pv_system_id = self.rng.choice(pv_system_ids)
-        selected_pv_power = selected_pv_power[pv_system_id]
+        pv_system_id = dask.delayed(self.rng.choice)(pv_system_ids)
+        selected_pv_power = dask.delayed(selected_pv_power.__getitem__)(pv_system_id)
 
         # Save data into the Example dict...
         return Example(
             pv_system_id=pv_system_id,
-            pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
-            pv_yield=selected_pv_power.values)
+            #pv_system_row_number=dask.delayed(self.pv_metadata.index.get_loc)(pv_system_id),
+            pv_yield=selected_pv_power)
 
     def pick_locations_for_batch(
             self,

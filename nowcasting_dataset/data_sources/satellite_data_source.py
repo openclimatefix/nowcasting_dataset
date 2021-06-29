@@ -80,8 +80,7 @@ class SatelliteDataSource(DataSource):
             expected_shape=self._shape_of_example,
             x_meters_center=x_meters_center, y_meters_center=y_meters_center,
             t0_dt=t0_dt, start_dt=start_dt, end_dt=end_dt,
-            dt_index=selected_sat_data.time
-        )
+            dt_index=selected_sat_data.time)
 
         return Example(sat_data=selected_sat_data)
 

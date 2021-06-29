@@ -47,6 +47,7 @@ def select_daylight_datetimes(
 def intersection_of_datetimeindexes(
         indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
     assert len(indexes) > 0
+    indexes = [pd.DatetimeIndex(i) for i in indexes]
     intersection = indexes[0]
     for index in indexes[1:]:
         intersection = intersection.intersection(index)

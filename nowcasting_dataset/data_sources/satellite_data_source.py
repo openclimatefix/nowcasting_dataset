@@ -74,13 +74,13 @@ class SatelliteDataSource(DataSource):
             x=slice(0, self._square.size_pixels),
             y=slice(0, self._square.size_pixels))
 
-        selected_sat_data = dask.delayed(check_shape)(
-            data_pass_through=selected_sat_data,
-            shape=selected_sat_data.shape,
-            expected_shape=self._shape_of_example,
-            x_meters_center=x_meters_center, y_meters_center=y_meters_center,
-            t0_dt=t0_dt, start_dt=start_dt, end_dt=end_dt,
-            dt_index=selected_sat_data.time)
+        #selected_sat_data = dask.delayed(check_shape)(
+        #    data_pass_through=selected_sat_data,
+        #    shape=selected_sat_data.shape,
+        #    expected_shape=self._shape_of_example,
+        #    x_meters_center=x_meters_center, y_meters_center=y_meters_center,
+        #    t0_dt=t0_dt, start_dt=start_dt, end_dt=end_dt,
+        #    dt_index=selected_sat_data.time)
 
         return Example(sat_data=selected_sat_data)
 

@@ -80,11 +80,10 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         examples = []
         for t0_dt, location in zip(t0_datetimes, locations):
             x_meters_center, y_meters_center = location
-            example = dask.delayed(self._get_example)(
+            example = self._get_example(
                 t0_dt=t0_dt,
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)
-            example = dask.delayed(nowcasting_dataset.example.to_numpy)(example)
             examples.append(example)
         batch_delayed = _delayed_colate_fn(examples)
         return dask.compute(batch_delayed)[0]
@@ -102,6 +101,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)
             example.update(example_from_source)
+        example = nowcasting_dataset.example.to_numpy(example)
         return example
 
 

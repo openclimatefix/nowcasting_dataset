@@ -105,14 +105,14 @@ class PVDataSource(DataSource):
                 " y_meters_center.")
 
         selected_pv_power = self.pv_power[pv_system_ids][start_dt:end_dt]
-        selected_pv_power.dropna(axis='columns', how='any', inplace=True)
+        columns_mask = selected_pv_power.notna().all().values
+        pv_system_ids = selected_pv_power.columns[columns_mask]
 
         # Select just one PV system (the locations in PVOutput.org are quite
         # approximate, so it's quite common to have multiple PV systems
         # at the same nominal lat lon.
-        pv_system_ids = selected_pv_power.columns
-        pv_system_id = dask.delayed(self.rng.choice)(pv_system_ids)
-        selected_pv_power = dask.delayed(selected_pv_power.__getitem__)(pv_system_id)
+        pv_system_id = self.rng.choice(pv_system_ids)
+        selected_pv_power = selected_pv_power[pv_system_id]
 
         # Save data into the Example dict...
         return Example(

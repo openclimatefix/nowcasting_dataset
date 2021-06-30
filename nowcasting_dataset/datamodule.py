@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Iterable
 from pathlib import Path
 import pandas as pd
 import torch
@@ -30,6 +30,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     history_len: int = 2  #: Number of timesteps of history, not including t0.
     forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
+    sat_channels: Iterable[str] = ('HRV', )
     image_size_pixels: int = 128
     meters_per_pixel: int = 2000
     pin_memory: bool = True  #: Passed to DataLoader.
@@ -48,7 +49,8 @@ class NowcastingDataModule(pl.LightningDataModule):
             image_size_pixels=self.image_size_pixels,
             meters_per_pixel=self.meters_per_pixel,
             history_len=self.history_len,
-            forecast_len=self.forecast_len)
+            forecast_len=self.forecast_len,
+            channels=self.sat_channels)
         
         self.data_sources = [self.sat_data_source]
 

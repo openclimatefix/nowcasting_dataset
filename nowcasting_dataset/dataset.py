@@ -9,6 +9,10 @@ from dataclasses import dataclass
 import torch
 
 
+_delayed_colate_fn = dask.delayed(
+    torch.utils.data._utils.collate.default_collate)
+
+
 @dataclass
 class NowcastingDataset(torch.utils.data.IterableDataset):
     """
@@ -23,8 +27,6 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
     def __post_init__(self):
         super().__init__()
-        self._colate_fn = dask.delayed(
-            torch.utils.data._utils.collate.default_collate)
         self._per_worker_init_has_run = False
         self._n_timesteps_per_batch = (
             self.batch_size // self.n_samples_per_timestep)
@@ -78,13 +80,13 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         examples = []
         for t0_dt, location in zip(t0_datetimes, locations):
             x_meters_center, y_meters_center = location
-            example = self._get_example(
+            example = dask.delayed(self._get_example)(
                 t0_dt=t0_dt,
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)
-            example = nowcasting_dataset.example.to_numpy(example)
+            example = dask.delayed(nowcasting_dataset.example.to_numpy)(example)
             examples.append(example)
-        batch_delayed = self._colate_fn(examples)
+        batch_delayed = _delayed_colate_fn(examples)
         return dask.compute(batch_delayed)[0]
 
     def _get_example(

@@ -12,7 +12,8 @@ from pathlib import Path
 import io
 import gcsfs
 import xarray as xr
-import dask.dataframe as dd
+import dask
+import functools
 
 
 @dataclass
@@ -72,16 +73,19 @@ class PVDataSource(DataSource):
         # TODO: Cubic interpolation?
         pv_power = pv_power.resample('5T').interpolate(method='time', limit=3)
         pv_power.dropna(axis='index', how='all', inplace=True)
-        self.pv_power = dd.from_pandas(pv_power, npartitions=3)
+        # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
+        print('pv_power = {:,.1f} MB'.format(pv_power.values.nbytes / 1E6))
+        self.pv_power = pv_power
 
     def get_sample(
             self,
             x_meters_center: Number,
             y_meters_center: Number,
             t0_dt: pd.Timestamp) -> Example:
+        
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
-        del t0_dt  # t0 is not used in this method!
+        del t0_dt  # t0 is not used in the rest of this method!
 
         # If x_meters_center and y_meters_center have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
@@ -125,17 +129,21 @@ class PVDataSource(DataSource):
             geographical location (<x_meters_center, y_meters_center> in
             OSGB coordinates.
         """
-        locations = []
-        for t0_datetime in t0_datetimes:
+        
+        # Set this up as a separate function, so we can cache the result!
+        @functools.cache
+        def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Index:
             start_dt = self._get_start_dt(t0_datetime)
             end_dt = self._get_end_dt(t0_datetime)
             available_pv_data = self.pv_power.loc[start_dt:end_dt]
-
-            # Select just one PV system
-            available_pv_data = available_pv_data.dropna(
-                axis='columns', how='any')
-            pv_system_ids = available_pv_data.columns
+            columns_mask = available_pv_data.notna().all().values
+            pv_system_ids = available_pv_data.columns[columns_mask]
             assert len(pv_system_ids) > 0
+            return pv_system_ids
+        
+        locations = []
+        for t0_datetime in t0_datetimes:
+            pv_system_ids = _get_pv_system_ids(t0_datetime)
             pv_system_id = self.rng.choice(pv_system_ids)
 
             # Get metadata for PV system
@@ -210,5 +218,5 @@ def drop_pv_systems_which_produce_overnight(
     pv_above_threshold_at_night = (
         pv_data_at_night > NIGHT_YIELD_THRESHOLD).any()
     bad_systems = pv_power.columns[pv_above_threshold_at_night]
-    print(len(bad_systems), 'bad systems found.')
+    print(len(bad_systems), 'bad PV systems found and removed!')
     return pv_power.drop(columns=bad_systems)

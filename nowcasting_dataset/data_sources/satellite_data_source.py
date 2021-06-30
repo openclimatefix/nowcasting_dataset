@@ -24,7 +24,9 @@ class SatelliteDataSource(DataSource):
         Access using public sat_data property.
       consolidated: Whether or not the Zarr store is consolidated.
       channels: List of satellite channels to load. If None then don't filter
-        by channels.
+        by channels. The available channels are:
+        'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
+        'IR_134', 'VIS006', 'VIS008', 'WV_062', 'WV_073'
     """
     consolidated: bool = True
     channels: Optional[Iterable[str]] = ('HRV', )
@@ -34,8 +36,13 @@ class SatelliteDataSource(DataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._sat_data = None
+        if self.channels is None:
+            n_channels = 12
+        else:
+            n_channels = len(self.channels)
+        n_channels 
         self._shape_of_example = (
-            self._total_seq_len, self.image_size_pixels, self.image_size_pixels, len(self.channels))
+            self._total_seq_len, self.image_size_pixels, self.image_size_pixels, n_channels)
 
     @property
     def sat_data(self):

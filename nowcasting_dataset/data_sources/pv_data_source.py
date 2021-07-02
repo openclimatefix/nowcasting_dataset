@@ -118,7 +118,7 @@ class PVDataSource(DataSource):
         # Save data into the Example dict...
         return Example(
             pv_system_id=pv_system_id,
-            #pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
+            pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
             pv_yield=selected_pv_power)
 
     def pick_locations_for_batch(

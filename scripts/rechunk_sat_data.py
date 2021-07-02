@@ -10,8 +10,8 @@ import zarr
 
 BUCKET = Path('solar-pv-nowcasting-data')
 SAT_PATH = BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/'
-SOURCE_SAT_FILENAME = 'gs://' + str(SAT_PATH / 'all_zarr_int16')
-TARGET_SAT_FILENAME = SAT_PATH / 'all_zarr_int16_single_timestep_quarter_geospatial.zarr'
+SOURCE_SAT_FILENAME = 'gs://' + str(SAT_PATH / 'all_zarr_int16_single_timestep_quarter_geospatial.zarr')
+TARGET_SAT_FILENAME = SAT_PATH / 'all_zarr_int16_single_timestep_eighth_geospatial_all_channels.zarr'
 TEMP_STORE_FILENAME = SAT_PATH / 'temp.zarr'
 
 
@@ -27,9 +27,9 @@ def main():
     target_chunks = {
         'stacked_eumetsat_data': {
             "time": 1,
-            "y": 704 // 2,
-            "x": 548 // 2,
-            "variable": 1
+            "y": 704 // 4,
+            "x": 548 // 4,
+            "variable": 12
         }}
 
     encoding = {

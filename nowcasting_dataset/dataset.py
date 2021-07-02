@@ -20,6 +20,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     """
 
     batch_size: int
+    n_batches_per_epoch: int
     #: Number of times to re-use each timestep. Must exactly divide batch_size.
     n_samples_per_timestep: int
     data_sources: List[data_sources.DataSource]
@@ -60,7 +61,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         """Yields a complete batch at a time."""
         if not self._per_worker_init_has_run:
             raise RuntimeError('per_worker_init() must be run!')
-        while True:
+        for _ in range(self.n_batches_per_epoch):
             yield self._get_batch()
 
     def _get_batch(self):

@@ -140,9 +140,11 @@ class NowcastingDataModule(pl.LightningDataModule):
             n_samples_per_timestep=self.n_samples_per_timestep)
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
+            n_batches_per_epoch=1024,
             **common_dataset_params)
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
+            n_batches_per_epoch=32,
             **common_dataset_params)
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:

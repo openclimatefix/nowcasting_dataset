@@ -6,6 +6,7 @@ import nowcasting_dataset
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 import torch
+from concurrent import futures
 
 
 @dataclass
@@ -70,16 +71,24 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = pd.DatetimeIndex(t0_datetimes)
 
         # Pick locations.
-        locations = self.data_sources[0].pick_locations_for_batch(t0_datetimes)
+        x_locations, y_locations = self.data_sources[0].pick_locations_for_batch(t0_datetimes)
 
-        # Loop to construct batch.
-        examples = []
-        for t0_dt, location in zip(t0_datetimes, locations):
-            x_meters_center, y_meters_center = location
-            example = self._get_example(
-                t0_dt=t0_dt,
-                x_meters_center=x_meters_center,
-                y_meters_center=y_meters_center)
+        # Load the first _n_timesteps_per_batch concurrently.  This loads the timesteps
+        # from disk concurrently, and fills the DataSource caches.  If we try loading
+        # all examples concurrently, then all the DataSources try reading from empty
+        # caches, and things are much slower!
+        zipped = list(zip(t0_datetimes, x_locations, y_locations))
+        with futures.ThreadPoolExecutor(max_workers=self.batch_size) as executor:
+            future_examples = []
+            for t0_datetime, x_location, y_location in zipped[:self._n_timesteps_per_batch]:
+                future_example = executor.submit(self._get_example, t0_datetime, x_location, y_location)
+                future_examples.append(future_example)
+            examples = [future_example.result() for future_example in future_examples]
+            
+        # Load the remaining examples.  This should hit the cache in SatelliteDataSource
+        # and NWPDataSource.
+        for t0_datetime, x_location, y_location in zipped[self._n_timesteps_per_batch:]:
+            example = self._get_example(t0_datetime, x_location, y_location)
             examples.append(example)
 
         # Tell the DataSources that we've finished sampling this batch.

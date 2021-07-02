@@ -59,12 +59,11 @@ class DataSource:
 
     def pick_locations_for_batch(
             self,
-            t0_datetimes: pd.DatetimeIndex) -> List[Tuple[Number, Number]]:
+            t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
-        Returns:  Outer list has one entry per t0_datetime.  Each 2-tuple is
-            geographical location (<x_meters_center, y_meters_center> in
-            OSGB coordinates.
+        Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
+            Locations are in OSGB coordinates.
         """
         # TODO: Do this properly, using PV locations!
         locations = [
@@ -73,7 +72,9 @@ class DataSource:
             100_000, 100_000,
             250_000, 250_000]
 
-        return np.random.choice(locations, size=(len(t0_datetimes), 2))
+        location = np.random.choice(locations, size=(len(t0_datetimes), 2))
+        
+        return location[:, 0], location[:, 1]
 
     def get_example(
             self,

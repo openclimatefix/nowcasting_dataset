@@ -121,12 +121,11 @@ class PVDataSource(DataSource):
 
     def pick_locations_for_batch(
             self,
-            t0_datetimes: pd.DatetimeIndex) -> List[Tuple[Number, Number]]:
+            t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
-        Returns:  Outer list has one entry per t0_datetime.  Each 2-tuple is
-            geographical location (<x_meters_center, y_meters_center> in
-            OSGB coordinates.
+        Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
+            Locations are in OSGB coordinates.
         """
         
         # Set this up as a separate function, so we can cache the result!
@@ -140,19 +139,18 @@ class PVDataSource(DataSource):
             assert len(pv_system_ids) > 0
             return pv_system_ids
         
-        locations = []
+        x_locations = []
+        y_locations = []
         for t0_datetime in t0_datetimes:
             pv_system_ids = _get_pv_system_ids(t0_datetime)
             pv_system_id = self.rng.choice(pv_system_ids)
 
             # Get metadata for PV system
             metadata_for_pv_system = self.pv_metadata.loc[pv_system_id]
-            location = (
-                metadata_for_pv_system.location_x,
-                metadata_for_pv_system.location_y)
-            locations.append(location)
+            x_locations.append(metadata_for_pv_system.location_x)
+            y_locations.append(metadata_for_pv_system.location_y)
 
-        return locations
+        return x_locations, y_locations
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

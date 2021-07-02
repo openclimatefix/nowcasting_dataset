@@ -75,16 +75,19 @@ class PVDataSource(DataSource):
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
         print('pv_power = {:,.1f} MB'.format(pv_power.values.nbytes / 1E6))
         self.pv_power = pv_power
+        
+    def _get_timestep(self, t0_dt: pd.Timestamp) -> pd.DataFrame:
+        start_dt = self._get_start_dt(t0_dt)
+        end_dt = self._get_end_dt(t0_dt)
+        del t0_dt  # t0 is not used in the rest of this method!
+        selected_pv_power = self.pv_power.loc[start_dt:end_dt]
+        return selected_pv_power.dropna(axis='columns', how='any')
 
     def get_sample(
             self,
             x_meters_center: Number,
             y_meters_center: Number,
             t0_dt: pd.Timestamp) -> Example:
-        
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
-        del t0_dt  # t0 is not used in the rest of this method!
 
         # If x_meters_center and y_meters_center have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
@@ -103,9 +106,8 @@ class PVDataSource(DataSource):
                 " (but not at the identical location to) x_meters_center and"
                 " y_meters_center.")
 
-        selected_pv_power = self.pv_power[pv_system_ids][start_dt:end_dt]
-        columns_mask = selected_pv_power.notna().all().values
-        pv_system_ids = selected_pv_power.columns[columns_mask]
+        selected_pv_power = self._get_timestep_with_cache(t0_dt)
+        pv_system_ids = selected_pv_power.columns.intersection(pv_system_ids)
 
         # Select just one PV system (the locations in PVOutput.org are quite
         # approximate, so it's quite common to have multiple PV systems
@@ -116,7 +118,7 @@ class PVDataSource(DataSource):
         # Save data into the Example dict...
         return Example(
             pv_system_id=pv_system_id,
-            #pv_system_row_number=dask.delayed(self.pv_metadata.index.get_loc)(pv_system_id),
+            #pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
             pv_yield=selected_pv_power)
 
     def pick_locations_for_batch(
@@ -139,6 +141,7 @@ class PVDataSource(DataSource):
             assert len(pv_system_ids) > 0
             return pv_system_ids
         
+        # Pick a random PV system for each t0_datetime, and then grab their geographical location.
         x_locations = []
         y_locations = []
         for t0_datetime in t0_datetimes:

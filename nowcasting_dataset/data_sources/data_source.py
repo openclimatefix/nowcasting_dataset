@@ -41,6 +41,7 @@ class DataSource:
         self._square = square.Square(
             size_pixels=image_size_pixels,
             meters_per_pixel=meters_per_pixel)
+        self._cache = {}
 
     def open(self):
         """Open the data source, if necessary.
@@ -84,13 +85,24 @@ class DataSource:
     ) -> Example:
         """Must be overridden by child classes."""
         raise NotImplementedError()
+        
+    def batch_end(self):
+        self._cache = {}
+        
+    def _get_timestep(self, t0_dt: pd.Timestamp):
+        """Get a single timestep of data.  Must be overridden."""
+        raise NotImplementedError()
+        
+    def _get_timestep_with_cache(self, t0_dt: pd.Timestamp):
+        try:
+            return self._cache[t0_dt]
+        except KeyError:
+            data = self._get_timestep(t0_dt)
+            self._cache[t0_dt] = data
+            return data
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt - self._history_dur
 
     def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt + self._forecast_dur
-
-    def batch_end(self):
-        """Called when batch ends."""
-        pass

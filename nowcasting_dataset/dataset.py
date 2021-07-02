@@ -85,8 +85,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                 future_examples.append(future_example)
             examples = [future_example.result() for future_example in future_examples]
             
-        # Load the remaining examples.  This should hit the cache in SatelliteDataSource
-        # and NWPDataSource.
+        # Load the remaining examples.  This should hit the DataSource caches.
         for t0_datetime, x_location, y_location in zipped[self._n_timesteps_per_batch:]:
             example = self._get_example(t0_datetime, x_location, y_location)
             examples.append(example)

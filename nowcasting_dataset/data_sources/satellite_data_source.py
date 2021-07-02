@@ -34,7 +34,6 @@ class SatelliteDataSource(DataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        self._cache = {}
         self._sat_data = None
         if self.channels is None:
             n_channels = 12
@@ -88,19 +87,12 @@ class SatelliteDataSource(DataSource):
         #    dt_index=selected_sat_data.time)
 
         return Example(sat_data=selected_sat_data)
-
-    def _get_timestep_with_cache(self, t0_dt: pd.Timestamp) -> xr.DataArray:
-        try:
-            return self._cache[t0_dt]
-        except KeyError:
-            start_dt = self._get_start_dt(t0_dt)
-            end_dt = self._get_end_dt(t0_dt)
-            data = self.sat_data.sel(time=slice(start_dt, end_dt))
-            self._cache[t0_dt] = data.load()
-            return data
         
-    def batch_end(self):
-        self._cache = {}
+    def _get_timestep(self, t0_dt: pd.Timestamp) -> xr.DataArray:
+        start_dt = self._get_start_dt(t0_dt)
+        end_dt = self._get_end_dt(t0_dt)
+        data = self.sat_data.sel(time=slice(start_dt, end_dt))
+        return data.load()
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""

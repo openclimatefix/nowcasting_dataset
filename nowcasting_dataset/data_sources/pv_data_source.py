@@ -12,7 +12,6 @@ from pathlib import Path
 import io
 import gcsfs
 import xarray as xr
-import dask
 import functools
 
 

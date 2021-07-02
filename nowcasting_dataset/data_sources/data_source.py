@@ -89,3 +89,7 @@ class DataSource:
 
     def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt + self._forecast_dur
+
+    def batch_end(self):
+        """Called when batch ends."""
+        pass

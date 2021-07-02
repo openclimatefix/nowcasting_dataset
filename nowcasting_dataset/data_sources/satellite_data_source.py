@@ -9,7 +9,6 @@ import pandas as pd
 import logging
 from dataclasses import dataclass, InitVar
 import itertools
-import dask
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
@@ -35,6 +34,7 @@ class SatelliteDataSource(DataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        self._cache = {}
         self._sat_data = None
         if self.channels is None:
             n_channels = 12
@@ -66,18 +66,16 @@ class SatelliteDataSource(DataSource):
             y_meters_center: Number,
             t0_dt: pd.Timestamp
     ) -> Example:
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
+        selected_sat_data = self._get_timestep_with_cache(t0_dt)
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center)
-        selected_sat_data = dask.delayed(self.sat_data.sel)(
-            time=slice(start_dt, end_dt),
+        selected_sat_data = selected_sat_data.sel(
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom))
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
-        selected_sat_data = dask.delayed(selected_sat_data.isel)(
+        selected_sat_data = selected_sat_data.isel(
             x=slice(0, self._square.size_pixels),
             y=slice(0, self._square.size_pixels))
 
@@ -90,6 +88,19 @@ class SatelliteDataSource(DataSource):
         #    dt_index=selected_sat_data.time)
 
         return Example(sat_data=selected_sat_data)
+
+    def _get_timestep_with_cache(self, t0_dt: pd.Timestamp) -> xr.DataArray:
+        try:
+            return self._cache[t0_dt]
+        except KeyError:
+            start_dt = self._get_start_dt(t0_dt)
+            end_dt = self._get_end_dt(t0_dt)
+            data = self.sat_data.sel(time=slice(start_dt, end_dt))
+            self._cache[t0_dt] = data.load()
+            return data
+        
+    def batch_end(self):
+        self._cache = {}
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""
@@ -137,8 +148,9 @@ def open_sat_data(
     # about a million chunks.  We use Dask.delayed in get_sample() though!
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
     dataset = xr.open_dataset(
-        filename, engine='zarr', consolidated=consolidated,
-        chunks=None, mode='r')
+        filename, engine='zarr', consolidated=consolidated, mode='r',
+        chunks=None
+    )
     data_array = dataset['stacked_eumetsat_data']
     del dataset
 

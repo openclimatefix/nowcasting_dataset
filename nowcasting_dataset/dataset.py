@@ -1,4 +1,3 @@
-import dask
 import pandas as pd
 import numpy as np
 from numbers import Number
@@ -7,10 +6,6 @@ import nowcasting_dataset
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 import torch
-
-
-_delayed_colate_fn = dask.delayed(
-    torch.utils.data._utils.collate.default_collate)
 
 
 @dataclass
@@ -86,8 +81,12 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)
             examples.append(example)
-        batch_delayed = _delayed_colate_fn(examples)
-        return dask.compute(batch_delayed)[0]
+
+        # Tell the DataSources that we've finished sampling this batch.
+        for data_source in self.data_sources:
+            data_source.batch_end()
+
+        return torch.utils.data._utils.collate.default_collate(examples)
 
     def _get_example(
             self,

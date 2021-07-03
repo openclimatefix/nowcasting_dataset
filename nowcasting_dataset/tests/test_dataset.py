@@ -13,13 +13,13 @@ def dataset(sat_data_source):
         history_len=0)
     return NowcastingDataset(
         batch_size=8,
+        n_batches_per_epoch_per_worker=64,
         n_samples_per_timestep=2,
         data_sources=[sat_data_source],
         t0_datetimes=t0_datetimes)
 
 
 def test_post_init(dataset: NowcastingDataset):
-    assert dataset._colate_fn is not None
     assert dataset._n_timesteps_per_batch == 4
     assert not dataset._per_worker_init_has_run
 

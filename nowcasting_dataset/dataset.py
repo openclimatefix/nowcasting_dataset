@@ -81,9 +81,11 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         # concurrently, then all the DataSources try reading from
         # empty caches, and things are much slower!
         zipped = list(zip(t0_datetimes, x_locations, y_locations))
-        with futures.ThreadPoolExecutor(max_workers=self.batch_size) as executor:
+        with futures.ThreadPoolExecutor(
+                max_workers=self.batch_size) as executor:
             future_examples = []
-            for t0_datetime, x_location, y_location in zipped[:self._n_timesteps_per_batch]:
+            for coords in zipped[:self._n_timesteps_per_batch]:
+                t0_datetime, x_location, y_location = coords
                 future_example = executor.submit(
                     self._get_example, t0_datetime, x_location, y_location)
                 future_examples.append(future_example)
@@ -91,7 +93,8 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                 future_example.result() for future_example in future_examples]
 
         # Load the remaining examples.  This should hit the DataSource caches.
-        for t0_datetime, x_location, y_location in zipped[self._n_timesteps_per_batch:]:
+        for coords in zipped[self._n_timesteps_per_batch:]:
+            t0_datetime, x_location, y_location = coords
             example = self._get_example(t0_datetime, x_location, y_location)
             examples.append(example)
 

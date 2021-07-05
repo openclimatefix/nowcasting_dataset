@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from numbers import Number
-from typing import List
+from typing import List, Tuple
 import nowcasting_dataset
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
@@ -61,19 +61,8 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             yield self._get_batch()
 
     def _get_batch(self):
-        # Pick datetimes.
-        t0_datetimes = self.rng.choice(
-            self.t0_datetimes,
-            size=self._n_timesteps_per_batch,
-            replace=False)
-        # Duplicate these random datetimes.
-        t0_datetimes = list(t0_datetimes) * self.n_samples_per_timestep
-        t0_datetimes = pd.DatetimeIndex(t0_datetimes)
-
-        # Pick locations.
-        data_source = self.data_sources[0]
-        x_locations, y_locations = data_source.pick_locations_for_batch(
-            t0_datetimes)
+        t0_datetimes = self._get_t0_datetimes_for_batch()
+        x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)
 
         # Load the first _n_timesteps_per_batch concurrently.  This
         # loads the timesteps from disk concurrently, and fills the
@@ -103,6 +92,20 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             data_source.batch_end()
 
         return torch.utils.data._utils.collate.default_collate(examples)
+
+    def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
+        # Pick random datetimes.
+        t0_datetimes = self.rng.choice(
+            self.t0_datetimes, size=self._n_timesteps_per_batch, replace=False)
+        # Duplicate these random datetimes.
+        t0_datetimes = list(t0_datetimes) * self.n_samples_per_timestep
+        return pd.DatetimeIndex(t0_datetimes)
+
+    def _get_locations_for_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
+        return self.data_sources[0].pick_locations_for_batch(t0_datetimes)
 
     def _get_example(
             self,

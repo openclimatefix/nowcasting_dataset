@@ -130,8 +130,8 @@ class ZarrDataSource(DataSource):
         self._data = None
         n_channels = len(self.channels)
         self._shape_of_example = (
-            self._total_seq_len, self.image_size_pixels,
-            self.image_size_pixels, n_channels)
+            self._total_seq_len, image_size_pixels,
+            image_size_pixels, n_channels)
 
     @property
     def data(self):

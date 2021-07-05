@@ -46,6 +46,10 @@ class NWPDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        n_channels = len(self.channels)
+        self._shape_of_example = (
+            n_channels, self._total_seq_len, image_size_pixels,
+            image_size_pixels)
 
     def open(self) -> None:
         # We don't want to open_sat_data in __init__.
@@ -54,8 +58,9 @@ class NWPDataSource(ZarrDataSource):
         # call open() _after_ creating separate processes.
         data = self._open_data()
         data = data[list(self.channels)].to_array()
-        self._data = data.sel(
-            step=slice(pd.Timedelta(0), pd.Timedelta(self.max_step)))
+        #self._data = data.sel(
+        #    step=slice(pd.Timedelta(0), pd.Timedelta(hours=self.max_step + 1)))
+        self._data = data
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(
@@ -141,7 +146,10 @@ class NWPDataSource(ZarrDataSource):
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""
-        nwp = self._open_data()
+        if self._data is None:
+            nwp = self._open_data()
+        else:
+            nwp = self._data
         target_times = nwp['init_time'] + nwp['step'][:self.max_step]
         target_times = target_times.values.flatten()
         target_times = np.unique(target_times)
@@ -163,7 +171,8 @@ def open_nwp(base_path: str, consolidated: bool) -> xr.Dataset:
     for zarr_store in ['2018_1-6', '2018_7-12', '2019_1-6', '2019_7-12']:
         full_dir = os.path.join(base_path, zarr_store)
         ds = xr.open_dataset(
-            full_dir, engine='zarr', consolidated=consolidated, mode='r')
+            full_dir, engine='zarr', consolidated=consolidated, mode='r',
+            chunks='auto')
         ds = ds.rename({'time': 'init_time'})
 
         # The isobaricInhPa coordinates look messed up, especially in
@@ -191,4 +200,8 @@ def open_nwp(base_path: str, consolidated: bool) -> xr.Dataset:
     # Silence warning about large chunks
     dask.config.set({"array.slicing.split_large_chunks": False})
     nwp_concatenated = xr.concat(nwp_datasets, dim='init_time')
+    
+    # Sanity check.
+    assert utils.is_monotonically_increasing(nwp_concatenated.init_time.astype(int))
+    assert utils.is_unique(nwp_concatenated.init_time)
     return nwp_concatenated

@@ -49,7 +49,10 @@ class SatelliteDataSource(ZarrDataSource):
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""
-        sat_data = self._open_data()
+        if self._data is None:
+            sat_data = self._open_data()
+        else:
+            sat_data = self._data
         return pd.DatetimeIndex(sat_data.time.values)
 
 

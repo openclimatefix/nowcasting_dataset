@@ -22,6 +22,10 @@ def is_monotonically_increasing(a: Array) -> bool:
     return np.all(np.diff(a) > 0)
 
 
+def is_unique(a: Array) -> bool:
+    return len(a) == len(np.unique(a))
+
+
 def scale_to_0_to_1(a: Array) -> Array:
     """Scale to the range [0, 1]."""
     a = a - a.min()

@@ -16,15 +16,14 @@ class Example(TypedDict):
     that they're immutable so we cannot change the values in the transforms.
     """
     # IMAGES
-    # Shape: batch_size, seq_length, width, height, channel
+    # Shape: [batch_size,] seq_length, width, height, channel
     sat_data: Array
 
     # PV yield time series
     pv_yield: Array
 
     # Numerical weather predictions (NWPs)
-    nwp: Array  #: NWP covering the entire geographical extent.
-    #: TODO: Document shape.
+    nwp: Array  #: Shape: [batch_size,], channel, seq_length, width, height
 
     # METADATA
     pv_system_id: int

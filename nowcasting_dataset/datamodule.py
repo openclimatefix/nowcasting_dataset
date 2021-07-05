@@ -51,7 +51,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             history_len=self.history_len,
             forecast_len=self.forecast_len,
             channels=self.sat_channels)
-        
+
         self.data_sources = [self.sat_data_source]
 
         if self.pv_power_filename is not None:

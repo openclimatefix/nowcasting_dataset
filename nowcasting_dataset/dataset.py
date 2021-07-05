@@ -71,20 +71,25 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = pd.DatetimeIndex(t0_datetimes)
 
         # Pick locations.
-        x_locations, y_locations = self.data_sources[0].pick_locations_for_batch(t0_datetimes)
+        data_source = self.data_sources[0]
+        x_locations, y_locations = data_source.pick_locations_for_batch(
+            t0_datetimes)
 
-        # Load the first _n_timesteps_per_batch concurrently.  This loads the timesteps
-        # from disk concurrently, and fills the DataSource caches.  If we try loading
-        # all examples concurrently, then all the DataSources try reading from empty
-        # caches, and things are much slower!
+        # Load the first _n_timesteps_per_batch concurrently.  This
+        # loads the timesteps from disk concurrently, and fills the
+        # DataSource caches.  If we try loading all examples
+        # concurrently, then all the DataSources try reading from
+        # empty caches, and things are much slower!
         zipped = list(zip(t0_datetimes, x_locations, y_locations))
         with futures.ThreadPoolExecutor(max_workers=self.batch_size) as executor:
             future_examples = []
             for t0_datetime, x_location, y_location in zipped[:self._n_timesteps_per_batch]:
-                future_example = executor.submit(self._get_example, t0_datetime, x_location, y_location)
+                future_example = executor.submit(
+                    self._get_example, t0_datetime, x_location, y_location)
                 future_examples.append(future_example)
-            examples = [future_example.result() for future_example in future_examples]
-            
+            examples = [
+                future_example.result() for future_example in future_examples]
+
         # Load the remaining examples.  This should hit the DataSource caches.
         for t0_datetime, x_location, y_location in zipped[self._n_timesteps_per_batch:]:
             example = self._get_example(t0_datetime, x_location, y_location)

@@ -1,6 +1,7 @@
 from typing import Union, Optional, Iterable, Dict
 from pathlib import Path
 import pandas as pd
+from copy import deepcopy
 import torch
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
@@ -122,10 +123,12 @@ class NowcastingDataModule(pl.LightningDataModule):
         # Create datasets
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
+            data_sources=self.data_sources,
             n_batches_per_epoch_per_worker=1024 // self.num_workers,
             **self._common_dataset_params())
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
+            data_sources=self.data_sources,
             n_batches_per_epoch_per_worker=32 // self.num_workers,
             **self._common_dataset_params())
 
@@ -158,8 +161,12 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
         if self.contiguous_dataset is None:
+            pv_data_source = deepcopy(self.pv_data_source)
+            pv_data_source.random_pv_system_for_given_location = False
+            data_sources = [pv_data_source, self.sat_data_source]
             self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
                 t0_datetimes=self.val_t0_datetimes,
+                data_sources=data_sources,
                 n_batches_per_epoch_per_worker=32 // self.num_workers,
                 **self._common_dataset_params())
         return torch.utils.data.DataLoader(
@@ -168,7 +175,6 @@ class NowcastingDataModule(pl.LightningDataModule):
     def _common_dataset_params(self) -> Dict:
         return dict(
             batch_size=self.batch_size,
-            data_sources=self.data_sources,
             n_samples_per_timestep=self.n_samples_per_timestep)
 
     def _common_dataloader_params(self) -> Dict:

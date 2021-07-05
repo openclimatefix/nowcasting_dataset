@@ -20,6 +20,7 @@ class PVDataSource(DataSource):
     metadata_filename: Union[str, Path]
     start_dt: Optional[datetime.datetime] = None
     end_dt: Optional[datetime.datetime] = None
+    random_pv_system_for_given_location: Optional[bool] = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -108,11 +109,15 @@ class PVDataSource(DataSource):
 
         selected_pv_power = self._get_timestep_with_cache(t0_dt)
         pv_system_ids = selected_pv_power.columns.intersection(pv_system_ids)
+        assert len(pv_system_ids) > 0
 
         # Select just one PV system (the locations in PVOutput.org are quite
         # approximate, so it's quite common to have multiple PV systems
         # at the same nominal lat lon.
-        pv_system_id = self.rng.choice(pv_system_ids)
+        if self.random_pv_system_for_given_location:
+            pv_system_id = self.rng.choice(pv_system_ids)
+        else:
+            pv_system_id = pv_system_ids[0]
         selected_pv_power = selected_pv_power[pv_system_id]
 
         # Save data into the Example dict...

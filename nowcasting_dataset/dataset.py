@@ -124,8 +124,12 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         return example
 
 
+@dataclass
 class ContiguousNowcastingDataset(NowcastingDataset):
     """Each batch contains contiguous timesteps for a single location."""
+    
+    def __post_init__(self):
+        super().__post_init__()
 
     def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
         max_i = len(self.t0_datetimes) - self.batch_size

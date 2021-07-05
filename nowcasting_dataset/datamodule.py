@@ -1,4 +1,4 @@
-from typing import Union, Optional, Iterable
+from typing import Union, Optional, Iterable, Dict
 from pathlib import Path
 import pandas as pd
 import torch
@@ -42,6 +42,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         super().__init__()
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
+        self.contiguous_dataset = None
 
     def prepare_data(self) -> None:
         self.sat_data_source = data_sources.SatelliteDataSource(
@@ -115,7 +116,21 @@ class NowcastingDataModule(pl.LightningDataModule):
           1. [Video of June 2019](https://www.youtube.com/watch?v=IOp-tj-IJpk)
           2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
-        del stage
+        del stage  # Not used in this method!
+        self._split_data()
+
+        # Create datasets
+        self.train_dataset = dataset.NowcastingDataset(
+            t0_datetimes=self.train_t0_datetimes,
+            n_batches_per_epoch_per_worker=1024 // self.num_workers,
+            **self._common_dataset_params())
+        self.val_dataset = dataset.NowcastingDataset(
+            t0_datetimes=self.val_t0_datetimes,
+            n_batches_per_epoch_per_worker=32 // self.num_workers,
+            **self._common_dataset_params())
+
+    def _split_data(self):
+        """Sets self.train_t0_datetimes and self.val_t0_datetimes."""
         self._check_has_prepared_data()
         all_datetimes = self._get_datetimes()
         t0_datetimes = nd_time.get_t0_datetimes(
@@ -133,20 +148,6 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.train_t0_datetimes = t0_datetimes[:split]
         self.val_t0_datetimes = t0_datetimes[split:]
 
-        # Create datasets
-        common_dataset_params = dict(
-            batch_size=self.batch_size,
-            data_sources=self.data_sources,
-            n_samples_per_timestep=self.n_samples_per_timestep)
-        self.train_dataset = dataset.NowcastingDataset(
-            t0_datetimes=self.train_t0_datetimes,
-            n_batches_per_epoch_per_worker=1024 // self.num_workers,
-            **common_dataset_params)
-        self.val_dataset = dataset.NowcastingDataset(
-            t0_datetimes=self.val_t0_datetimes,
-            n_batches_per_epoch_per_worker=32 // self.num_workers,
-            **common_dataset_params)
-
     def train_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(
             self.train_dataset, **self._common_dataloader_params())
@@ -155,7 +156,22 @@ class NowcastingDataModule(pl.LightningDataModule):
         return torch.utils.data.DataLoader(
             self.val_dataset, **self._common_dataloader_params())
 
-    def _common_dataloader_params(self):
+    def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
+        if self.contiguous_dataset is None:
+            self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
+                t0_datetimes=self.val_t0_datetimes,
+                n_batches_per_epoch_per_worker=32 // self.num_workers,
+                **self._common_dataset_params())
+        return torch.utils.data.DataLoader(
+            self.contiguous_dataset, **self._common_dataloader_params())
+
+    def _common_dataset_params(self) -> Dict:
+        return dict(
+            batch_size=self.batch_size,
+            data_sources=self.data_sources,
+            n_samples_per_timestep=self.n_samples_per_timestep)
+
+    def _common_dataloader_params(self) -> Dict:
         return dict(
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
@@ -171,7 +187,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         """Compute the datetime index.
 
         Returns the intersection of the datetime indicies of all the
-        data_sources; filtered by daylight hours."""
+        data_sources, filtered by daylight hours."""
         self._check_has_prepared_data()
 
         # Get the intersection of datetimes from all data sources.

@@ -12,9 +12,6 @@ import numpy as np
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
-
-nwp_ds.data - xr.DataArray(data=std.values, dims=('variable', ), coords=dict(variable=std['variable'].values))
-
 NWP_VARIABLE_NAMES = (
     't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
 
@@ -23,20 +20,20 @@ NWP_VARIABLE_NAMES = (
 # nwp_ds.open()
 # mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(dim=['step', 'x', 'init_time', 'y']).compute()
 NWP_MEAN = xr.DataArray(
-    data=(
+    data=[
         2.8041010e+02, 1.6854691e+01, 6.7529683e-05, 8.1832832e+01,
         7.1233767e-03, 8.8566933e+00, 4.3474598e+04, 4.9820110e+01,
-        4.8095409e+01, 4.2833260e+01),
-    dims=('variable', ),
-    coords={'variable': NWP_VARIABLE_NAMES})
+        4.8095409e+01, 4.2833260e+01],
+    dims=['variable'],
+    coords={'variable': list(NWP_VARIABLE_NAMES)})
 
 NWP_STD = xr.DataArray(
-    data=(
+    data=[
         2.5812180e+00, 4.1278820e+01, 2.7507244e-04, 9.0967312e+00,
         1.4110464e-01, 4.3616886e+00, 2.3853148e+04, 3.8900299e+01,
-        4.2830105e+01, 4.2778091e+01),
-    dims=('variable', ),
-    coords={'variable': NWP_VARIABLE_NAMES})
+        4.2830105e+01, 4.2778091e+01],
+    dims=['variable'],
+    coords={'variable': list(NWP_VARIABLE_NAMES)})
 
 @dataclass
 class NWPDataSource(ZarrDataSource):

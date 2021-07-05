@@ -39,9 +39,10 @@ class SatelliteDataSource(DataSource):
             n_channels = 12
         else:
             n_channels = len(self.channels)
-        n_channels 
+
         self._shape_of_example = (
-            self._total_seq_len, self.image_size_pixels, self.image_size_pixels, n_channels)
+            self._total_seq_len, self.image_size_pixels,
+            self.image_size_pixels, n_channels)
 
     @property
     def sat_data(self):
@@ -78,16 +79,17 @@ class SatelliteDataSource(DataSource):
             x=slice(0, self._square.size_pixels),
             y=slice(0, self._square.size_pixels))
 
-        #selected_sat_data = dask.delayed(check_shape)(
-        #    data_pass_through=selected_sat_data,
-        #    shape=selected_sat_data.shape,
-        #    expected_shape=self._shape_of_example,
-        #    x_meters_center=x_meters_center, y_meters_center=y_meters_center,
-        #    t0_dt=t0_dt, start_dt=start_dt, end_dt=end_dt,
-        #    dt_index=selected_sat_data.time)
+        if selected_sat_data.shape != self._shape_of_example:
+            raise RuntimeError(
+                'Satellite data is wrong shape! '
+                f'x_meters_center={x_meters_center}\n'
+                f'y_meters_center={y_meters_center}\n'
+                f't0_dt={t0_dt}\n'
+                f'expected shape={self._shape_of_example}\n'
+                f'actual shape   {selected_sat_data.shape}')
 
         return Example(sat_data=selected_sat_data)
-        
+
     def _get_timestep(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
@@ -155,17 +157,6 @@ def open_sat_data(
 
 
 def check_shape(
-    data_pass_through, shape, expected_shape, 
-    x_meters_center, y_meters_center, t0_dt, start_dt, end_dt, dt_index):
-    if shape != expected_shape:
-        raise RuntimeError(
-            'Satellite data is wrong shape! '
-            f'x_meters_center={x_meters_center}\n'
-            f'y_meters_center={y_meters_center}\n'
-            f't0_dt={t0_dt}\n'
-            f'start_dt={start_dt}\n'
-            f'end_dt={end_dt}\n'
-            f'dt_index={dt_index}\n'
-            f'expected shape={expected_shape}\n'
-            f'actual shape   {shape}')
+        data_pass_through, shape, expected_shape, x_meters_center,
+        y_meters_center, t0_dt, start_dt, end_dt, dt_index):
     return data_pass_through

@@ -58,9 +58,10 @@ class DataSource:
         """Returns a complete list of all available datetimes."""
         raise NotImplementedError()
 
-    def pick_locations_for_batch(
+    def get_locations_for_batch(
             self,
-            t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+            t0_datetimes: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
@@ -74,7 +75,7 @@ class DataSource:
             250_000, 250_000]
 
         location = np.random.choice(locations, size=(len(t0_datetimes), 2))
-        
+
         return location[:, 0], location[:, 1]
 
     def get_example(
@@ -85,14 +86,14 @@ class DataSource:
     ) -> Example:
         """Must be overridden by child classes."""
         raise NotImplementedError()
-        
+
     def batch_end(self):
         self._cache = {}
-        
+
     def _get_timestep(self, t0_dt: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden."""
         raise NotImplementedError()
-        
+
     def _get_timestep_with_cache(self, t0_dt: pd.Timestamp):
         try:
             return self._cache[t0_dt]

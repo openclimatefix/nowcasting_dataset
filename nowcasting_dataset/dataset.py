@@ -105,7 +105,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             self,
             t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
-        return self.data_sources[0].pick_locations_for_batch(t0_datetimes)
+        return self.data_sources[0].get_locations_for_batch(t0_datetimes)
 
     def _get_example(
             self,

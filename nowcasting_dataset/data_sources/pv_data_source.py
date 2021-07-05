@@ -75,7 +75,7 @@ class PVDataSource(DataSource):
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
         print('pv_power = {:,.1f} MB'.format(pv_power.values.nbytes / 1E6))
         self.pv_power = pv_power
-        
+
     def _get_timestep(self, t0_dt: pd.Timestamp) -> pd.DataFrame:
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
@@ -121,15 +121,16 @@ class PVDataSource(DataSource):
             pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
             pv_yield=selected_pv_power)
 
-    def pick_locations_for_batch(
+    def get_locations_for_batch(
             self,
-            t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+            t0_datetimes: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
             Locations are in OSGB coordinates.
         """
-        
+
         # Set this up as a separate function, so we can cache the result!
         @functools.cache
         def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Index:
@@ -140,8 +141,9 @@ class PVDataSource(DataSource):
             pv_system_ids = available_pv_data.columns[columns_mask]
             assert len(pv_system_ids) > 0
             return pv_system_ids
-        
-        # Pick a random PV system for each t0_datetime, and then grab their geographical location.
+
+        # Pick a random PV system for each t0_datetime, and then grab
+        # their geographical location.
         x_locations = []
         y_locations = []
         for t0_datetime in t0_datetimes:

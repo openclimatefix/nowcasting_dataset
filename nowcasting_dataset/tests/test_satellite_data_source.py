@@ -1,7 +1,6 @@
 import pytest
 import pandas as pd
 import numpy as np
-import dask
 
 
 def test_satellite_data_source_init(sat_data_source):
@@ -10,7 +9,7 @@ def test_satellite_data_source_init(sat_data_source):
 
 def test_open(sat_data_source):
     sat_data_source.open()
-    assert sat_data_source.sat_data is not None
+    assert sat_data_source.data is not None
 
 
 def test_datetime_index(sat_data_source):
@@ -35,13 +34,12 @@ def test_datetime_index(sat_data_source):
         (2001, 2001, -124_000, 130_000, 130_000, -124_000),
     ]
 )
-def test_get_sample(sat_data_source, x, y, left, right, top, bottom):
+def test_get_example(sat_data_source, x, y, left, right, top, bottom):
     sat_data_source.open()
     t0_dt = pd.Timestamp('2019-01-01T13:00')
-    sample = sat_data_source.get_sample(
+    example = sat_data_source.get_example(
         t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
-    sample = dask.compute(sample)[0]
-    sat_data = sample['sat_data']
+    sat_data = example['sat_data']
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]
     # sat_data.y is top-to-bottom.

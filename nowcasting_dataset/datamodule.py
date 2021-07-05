@@ -32,6 +32,9 @@ class NowcastingDataModule(pl.LightningDataModule):
     forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     sat_channels: Iterable[str] = ('HRV', )
+    nwp_base_path: Optional[str] = None
+    nwp_channels: Optional[Iterable[str]] = (
+        't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
     image_size_pixels: int = 128
     meters_per_pixel: int = 2000
     pin_memory: bool = True  #: Passed to DataLoader.
@@ -46,6 +49,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.contiguous_dataset = None
 
     def prepare_data(self) -> None:
+        # Satellite data
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
             image_size_pixels=self.image_size_pixels,
@@ -56,6 +60,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         self.data_sources = [self.sat_data_source]
 
+        # PV
         if self.pv_power_filename is not None:
             sat_datetimes = self.sat_data_source.datetime_index()
 
@@ -70,6 +75,18 @@ class NowcastingDataModule(pl.LightningDataModule):
                 meters_per_pixel=self.meters_per_pixel)
 
             self.data_sources = [self.pv_data_source, self.sat_data_source]
+
+        # NWP data
+        if self.nwp_base_path is not None:
+            self.nwp_data_source = data_sources.NWPDataSource(
+                filename=self.nwp_base_path,
+                image_size_pixels=2,
+                meters_per_pixel=self.meters_per_pixel,
+                history_len=self.history_len,
+                forecast_len=self.forecast_len,
+                channels=self.nwp_channels)
+
+            self.data_sources.append(self.nwp_data_source)
 
     def setup(self, stage='fit'):
         """Split data, etc.

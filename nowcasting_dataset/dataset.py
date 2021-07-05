@@ -89,7 +89,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         # Tell the DataSources that we've finished sampling this batch.
         for data_source in self.data_sources:
-            data_source.batch_end()
+            data_source.empty_cache()
 
         return torch.utils.data._utils.collate.default_collate(examples)
 
@@ -115,7 +115,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         example = nowcasting_dataset.example.Example(t0_dt=t0_dt)
         for data_source in self.data_sources:
-            example_from_source = data_source.get_sample(
+            example_from_source = data_source.get_example(
                 t0_dt=t0_dt,
                 x_meters_center=x_meters_center,
                 y_meters_center=y_meters_center)

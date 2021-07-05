@@ -5,8 +5,10 @@ from nowcasting_dataset.example import Example
 from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
 from dataclasses import dataclass, InitVar
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterable
 from pathlib import Path
+import xarray as xr
+import itertools
 
 
 @dataclass
@@ -41,7 +43,7 @@ class DataSource:
         self._square = square.Square(
             size_pixels=image_size_pixels,
             meters_per_pixel=meters_per_pixel)
-        self._cache = {}
+        self.empty_cache()
 
     def open(self):
         """Open the data source, if necessary.
@@ -54,6 +56,24 @@ class DataSource:
         """
         pass
 
+    def empty_cache(self):
+        self._cache = {}
+
+    def _get_cached_time_slice(self, t0_dt: pd.Timestamp):
+        try:
+            return self._cache[t0_dt]
+        except KeyError:
+            data = self._get_time_slice(t0_dt)
+            self._cache[t0_dt] = data
+            return data
+
+    def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
+        return t0_dt - self._history_dur
+
+    def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
+        return t0_dt + self._forecast_dur
+
+    # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
         raise NotImplementedError()
@@ -87,23 +107,103 @@ class DataSource:
         """Must be overridden by child classes."""
         raise NotImplementedError()
 
-    def batch_end(self):
-        self._cache = {}
-
-    def _get_timestep(self, t0_dt: pd.Timestamp):
+    def _get_time_slice(self, t0_dt: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden."""
         raise NotImplementedError()
 
-    def _get_timestep_with_cache(self, t0_dt: pd.Timestamp):
-        try:
-            return self._cache[t0_dt]
-        except KeyError:
-            data = self._get_timestep(t0_dt)
-            self._cache[t0_dt] = data
-            return data
 
-    def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt - self._history_dur
+class ZarrDataSource(DataSource):
+    """
+    Attributes:
+      _data: xr.DataArray data, opened by open().
+        x is left-to-right.
+        y is top-to-bottom.
+        Access using public data property.
+      consolidated: Whether or not the Zarr store is consolidated.
+      channels: The Zarr parameters to load.
+    """
+    channels: Iterable[str]
+    consolidated: bool = True
 
-    def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt + self._forecast_dur
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        super().__post_init__(image_size_pixels, meters_per_pixel)
+        self._data = None
+        n_channels = len(self.channels)
+        self._shape_of_example = (
+            self._total_seq_len, self.image_size_pixels,
+            self.image_size_pixels, n_channels)
+
+    @property
+    def data(self):
+        if self._data is None:
+            raise RuntimeError('Please run `open()` before accessing data!')
+        return self._data
+
+    def get_example(
+            self,
+            x_meters_center: Number,
+            y_meters_center: Number,
+            t0_dt: pd.Timestamp
+    ) -> Example:
+        selected_data = self._get_cached_time_slice(t0_dt)
+        bounding_box = self._square.bounding_box_centered_on(
+            x_meters_center=x_meters_center, y_meters_center=y_meters_center)
+        selected_data = selected_data.sel(
+            x=slice(bounding_box.left, bounding_box.right),
+            y=slice(bounding_box.top, bounding_box.bottom))
+
+        # selected_sat_data is likely to have 1 too many pixels in x and y
+        # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
+        selected_data = selected_data.isel(
+            x=slice(0, self._square.size_pixels),
+            y=slice(0, self._square.size_pixels))
+
+        selected_data = self._post_process_example(selected_data, t0_dt)
+
+        if selected_data.shape != self._shape_of_example:
+            raise RuntimeError(
+                'Example is wrong shape! '
+                f'x_meters_center={x_meters_center}\n'
+                f'y_meters_center={y_meters_center}\n'
+                f't0_dt={t0_dt}\n'
+                f'expected shape={self._shape_of_example}\n'
+                f'actual shape   {selected_data.shape}')
+
+        return self._put_data_into_example(selected_data)
+
+    def geospatial_border(self) -> List[Tuple[Number, Number]]:
+        """Get 'corner' coordinates for a rectangle within the boundary of the
+        data.
+
+        Returns List of 2-tuples of the x and y coordinates of each corner,
+        in OSGB projection.
+        """
+        GEO_BORDER: int = 64  #: In same geo projection and units as sat_data.
+        data = self._open_data()
+        return [
+            (data.x.values[x], data.y.values[y])
+            for x, y in itertools.product(
+                [GEO_BORDER, -GEO_BORDER],
+                [GEO_BORDER, -GEO_BORDER])]
+
+    # ****************** METHODS THAT CAN BE OVERRIDDEN **********************
+    def _post_process_example(
+            self,
+            selected_data: xr.DataArray,
+            t0_dt: pd.Timestamp) -> xr.DataArray:
+        return selected_data
+
+    # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
+    # (in addition to the DataSource methods that must be overridden)
+    def open(self) -> None:
+        # We don't want to _open_data() in __init__.
+        # If we did that, then we couldn't copy ZarrDataSource
+        # instances into separate processes.  Instead,
+        # call open() _after_ creating separate processes.
+        raise NotImplementedError()
+
+    def _open_data(self) -> xr.DataArray:
+        raise NotImplementedError()
+
+    def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
+        raise NotImplementedError()

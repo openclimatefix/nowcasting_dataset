@@ -77,14 +77,14 @@ class PVDataSource(DataSource):
         print('pv_power = {:,.1f} MB'.format(pv_power.values.nbytes / 1E6))
         self.pv_power = pv_power
 
-    def _get_timestep(self, t0_dt: pd.Timestamp) -> pd.DataFrame:
+    def _get_time_slice(self, t0_dt: pd.Timestamp) -> pd.DataFrame:
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt]
         return selected_pv_power.dropna(axis='columns', how='any')
 
-    def get_sample(
+    def get_example(
             self,
             x_meters_center: Number,
             y_meters_center: Number,

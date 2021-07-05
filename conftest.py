@@ -34,7 +34,9 @@ def sat_filename(use_cloud_data: bool) -> Path:
 @pytest.fixture
 def sat_data_source(sat_filename: Path):
     return SatelliteDataSource(
-        image_size_pixels=pytest.IMAGE_SIZE_PIXELS, 
+        image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
         filename=sat_filename,
-        history_len=0, forecast_len=1
+        history_len=0,
+        forecast_len=1,
+        channels=('HRV', )
     )

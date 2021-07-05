@@ -24,7 +24,6 @@ class Example(TypedDict):
 
     # Numerical weather predictions (NWPs)
     nwp: Array  #: NWP covering the entire geographical extent.
-    nwp_above_pv: Array  #: The NWP at a single point nearest to the PV system.
     #: TODO: Document shape.
 
     # METADATA
@@ -52,7 +51,7 @@ def to_numpy(example: Example) -> Example:
     for key in DATETIME_ITEMS:
         if key in example:
             example[key] = int(example[key].timestamp())
-            
+
     PANDAS_ITEMS = ('pv_yield', )
     for key in PANDAS_ITEMS:
         if key in example:

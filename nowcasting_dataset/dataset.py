@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from numbers import Number
-from typing import List, Tuple
+from typing import List, Tuple, Iterable
 import nowcasting_dataset
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
@@ -98,7 +98,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = self.rng.choice(
             self.t0_datetimes, size=self._n_timesteps_per_batch, replace=False)
         # Duplicate these random datetimes.
-        t0_datetimes = list(t0_datetimes) * self.n_samples_per_timestep
+        t0_datetimes = np.tile(t0_datetimes, reps=self.n_samples_per_timestep)
         return pd.DatetimeIndex(t0_datetimes)
 
     def _get_locations_for_batch(
@@ -122,6 +122,27 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             example.update(example_from_source)
         example = nowcasting_dataset.example.to_numpy(example)
         return example
+
+
+class ContiguousNowcastingDataset(NowcastingDataset):
+    """Each batch contains contiguous timesteps for a single location."""
+
+    def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
+        max_i = len(self.t0_datetimes) - self.batch_size
+        start_i = self.rng.integers(low=0, high=max_i)
+        end_i = start_i + self.batch_size
+        t0_datetimes = self.t0_datetimes[start_i:end_i]
+        return pd.DatetimeIndex(t0_datetimes)
+
+    def _get_locations_for_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex
+    ) -> Tuple[Iterable[Number], Iterable[Number]]:
+        x_locations, y_locations = super()._get_locations_for_batch(
+            t0_datetimes)
+        x_locations = np.repeat(x_locations[0], repeats=self.batch_size)
+        y_locations = np.repeat(y_locations[0], repeats=self.batch_size)
+        return x_locations, y_locations
 
 
 def worker_init_fn(worker_id):

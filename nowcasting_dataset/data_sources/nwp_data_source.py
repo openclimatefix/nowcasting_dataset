@@ -13,6 +13,31 @@ import numpy as np
 _LOG = logging.getLogger('nowcasting_dataset')
 
 
+nwp_ds.data - xr.DataArray(data=std.values, dims=('variable', ), coords=dict(variable=std['variable'].values))
+
+NWP_VARIABLE_NAMES = (
+    't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
+
+# Means computed with
+# nwp_ds = NWPDataSource(...)
+# nwp_ds.open()
+# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(dim=['step', 'x', 'init_time', 'y']).compute()
+NWP_MEAN = xr.DataArray(
+    data=(
+        2.8041010e+02, 1.6854691e+01, 6.7529683e-05, 8.1832832e+01,
+        7.1233767e-03, 8.8566933e+00, 4.3474598e+04, 4.9820110e+01,
+        4.8095409e+01, 4.2833260e+01),
+    dims=('variable', ),
+    coords={'variable': NWP_VARIABLE_NAMES})
+
+NWP_STD = xr.DataArray(
+    data=(
+        2.5812180e+00, 4.1278820e+01, 2.7507244e-04, 9.0967312e+00,
+        1.4110464e-01, 4.3616886e+00, 2.3853148e+04, 3.8900299e+01,
+        4.2830105e+01, 4.2778091e+01),
+    dims=('variable', ),
+    coords={'variable': NWP_VARIABLE_NAMES})
+
 @dataclass
 class NWPDataSource(ZarrDataSource):
     """
@@ -38,9 +63,7 @@ class NWPDataSource(ZarrDataSource):
             mcc   : Medium-level cloud cover in %.
             hcc   : High-level cloud cover in %.
     """
-    channels: Optional[Iterable[str]] = (
-        't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
-    max_step: int = 3  #: Max forecast timesteps to load from NWPs.
+    channels: Optional[Iterable[str]] = NWP_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 2
     meters_per_pixel: InitVar[int] = 2_000
 
@@ -58,8 +81,8 @@ class NWPDataSource(ZarrDataSource):
         # call open() _after_ creating separate processes.
         data = self._open_data()
         data = data[list(self.channels)].to_array()
-        #self._data = data.sel(
-        #    step=slice(pd.Timedelta(0), pd.Timedelta(hours=self.max_step + 1)))
+        data -= NWP_MEAN
+        data /= NWP_STD
         self._data = data
 
     def _open_data(self) -> xr.DataArray:
@@ -100,8 +123,16 @@ class NWPDataSource(ZarrDataSource):
 
         # Get the most recent NWP initialisation time for each
         # target_time_hourly.
-        init_times = self.data.sel(
-            init_time=target_times_hourly, method='ffill').init_time.values
+        try:
+            init_times = self.data.sel(
+                init_time=target_times_hourly, method='ffill').init_time.values
+        except Exception as e:
+            is_increasing = utils.is_monotonically_increasing(self.data.init_time.astype(int))
+            is_unique = utils.is_unique(self.data.init_time)
+            _LOG.exception(
+                f'Exception! start_hourly={start_hourly}, t0_hourly={t0_hourly}, end_hourly={end_hourly}, '
+                f'target_times_hourly={target_times_hourly}, {e}, is_increasing={is_increasing}, is_unique={is_unique}')
+            raise
 
         # Find the NWP init time for just the 'future' portion of the example.
         init_time_future = init_times[target_times_hourly == t0_hourly]
@@ -150,7 +181,7 @@ class NWPDataSource(ZarrDataSource):
             nwp = self._open_data()
         else:
             nwp = self._data
-        target_times = nwp['init_time'] + nwp['step'][:self.max_step]
+        target_times = nwp['init_time'] + nwp['step'][:3]
         target_times = target_times.values.flatten()
         target_times = np.unique(target_times)
         target_times = np.sort(target_times)

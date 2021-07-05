@@ -7,6 +7,9 @@ from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 import torch
 from concurrent import futures
+import logging
+
+_LOG = logging.getLogger('nowcasting_dataset')
 
 
 @dataclass
@@ -115,10 +118,16 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         example = nowcasting_dataset.example.Example(t0_dt=t0_dt)
         for data_source in self.data_sources:
-            example_from_source = data_source.get_example(
-                t0_dt=t0_dt,
-                x_meters_center=x_meters_center,
-                y_meters_center=y_meters_center)
+            try:
+                example_from_source = data_source.get_example(
+                    t0_dt=t0_dt,
+                    x_meters_center=x_meters_center,
+                    y_meters_center=y_meters_center)
+            except Exception as e:
+                _LOG.exception(
+                    f'Exception!  t0_dt={t0_dt}, x_meters_center={x_meters_center}, y_meters_center={y_meters_center}, {e}')
+                raise
+                
             example.update(example_from_source)
         example = nowcasting_dataset.example.to_numpy(example)
         return example

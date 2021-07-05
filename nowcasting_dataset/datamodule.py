@@ -47,6 +47,8 @@ class NowcastingDataModule(pl.LightningDataModule):
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
         self.contiguous_dataset = None
+        if self.num_workers == 0:
+            self.prefetch_factor = 2  # Set to default when not using multiprocessing.
 
     def prepare_data(self) -> None:
         # Satellite data
@@ -141,14 +143,24 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=1024 // self.num_workers,
+            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(1024),
             **self._common_dataset_params())
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=32 // self.num_workers,
+            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(32),
             **self._common_dataset_params())
+        
+        if self.num_workers == 0:
+            self.train_dataset.per_worker_init(worker_id=0)
+            self.val_dataset.per_worker_init(worker_id=0)
 
+    def _n_batches_per_epoch_per_worker(self, n_batches_per_epoch: int) -> int:
+        if self.num_workers > 0:
+            return n_batches_per_epoch // self.num_workers
+        else:
+            return n_batches_per_epoch
+            
     def _split_data(self):
         """Sets self.train_t0_datetimes and self.val_t0_datetimes."""
         self._check_has_prepared_data()
@@ -184,8 +196,10 @@ class NowcastingDataModule(pl.LightningDataModule):
             self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
                 t0_datetimes=self.val_t0_datetimes,
                 data_sources=data_sources,
-                n_batches_per_epoch_per_worker=32 // self.num_workers,
+                n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(32),
                 **self._common_dataset_params())
+            if self.num_workers == 0:
+                self.contiguous_dataset.per_worker_init(worker_id=0)
         return torch.utils.data.DataLoader(
             self.contiguous_dataset, **self._common_dataloader_params())
 

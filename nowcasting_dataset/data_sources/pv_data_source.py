@@ -107,7 +107,7 @@ class PVDataSource(DataSource):
                 " (but not at the identical location to) x_meters_center and"
                 " y_meters_center.")
 
-        selected_pv_power = self._get_timestep_with_cache(t0_dt)
+        selected_pv_power = self._get_cached_time_slice(t0_dt)
         pv_system_ids = selected_pv_power.columns.intersection(pv_system_ids)
         assert len(pv_system_ids) > 0
 

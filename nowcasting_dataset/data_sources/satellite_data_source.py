@@ -124,8 +124,8 @@ def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
     dataset = xr.open_dataset(
         filename, engine='zarr', consolidated=consolidated, mode='r',
-        chunks=None
-    )
+        chunks=None)
+
     data_array = dataset['stacked_eumetsat_data']
     del dataset
 

@@ -75,7 +75,7 @@ class DataSource:
         examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
-            example = self._get_example(t0_datetime, x_location, y_location)
+            example = self.get_example(t0_datetime, x_location, y_location)
             example = to_numpy(example)
             examples.append(example)
 

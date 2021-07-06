@@ -27,7 +27,7 @@ NWP_MEAN = xr.DataArray(
         7.1233767e-03, 8.8566933e+00, 4.3474598e+04, 4.9820110e+01,
         4.8095409e+01, 4.2833260e+01],
     dims=['variable'],
-    coords={'variable': list(NWP_VARIABLE_NAMES)})
+    coords={'variable': list(NWP_VARIABLE_NAMES)}).astype(np.float32)
 
 NWP_STD = xr.DataArray(
     data=[
@@ -35,7 +35,7 @@ NWP_STD = xr.DataArray(
         1.4110464e-01, 4.3616886e+00, 2.3853148e+04, 3.8900299e+01,
         4.2830105e+01, 4.2778091e+01],
     dims=['variable'],
-    coords={'variable': list(NWP_VARIABLE_NAMES)})
+    coords={'variable': list(NWP_VARIABLE_NAMES)}).astype(np.float32)
 
 
 @dataclass
@@ -210,14 +210,9 @@ def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     _LOG.debug('Opening NWP data: %s', filename)
     utils.set_fsspec_for_multiprocess()
     nwp = xr.open_dataset(
-        filename, engine='zarr', consolidated=consolidated, mode='r',
-        chunks='auto')
-
-    # HORRIBLE HACK.
-    # TODO: REMOVE!
-    _LOG.warning('Horrible hack! Adding 6 months to init_time!!! MUST REMOVE!')
-    timedelta = pd.Timestamp('2018-06-01') - pd.Timestamp('2018-01-01')
-    nwp['init_time'] = nwp.init_time + timedelta
+        filename, engine='zarr', consolidated=consolidated, mode='r', chunks={})
+    # chunks={} loads the dataset with dask using engine preferred chunks
+    # if exposed by the backend, otherwise with a single chunk for all arrays.
 
     # Sanity check.
     # TODO: Replace this with
@@ -225,52 +220,3 @@ def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     assert utils.is_monotonically_increasing(nwp.init_time.astype(int))
     assert utils.is_unique(nwp.init_time)
     return nwp
-
-
-def open_nwp_old(base_path: str, consolidated: bool) -> xr.Dataset:
-    """
-    Args:
-        base_path must start with 'gs://' if it's on GCP.
-    """
-    _LOG.debug('Opening NWP data: %s', base_path)
-    utils.set_fsspec_for_multiprocess()
-    nwp_datasets = []
-    # TODO: Parellise the for-loop below using ThreadPoolExecutor:
-    for zarr_store in ['2018_1-6', '2018_7-12', '2019_1-6', '2019_7-12']:
-        full_dir = os.path.join(base_path, zarr_store)
-        ds = xr.open_dataset(
-            full_dir, engine='zarr', consolidated=consolidated, mode='r',
-            chunks='auto')
-        ds = ds.rename({'time': 'init_time'})
-
-        # The isobaricInhPa coordinates look messed up, especially in
-        # the 2018_7-12 and 2019_7-12 Zarr stores.  So let's drop all
-        # the variables with multiple vertical levels for now:
-        del ds['isobaricInhPa'], ds['gh_p'], ds['r_p'], ds['t_p']
-        del ds['wdir_p'], ds['ws_p']
-
-        # There are a lot of doubled-up indicies from 2018-07-18 00:00
-        # to 2018-08-27 09:00.  De-duplicate the index. Code adapted
-        # from https://stackoverflow.com/a/51077784/732596
-        if zarr_store == '2018_7-12':
-            _, unique_index = np.unique(ds.init_time, return_index=True)
-            ds = ds.isel(init_time=unique_index)
-
-        # 2019-02-01T21 is in the wrong place! It comes after
-        # 2019-02-03T15.  Oops!
-        if zarr_store == '2019_1-6':
-            sorted_init_time = np.sort(ds.init_time)
-            ds = ds.reindex(init_time=sorted_init_time)
-
-        nwp_datasets.append(ds)
-
-    # Concat.
-    # Silence warning about large chunks
-    dask.config.set({"array.slicing.split_large_chunks": False})
-    nwp_concatenated = xr.concat(nwp_datasets, dim='init_time')
-    
-    # Sanity check.
-    # TODO: Replace this with pandas.core.indexes.base._is_strictly_monotonic_increasing()
-    assert utils.is_monotonically_increasing(nwp_concatenated.init_time.astype(int))
-    assert utils.is_unique(nwp_concatenated.init_time)
-    return nwp_concatenated

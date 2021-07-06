@@ -77,14 +77,13 @@ class NWPDataSource(ZarrDataSource):
         # instances into separate processes.  Instead,
         # call open() _after_ creating separate processes.
         data = self._open_data()
-        data = data[list(self.channels)].to_array()
-        data -= NWP_MEAN
+        data = data['UKV'].sel(variable=list(self.channels))
+        data -= NWP_MEAN  
         data /= NWP_STD
         self._data = data
 
     def _open_data(self) -> xr.DataArray:
-        return open_nwp(
-            base_path=self.filename, consolidated=self.consolidated)
+        return open_nwp(self.filename, consolidated=self.consolidated)
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
         return Example(nwp=selected_data)
@@ -119,36 +118,25 @@ class NWPDataSource(ZarrDataSource):
         target_times_hourly = pd.date_range(start_hourly, end_hourly, freq='H')
 
         # Get the most recent NWP initialisation time for each
-        # target_time_hourly.  We must retry because of a wierd bug in Pandas
+        # target_time_hourly.  We can't use 
+        # init_times = nwp_ds.data.sel(init_time=target_times_hourly, method='ffill').init_time.values
+        # because we hit a Pandas bug
         # whereby Index.is_unique() sometimes returns false when
         # used in a multi-threading context.  See:
         # https://github.com/pandas-dev/pandas/issues/21150
         # https://github.com/openclimatefix/nowcasting_dataset/issues/42
-        N_RETRIES = 50
-        for _ in range(N_RETRIES):
-            try:
-                init_times = self.data.sel(
-                    init_time=target_times_hourly, method='ffill').init_time.values
-            except pd.errors.InvalidIndexError:
-                continue  # retry!
-            except Exception as e:
-                is_increasing = utils.is_monotonically_increasing(self.data.init_time.astype(int))
-                is_unique = utils.is_unique(self.data.init_time)
-                _LOG.exception(
-                    f'Exception! start_hourly={start_hourly}, t0_hourly={t0_hourly}, end_hourly={end_hourly}, '
-                    f'target_times_hourly={target_times_hourly}, {e}, is_increasing={is_increasing}, is_unique={is_unique}')
-                raise
-            else:
-                break
-        else:
-            raise pd.errors.InvalidIndexError()
+        indexes = np.searchsorted(self.data.init_time, target_times_hourly, side='right')
+        indexes -= 1  # Because searchsorted returns the index _after_ the index we want.
+        init_times = self.data.init_time.values[indexes]
 
         # Find the NWP init time for just the 'future' portion of the example.
         init_time_future = init_times[target_times_hourly == t0_hourly]
 
         # For the 'future' portion of the example, replace all the NWP
         # init times with the NWP init time most recent to t0.
-        init_times[target_times_hourly > t0_hourly] = init_time_future
+        future_timesteps = target_times_hourly > t0_hourly
+        if any(future_timesteps):
+            init_times[future_timesteps] = init_time_future
 
         # steps is the number of hourly timesteps beyond the NWP
         # initialisation time.
@@ -198,8 +186,31 @@ class NWPDataSource(ZarrDataSource):
         resampler = pd.Series(0, index=target_times).resample('5T')
         return resampler.ffill(limit=11).dropna().index
 
+    
+def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
+    """
+    Args:
+        filename must start with 'gs://' if it's on GCP.
+    """
+    _LOG.debug('Opening NWP data: %s', filename)
+    utils.set_fsspec_for_multiprocess()
+    nwp = xr.open_dataset(
+        filename, engine='zarr', consolidated=consolidated, mode='r', chunks='auto')
+    
+    # HORRIBLE HACK.
+    # TODO: REMOVE!
+    _LOG.warning('Horrible hack!  Adding 6 months to init_time!!!  MUST REMOVE!')
+    timedelta = pd.Timestamp('2018-06-01') - pd.Timestamp('2018-01-01')
+    nwp['init_time'] = nwp.init_time + timedelta
 
-def open_nwp(base_path: str, consolidated: bool) -> xr.Dataset:
+    # Sanity check.
+    # TODO: Replace this with pandas.core.indexes.base._is_strictly_monotonic_increasing()
+    assert utils.is_monotonically_increasing(nwp.init_time.astype(int))
+    assert utils.is_unique(nwp.init_time)
+    return nwp
+    
+
+def open_nwp_old(base_path: str, consolidated: bool) -> xr.Dataset:
     """
     Args:
         base_path must start with 'gs://' if it's on GCP.

@@ -3,12 +3,13 @@ import dask
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import utils
-from typing import Iterable, Optional
+from typing import Iterable, Optional, List
 import xarray as xr
 import pandas as pd
 import logging
 from dataclasses import dataclass, InitVar
 import numpy as np
+from numbers import Number
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
@@ -18,7 +19,8 @@ NWP_VARIABLE_NAMES = (
 # Means computed with
 # nwp_ds = NWPDataSource(...)
 # nwp_ds.open()
-# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(dim=['step', 'x', 'init_time', 'y']).compute()
+# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(
+#     dim=['step', 'x', 'init_time', 'y']).compute()
 NWP_MEAN = xr.DataArray(
     data=[
         2.8041010e+02, 1.6854691e+01, 6.7529683e-05, 8.1832832e+01,
@@ -34,6 +36,7 @@ NWP_STD = xr.DataArray(
         4.2830105e+01, 4.2778091e+01],
     dims=['variable'],
     coords={'variable': list(NWP_VARIABLE_NAMES)})
+
 
 @dataclass
 class NWPDataSource(ZarrDataSource):
@@ -78,9 +81,21 @@ class NWPDataSource(ZarrDataSource):
         # call open() _after_ creating separate processes.
         data = self._open_data()
         data = data['UKV'].sel(variable=list(self.channels))
-        data -= NWP_MEAN  
+        data -= NWP_MEAN
         data /= NWP_STD
         self._data = data
+
+    def get_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex,
+            x_locations: Iterable[Number],
+            y_locations: Iterable[Number]) -> List[Example]:
+
+        examples_delayed = super().get_batch(
+            t0_datetimes=t0_datetimes,
+            x_locations=x_locations,
+            y_locations=y_locations)
+        return dask.compute(examples_delayed)[0]
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)
@@ -105,7 +120,16 @@ class NWPDataSource(ZarrDataSource):
         predictions produced by the freshest NWP run to each timestep.
 
         For the future (`t0`, `end`], use the NWP initialised most
-        recently to t0."""
+        recently to t0.
+
+        THIS METHOD IS NOT THREAD-SAFE!
+        Both the calls to self.data.sel() break if used from multiple
+        threads!  This is due to a Pandas bug
+        whereby Index.is_unique() sometimes returns false when
+        used in a multi-threading context.  See:
+        https://github.com/pandas-dev/pandas/issues/21150
+        https://github.com/openclimatefix/nowcasting_dataset/issues/42
+        """
         # First we get the hourly NWPs; then we resample to `freq` at
         # the end of the function.
         start_dt = self._get_start_dt(t0_dt)
@@ -118,25 +142,16 @@ class NWPDataSource(ZarrDataSource):
         target_times_hourly = pd.date_range(start_hourly, end_hourly, freq='H')
 
         # Get the most recent NWP initialisation time for each
-        # target_time_hourly.  We can't use 
-        # init_times = nwp_ds.data.sel(init_time=target_times_hourly, method='ffill').init_time.values
-        # because we hit a Pandas bug
-        # whereby Index.is_unique() sometimes returns false when
-        # used in a multi-threading context.  See:
-        # https://github.com/pandas-dev/pandas/issues/21150
-        # https://github.com/openclimatefix/nowcasting_dataset/issues/42
-        indexes = np.searchsorted(self.data.init_time, target_times_hourly, side='right')
-        indexes -= 1  # Because searchsorted returns the index _after_ the index we want.
-        init_times = self.data.init_time.values[indexes]
+        # target_time_hourly.
+        init_times = self.data.sel(
+            init_time=target_times_hourly, method='ffill').init_time.values
 
         # Find the NWP init time for just the 'future' portion of the example.
         init_time_future = init_times[target_times_hourly == t0_hourly]
 
         # For the 'future' portion of the example, replace all the NWP
         # init times with the NWP init time most recent to t0.
-        future_timesteps = target_times_hourly > t0_hourly
-        if any(future_timesteps):
-            init_times[future_timesteps] = init_time_future
+        init_times[target_times_hourly > t0_hourly] = init_time_future
 
         # steps is the number of hourly timesteps beyond the NWP
         # initialisation time.
@@ -158,7 +173,7 @@ class NWPDataSource(ZarrDataSource):
         step_indexer = _get_data_array_indexer(steps)
         nwp_selected = self.data.sel(
             init_time=init_time_indexer, step=step_indexer)
-        return nwp_selected.load()
+        return nwp_selected
 
     def _post_process_example(
             self,
@@ -186,7 +201,7 @@ class NWPDataSource(ZarrDataSource):
         resampler = pd.Series(0, index=target_times).resample('5T')
         return resampler.ffill(limit=11).dropna().index
 
-    
+
 def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     """
     Args:
@@ -195,20 +210,22 @@ def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     _LOG.debug('Opening NWP data: %s', filename)
     utils.set_fsspec_for_multiprocess()
     nwp = xr.open_dataset(
-        filename, engine='zarr', consolidated=consolidated, mode='r', chunks='auto')
-    
+        filename, engine='zarr', consolidated=consolidated, mode='r',
+        chunks='auto')
+
     # HORRIBLE HACK.
     # TODO: REMOVE!
-    _LOG.warning('Horrible hack!  Adding 6 months to init_time!!!  MUST REMOVE!')
+    _LOG.warning('Horrible hack! Adding 6 months to init_time!!! MUST REMOVE!')
     timedelta = pd.Timestamp('2018-06-01') - pd.Timestamp('2018-01-01')
     nwp['init_time'] = nwp.init_time + timedelta
 
     # Sanity check.
-    # TODO: Replace this with pandas.core.indexes.base._is_strictly_monotonic_increasing()
+    # TODO: Replace this with
+    # pandas.core.indexes.base._is_strictly_monotonic_increasing()
     assert utils.is_monotonically_increasing(nwp.init_time.astype(int))
     assert utils.is_unique(nwp.init_time)
     return nwp
-    
+
 
 def open_nwp_old(base_path: str, consolidated: bool) -> xr.Dataset:
     """

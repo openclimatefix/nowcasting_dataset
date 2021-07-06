@@ -1,12 +1,13 @@
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.example import Example, to_numpy
 from nowcasting_dataset import utils
-from typing import Union, Iterable, Optional
+from typing import Iterable, Optional, List
+from numbers import Number
 import xarray as xr
-from pathlib import Path
 import pandas as pd
 import logging
 from dataclasses import dataclass, InitVar
+from concurrent import futures
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
@@ -17,6 +18,7 @@ class SatelliteDataSource(ZarrDataSource):
     Args:
         filename: Must start with 'gs://' if on GCP.
     """
+    n_timesteps_per_batch: int = None
     channels: Optional[Iterable[str]] = (
         'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
         'IR_134', 'VIS006', 'VIS008', 'WV_062', 'WV_073')
@@ -25,6 +27,13 @@ class SatelliteDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        if self.n_timesteps_per_batch is None:
+            raise ValueError('n_timesteps_per_batch must be set!')
+        self._cache = {}
+        n_channels = len(self.channels)
+        self._shape_of_example = (
+            self._total_seq_len, image_size_pixels,
+            image_size_pixels, n_channels)
 
     def open(self) -> None:
         # We don't want to open_sat_data in __init__.
@@ -38,14 +47,53 @@ class SatelliteDataSource(ZarrDataSource):
         return open_sat_data(
             filename=self.filename, consolidated=self.consolidated)
 
+    def get_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex,
+            x_locations: Iterable[Number],
+            y_locations: Iterable[Number]) -> List[Example]:
+        # Load the first _n_timesteps_per_batch concurrently.  This
+        # loads the timesteps from disk concurrently, and fills the
+        # cache.  If we try loading all examples
+        # concurrently, then SatelliteDataSource will try reading from
+        # empty caches, and things are much slower!
+        zipped = list(zip(t0_datetimes, x_locations, y_locations))
+        batch_size = len(t0_datetimes)
+
+        with futures.ThreadPoolExecutor(
+                max_workers=batch_size) as executor:
+            future_examples = []
+            for coords in zipped[:self.n_timesteps_per_batch]:
+                t0_datetime, x_location, y_location = coords
+                future_example = executor.submit(
+                    self.get_example, t0_datetime, x_location, y_location)
+                future_examples.append(future_example)
+            examples = [
+                future_example.result() for future_example in future_examples]
+
+        # Load the remaining examples.  This should hit the DataSource caches.
+        for coords in zipped[self.n_timesteps_per_batch:]:
+            t0_datetime, x_location, y_location = coords
+            example = self.get_example(t0_datetime, x_location, y_location)
+            examples.append(example)
+
+        examples = [to_numpy(example) for example in examples]
+        self._cache = {}
+        return examples
+
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
         return Example(sat_data=selected_data)
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
-        data = self.data.sel(time=slice(start_dt, end_dt))
-        return data.load()
+        try:
+            return self._cache[t0_dt]
+        except KeyError:
+            start_dt = self._get_start_dt(t0_dt)
+            end_dt = self._get_end_dt(t0_dt)
+            data = self.data.sel(time=slice(start_dt, end_dt))
+            data = data.load()
+            self._cache[t0_dt] = data
+            return data
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""

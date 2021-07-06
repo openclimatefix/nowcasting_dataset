@@ -58,7 +58,9 @@ class NowcastingDataModule(pl.LightningDataModule):
             meters_per_pixel=self.meters_per_pixel,
             history_len=self.history_len,
             forecast_len=self.forecast_len,
-            channels=self.sat_channels)
+            channels=self.sat_channels,
+            n_timesteps_per_batch=(
+                self.batch_size // self.n_samples_per_timestep))
 
         self.data_sources = [self.sat_data_source]
 

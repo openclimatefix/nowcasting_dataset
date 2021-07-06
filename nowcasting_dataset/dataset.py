@@ -63,45 +63,31 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         for _ in range(self.n_batches_per_epoch_per_worker):
             yield self._get_batch()
 
-    def _get_batch(self):
+    def _get_batch(self) -> torch.Tensor:
         t0_datetimes = self._get_t0_datetimes_for_batch()
         x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)
 
-        # Load the first _n_timesteps_per_batch concurrently.  This
-        # loads the timesteps from disk concurrently, and fills the
-        # DataSource caches.  If we try loading all examples
-        # concurrently, then all the DataSources try reading from
-        # empty caches, and things are much slower!
-        zipped = list(zip(t0_datetimes, x_locations, y_locations))
-        
-        """
-        with futures.ThreadPoolExecutor(
-                max_workers=self.batch_size) as executor:
-            future_examples = []
-            for coords in zipped[:self._n_timesteps_per_batch]:
-                t0_datetime, x_location, y_location = coords
-                future_example = executor.submit(
-                    self._get_example, t0_datetime, x_location, y_location)
-                future_examples.append(future_example)
-            examples = [
-                future_example.result() for future_example in future_examples]
-        """
-        # Temporarily try single-threaded code!
-        examples = []
-        for coords in zipped[:self._n_timesteps_per_batch]:
-            t0_datetime, x_location, y_location = coords
-            example = self._get_example(t0_datetime, x_location, y_location)
-            examples.append(example)
+        examples = None
+        n_threads = len(self.data_sources)
+        with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
+            # Submit tasks to the executor.
+            future_examples_per_source = []
+            for data_source in self.data_sources:
+                future_examples = executor.submit(
+                    data_source.get_batch,
+                    t0_datetimes=t0_datetimes,
+                    x_locations=x_locations,
+                    y_locations=y_locations)
+                future_examples_per_source.append(future_examples)
 
-        # Load the remaining examples.  This should hit the DataSource caches.
-        for coords in zipped[self._n_timesteps_per_batch:]:
-            t0_datetime, x_location, y_location = coords
-            example = self._get_example(t0_datetime, x_location, y_location)
-            examples.append(example)
-
-        # Tell the DataSources that we've finished sampling this batch.
-        for data_source in self.data_sources:
-            data_source.empty_cache()
+            # Collect results from each thread.
+            for future_examples in future_examples_per_source:
+                examples_from_source = future_examples.result()
+                if examples is None:
+                    examples = examples_from_source
+                else:
+                    for i in range(self.batch_size):
+                        examples[i].update(examples_from_source[i])
 
         return torch.utils.data._utils.collate.default_collate(examples)
 
@@ -119,43 +105,11 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     ) -> Tuple[List[Number], List[Number]]:
         return self.data_sources[0].get_locations_for_batch(t0_datetimes)
 
-    def _get_example(
-            self,
-            t0_dt: pd.Timestamp,
-            x_meters_center: Number,
-            y_meters_center: Number) -> nowcasting_dataset.example.Example:
-        
-        example = nowcasting_dataset.example.Example(t0_dt=t0_dt)
-        n_threads = len(self.data_sources)
-        with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
-            # Submit tasks to the executor.
-            future_examples = []
-            for data_source in self.data_sources:
-                future_example = executor.submit(
-                    data_source.get_example, 
-                    t0_dt=t0_dt,
-                    x_meters_center=x_meters_center,
-                    y_meters_center=y_meters_center)
-                future_examples.append(future_example)                
-
-            # Collect results from each thread.
-            for future_example in future_examples:
-                try:
-                    example_from_source = future_example.result()
-                except Exception as e:
-                    _LOG.exception(
-                        f'Exception!  t0_dt={t0_dt}, x_meters_center={x_meters_center}, y_meters_center={y_meters_center}, {e}')
-                    raise
-                example.update(example_from_source)
-
-        example = nowcasting_dataset.example.to_numpy(example)
-        return example
-
 
 @dataclass
 class ContiguousNowcastingDataset(NowcastingDataset):
     """Each batch contains contiguous timesteps for a single location."""
-    
+
     def __post_init__(self):
         super().__post_init__()
 

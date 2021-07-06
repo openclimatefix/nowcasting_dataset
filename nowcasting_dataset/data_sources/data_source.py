@@ -1,7 +1,7 @@
 from numbers import Number
 import pandas as pd
 import numpy as np
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.example import Example, to_numpy
 from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
 from dataclasses import dataclass, InitVar
@@ -43,8 +43,14 @@ class DataSource:
         self._square = square.Square(
             size_pixels=image_size_pixels,
             meters_per_pixel=meters_per_pixel)
-        self.empty_cache()
 
+    def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
+        return t0_dt - self._history_dur
+
+    def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
+        return t0_dt + self._forecast_dur
+
+    # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
     def open(self):
         """Open the data source, if necessary.
 
@@ -56,22 +62,24 @@ class DataSource:
         """
         pass
 
-    def empty_cache(self):
-        self._cache = {}
+    def get_batch(
+            self,
+            t0_datetimes: pd.DatetimeIndex,
+            x_locations: Iterable[Number],
+            y_locations: Iterable[Number]) -> List[Example]:
+        """
+        Returns:
+            List of Examples with data converted to Numpy form.
+        """
 
-    def _get_cached_time_slice(self, t0_dt: pd.Timestamp):
-        try:
-            return self._cache[t0_dt]
-        except KeyError:
-            data = self._get_time_slice(t0_dt)
-            self._cache[t0_dt] = data
-            return data
+        examples = []
+        zipped = zip(t0_datetimes, x_locations, y_locations)
+        for t0_datetime, x_location, y_location in zipped:
+            example = self._get_example(t0_datetime, x_location, y_location)
+            example = to_numpy(example)
+            examples.append(example)
 
-    def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt - self._history_dur
-
-    def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt + self._forecast_dur
+        return examples
 
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     def datetime_index(self) -> pd.DatetimeIndex:
@@ -100,9 +108,9 @@ class DataSource:
 
     def get_example(
             self,
+            t0_dt: pd.Timestamp,  #: Datetime of "now": The most recent obs.
             x_meters_center: Number,  #: Centre, in OSGB coordinates.
-            y_meters_center: Number,  #: Centre, in OSGB coordinates.
-            t0_dt: pd.Timestamp  #: Datetime of "now": The most recent obs.
+            y_meters_center: Number  #: Centre, in OSGB coordinates.
     ) -> Example:
         """Must be overridden by child classes."""
         raise NotImplementedError()
@@ -128,10 +136,6 @@ class ZarrDataSource(DataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
-        n_channels = len(self.channels)
-        self._shape_of_example = (
-            self._total_seq_len, image_size_pixels,
-            image_size_pixels, n_channels)
 
     @property
     def data(self):
@@ -141,11 +145,11 @@ class ZarrDataSource(DataSource):
 
     def get_example(
             self,
+            t0_dt: pd.Timestamp,
             x_meters_center: Number,
-            y_meters_center: Number,
-            t0_dt: pd.Timestamp
+            y_meters_center: Number
     ) -> Example:
-        selected_data = self._get_cached_time_slice(t0_dt)
+        selected_data = self._get_time_slice(t0_dt)
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center)
         selected_data = selected_data.sel(

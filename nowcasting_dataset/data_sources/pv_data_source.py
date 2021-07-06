@@ -78,6 +78,7 @@ class PVDataSource(DataSource):
         self.pv_power = pv_power
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> pd.DataFrame:
+        # TODO: Cache this?
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in the rest of this method!
@@ -86,9 +87,9 @@ class PVDataSource(DataSource):
 
     def get_example(
             self,
+            t0_dt: pd.Timestamp,
             x_meters_center: Number,
-            y_meters_center: Number,
-            t0_dt: pd.Timestamp) -> Example:
+            y_meters_center: Number) -> Example:
 
         # If x_meters_center and y_meters_center have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
@@ -107,7 +108,7 @@ class PVDataSource(DataSource):
                 " (but not at the identical location to) x_meters_center and"
                 " y_meters_center.")
 
-        selected_pv_power = self._get_cached_time_slice(t0_dt)
+        selected_pv_power = self._get_time_slice(t0_dt)
         pv_system_ids = selected_pv_power.columns.intersection(pv_system_ids)
         assert len(pv_system_ids) > 0
 

@@ -12,14 +12,14 @@ from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIAB
 BUCKET = Path('solar-pv-nowcasting-data')
 NWP_PATH = BUCKET / 'NWP/UK_Met_Office/'
 SOURCE_PATH = 'gs://' + str(BUCKET / 'NWP/UK_Met_Office/UKV_zarr')
-TARGET_PATH = NWP_PATH / 'UKV_single_step_and_single_timestep_all_variables.zarr'
-TEMP_STORE_FILENAME = NWP_PATH / 'temp2.zarr'
+TARGET_PATH = NWP_PATH / 'UKV_single_step_and_single_timestep_all_vars.zarr'
+TEMP_STORE_FILENAME = NWP_PATH / 'temp3.zarr'
 
 
 def main():
     source_dataset = open_nwp(base_path=SOURCE_PATH, consolidated=True)
     source_dataset = source_dataset[list(NWP_VARIABLE_NAMES)].to_array()
-    #source_dataset = source_dataset.isel(init_time=slice(0, 2))
+    source_dataset = source_dataset.isel(init_time=slice(0, 1000))
     source_dataset = source_dataset.to_dataset(name='UKV')
     print(source_dataset)
 

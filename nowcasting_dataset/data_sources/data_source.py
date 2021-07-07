@@ -120,6 +120,7 @@ class DataSource:
         raise NotImplementedError()
 
 
+@dataclass
 class ZarrDataSource(DataSource):
     """
     Attributes:
@@ -131,11 +132,14 @@ class ZarrDataSource(DataSource):
       channels: The Zarr parameters to load.
     """
     channels: Iterable[str]
+    n_timesteps_per_batch: int = None  # Mustn't be None, but cannot have a non-default arg in this position.
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
+        if self.n_timesteps_per_batch is None:
+            raise ValueError('n_timesteps_per_batch must be set!')
 
     @property
     def data(self):

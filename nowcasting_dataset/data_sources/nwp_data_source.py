@@ -1,7 +1,7 @@
 import os
 import dask
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.example import Example, to_numpy
 from nowcasting_dataset import utils
 from typing import Iterable, Optional, List
 import xarray as xr
@@ -10,6 +10,7 @@ import logging
 from dataclasses import dataclass, InitVar
 import numpy as np
 from numbers import Number
+from concurrent import futures
 
 _LOG = logging.getLogger('nowcasting_dataset')
 
@@ -80,10 +81,7 @@ class NWPDataSource(ZarrDataSource):
         # instances into separate processes.  Instead,
         # call open() _after_ creating separate processes.
         data = self._open_data()
-        data = data['UKV'].sel(variable=list(self.channels))
-        data -= NWP_MEAN
-        data /= NWP_STD
-        self._data = data
+        self._data = data['UKV'].sel(variable=list(self.channels))
 
     def get_batch(
             self,
@@ -91,11 +89,48 @@ class NWPDataSource(ZarrDataSource):
             x_locations: Iterable[Number],
             y_locations: Iterable[Number]) -> List[Example]:
 
-        examples_delayed = super().get_batch(
-            t0_datetimes=t0_datetimes,
-            x_locations=x_locations,
-            y_locations=y_locations)
-        return dask.compute(examples_delayed)[0]
+        # Lazily select time slices.
+        selections = []
+        for t0_dt in t0_datetimes[:self.n_timesteps_per_batch]:
+            selections.append(self._get_time_slice(t0_dt))
+
+        # Load entire time slices from disk in multiple threads.
+        data = []
+        with futures.ThreadPoolExecutor(max_workers=self.n_timesteps_per_batch) as executor:
+            data_futures = []
+            # Submit tasks.
+            for selection in selections:
+                future = executor.submit(selection.load)
+                data_futures.append(future)
+
+            # Grab tasks
+            for future in data_futures:
+                d = future.result()
+                data.append(d)
+
+        # Select squares from pre-loaded time slices.
+        examples = []
+        for i, (x_meters_center, y_meters_center) in enumerate(zip(x_locations, y_locations)):
+            selected_data = data[i % self.n_timesteps_per_batch]
+            bounding_box = self._square.bounding_box_centered_on(
+                x_meters_center=x_meters_center, y_meters_center=y_meters_center)
+            selected_data = selected_data.sel(
+                x=slice(bounding_box.left, bounding_box.right),
+                y=slice(bounding_box.top, bounding_box.bottom))
+
+            # selected_sat_data is likely to have 1 too many pixels in x and y
+            # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
+            selected_data = selected_data.isel(
+                x=slice(0, self._square.size_pixels),
+                y=slice(0, self._square.size_pixels))
+
+            t0_dt = t0_datetimes[i]
+            selected_data = self._post_process_example(selected_data, t0_dt)
+
+            example = self._put_data_into_example(selected_data)
+            example = to_numpy(example)
+            examples.append(example)
+        return examples
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)
@@ -109,71 +144,24 @@ class NWPDataSource(ZarrDataSource):
         Note that this function does *not* resample from hourly to 5 minutely.
         Resampling would be very expensive if done on the whole geographical
         extent of the NWP data!  So resampling is done in
-        _post_process_example().
-
-        The NWP for each example covers a contiguous timespan running
-        from `start_dt` to `end_dt`.  The first part of the timeseries
-        [`start_dt`, `t0`] is the 'recent history'.  The second part of
-        the timeseries (`t0`, `end_dt`] is the 'future'.
-
-        For each timestep in the recent history [`start`, `t0`], get
-        predictions produced by the freshest NWP run to each timestep.
-
-        For the future (`t0`, `end`], use the NWP initialised most
-        recently to t0.
-
-        THIS METHOD IS NOT THREAD-SAFE!
-        Both the calls to self.data.sel() break if used from multiple
-        threads!  This is due to a Pandas bug
-        whereby Index.is_unique() sometimes returns false when
-        used in a multi-threading context.  See:
-        https://github.com/pandas-dev/pandas/issues/21150
-        https://github.com/openclimatefix/nowcasting_dataset/issues/42
-        """
-        # First we get the hourly NWPs; then we resample to `freq` at
-        # the end of the function.
+        _post_process_example()."""
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
         start_hourly = start_dt.floor('H')
-        t0_hourly = t0_dt.ceil('H')
         end_hourly = end_dt.ceil('H')
 
-        target_times_hourly = pd.date_range(start_hourly, end_hourly, freq='H')
+        init_time_i = np.searchsorted(self.data.init_time, start_hourly.to_numpy(), side='right')
+        init_time_i -= 1  # Because searchsorted() gives the index to the entry _after_.
+        init_time = self.data.init_time.values[init_time_i]
 
-        # Get the most recent NWP initialisation time for each
-        # target_time_hourly.
-        init_times = self.data.sel(
-            init_time=target_times_hourly, method='ffill').init_time.values
+        step_start = start_hourly - init_time
+        step_end = end_hourly - init_time
 
-        # Find the NWP init time for just the 'future' portion of the example.
-        init_time_future = init_times[target_times_hourly == t0_hourly]
-
-        # For the 'future' portion of the example, replace all the NWP
-        # init times with the NWP init time most recent to t0.
-        init_times[target_times_hourly > t0_hourly] = init_time_future
-
-        # steps is the number of hourly timesteps beyond the NWP
-        # initialisation time.
-        steps = target_times_hourly - init_times
-
-        def _get_data_array_indexer(index):
-            # We want one timestep for each target_time_hourly
-            # (obviously!)  If we simply do
-            # nwp.sel(init_time=init_times, step=steps) then we'll get
-            # the *product* of init_times and steps, which is not what
-            # we want!  Instead, we use xarray's vectorized-indexing
-            # mode by using a DataArray indexer.  See the last example here:
-            # http://xarray.pydata.org/en/stable/user-guide/indexing.html#vectorized-indexing
-            return xr.DataArray(
-                index, dims='target_time',
-                coords={'target_time': target_times_hourly})
-
-        init_time_indexer = _get_data_array_indexer(init_times)
-        step_indexer = _get_data_array_indexer(steps)
-        nwp_selected = self.data.sel(
-            init_time=init_time_indexer, step=step_indexer)
-        return nwp_selected
+        selected = self.data.sel(init_time=init_time, step=slice(step_start, step_end))
+        selected = selected.swap_dims({'step': 'target_time'})
+        selected['target_time'] = init_time + selected.step
+        return selected
 
     def _post_process_example(
             self,
@@ -182,10 +170,12 @@ class NWPDataSource(ZarrDataSource):
         """Resamples to 5 minutely."""
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
+        selected_data = selected_data - NWP_MEAN
+        selected_data = selected_data / NWP_STD
         selected_data = selected_data.resample({'target_time': '5T'})
         selected_data = selected_data.interpolate()
-        selected_data = selected_data.astype(np.float32)
-        return selected_data.sel(target_time=slice(start_dt, end_dt))
+        selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
+        return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""
@@ -210,9 +200,7 @@ def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     _LOG.debug('Opening NWP data: %s', filename)
     utils.set_fsspec_for_multiprocess()
     nwp = xr.open_dataset(
-        filename, engine='zarr', consolidated=consolidated, mode='r', chunks={})
-    # chunks={} loads the dataset with dask using engine preferred chunks
-    # if exposed by the backend, otherwise with a single chunk for all arrays.
+        filename, engine='zarr', consolidated=consolidated, mode='r', chunks=None)
 
     # Sanity check.
     # TODO: Replace this with

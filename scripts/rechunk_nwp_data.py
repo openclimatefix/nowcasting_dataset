@@ -14,8 +14,8 @@ import numpy as np
 BUCKET = Path('solar-pv-nowcasting-data')
 NWP_PATH = BUCKET / 'NWP/UK_Met_Office/'
 SOURCE_PATH = 'gs://' + str(BUCKET / 'NWP/UK_Met_Office/UKV_zarr')
-TARGET_PATH = NWP_PATH / 'UKV_single_step_and_single_timestep_all_vars_2018_7-12.zarr'
-TEMP_STORE_FILENAME = NWP_PATH / 'temp2.zarr'
+TARGET_PATH = NWP_PATH / 'UKV_single_step_and_single_timestep_all_vars_full_spatial_2018_7-12_float32.zarr'
+TEMP_STORE_FILENAME = NWP_PATH / 'temp3.zarr'
 
 
 def open_nwp(zarr_store: str) -> xr.Dataset:
@@ -63,15 +63,15 @@ def main():
             "variable": 10,
             "init_time": 1,
             "step": 1,
-            "x": 548 // 2,
-            "y": 704 // 2
+            "x": 548,
+            "y": 704
         }
     }
 
     encoding = {
         'UKV': {
             'compressor': numcodecs.Blosc(cname="zstd", clevel=5),
-            'dtype': 'float16'
+            'dtype': 'float32'
         }
     }
 

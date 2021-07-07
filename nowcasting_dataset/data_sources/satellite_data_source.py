@@ -18,7 +18,6 @@ class SatelliteDataSource(ZarrDataSource):
     Args:
         filename: Must start with 'gs://' if on GCP.
     """
-    n_timesteps_per_batch: int = None
     channels: Optional[Iterable[str]] = (
         'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
         'IR_134', 'VIS006', 'VIS008', 'WV_062', 'WV_073')
@@ -27,8 +26,6 @@ class SatelliteDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        if self.n_timesteps_per_batch is None:
-            raise ValueError('n_timesteps_per_batch must be set!')
         self._cache = {}
         n_channels = len(self.channels)
         self._shape_of_example = (

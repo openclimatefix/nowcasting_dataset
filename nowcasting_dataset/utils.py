@@ -30,10 +30,10 @@ def is_unique(a: Array) -> bool:
 
 def scale_to_0_to_1(a: Array) -> Array:
     """Scale to the range [0, 1]."""
-    a = a - np.asarray(a).min()
-    a = a / np.asarray(a).max()
-    np.testing.assert_almost_equal(np.asarray(a).min(), 0.0)
-    np.testing.assert_almost_equal(np.asarray(a).max(), 1.0)
+    a = a - a.min()
+    a = a / a.max()
+    np.testing.assert_almost_equal(np.nanmin(a), 0.0)
+    np.testing.assert_almost_equal(np.nanmax(a), 1.0)
     return a
 
 

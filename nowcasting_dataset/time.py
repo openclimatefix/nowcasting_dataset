@@ -121,7 +121,7 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     features = {}
     features['hour_of_day'] = index.hour + (index.minute / 60)
     features['day_of_year'] = index.day_of_year
-    return pd.DataFrame(features, index=index)
+    return pd.DataFrame(features, index=index).astype(np.float32)
 
 
 def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:

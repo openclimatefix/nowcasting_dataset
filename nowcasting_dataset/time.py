@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 from typing import Iterable, Tuple, List, NamedTuple
 import pvlib
-from nowcasting_dataset import geospatial
+from nowcasting_dataset import geospatial, utils
+from nowcasting_dataset.example import Example
 import warnings
 
 
@@ -114,3 +115,21 @@ def get_t0_datetimes(
 def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:
     assert n_timesteps >= 0
     return pd.Timedelta(n_timesteps * 5, unit='minutes')
+
+
+def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
+    features = {}
+    features['hour_of_day'] = index.hour + (index.minute / 60)
+    features['day_of_year'] = index.day_of_year
+    return pd.DataFrame(features, index=index)
+
+
+def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
+    dt_features = datetime_features(index)
+    dt_features['hour_of_day'] /= 24
+    dt_features['day_of_year'] /= 365
+    dt_features = utils.sin_and_cos(dt_features)
+    example = Example()
+    for col_name, series in dt_features.iteritems():
+        example[col_name] = series
+    return example

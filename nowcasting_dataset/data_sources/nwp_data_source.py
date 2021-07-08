@@ -64,6 +64,7 @@ class NWPDataSource(ZarrDataSource):
             mcc   : Medium-level cloud cover in %.
             hcc   : High-level cloud cover in %.
     """
+    filename: str = None
     channels: Optional[Iterable[str]] = NWP_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 2
     meters_per_pixel: InitVar[int] = 2_000

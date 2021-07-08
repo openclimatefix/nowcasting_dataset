@@ -95,6 +95,11 @@ class NowcastingDataModule(pl.LightningDataModule):
 
             self.data_sources.append(self.nwp_data_source)
 
+        self.datetime_data_source = data_sources.DatetimeDataSource(
+            history_len=self.history_len,
+            forecast_len=self.forecast_len)
+        self.data_sources.append(self.datetime_data_source)
+
     def setup(self, stage='fit'):
         """Split data, etc.
 
@@ -155,7 +160,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             data_sources=self.data_sources,
             n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(32),
             **self._common_dataset_params())
-        
+
         if self.num_workers == 0:
             self.train_dataset.per_worker_init(worker_id=0)
             self.val_dataset.per_worker_init(worker_id=0)
@@ -165,7 +170,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             return n_batches_per_epoch // self.num_workers
         else:
             return n_batches_per_epoch
-            
+
     def _split_data(self):
         """Sets self.train_t0_datetimes and self.val_t0_datetimes."""
         self._check_has_prepared_data()
@@ -233,9 +238,12 @@ class NowcastingDataModule(pl.LightningDataModule):
         self._check_has_prepared_data()
 
         # Get the intersection of datetimes from all data sources.
-        all_datetime_indexes = [
-            data_source.datetime_index()
-            for data_source in self.data_sources]
+        all_datetime_indexes = []
+        for data_source in self.data_sources:
+            try:
+                all_datetime_indexes.append(data_source.datetime_index())
+            except NotImplementedError:
+                pass
         datetimes = nd_time.intersection_of_datetimeindexes(
             all_datetime_indexes)
         del all_datetime_indexes  # save memory

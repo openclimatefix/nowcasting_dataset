@@ -17,13 +17,14 @@ import functools
 
 @dataclass
 class PVDataSource(DataSource):
+    filename: Union[str, Path]
     metadata_filename: Union[str, Path]
     start_dt: Optional[datetime.datetime] = None
     end_dt: Optional[datetime.datetime] = None
     random_pv_system_for_given_location: Optional[bool] = True
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+    def __post_init__(self):
+        super().__post_init__()
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()

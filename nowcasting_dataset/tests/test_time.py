@@ -70,3 +70,17 @@ def test_timesteps_to_duration():
     assert nd_time.timesteps_to_duration(0) == pd.Timedelta(0)
     assert nd_time.timesteps_to_duration(1) == pd.Timedelta('5T')
     assert nd_time.timesteps_to_duration(12) == pd.Timedelta('1H')
+
+
+def test_datetime_features_in_example():
+    index = pd.date_range('2020-01-01', '2020-01-06 23:00', freq='h')
+    example = nd_time.datetime_features_in_example(index)
+    assert len(example['hour_of_day_sin']) == len(index)
+    for col_name in ['hour_of_day_sin', 'hour_of_day_cos']:
+        assert col_name in example
+        np.testing.assert_array_almost_equal(
+            example[col_name],
+            np.tile(example[col_name][:24], reps=6))
+
+    assert 'day_of_year_sin' in example
+    assert 'day_of_year_cos' in example

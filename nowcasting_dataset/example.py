@@ -23,7 +23,7 @@ class Example(TypedDict):
     pv_yield: Array
 
     # Numerical weather predictions (NWPs)
-    nwp: Array  #: Shape: [batch_size,], channel, seq_length, width, height
+    nwp: Array  #: Shape: [batch_size,] channel, seq_length, width, height
 
     # METADATA
     pv_system_id: int
@@ -38,9 +38,15 @@ class Example(TypedDict):
     # passed into the ML model.
     # t0_dt is 'now', the most recent observation.
     t0_dt: Union[pd.Timestamp, int]
+    hour_of_day_sin: Array  #: Shape: [batch_size,] seq_length
+    hour_of_day_cos: Array
+    day_of_year_sin: Array
+    day_of_year_cos: Array
 
 
 def to_numpy(example: Example) -> Example:
+    # TODO: Simpler to loop through each attribute in example and test
+    # the data type.
     XARRAY_ITEMS = ('sat_data', 'nwp', 'nwp_above_pv')
     for key in XARRAY_ITEMS:
         if key in example:
@@ -51,7 +57,9 @@ def to_numpy(example: Example) -> Example:
         if key in example:
             example[key] = int(example[key].timestamp())
 
-    PANDAS_ITEMS = ('pv_yield', )
+    PANDAS_ITEMS = (
+        'pv_yield', 'hour_of_day_sin', 'hour_of_day_cos', 'day_of_year_sin',
+        'day_of_year_cos')
     for key in PANDAS_ITEMS:
         if key in example:
             example[key] = example[key].values

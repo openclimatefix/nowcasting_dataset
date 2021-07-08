@@ -16,7 +16,6 @@ class DataSource:
     """Abstract base class.
 
     Attributes:
-      filename: Filename of the data source.
       history_len: Number of timesteps of history to include in each example.
         Does NOT include t0.  That is, if history_len = 0 then the example
         will start at t0.
@@ -24,25 +23,17 @@ class DataSource:
         Does NOT include t0.  If forecast_len = 0 then the example will end
         at t0.  If both history_len and forecast_len are 0, then the example
         will consist of a single timestep at t0.
-      image_size_pixels: Size of the width and height of the image crop
-        returned by get_sample().
     """
-    filename: Union[str, Path]
     history_len: int
     forecast_len: int
-    image_size_pixels: InitVar[int]
-    meters_per_pixel: InitVar[int]
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(self):
         assert self.history_len >= 0
         assert self.forecast_len >= 0
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
         self._history_dur = nd_time.timesteps_to_duration(self.history_len)
         self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len)
-        self._square = square.Square(
-            size_pixels=image_size_pixels,
-            meters_per_pixel=meters_per_pixel)
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt - self._history_dur
@@ -69,9 +60,8 @@ class DataSource:
             y_locations: Iterable[Number]) -> List[Example]:
         """
         Returns:
-            List of Examples with data converted to Numpy form.
+            List of Examples with data converted to Numpy data structures.
         """
-
         examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
@@ -81,11 +71,17 @@ class DataSource:
 
         return examples
 
-    # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
+        # Leave this NotImplemented if this DataSource has no concept
+        # of a list of datetimes (e.g. for DatetimeDataSource).
         raise NotImplementedError()
 
+    def _get_time_slice(self, t0_dt: pd.Timestamp):
+        """Get a single timestep of data.  Must be overridden."""
+        raise NotImplementedError()
+
+    # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     def get_locations_for_batch(
             self,
             t0_datetimes: pd.DatetimeIndex
@@ -115,13 +111,25 @@ class DataSource:
         """Must be overridden by child classes."""
         raise NotImplementedError()
 
-    def _get_time_slice(self, t0_dt: pd.Timestamp):
-        """Get a single timestep of data.  Must be overridden."""
-        raise NotImplementedError()
+
+@dataclass
+class ImageDataSource(DataSource):
+    """
+    Args:
+      image_size_pixels: Size of the width and height of the image crop
+        returned by get_sample(). """
+    image_size_pixels: InitVar[int]
+    meters_per_pixel: InitVar[int]
+
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        super().__post_init__()
+        self._square = square.Square(
+            size_pixels=image_size_pixels,
+            meters_per_pixel=meters_per_pixel)
 
 
 @dataclass
-class ZarrDataSource(DataSource):
+class ZarrDataSource(ImageDataSource):
     """
     Attributes:
       _data: xr.DataArray data, opened by open().

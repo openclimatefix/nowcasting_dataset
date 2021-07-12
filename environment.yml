@@ -33,3 +33,6 @@ dependencies:
   - flake8
   - jedi
   - mypy
+
+  - pip:
+    - neptune-client[pytorch-lightning]

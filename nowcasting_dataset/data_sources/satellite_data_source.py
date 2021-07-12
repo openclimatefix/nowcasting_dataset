@@ -3,6 +3,7 @@ from nowcasting_dataset.example import Example, to_numpy
 from nowcasting_dataset import utils
 from typing import Iterable, Optional, List
 from numbers import Number
+import numpy as np
 import xarray as xr
 import pandas as pd
 import logging
@@ -12,6 +13,30 @@ from concurrent import futures
 _LOG = logging.getLogger('nowcasting_dataset')
 
 
+SAT_VARIABLE_NAMES = (
+    'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
+    'IR_134', 'VIS006', 'VIS008', 'WV_062', 'WV_073')
+# Means computed with
+# nwp_ds = NWPDataSource(...)
+# nwp_ds.open()
+# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(
+#     dim=['step', 'x', 'init_time', 'y']).compute()
+SAT_MEAN = xr.DataArray(
+    data=[
+        93.23458, 131.71373, 843.7779 , 736.6148 , 771.1189 , 589.66034,
+        862.29816, 927.69586,  90.70885, 107.58985, 618.4583 , 532.47394],
+    dims=['variable'],
+    coords={'variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
+
+SAT_STD = xr.DataArray(
+    data=[
+        115.34247 , 139.92636 ,  36.99538 ,  57.366386,  30.346825,
+        149.68007 ,  51.70631 ,  35.872967, 115.77212 , 120.997154,
+         98.57828 ,  99.76469],
+    dims=['variable'],
+    coords={'variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
+
+
 @dataclass
 class SatelliteDataSource(ZarrDataSource):
     """
@@ -19,9 +44,7 @@ class SatelliteDataSource(ZarrDataSource):
         filename: Must start with 'gs://' if on GCP.
     """
     filename: str = None
-    channels: Optional[Iterable[str]] = (
-        'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
-        'IR_134', 'VIS006', 'VIS008', 'WV_062', 'WV_073')
+    channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
 
@@ -93,6 +116,14 @@ class SatelliteDataSource(ZarrDataSource):
             self._cache[t0_dt] = data
             return data
 
+    def _post_process_example(
+            self,
+            selected_data: xr.DataArray,
+            t0_dt: pd.Timestamp) -> xr.DataArray:
+        selected_data = selected_data - SAT_MEAN
+        selected_data = selected_data / SAT_STD
+        return selected_data
+        
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""
         if self._data is None:

@@ -151,7 +151,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(1024 * 8),
+            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(1024 * 2),
             **self._common_dataset_params())
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,

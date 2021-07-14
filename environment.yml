@@ -36,3 +36,4 @@ dependencies:
 
   - pip:
     - neptune-client[pytorch-lightning]
+    - tilebasemap

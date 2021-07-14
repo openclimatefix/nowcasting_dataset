@@ -126,7 +126,9 @@ class PVDataSource(DataSource):
         return Example(
             pv_system_id=pv_system_id,
             pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
-            pv_yield=selected_pv_power)
+            pv_yield=selected_pv_power,
+            x_meters_center=x_meters_center,
+            y_meters_center=y_meters_center)
 
     def get_locations_for_batch(
             self,

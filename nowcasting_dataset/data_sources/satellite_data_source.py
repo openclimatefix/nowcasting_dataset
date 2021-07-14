@@ -103,7 +103,11 @@ class SatelliteDataSource(ZarrDataSource):
         return examples
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
-        return Example(sat_data=selected_data)
+        return Example(
+            sat_data=selected_data,
+            sat_x_coords=selected_data.x,
+            sat_y_coords=selected_data.y,
+            sat_datetime_index=selected_data.time)
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         try:

@@ -137,7 +137,11 @@ class NWPDataSource(ZarrDataSource):
         return open_nwp(self.filename, consolidated=self.consolidated)
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
-        return Example(nwp=selected_data)
+        return Example(
+            nwp=selected_data,
+            nwp_x_coords=selected_data.x,
+            nwp_y_coords=selected_data.y,
+            nwp_target_time=selected_data.target_time)
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         """Select the numerical weather predictions for a single time slice.

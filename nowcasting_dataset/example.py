@@ -1,5 +1,7 @@
 from typing import TypedDict, Union
 import pandas as pd
+import xarray as xr
+import numpy as np
 from nowcasting_dataset.consts import Array
 
 
@@ -18,12 +20,18 @@ class Example(TypedDict):
     # IMAGES
     # Shape: [batch_size,] seq_length, width, height, channel
     sat_data: Array
+    sat_x_coords: Array
+    sat_y_coords: Array
+    sat_datetime_index: Array
 
     # PV yield time series
     pv_yield: Array
 
     # Numerical weather predictions (NWPs)
     nwp: Array  #: Shape: [batch_size,] channel, seq_length, width, height
+    nwp_x_coords: Array
+    nwp_y_coords: Array
+    nwp_target_time: Array
 
     # METADATA
     pv_system_id: int
@@ -45,23 +53,20 @@ class Example(TypedDict):
 
 
 def to_numpy(example: Example) -> Example:
-    # TODO: Simpler to loop through each attribute in example and test
-    # the data type.
-    XARRAY_ITEMS = ('sat_data', 'nwp', 'nwp_above_pv')
-    for key in XARRAY_ITEMS:
-        if key in example:
-            example[key] = example[key].data
+    for key, value in example.items():
+        if isinstance(value, xr.DataArray):
+            value = value.data
 
-    DATETIME_ITEMS = ('start_dt', 'end_dt', 't0_dt')
-    for key in DATETIME_ITEMS:
-        if key in example:
-            example[key] = int(example[key].timestamp())
+        if isinstance(value, (pd.Series, pd.DataFrame)):
+            value = value.values
+        elif isinstance(value, pd.DatetimeIndex):
+            value = value.values.astype('datetime64[s]').astype(np.int32)
+        elif isinstance(value, pd.Timestamp):
+            value = np.int32(value.timestamp())
+        elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
+            value = value.astype('datetime64[s]').astype(np.int32)
+        #elif isinstance(value, numbers.Number):
+        #    value = np.asanyarray(value)
 
-    PANDAS_ITEMS = (
-        'pv_yield', 'hour_of_day_sin', 'hour_of_day_cos', 'day_of_year_sin',
-        'day_of_year_cos')
-    for key in PANDAS_ITEMS:
-        if key in example:
-            example[key] = example[key].values
-
+        example[key] = value
     return example

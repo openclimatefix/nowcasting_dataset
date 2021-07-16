@@ -14,8 +14,8 @@ import numpy as np
 BUCKET = Path('solar-pv-nowcasting-data')
 NWP_PATH = BUCKET / 'NWP/UK_Met_Office/'
 SOURCE_PATH = 'gs://' + str(BUCKET / 'NWP/UK_Met_Office/UKV_zarr')
-TARGET_PATH = NWP_PATH / 'UKV_single_step_and_single_timestep_all_vars_full_spatial_2018_7-12_float32.zarr'
-TEMP_STORE_FILENAME = NWP_PATH / 'temp3.zarr'
+TARGET_PATH = NWP_PATH / 'UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr'
+TEMP_STORE_FILENAME = NWP_PATH / 'temp.zarr'
 
 
 def open_nwp(zarr_store: str) -> xr.Dataset:
@@ -42,17 +42,24 @@ def open_nwp(zarr_store: str) -> xr.Dataset:
     if zarr_store == '2019_1-6':
         sorted_init_time = np.sort(ds.init_time)
         ds = ds.reindex(init_time=sorted_init_time)
-        
+
     return ds
 
 
 def main():
-    #for zarr_store in ['2018_7-12', '2019_1-6', '2019_7-12']:
-    source_dataset = open_nwp('2018_7-12')
-    source_dataset = source_dataset[list(NWP_VARIABLE_NAMES)].to_array()
+    nwp_datasets = []
+    for zarr_store in ['2018_1-6', '2018_7-12', '2019_1-6', '2019_7-12']:
+        print('opening', zarr_store)
+        nwp_datasets.append(open_nwp(zarr_store))
+    
+    print('concat...')
+    nwp_concatenated = xr.concat(nwp_datasets, dim='init_time')
+        
+    # Convert to array so we can chunk along the 'variable' axis
+    source_dataset = nwp_concatenated[list(NWP_VARIABLE_NAMES)].to_array()
     #source_dataset = source_dataset.isel(init_time=slice(0, 2))
     source_dataset = source_dataset.to_dataset(name='UKV')
-    print(source_dataset)
+    print('source_dataset:\n', source_dataset)
 
     gcs = gcsfs.GCSFileSystem()
     target_store = gcs.get_mapper(TARGET_PATH)
@@ -79,7 +86,7 @@ def main():
     rechunk_plan = rechunker.rechunk(
         source=source_dataset,
         target_chunks=target_chunks,
-        max_mem="1GB",
+        max_mem="3GB",
         target_store=target_store,
         target_options=encoding,
         temp_store=temp_store)

@@ -9,6 +9,7 @@ import zarr
 from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 import os
 import numpy as np
+# from dask import distributed, diagnostics
 
 
 BUCKET = Path('solar-pv-nowcasting-data')
@@ -47,6 +48,10 @@ def open_nwp(zarr_store: str) -> xr.Dataset:
 
 
 def main():
+    #cluster = distributed.LocalCluster(n_workers=8, threads_per_worker=4)
+    #client = distributed.Client(cluster)
+    #print(client)
+
     nwp_datasets = []
     for zarr_store in ['2018_1-6', '2018_7-12', '2019_1-6', '2019_7-12']:
         print('opening', zarr_store)
@@ -91,6 +96,7 @@ def main():
         target_options=encoding,
         temp_store=temp_store)
 
+    #with diagnostics.ProgressBar():
     rechunk_plan.execute()
 
     print('Consolidating...')

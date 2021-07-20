@@ -129,7 +129,8 @@ class NWPDataSource(ZarrDataSource):
             selected_data = self._post_process_example(selected_data, t0_dt)
 
             example = self._put_data_into_example(selected_data)
-            example = to_numpy(example)
+            if self.convert_to_numpy:
+                example = to_numpy(example)
             examples.append(example)
         return examples
 

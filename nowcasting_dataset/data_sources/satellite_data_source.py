@@ -98,7 +98,8 @@ class SatelliteDataSource(ZarrDataSource):
             example = self.get_example(t0_datetime, x_location, y_location)
             examples.append(example)
 
-        examples = [to_numpy(example) for example in examples]
+        if self.convert_to_numpy:
+            examples = [to_numpy(example) for example in examples]
         self._cache = {}
         return examples
 

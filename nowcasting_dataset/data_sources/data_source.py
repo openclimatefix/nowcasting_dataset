@@ -26,6 +26,7 @@ class DataSource:
     """
     history_len: int
     forecast_len: int
+    convert_to_numpy: bool
 
     def __post_init__(self):
         assert self.history_len >= 0
@@ -66,7 +67,8 @@ class DataSource:
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
             example = self.get_example(t0_datetime, x_location, y_location)
-            example = to_numpy(example)
+            if self.convert_to_numpy:
+                example = to_numpy(example)
             examples.append(example)
 
         return examples

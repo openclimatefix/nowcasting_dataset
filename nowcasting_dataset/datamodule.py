@@ -1,4 +1,4 @@
-from typing import Union, Optional, Iterable, Dict
+from typing import Union, Optional, Iterable, Dict, Callable
 from pathlib import Path
 import pandas as pd
 from copy import deepcopy
@@ -28,6 +28,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     pv_power_filename: Optional[Union[str, Path]] = None
     pv_metadata_filename: Optional[Union[str, Path]] = None
     batch_size: int = 8
+    n_training_batches_per_epoch: int = 2048
     history_len: int = 2  #: Number of timesteps of history, not including t0.
     forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
@@ -35,12 +36,14 @@ class NowcastingDataModule(pl.LightningDataModule):
     nwp_base_path: Optional[str] = None
     nwp_channels: Optional[Iterable[str]] = (
         't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
-    image_size_pixels: int = 128
-    meters_per_pixel: int = 2000
+    image_size_pixels: int = 128  #: Passed to Data Sources.
+    meters_per_pixel: int = 2000  #: Passed to Data Sources.
+    convert_to_numpy: bool = True  #: Passed to Data Sources.
     pin_memory: bool = True  #: Passed to DataLoader.
     num_workers: int = 16  #: Passed to DataLoader.
     prefetch_factor: int = 64  #: Passed to DataLoader.
     n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
+    collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
 
     def __post_init__(self):
         super().__init__()
@@ -62,7 +65,8 @@ class NowcastingDataModule(pl.LightningDataModule):
             history_len=self.history_len,
             forecast_len=self.forecast_len,
             channels=self.sat_channels,
-            n_timesteps_per_batch=n_timesteps_per_batch)
+            n_timesteps_per_batch=n_timesteps_per_batch,
+            convert_to_numpy=self.convert_to_numpy)
 
         self.data_sources = [self.sat_data_source]
 
@@ -76,7 +80,8 @@ class NowcastingDataModule(pl.LightningDataModule):
                 start_dt=sat_datetimes[0],
                 end_dt=sat_datetimes[-1],
                 history_len=self.history_len,
-                forecast_len=self.forecast_len)
+                forecast_len=self.forecast_len,
+                convert_to_numpy=self.convert_to_numpy)
 
             self.data_sources = [self.pv_data_source, self.sat_data_source]
 
@@ -89,13 +94,15 @@ class NowcastingDataModule(pl.LightningDataModule):
                 history_len=self.history_len,
                 forecast_len=self.forecast_len,
                 channels=self.nwp_channels,
-                n_timesteps_per_batch=n_timesteps_per_batch)
+                n_timesteps_per_batch=n_timesteps_per_batch,
+                convert_to_numpy=self.convert_to_numpy)
 
             self.data_sources.append(self.nwp_data_source)
 
         self.datetime_data_source = data_sources.DatetimeDataSource(
             history_len=self.history_len,
-            forecast_len=self.forecast_len)
+            forecast_len=self.forecast_len,
+            convert_to_numpy=self.convert_to_numpy)
         self.data_sources.append(self.datetime_data_source)
 
     def setup(self, stage='fit'):
@@ -151,7 +158,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(1024 * 2),
+            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(self.n_training_batches_per_epoch),
             **self._common_dataset_params())
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
@@ -214,7 +221,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     def _common_dataset_params(self) -> Dict:
         return dict(
             batch_size=self.batch_size,
-            n_samples_per_timestep=self.n_samples_per_timestep)
+            n_samples_per_timestep=self.n_samples_per_timestep,
+            collate_fn=self.collate_fn)
 
     def _common_dataloader_params(self) -> Dict:
         return dict(

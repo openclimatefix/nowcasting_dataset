@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from numbers import Number
-from typing import List, Tuple, Iterable
+from typing import List, Tuple, Iterable, Callable
 import nowcasting_dataset
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
@@ -24,6 +24,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     n_samples_per_timestep: int
     data_sources: List[data_sources.DataSource]
     t0_datetimes: pd.DatetimeIndex  #: Valid t0 datetimes.
+    collate_fn: Callable = torch.utils.data._utils.collate.default_collate
 
     def __post_init__(self):
         super().__init__()
@@ -89,7 +90,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                     for i in range(self.batch_size):
                         examples[i].update(examples_from_source[i])
 
-        return torch.utils.data._utils.collate.default_collate(examples)
+        return self.collate_fn(examples)
 
     def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
         # Pick random datetimes.

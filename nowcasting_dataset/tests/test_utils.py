@@ -27,3 +27,7 @@ def test_sin_and_cos():
     sin_and_cos = utils.sin_and_cos(rescaled)
     np.testing.assert_array_equal(
         sin_and_cos.columns, ['a_sin', 'a_cos', 'b_sin', 'b_cos'])
+
+    
+def test_get_netcdf_filename():
+    assert utils.get_netcdf_filename(10) == '77eb6f_10.nc'

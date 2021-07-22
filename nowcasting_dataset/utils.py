@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from nowcasting_dataset.consts import Array
 import fsspec.asyn
+from pathlib import Path
+import hashlib
 
 
 def set_fsspec_for_multiprocess() -> None:
@@ -65,3 +67,15 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
         output_df[f'{col_name}_sin'] = np.sin(radians)
         output_df[f'{col_name}_cos'] = np.cos(radians)
     return output_df
+
+
+def get_netcdf_filename(batch_idx: int) -> Path:
+    """Generate full filename, excluding path.
+    
+    Filename includes the first 6 digits of the MD5 hash of the filename,
+    as recommended by Google Cloud in order to distribute data across
+    multiple back-end servers.
+    """
+    filename = f'{batch_idx}.nc'
+    hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
+    return f'{hash_of_filename[:6]}_{filename}'

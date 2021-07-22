@@ -20,9 +20,8 @@ class Example(TypedDict):
     # IMAGES
     # Shape: [batch_size,] seq_length, width, height, channel
     sat_data: Array
-    sat_x_coords: Array
+    sat_x_coords: Array  #: OSGB geo-spatial coordinates.
     sat_y_coords: Array
-    sat_datetime_index: Array
 
     # PV yield time series
     pv_yield: Array
@@ -31,13 +30,10 @@ class Example(TypedDict):
     nwp: Array  #: Shape: [batch_size,] channel, seq_length, width, height
     nwp_x_coords: Array
     nwp_y_coords: Array
-    nwp_target_time: Array
 
     # METADATA
     pv_system_id: int
     pv_system_row_number: int  #: Guaranteed to be in the range [0, len(pv_metadata)]
-    x_meters_center: float  #: OSGB coordinates for center of the image.
-    y_meters_center: float
 
     # Datetimes (abbreviated to "dt")
     # At 5-minutes past the hour {0, 5, ..., 55}
@@ -45,7 +41,8 @@ class Example(TypedDict):
     # Datetimes become Unix epochs (UTC) represented as int64 just before being
     # passed into the ML model.
     # t0_dt is 'now', the most recent observation.
-    t0_dt: Union[pd.Timestamp, int]
+    sat_datetime_index: Array
+    nwp_target_time: Array
     hour_of_day_sin: Array  #: Shape: [batch_size,] seq_length
     hour_of_day_cos: Array
     day_of_year_sin: Array

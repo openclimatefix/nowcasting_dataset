@@ -28,7 +28,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     pv_power_filename: Optional[Union[str, Path]] = None
     pv_metadata_filename: Optional[Union[str, Path]] = None
     batch_size: int = 8
-    n_training_batches_per_epoch: int = 2048
+    n_training_batches_per_epoch: int = 25_000
+    n_validation_batches_per_epoch: int = 1_000
     history_len: int = 2  #: Number of timesteps of history, not including t0.
     forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
@@ -163,7 +164,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(32),
+            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(self.n_validation_batches_per_epoch),
             **self._common_dataset_params())
 
         if self.num_workers == 0:

@@ -24,6 +24,9 @@ pre-compute the training and validation data (the script makes used of the
 `nowcasting_dataset.dataset.NetCDFDataset` is at PyTorch Dataset, to
 be used to train ML models.
 
+This repo doesn't contain the ML models themselves.  The models are
+in: https://github.com/openclimatefix/predict_pv_yield_2/
+
 # Installation
 
 From within the cloned `nowcasting_dataset` directory:

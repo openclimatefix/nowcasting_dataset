@@ -5,6 +5,7 @@ channels:
   - conda-forge
 dependencies:
   - python>=3.8
+  - pip
 
   # Scientific Python
   - numpy
@@ -17,8 +18,10 @@ dependencies:
   
   # Cloud & distributed compute
   - gcsfs
-  - dask
-  - python-graphviz  # For visualising dask graphs
+
+  # Images & optical flow
+  - conda-forge::opencv  # also run `apt install libgl1-mesa-glx`
+  - scikit-image
   
   # Machine learning
   - pytorch::pytorch  # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.

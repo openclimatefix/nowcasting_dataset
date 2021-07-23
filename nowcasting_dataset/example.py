@@ -5,6 +5,10 @@ import numpy as np
 from nowcasting_dataset.consts import Array
 
 
+DATETIME_FEATURE_NAMES = ('hour_of_day_sin', 'hour_of_day_cos',
+                          'day_of_year_sin', 'day_of_year_cos')
+
+
 class Example(TypedDict):
     """Simple class for structuring data for each ML example.
 
@@ -33,7 +37,7 @@ class Example(TypedDict):
 
     # METADATA
     pv_system_id: int
-    pv_system_row_number: int  #: Guaranteed to be in the range [0, len(pv_metadata)]
+    pv_system_row_number: int  #: In the range [0, len(pv_metadata)].
 
     # Datetimes (abbreviated to "dt")
     # At 5-minutes past the hour {0, 5, ..., 55}
@@ -60,10 +64,9 @@ def to_numpy(example: Example) -> Example:
             value = value.values.astype('datetime64[s]').astype(np.int32)
         elif isinstance(value, pd.Timestamp):
             value = np.int32(value.timestamp())
-        elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
+        elif (isinstance(value, np.ndarray) and
+              np.issubdtype(value.dtype, np.datetime64)):
             value = value.astype('datetime64[s]').astype(np.int32)
-        #elif isinstance(value, numbers.Number):
-        #    value = np.asanyarray(value)
 
         example[key] = value
     return example

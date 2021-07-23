@@ -35,6 +35,7 @@ From within the cloned `nowcasting_dataset` directory:
 conda env create -f environment.yml
 conda activate nowcasting_dataset
 pip install -e .
+sudo apt install libgl1-mesa-glx  # For optical flow
 ```
 
 # Testing

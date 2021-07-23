@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Iterable, Tuple, List, NamedTuple
-import pvlib
+from typing import Iterable, Tuple, List
 from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.example import Example
 import warnings
@@ -25,6 +24,8 @@ def select_daylight_datetimes(
           (Watts per square meter?)
 
     """
+    import pvlib
+
     ghi_for_all_locations = []
     for x, y in locations:
         lat, lon = geospatial.osgb_to_lat_lon(x, y)

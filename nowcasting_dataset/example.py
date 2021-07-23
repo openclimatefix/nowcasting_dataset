@@ -1,4 +1,4 @@
-from typing import TypedDict, Union
+from typing import TypedDict
 import pandas as pd
 import xarray as xr
 import numpy as np

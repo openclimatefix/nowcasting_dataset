@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+"""
+Pre-prepares batches of data on Google Cloud Storage.
+
+Usage:
+
+First, manually create the directories given by the constants DST_TRAIN_PATH and
+DST_VALIDATION_PATH.
+"""
+
 from nowcasting_dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.example import Example
 from pathlib import Path
@@ -31,7 +40,9 @@ SAT_FILENAME = BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_sin
 NWP_BASE_PATH = BUCKET / 'NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr'
 
 
-DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/'
+DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v2/'
+DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
+DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
 
 
@@ -45,7 +56,7 @@ def get_data_module():
         batch_size=32,
         history_len=6,  #: Number of timesteps of history, not including t0.
         forecast_len=12,  #: Number of timesteps of forecast.
-        image_size_pixels=32,
+        image_size_pixels=64,
         nwp_channels=('t', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc'),
         sat_channels=(
             'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
@@ -166,17 +177,29 @@ def iterate_over_dataloader_and_write_to_disk(
     upload_and_delete_local_files(dst_path)
 
 
+def check_path_exists(path: str):
+    gcs = gcsfs.GCSFileSystem()
+    if not gcs.exists(path):
+        raise RuntimeError(f'{path} does not exist!')
+
+
+def check_directories():
+    for path in [DST_TRAIN_PATH, DST_VALIDATION_PATH]:
+        check_path_exists(path)
+
+
 def main():
+    check_directories()
     datamodule = get_data_module()
     _LOG.info('Finished preparing datamodule!')
     _LOG.info('Preparing training data...')
     iterate_over_dataloader_and_write_to_disk(
         datamodule.train_dataloader(),
-        os.path.join(DST_NETCDF4_PATH, 'train'))
+        DST_TRAIN_PATH)
     _LOG.info('Preparing validation data...')
     iterate_over_dataloader_and_write_to_disk(
         datamodule.val_dataloader(),
-        os.path.join(DST_NETCDF4_PATH, 'validation'))
+        DST_VALIDATION_PATH)
     _LOG.info('Done!')
 
 

@@ -18,7 +18,7 @@ import gcsfs
 import torch
 import os
 import glob
-from typing import List
+from typing import List, Optional
 
 from nowcasting_dataset.utils import get_netcdf_filename
 
@@ -45,6 +45,7 @@ DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
 DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
 
+UPLOAD_EVERY_N_BATCHES = 64
 
 # Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
 # https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999/2
@@ -56,7 +57,7 @@ def get_data_module():
         batch_size=32,
         history_len=6,  #: Number of timesteps of history, not including t0.
         forecast_len=12,  #: Number of timesteps of forecast.
-        image_size_pixels=64,
+        image_size_pixels=32,
         nwp_channels=('t', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc'),
         sat_channels=(
             'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
@@ -81,10 +82,14 @@ def get_data_module():
     return data_module
 
 
-def coord_to_range(da: xr.DataArray, dim: str, prefix: str, dtype=np.int32) -> xr.DataArray:
+def coord_to_range(
+        da: xr.DataArray, dim: str,
+        prefix: Optional[str], dtype=np.int32) -> xr.DataArray:
     coord = da[dim]
     da[dim] = np.arange(len(coord), dtype=dtype)
-    da[f'{prefix}_{dim}_coords'] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
+    if prefix is not None:
+        da[f'{prefix}_{dim}_coords'] = xr.DataArray(
+            coord, coords=[da[dim]], dims=[dim])
     return da
 
 
@@ -114,7 +119,8 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
         # Datetime features
         for name in ['hour_of_day_sin', 'hour_of_day_cos', 'day_of_year_sin', 'day_of_year_cos']:
-            ds = example[name].rename(name).to_xarray().to_dataset()
+            ds = example[name].rename(name).to_xarray().to_dataset().rename({'index': 'time'})
+            ds = coord_to_range(ds, 'time', prefix=None)
             individual_datasets.append(ds)
 
         # PV
@@ -166,7 +172,6 @@ def upload_and_delete_local_files(dst_path: str):
 
 def iterate_over_dataloader_and_write_to_disk(
         dataloader: torch.utils.data.DataLoader, dst_path: str):
-    UPLOAD_EVERY_N_BATCHES = 64
     _LOG.info('Getting first batch')
     for batch_i, batch in enumerate(dataloader):
         _LOG.info(f'Got batch {batch_i}')

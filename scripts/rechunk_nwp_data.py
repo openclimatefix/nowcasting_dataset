@@ -6,10 +6,9 @@ import numcodecs
 import gcsfs
 import rechunker
 import zarr
-from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 import os
 import numpy as np
-# from dask import distributed, diagnostics
 
 
 BUCKET = Path('solar-pv-nowcasting-data')
@@ -56,10 +55,10 @@ def main():
     for zarr_store in ['2018_1-6', '2018_7-12', '2019_1-6', '2019_7-12']:
         print('opening', zarr_store)
         nwp_datasets.append(open_nwp(zarr_store))
-    
+
     print('concat...')
     nwp_concatenated = xr.concat(nwp_datasets, dim='init_time')
-        
+
     # Convert to array so we can chunk along the 'variable' axis
     source_dataset = nwp_concatenated[list(NWP_VARIABLE_NAMES)].to_array()
     #source_dataset = source_dataset.isel(init_time=slice(0, 2))

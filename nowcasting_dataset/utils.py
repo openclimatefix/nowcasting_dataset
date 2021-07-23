@@ -71,7 +71,7 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_netcdf_filename(batch_idx: int) -> Path:
     """Generate full filename, excluding path.
-    
+
     Filename includes the first 6 digits of the MD5 hash of the filename,
     as recommended by Google Cloud in order to distribute data across
     multiple back-end servers.

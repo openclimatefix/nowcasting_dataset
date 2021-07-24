@@ -71,8 +71,8 @@ def get_data_module():
         num_workers=16,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
         n_samples_per_timestep=8,  #: Passed to NowcastingDataset
-        n_training_batches_per_epoch=25_000,
-        n_validation_batches_per_epoch=1_000,
+        n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!
+        n_validation_batches_per_epoch=1_008,
         collate_fn=lambda x: x,
         convert_to_numpy=False  #: Leave data as Pandas / Xarray for pre-preparing.
     )

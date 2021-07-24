@@ -183,7 +183,6 @@ def iterate_over_dataloader_and_write_to_disk(
         write_batch_locally(batch, batch_i)
         if batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
             upload_and_delete_local_files(dst_path)
-        _LOG.debug('getting next batch...')
     upload_and_delete_local_files(dst_path)
 
 

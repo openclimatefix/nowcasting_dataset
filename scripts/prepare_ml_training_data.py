@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-"""
-Pre-prepares batches of data on Google Cloud Storage.
+"""Pre-prepares batches of data on Google Cloud Storage.
 
 Usage:
 
-First, manually create the directories given by the constants DST_TRAIN_PATH and
-DST_VALIDATION_PATH.
+First, manually create the GCS directories given by the constants
+DST_TRAIN_PATH and DST_VALIDATION_PATH, and create the
+LOCAL_TEMP_PATH.  Note that all files will be deleted from
+LOCAL_TEMP_PATH when this script starts up.
 """
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
@@ -160,14 +161,18 @@ def write_batch_locally(batch: List[Example], batch_i: int):
         local_filename, engine='h5netcdf', mode='w', encoding=encoding)
 
 
+def delete_all_files_in_temp_path():
+    files = glob.glob(str(LOCAL_TEMP_PATH / '.*'))
+    _LOG.info(f'Deleting {len(files)} files from {LOCAL_TEMP_PATH}.')
+    for f in files:
+        os.remove(f)
+
+
 def upload_and_delete_local_files(dst_path: str):
     _LOG.info('Uploading!')
     gcs = gcsfs.GCSFileSystem()
     gcs.put(str(LOCAL_TEMP_PATH), dst_path, recursive=True)
-    # Delete local files
-    files = glob.glob(str(LOCAL_TEMP_PATH / '*.nc'))
-    for f in files:
-        os.remove(f)
+    delete_all_files_in_temp_path()
 
 
 def iterate_over_dataloader_and_write_to_disk(
@@ -195,6 +200,7 @@ def check_directories():
 
 def main():
     check_directories()
+    delete_all_files_in_temp_path()
     datamodule = get_data_module()
     _LOG.info('Finished preparing datamodule!')
     _LOG.info('Preparing training data...')

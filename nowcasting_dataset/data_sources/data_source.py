@@ -23,6 +23,7 @@ class DataSource:
         Does NOT include t0.  If forecast_len = 0 then the example will end
         at t0.  If both history_len and forecast_len are 0, then the example
         will consist of a single timestep at t0.
+      convert_to_numpy: Whether or not to convert each example to numpy.
     """
     history_len: int
     forecast_len: int
@@ -142,7 +143,8 @@ class ZarrDataSource(ImageDataSource):
       channels: The Zarr parameters to load.
     """
     channels: Iterable[str]
-    n_timesteps_per_batch: int = None  # Mustn't be None, but cannot have a non-default arg in this position.
+    #: Mustn't be None, but cannot have a non-default arg in this position :)
+    n_timesteps_per_batch: int = None
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):

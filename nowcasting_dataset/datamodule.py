@@ -84,7 +84,9 @@ class NowcastingDataModule(pl.LightningDataModule):
                 end_dt=sat_datetimes[-1],
                 history_len=self.history_len,
                 forecast_len=self.forecast_len,
-                convert_to_numpy=self.convert_to_numpy)
+                convert_to_numpy=self.convert_to_numpy,
+                image_size_pixels=self.image_size_pixels,
+                meters_per_pixel=self.meters_per_pixel)
 
             self.data_sources = [self.pv_data_source, self.sat_data_source]
 

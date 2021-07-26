@@ -30,16 +30,16 @@ class Example(TypedDict):
 
     #: PV yield from all PV systems in the region of interest (ROI).
     #: Includes central PV system, which will always be the first entry.
-    #: shape = [batch_size, ] max_n_pv_systems, seq_length
+    #: shape = [batch_size, ] seq_length, n_pv_systems_per_example
     pv_yield: Array
 
     #: PV identification.
-    #: shape = [batch_size, ] max_n_pv_systems
-    pv_system_id: int
-    pv_system_row_number: int  #: In the range [0, len(pv_metadata)].
+    #: shape = [batch_size, ] n_pv_systems_per_example
+    pv_system_id: Array
+    pv_system_row_number: Array  #: In the range [0, len(pv_metadata)].
 
     #: PV system geographical location (in OSGB coords).
-    #: shape = [batch_size, ] max_n_pv_systems
+    #: shape = [batch_size, ] n_pv_systems_per_example
     pv_system_x_coords: Array
     pv_system_y_coords: Array
 
@@ -69,6 +69,7 @@ class Example(TypedDict):
 def to_numpy(example: Example) -> Example:
     for key, value in example.items():
         if isinstance(value, xr.DataArray):
+            # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
             value = value.data
 
         if isinstance(value, (pd.Series, pd.DataFrame)):

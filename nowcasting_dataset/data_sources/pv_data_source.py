@@ -1,4 +1,4 @@
-from nowcasting_dataset.data_sources.data_source import DataSource
+from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import geospatial, utils
 from dataclasses import dataclass
@@ -16,12 +16,15 @@ import functools
 
 
 @dataclass
-class PVDataSource(DataSource):
+class PVDataSource(ImageDataSource):
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
     start_dt: Optional[datetime.datetime] = None
     end_dt: Optional[datetime.datetime] = None
     random_pv_system_for_given_location: Optional[bool] = True
+    #: Each example will always have this many PV systems.
+    #: If less than this number exist in the data then pad with NaNs.
+    n_pv_systems_per_example: int = 128
 
     def __post_init__(self):
         super().__post_init__()
@@ -122,6 +125,28 @@ class PVDataSource(DataSource):
 
         return pv_system_id
 
+    def _get_all_pv_system_ids_in_roi(
+            self,
+            x_meters_center: Number,
+            y_meters_center: Number,
+            pv_system_ids_with_data_for_timeslice: pd.Int64Index
+    ) -> pd.Int64Index:
+        """Find the PV system IDs for all the PV systems within the geospatial
+        region of interest, defined by self.square."""
+        bounding_box = self._square.bounding_box_centered_on(
+            x_meters_center=x_meters_center, y_meters_center=y_meters_center)
+        x = self.pv_metadata.location_x
+        y = self.pv_metadata.location_y
+        pv_system_ids = self.pv_metadata.index[
+            (x >= bounding_box.left) &
+            (x <= bounding_box.right) &
+            (y >= bounding_box.bottom) &
+            (y <= bounding_box.top)]
+        pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(
+            pv_system_ids)
+        assert len(pv_system_ids) > 0
+        return pv_system_ids
+
     def get_example(
             self,
             t0_dt: pd.Timestamp,
@@ -131,16 +156,48 @@ class PVDataSource(DataSource):
         selected_pv_power = self._get_time_slice(t0_dt)
         central_pv_system_id = self._get_central_pv_system_id(
             x_meters_center, y_meters_center, selected_pv_power.columns)
-        selected_pv_power = selected_pv_power[central_pv_system_id]
+        all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
+            x_meters_center, y_meters_center, selected_pv_power.columns)
 
+        # By convention, the 'target' PV system ID (the one in the center
+        # of the image) must be in the first position of the returned arrays.
+        all_pv_system_ids = all_pv_system_ids.drop(central_pv_system_id)
+        all_pv_system_ids = all_pv_system_ids.insert(
+            loc=0, item=central_pv_system_id)
+
+        print('num PV systems in ROI:', len(all_pv_system_ids))
+        all_pv_system_ids = all_pv_system_ids[:self.n_pv_systems_per_example]
+
+        selected_pv_power = selected_pv_power[all_pv_system_ids]
+        pv_system_row_number = np.flatnonzero(
+            self.pv_metadata.index.isin(all_pv_system_ids))
+        pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
+        pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
         # Save data into the Example dict...
-        return Example(
-            pv_system_id=central_pv_system_id,
-            pv_system_row_number=self.pv_metadata.index.get_loc(
-                central_pv_system_id),
+        example = Example(
+            pv_system_id=all_pv_system_ids,
+            pv_system_row_number=pv_system_row_number,
             pv_yield=selected_pv_power,
             x_meters_center=x_meters_center,
-            y_meters_center=y_meters_center)
+            y_meters_center=y_meters_center,
+            pv_system_x_coords=pv_system_x_coords,
+            pv_system_y_coords=pv_system_y_coords)
+
+        # Pad (if necessary) so returned arrays are always of size
+        # n_pv_systems_per_example.
+        pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)
+        pad_shape = (0, pad_size)  # (before, after)
+        one_dimensional_arrays = [
+                'pv_system_id', 'pv_system_row_number',
+                'pv_system_x_coords', 'pv_system_y_coords']
+        for name in one_dimensional_arrays:
+            example[name] = utils.pad_nans(example[name], pad_width=pad_shape)
+
+        example['pv_yield'] = utils.pad_nans(
+            example['pv_yield'],
+            pad_width=((0, 0), pad_shape))  # (axis0, axis1)
+
+        return example
 
     def get_locations_for_batch(
             self,

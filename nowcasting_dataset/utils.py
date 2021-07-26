@@ -79,3 +79,8 @@ def get_netcdf_filename(batch_idx: int) -> Path:
     filename = f'{batch_idx}.nc'
     hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
     return f'{hash_of_filename[:6]}_{filename}'
+
+
+def pad_nans(array, pad_width) -> np.ndarray:
+    array = array.astype(np.float32)
+    return np.pad(array, pad_width, constant_values=np.NaN)

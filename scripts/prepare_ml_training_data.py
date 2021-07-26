@@ -135,14 +135,21 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
         pv_yield = pv_yield.to_dataset(name='pv_yield')
         n_pv_systems = len(example['pv_system_id'])
         # This will expand all dataarrays to have an 'example' dim.
-        for name in [
-                'pv_system_id', 'pv_system_row_number',
-                'x_meters_center', 'y_meters_center']:
+        # 0D
+        for name in ['x_meters_center', 'y_meters_center']:
             pv_yield[name] = xr.DataArray(
                 [example[name]],
+                coords=example_dim,
+                dims=['example'])
+            
+        # 1D
+        for name in ['pv_system_id', 'pv_system_row_number']:
+            pv_yield[name] = xr.DataArray(
+                example[name],
                 coords=example_dim | {
-                    'pv_system_id': np.arange(n_pv_systems, dtype=np.int32)},
+                    'pv_system': np.arange(n_pv_systems, dtype=np.int32)},
                 dims=['example', 'pv_system'])
+
         individual_datasets.append(pv_yield)
 
         # Merge
@@ -177,7 +184,7 @@ def write_batch_locally(batch: List[Example], batch_i: int):
 
 
 def delete_all_files_in_temp_path():
-    files = glob.glob(str(LOCAL_TEMP_PATH / '.*'))
+    files = glob.glob(str(LOCAL_TEMP_PATH / '*.*'))
     _LOG.info(f'Deleting {len(files)} files from {LOCAL_TEMP_PATH}.')
     for f in files:
         os.remove(f)

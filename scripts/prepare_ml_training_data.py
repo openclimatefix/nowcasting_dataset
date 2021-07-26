@@ -128,15 +128,16 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             individual_datasets.append(ds)
 
         # PV
-        pv_yield = example['pv_yield'].rename('pv_yield').to_xarray().rename(
-            {'datetime': 'time'}).to_dataset()
+        pv_yield = example['pv_yield'].to_xarray().to_dataset(name='pv_yield')
         pv_yield = coord_to_range(pv_yield, 'time', prefix='pv_yield')
         # This will expand all dataarrays to have an 'example' dim.
         for name in [
                 'pv_system_id', 'pv_system_row_number',
                 'x_meters_center', 'y_meters_center']:
             pv_yield[name] = xr.DataArray(
-                [example[name]], coords=example_dim, dims=['example'])
+                [example[name]],
+                coords=example_dim | {'pv_system_id': example['pv_system_id']},
+                dims=['example', 'pv_system_id'])
         individual_datasets.append(pv_yield)
 
         # Merge

@@ -196,6 +196,11 @@ class PVDataSource(ImageDataSource):
         example['pv_yield'] = utils.pad_nans(
             example['pv_yield'],
             pad_width=((0, 0), pad_shape))  # (axis0, axis1)
+        example['pv_yield'] = pd.DataFrame(
+            example['pv_yield'],
+            index=selected_pv_power.index,
+            columns=all_pv_system_ids)
+        example['pv_yield'].index.name = 'time'
 
         return example
 

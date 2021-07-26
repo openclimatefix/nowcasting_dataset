@@ -44,7 +44,7 @@ SAT_FILENAME = BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_sin
 NWP_BASE_PATH = BUCKET / 'NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr'
 
 
-DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4_test/'
+DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/'
 DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
 DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
@@ -143,7 +143,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 dims=['example'])
 
         # 1D
-        for name in ['pv_system_id', 'pv_system_row_number']:
+        for name in [
+                'pv_system_id', 'pv_system_row_number',
+                'pv_system_x_coords', 'pv_system_y_coords']:
             pv_yield[name] = xr.DataArray(
                 example[name][None, :],
                 coords=example_dim | {
@@ -164,7 +166,8 @@ def fix_dtypes(concat_ds):
         'sat_x_coords': np.int32, 'sat_y_coords': np.int32,
         'nwp': np.float32,
         'nwp_x_coords': np.float32, 'nwp_y_coords': np.float32,
-        'pv_system_id': np.int32, 'pv_system_row_number': np.int32}
+        'pv_system_id': np.float32, 'pv_system_row_number': np.float32,
+        'pv_system_x_coords': np.float32, 'pv_system_y_coords': np.float32}
 
     for name, dtype in ds_dtypes.items():
         concat_ds[name] = concat_ds[name].astype(dtype)

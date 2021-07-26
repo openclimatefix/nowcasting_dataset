@@ -76,7 +76,7 @@ def get_data_module():
         n_validation_batches_per_epoch=1_008,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
-        normalised_sat=False
+        normalise_sat=False
     )
     _LOG.info('prepare_data()')
     data_module.prepare_data()

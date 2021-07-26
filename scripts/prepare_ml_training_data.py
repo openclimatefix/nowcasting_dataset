@@ -141,11 +141,11 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 [example[name]],
                 coords=example_dim,
                 dims=['example'])
-            
+
         # 1D
         for name in ['pv_system_id', 'pv_system_row_number']:
             pv_yield[name] = xr.DataArray(
-                example[name],
+                example[name][None, :],
                 coords=example_dim | {
                     'pv_system': np.arange(n_pv_systems, dtype=np.int32)},
                 dims=['example', 'pv_system'])

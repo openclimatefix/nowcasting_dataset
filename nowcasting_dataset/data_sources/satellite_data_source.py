@@ -23,16 +23,16 @@ SAT_VARIABLE_NAMES = (
 #     dim=['step', 'x', 'init_time', 'y']).compute()
 SAT_MEAN = xr.DataArray(
     data=[
-        93.23458, 131.71373, 843.7779 , 736.6148 , 771.1189 , 589.66034,
-        862.29816, 927.69586,  90.70885, 107.58985, 618.4583 , 532.47394],
+        93.23458, 131.71373, 843.7779, 736.6148, 771.1189, 589.66034,
+        862.29816, 927.69586,  90.70885, 107.58985, 618.4583, 532.47394],
     dims=['variable'],
     coords={'variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
 
 SAT_STD = xr.DataArray(
     data=[
-        115.34247 , 139.92636 ,  36.99538 ,  57.366386,  30.346825,
-        149.68007 ,  51.70631 ,  35.872967, 115.77212 , 120.997154,
-         98.57828 ,  99.76469],
+        115.34247, 139.92636,  36.99538,  57.366386,  30.346825,
+        149.68007,  51.70631,  35.872967, 115.77212, 120.997154,
+        98.57828,  99.76469],
     dims=['variable'],
     coords={'variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
 
@@ -47,6 +47,7 @@ class SatelliteDataSource(ZarrDataSource):
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
+    normalise: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -125,10 +126,11 @@ class SatelliteDataSource(ZarrDataSource):
             self,
             selected_data: xr.DataArray,
             t0_dt: pd.Timestamp) -> xr.DataArray:
-        selected_data = selected_data - SAT_MEAN
-        selected_data = selected_data / SAT_STD
+        if self.normalise:
+            selected_data = selected_data - SAT_MEAN
+            selected_data = selected_data / SAT_STD
         return selected_data
-        
+
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes"""
         if self._data is None:

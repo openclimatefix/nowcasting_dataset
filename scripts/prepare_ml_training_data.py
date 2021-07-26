@@ -41,7 +41,7 @@ SAT_FILENAME = BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_sin
 NWP_BASE_PATH = BUCKET / 'NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr'
 
 
-DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v3/'
+DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4_test/'
 DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
 DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
@@ -74,7 +74,8 @@ def get_data_module():
         n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!
         n_validation_batches_per_epoch=1_008,
         collate_fn=lambda x: x,
-        convert_to_numpy=False  #: Leave data as Pandas / Xarray for pre-preparing.
+        convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
+        normalised_sat=False
     )
     _LOG.info('prepare_data()')
     data_module.prepare_data()
@@ -153,6 +154,8 @@ def fix_dtypes(concat_ds):
 
     for name, dtype in ds_dtypes.items():
         concat_ds[name] = concat_ds[name].astype(dtype)
+
+    assert concat_ds['sat_data'].dtype == np.int16
     return concat_ds
 
 

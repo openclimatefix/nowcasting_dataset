@@ -34,6 +34,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     sat_channels: Iterable[str] = ('HRV', )
+    normalise_sat: bool = True
     nwp_base_path: Optional[str] = None
     nwp_channels: Optional[Iterable[str]] = (
         't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
@@ -56,9 +57,9 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def prepare_data(self) -> None:
         # Satellite data
-        n_timesteps_per_batch=(
+        n_timesteps_per_batch = (
                 self.batch_size // self.n_samples_per_timestep)
-        
+
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
             image_size_pixels=self.image_size_pixels,
@@ -67,7 +68,8 @@ class NowcastingDataModule(pl.LightningDataModule):
             forecast_len=self.forecast_len,
             channels=self.sat_channels,
             n_timesteps_per_batch=n_timesteps_per_batch,
-            convert_to_numpy=self.convert_to_numpy)
+            convert_to_numpy=self.convert_to_numpy,
+            normalise=self.normalise_sat)
 
         self.data_sources = [self.sat_data_source]
 
@@ -159,12 +161,16 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(self.n_training_batches_per_epoch),
+            n_batches_per_epoch_per_worker=(
+                self._n_batches_per_epoch_per_worker(
+                    self.n_training_batches_per_epoch),
             **self._common_dataset_params())
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
-            n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(self.n_validation_batches_per_epoch),
+            n_batches_per_epoch_per_worker=(
+                self._n_batches_per_epoch_per_worker(
+                    self.n_validation_batches_per_epoch),
             **self._common_dataset_params())
 
         if self.num_workers == 0:
@@ -212,7 +218,8 @@ class NowcastingDataModule(pl.LightningDataModule):
             self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
                 t0_datetimes=self.val_t0_datetimes,
                 data_sources=data_sources,
-                n_batches_per_epoch_per_worker=self._n_batches_per_epoch_per_worker(32),
+                n_batches_per_epoch_per_worker=(
+                    self._n_batches_per_epoch_per_worker(32)),
                 **self._common_dataset_params())
             if self.num_workers == 0:
                 self.contiguous_dataset.per_worker_init(worker_id=0)

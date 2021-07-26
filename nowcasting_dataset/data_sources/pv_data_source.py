@@ -93,7 +93,7 @@ class PVDataSource(ImageDataSource):
             self,
             x_meters_center: Number,
             y_meters_center: Number,
-            pv_system_ids_with_data_for_timeslice: pd.Int16Index) -> int:
+            pv_system_ids_with_data_for_timeslice: pd.Int64Index) -> int:
         # If x_meters_center and y_meters_center have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
         # to find the pv_system_ids at that exact location.  This is

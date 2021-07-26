@@ -165,7 +165,6 @@ class PVDataSource(ImageDataSource):
         all_pv_system_ids = all_pv_system_ids.insert(
             loc=0, item=central_pv_system_id)
 
-        print('num PV systems in ROI:', len(all_pv_system_ids))
         all_pv_system_ids = all_pv_system_ids[:self.n_pv_systems_per_example]
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
@@ -199,7 +198,7 @@ class PVDataSource(ImageDataSource):
         example['pv_yield'] = pd.DataFrame(
             example['pv_yield'],
             index=selected_pv_power.index,
-            columns=all_pv_system_ids)
+            columns=example['pv_system_id'])
         example['pv_yield'].index.name = 'time'
 
         return example

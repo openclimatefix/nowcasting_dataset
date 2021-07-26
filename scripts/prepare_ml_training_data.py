@@ -131,7 +131,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
         # PV
         pv_yield = xr.DataArray(
-            example['pv_yield'], dims=['time', 'pv_system_id'])
+            example['pv_yield'], dims=['time', 'pv_system'])
         pv_yield = pv_yield.to_dataset(name='pv_yield')
         n_pv_systems = len(example['pv_system_id'])
         # This will expand all dataarrays to have an 'example' dim.
@@ -142,7 +142,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 [example[name]],
                 coords=example_dim | {
                     'pv_system_id': np.arange(n_pv_systems, dtype=np.int32)},
-                dims=['example', 'pv_system_id'])
+                dims=['example', 'pv_system'])
         individual_datasets.append(pv_yield)
 
         # Merge

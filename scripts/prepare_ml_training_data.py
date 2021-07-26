@@ -88,6 +88,8 @@ def get_data_module():
 def coord_to_range(
         da: xr.DataArray, dim: str,
         prefix: Optional[str], dtype=np.int32) -> xr.DataArray:
+    # TODO: Actually, I think this is over-complicated?  I think we can
+    # just strip off the 'coord' from the dimension.
     coord = da[dim]
     da[dim] = np.arange(len(coord), dtype=dtype)
     if prefix is not None:
@@ -128,8 +130,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             individual_datasets.append(ds)
 
         # PV
-        pv_yield = example['pv_yield'].to_xarray().to_dataset(name='pv_yield')
-        pv_yield = coord_to_range(pv_yield, 'time', prefix='pv_yield')
+        pv_yield = xr.DataArray(
+            example['pv_yield'], dims=['time', 'pv_system_id'])
+        pv_yield = pv_yield.to_dataset(name='pv_yield')
         # This will expand all dataarrays to have an 'example' dim.
         for name in [
                 'pv_system_id', 'pv_system_row_number',

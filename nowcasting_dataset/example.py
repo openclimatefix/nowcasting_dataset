@@ -3,6 +3,7 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 from nowcasting_dataset.consts import Array
+from numbers import Number
 
 
 DATETIME_FEATURE_NAMES = ('hour_of_day_sin', 'hour_of_day_cos',
@@ -38,6 +39,8 @@ class Example(TypedDict):
     # METADATA
     pv_system_id: int
     pv_system_row_number: int  #: In the range [0, len(pv_metadata)].
+    x_meters_center: Number  #: In OSGB coordinations
+    y_meters_center: Number  #: In OSGB coordinations
 
     # Datetimes (abbreviated to "dt")
     # At 5-minutes past the hour {0, 5, ..., 55}

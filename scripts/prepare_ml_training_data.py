@@ -11,7 +11,7 @@ LOCAL_TEMP_PATH when this script starts up.
 """
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.example import Example, DATETIME_FEATURE_NAMES
 from pathlib import Path
 import numpy as np
 import xarray as xr
@@ -119,17 +119,22 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             individual_datasets.append(ds)
 
         # Datetime features
-        for name in ['hour_of_day_sin', 'hour_of_day_cos', 'day_of_year_sin', 'day_of_year_cos']:
-            ds = example[name].rename(name).to_xarray().to_dataset().rename({'index': 'time'})
+        for name in DATETIME_FEATURE_NAMES:
+            ds = example[name].rename(name).to_xarray().to_dataset().rename(
+                {'index': 'time'})
             ds = coord_to_range(ds, 'time', prefix=None)
             individual_datasets.append(ds)
 
         # PV
-        pv_yield = example['pv_yield'].rename('pv_yield').to_xarray().rename({'datetime': 'time'}).to_dataset()
+        pv_yield = example['pv_yield'].rename('pv_yield').to_xarray().rename(
+            {'datetime': 'time'}).to_dataset()
         pv_yield = coord_to_range(pv_yield, 'time', prefix='pv_yield')
         # This will expand all dataarrays to have an 'example' dim.
-        for name in ['pv_system_id', 'pv_system_row_number']:
-            pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=['example'])
+        for name in [
+                'pv_system_id', 'pv_system_row_number',
+                'x_meters_center', 'y_meters_center']:
+            pv_yield[name] = xr.DataArray(
+                [example[name]], coords=example_dim, dims=['example'])
         individual_datasets.append(pv_yield)
 
         # Merge

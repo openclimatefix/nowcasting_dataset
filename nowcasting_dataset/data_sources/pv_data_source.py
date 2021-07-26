@@ -26,8 +26,8 @@ class PVDataSource(ImageDataSource):
     #: If less than this number exist in the data then pad with NaNs.
     n_pv_systems_per_example: int = 128
 
-    def __post_init__(self):
-        super().__post_init__()
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        super().__post_init__(image_size_pixels, meters_per_pixel)
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()

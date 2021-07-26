@@ -28,8 +28,20 @@ class Example(TypedDict):
     sat_x_coords: Array  #: OSGB geo-spatial coordinates.
     sat_y_coords: Array
 
-    # PV yield time series
+    #: PV yield from all PV systems in the region of interest (ROI).
+    #: Includes central PV system, which will always be the first entry.
+    #: shape = [batch_size, ] max_n_pv_systems, seq_length
     pv_yield: Array
+
+    #: PV identification.
+    #: shape = [batch_size, ] max_n_pv_systems
+    pv_system_id: int
+    pv_system_row_number: int  #: In the range [0, len(pv_metadata)].
+
+    #: PV system geographical location (in OSGB coords).
+    #: shape = [batch_size, ] max_n_pv_systems
+    pv_system_x_coords: Array
+    pv_system_y_coords: Array
 
     # Numerical weather predictions (NWPs)
     nwp: Array  #: Shape: [batch_size,] channel, seq_length, width, height
@@ -37,8 +49,6 @@ class Example(TypedDict):
     nwp_y_coords: Array
 
     # METADATA
-    pv_system_id: int
-    pv_system_row_number: int  #: In the range [0, len(pv_metadata)].
     x_meters_center: Number  #: In OSGB coordinations
     y_meters_center: Number  #: In OSGB coordinations
 

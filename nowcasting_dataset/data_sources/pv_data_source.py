@@ -86,12 +86,11 @@ class PVDataSource(DataSource):
         selected_pv_power = self.pv_power.loc[start_dt:end_dt]
         return selected_pv_power.dropna(axis='columns', how='any')
 
-    def get_example(
+    def _get_central_pv_system_id(
             self,
-            t0_dt: pd.Timestamp,
             x_meters_center: Number,
-            y_meters_center: Number) -> Example:
-
+            y_meters_center: Number,
+            pv_system_ids_with_data_for_timeslice: pd.Int16Index) -> int:
         # If x_meters_center and y_meters_center have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
         # to find the pv_system_ids at that exact location.  This is
@@ -109,23 +108,36 @@ class PVDataSource(DataSource):
                 " (but not at the identical location to) x_meters_center and"
                 " y_meters_center.")
 
-        selected_pv_power = self._get_time_slice(t0_dt)
-        pv_system_ids = selected_pv_power.columns.intersection(pv_system_ids)
+        pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(
+            pv_system_ids)
         assert len(pv_system_ids) > 0
 
         # Select just one PV system (the locations in PVOutput.org are quite
         # approximate, so it's quite common to have multiple PV systems
-        # at the same nominal lat lon.
+        # at the same nominal lat lon).
         if self.random_pv_system_for_given_location:
             pv_system_id = self.rng.choice(pv_system_ids)
         else:
             pv_system_id = pv_system_ids[0]
-        selected_pv_power = selected_pv_power[pv_system_id]
+
+        return pv_system_id
+
+    def get_example(
+            self,
+            t0_dt: pd.Timestamp,
+            x_meters_center: Number,
+            y_meters_center: Number) -> Example:
+
+        selected_pv_power = self._get_time_slice(t0_dt)
+        central_pv_system_id = self._get_central_pv_system_id(
+            x_meters_center, y_meters_center, selected_pv_power.columns)
+        selected_pv_power = selected_pv_power[central_pv_system_id]
 
         # Save data into the Example dict...
         return Example(
-            pv_system_id=pv_system_id,
-            pv_system_row_number=self.pv_metadata.index.get_loc(pv_system_id),
+            pv_system_id=central_pv_system_id,
+            pv_system_row_number=self.pv_metadata.index.get_loc(
+                central_pv_system_id),
             pv_yield=selected_pv_power,
             x_meters_center=x_meters_center,
             y_meters_center=y_meters_center)

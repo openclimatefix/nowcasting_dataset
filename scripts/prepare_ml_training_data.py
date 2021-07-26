@@ -12,6 +12,9 @@ LOCAL_TEMP_PATH when this script starts up.
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.example import Example, DATETIME_FEATURE_NAMES
+from nowcasting_dataset.data_sources.satellite_data_source import (
+    SAT_VARIABLE_NAMES)
+from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from pathlib import Path
 import numpy as np
 import xarray as xr
@@ -59,10 +62,8 @@ def get_data_module():
         history_len=6,  #: Number of timesteps of history, not including t0.
         forecast_len=12,  #: Number of timesteps of forecast.
         image_size_pixels=64,
-        nwp_channels=('t', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc'),
-        sat_channels=(
-            'HRV', 'IR_016', 'IR_039', 'IR_087', 'IR_097', 'IR_108', 'IR_120',
-            'IR_134', 'VIS006', 'VIS008', 'WV_062', 'WV_073'),
+        nwp_channels=NWP_VARIABLE_NAMES,
+        sat_channels=SAT_VARIABLE_NAMES,
         pv_power_filename=PV_DATA_FILENAME,
         pv_metadata_filename=f'gs://{PV_METADATA_FILENAME}',
         sat_filename=f'gs://{SAT_FILENAME}',

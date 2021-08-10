@@ -16,3 +16,4 @@ pytest
 flake8
 jedi
 mypy
+tables

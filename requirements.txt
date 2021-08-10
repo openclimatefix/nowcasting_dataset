@@ -1,0 +1,17 @@
+numpy
+pandas
+matplotlib
+zarr
+xarray
+ipykernel
+h5netcdf
+gcsfs
+scikit-image
+torch
+pytorch-lightning
+pvlib
+pyproj
+pytest
+flake8
+jedi
+mypy

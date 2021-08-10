@@ -39,4 +39,5 @@ def sat_data_source(sat_filename: Path):
         history_len=0,
         forecast_len=1,
         channels=('HRV', ),
-        n_timesteps_per_batch=2)
+        n_timesteps_per_batch=2,
+        convert_to_numpy=True)

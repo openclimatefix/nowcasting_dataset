@@ -17,7 +17,8 @@ def test_osgb_to_lat_lon():
     except:
         # Sometimes this test fails, then run the following code.
         # This forces a fresh 'grid' to be downloaded.
-        pyproj.transformer.TransformerGroup(crs_from=geospatial.OSGB, crs_to=geospatial.WGS84).download_grids()
+        pyproj.transformer.\
+            TransformerGroup(crs_from=geospatial.OSGB, crs_to=geospatial.WGS84).download_grids(verbose=True)
 
     finally:
         osgb_coords = geospatial.osgb_to_lat_lon(x=0, y=0)

@@ -1,0 +1,57 @@
+# general configuration used to create the dataset
+general:
+  name:
+    'example'
+  description:
+    'Example data configuration for a yaml data set'
+input_data:
+  # gcs bucket where data is saved
+  bucket: 'solar-pv-nowcasting-data'
+  solar:
+    pv_path: 'PV/PVOutput.org'
+    pv_data_filename: 'UK_PV_timeseries_batch.nc'
+    pv_metadata_filename: 'UK_PV_metadata.csv'
+  satelight:
+    satelite_filename: 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr'
+  nwp:   # Numerical weather predictions
+    npw_base_path: 'NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr'
+output_data:
+  filepath: 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v-test/'
+process:
+  # the batch size of the
+  batch_size: 32
+  # how many timesteps to forecast in the future
+  forecast_len: 12
+  # how many historic timesteps are used
+  history_len: 6
+  # the size of the satelight images
+  image_size_pixels: 64
+  # the channels used in the nwp data
+  sat_channels:
+    - HRV
+    - IR_016
+    - IR_039
+    - IR_087
+    - IR_097
+    - IR_108
+    - IR_120
+    - IR_134
+    - VIS006
+    - VIS008
+    - WV_062
+    - WV_073
+  # the nwp channels that are used
+  nwp_channels:
+    - t
+    - dswrf
+    - prate
+    - r
+    - sde
+    - si10
+    - vis
+    - lcc
+    - mcc
+    - hcc
+  # what precision to use
+  precision: 16
+  val_check_interval: 1000

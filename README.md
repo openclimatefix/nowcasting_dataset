@@ -25,7 +25,7 @@ pre-compute the training and validation data (the script makes used of the
 be used to train ML models.
 
 This repo doesn't contain the ML models themselves.  The models are
-in: https://github.com/openclimatefix/predict_pv_yield_2/
+in: https://github.com/openclimatefix/predict_pv_yield/
 
 # Installation
 

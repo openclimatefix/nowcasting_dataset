@@ -1,0 +1,2 @@
+[run]
+omit = nowcasting_dataset/tests/*

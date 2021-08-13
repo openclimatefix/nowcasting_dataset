@@ -18,3 +18,4 @@ jedi
 mypy
 tables
 pydantic
+pytest-cov

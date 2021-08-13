@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
-from .constants import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
+
+from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
 
 class General(BaseModel):

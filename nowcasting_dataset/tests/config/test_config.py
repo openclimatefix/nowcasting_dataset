@@ -1,5 +1,5 @@
-from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.config.save import save_yaml_configuration
+from nowcasting_dataset.config.load import load_yaml_configuration, load_configuration_from_gcs
+from nowcasting_dataset.config.save import save_yaml_configuration, save_configuration_to_gcs
 from nowcasting_dataset.config.model import Configuration
 import nowcasting_dataset
 import os
@@ -43,3 +43,21 @@ def test_yaml_save():
 
         # check the file can be loaded
         _ = load_yaml_configuration(name)
+
+
+@pytest.mark.skip('Skiping test as CD does not have google credentials')
+def test_save_to_gcs():
+    """
+    Check that configuration can be saved to gcs
+    """
+    save_configuration_to_gcs(configuration=Configuration())
+
+
+@pytest.mark.skip('Skiping test as CD does not have google credentials')
+def test_load_to_gcs():
+    """
+    Check that configuration can be loaded to gcs
+    """
+    config = load_configuration_from_gcs(gcp_dir='prepared_ML_training_data/v-default')
+
+    assert isinstance(config, Configuration)

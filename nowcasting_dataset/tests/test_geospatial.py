@@ -1,6 +1,7 @@
 from nowcasting_dataset import geospatial
 import numpy as np
-import pyproj
+# import pyproj
+import pandas as pd
 
 
 def test_osgb_to_lat_lon():
@@ -25,3 +26,14 @@ def test_osgb_to_lat_lon():
             osgb_coords,
             (49.76680681317516, -7.557207277153569))
 
+
+def test_calculate_azimuth_and_elevation_angle():
+    datestamps = pd.date_range('2021-01-01 00:00:00', '2021-01-05', freq='5T', tz='UTC')
+
+    s = geospatial.calculate_azimuth_and_elevation_angle(location_x=529600.18758,
+                                                         location_y=136150.294751,
+                                                         datestamps=datestamps.to_pydatetime())
+
+    assert len(s) == len(datestamps)
+    assert 'azimuth' in s.columns
+    assert 'elevation' in s.columns

@@ -43,3 +43,7 @@ sudo apt install libgl1-mesa-glx  # For optical flow
 To test using the small amount of data stored in this repo: `py.test -s`
 
 To test using the full dataset on Google Cloud, add the `--use_cloud_data` switch.
+
+# Documentation
+
+Please see the [`Example` class](https://github.com/openclimatefix/nowcasting_dataset/blob/main/nowcasting_dataset/example.py) for documentation about the different data fields in each example / batch.

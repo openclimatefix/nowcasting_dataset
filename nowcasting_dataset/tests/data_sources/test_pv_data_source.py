@@ -23,6 +23,7 @@ def test_get_example_and_batch():
         metadata_filename=f"gs://{PV_METADATA_FILENAME}",
         start_dt=datetime.fromisoformat("2019-01-01 00:00:00.000+00:00"),
         end_dt=datetime.fromisoformat("2019-01-02 00:00:00.000+00:00"),
+        load_azimuth_and_elevation=True,
     )
 
     x_locations, y_locations = pv_data_source.get_locations_for_batch(pv_data_source.pv_power.index)

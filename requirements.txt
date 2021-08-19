@@ -17,3 +17,6 @@ flake8
 jedi
 mypy
 tables
+boto3
+moto
+shutil

@@ -142,7 +142,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             try:
                 pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
             except Exception as e:
-                _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim} and ')
+                _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim}')
+                if name not in example.keys():
+                    _LOG.error(f'{name} not in data keys: {example.keys()}')
                 _LOG.error(e)
                 raise Exception
 

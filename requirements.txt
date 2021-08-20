@@ -17,11 +17,8 @@ flake8
 jedi
 mypy
 tables
-<<<<<<< HEAD
 boto3
 moto
 neptune-client
-=======
 pydantic
 pytest-cov
->>>>>>> main

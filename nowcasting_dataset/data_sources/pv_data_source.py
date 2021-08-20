@@ -295,8 +295,8 @@ class PVDataSource(ImageDataSource):
             row = self.pv_metadata.iloc[i]
 
             azimuth_and_elevation \
-                = geospatial.calculate_azimuth_and_elevation_angle(location_x=row.location_x,
-                                                                   location_y=row.location_y,
+                = geospatial.calculate_azimuth_and_elevation_angle(latitude=row.latitude,
+                                                                   longitude=row.longitude,
                                                                    datestamps=datestamps)
 
             pv_azimuth.append(azimuth_and_elevation.loc[:, 'azimuth'].rename(row.name))

@@ -78,26 +78,24 @@ def lat_lon_to_osgb(lat: Number, lon: Number) -> Tuple[Number, Number]:
     return transformers.lat_lon_to_osgb.transform(lat, lon)
 
 
-def calculate_azimuth_and_elevation_angle(location_x: float, location_y: float, datestamps: [datetime]) -> pd.DataFrame:
+def calculate_azimuth_and_elevation_angle(latitude: float, longitude: float, datestamps: [datetime]) -> pd.DataFrame:
     """
     Calculation the azimuth angle, and the elevation angle for several datetamps, but for one specific osgb location
 
     More details see: https://www.celestis.com/resources/faq/what-are-the-azimuth-and-elevation-of-a-satellite/
 
     Args:
-        location_x: osgb x coordinate
-        location_y: osgb y coordinate
+        latitude: latitude of the pv site
+        longitude: longitude of the pv site
         datestamps: list of datestamps to calculate the sun angles. i.e the sun moves from east to west in the day.
 
     Returns: Pandas data frame with the index the same as 'datestamps', with columns of "elevation" and "azimuth" that
     have been calculate.
 
     """
-    # change osgb to lat and lon
-    lat, lon = osgb_to_lat_lon(location_x, location_y)
 
     # get the solor position
-    solpos = pvlib.solarposition.get_solarposition(datestamps, lat, lon)
+    solpos = pvlib.solarposition.get_solarposition(datestamps, latitude, longitude)
 
     # extract the information we want
     return solpos[["elevation", "azimuth"]]

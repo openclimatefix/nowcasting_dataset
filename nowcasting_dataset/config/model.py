@@ -40,7 +40,7 @@ class Process(BaseModel):
     sat_channels: tuple = Field(SAT_VARIABLE_NAMES, description="the satelite channels that are used")
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
 
-    prcesion: int = Field(16, description="what precision to use")
+    precision: int = Field(16, description="what precision to use")
     val_check_interval: int = Field(1000, description="TODO")
 
 

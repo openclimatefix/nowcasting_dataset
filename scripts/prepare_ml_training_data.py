@@ -139,7 +139,12 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
         # This will expand all dataarrays to have an 'example' dim.
         # 0D
         for name in ["x_meters_center", "y_meters_center"]:
-            pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
+            try:
+                pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
+            except Exception as e:
+                _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim} and ')
+                _LOG.error(e)
+                raise Exception
 
         # 1D
         for name in ["pv_system_id", "pv_system_row_number", "pv_system_x_coords", "pv_system_y_coords"]:

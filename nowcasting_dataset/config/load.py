@@ -12,7 +12,7 @@ def load_yaml_configuration(filename: str) -> Configuration:
     """
     Load a yaml file which has a configuration in it
     filename: the file name that you want to load
-    Returns: pydnaictic class
+    Returns: pydantic class
     """
 
     # load the file to a dictionary

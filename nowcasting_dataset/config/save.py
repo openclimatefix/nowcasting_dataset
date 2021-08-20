@@ -12,7 +12,7 @@ def save_yaml_configuration(configuration: Configuration, filename: str):
     """
     Load a local yaml file which has the a configuration in it
     filename: the file name that you want to load
-    Returns: pydnaictic class
+    Returns: pydantic class
     """
 
     # make a dictionary from the configuration

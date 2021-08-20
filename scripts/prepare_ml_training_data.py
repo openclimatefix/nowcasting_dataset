@@ -27,7 +27,7 @@ from nowcasting_dataset.utils import get_netcdf_filename
 
 import logging
 
-logging.basicConfig()
+logging.basicConfig(format='%(asctime)s %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
 

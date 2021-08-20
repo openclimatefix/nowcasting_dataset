@@ -24,7 +24,8 @@ import os
 from typing import List, Optional
 
 from nowcasting_dataset.utils import get_netcdf_filename
-from neptune.new.integrations.pytorch_lightning import NeptuneLogger
+import neptune.new as neptune
+from neptune.new.integrations.python_logger import NeptuneHandler
 
 import logging
 
@@ -204,7 +205,11 @@ def check_directories():
 
 def main():
 
-    logger = NeptuneLogger(project='OpenClimateFix/nowcasting-data')
+    run = neptune.init(project='OpenClimateFix/nowcasting-data',
+                       capture_stdout=True,
+                       capture_stderr=True,
+                       capture_hardware_metrics=False)
+    _LOG.addHandler(NeptuneHandler(run=run))
 
     check_directories()
     delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)

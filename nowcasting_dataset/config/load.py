@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def load_yaml_configuration(filename: str) -> Configuration:
     """
-    Load a yaml file which has the a configruation in it
+    Load a yaml file which has a configuration in it
     filename: the file name that you want to load
     Returns: pydnaictic class
     """

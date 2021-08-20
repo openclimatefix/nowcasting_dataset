@@ -17,3 +17,5 @@ flake8
 jedi
 mypy
 tables
+pydantic
+pytest-cov

@@ -10,6 +10,9 @@ LOCAL_TEMP_PATH.  Note that all files will be deleted from
 LOCAL_TEMP_PATH when this script starts up.
 """
 
+import nowcasting_dataset
+from nowcasting_dataset.config.load import load_yaml_configuration
+from nowcasting_dataset.config.save import save_configuration_to_gcs
 from nowcasting_dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.example import Example, DATETIME_FEATURE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import (
@@ -31,20 +34,25 @@ logging.basicConfig()
 _LOG = logging.getLogger('nowcasting_dataset')
 _LOG.setLevel(logging.DEBUG)
 
-BUCKET = Path('solar-pv-nowcasting-data')
+# load configuration, this can be changed to a different filename as needed
+filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), 'config', 'example.yaml')
+config = load_yaml_configuration(filename)
+
+# set the gcs bucket name
+BUCKET = Path(config.input_data.bucket)
 
 # Solar PV data
-PV_PATH = BUCKET / 'PV/PVOutput.org'
-PV_DATA_FILENAME = PV_PATH / 'UK_PV_timeseries_batch.nc'
-PV_METADATA_FILENAME = PV_PATH / 'UK_PV_metadata.csv'
+PV_PATH = BUCKET / config.input_data.solar_pv_path
+PV_DATA_FILENAME = PV_PATH / config.input_data.solar_pv_data_filename
+PV_METADATA_FILENAME = PV_PATH / config.input_data.solar_pv_metadata_filename
 
-SAT_FILENAME = BUCKET / 'satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr'
+SAT_FILENAME = BUCKET / config.input_data.satelite_filename
 
 # Numerical weather predictions
-NWP_BASE_PATH = BUCKET / 'NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr'
+NWP_BASE_PATH = BUCKET / config.input_data.npw_base_path
 
 
-DST_NETCDF4_PATH = 'gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/'
+DST_NETCDF4_PATH = config.output_data.filepath
 DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
 DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
@@ -58,10 +66,10 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 def get_data_module():
     data_module = NowcastingDataModule(
-        batch_size=32,
-        history_len=6,  #: Number of timesteps of history, not including t0.
-        forecast_len=12,  #: Number of timesteps of forecast.
-        image_size_pixels=64,
+        batch_size=config.process.batch_size,
+        history_len=config.process.history_length,  #: Number of timesteps of history, not including t0.
+        forecast_len=config.process.forecast_length,  #: Number of timesteps of forecast.
+        image_size_pixels=config.process.image_size_pixels,
         nwp_channels=NWP_VARIABLE_NAMES,
         sat_channels=SAT_VARIABLE_NAMES,
         pv_power_filename=PV_DATA_FILENAME,
@@ -235,6 +243,10 @@ def main():
     iterate_over_dataloader_and_write_to_disk(
         datamodule.val_dataloader(),
         DST_VALIDATION_PATH)
+    
+    # save confgiruation to gcs
+    save_configuration_to_gcs(configuration=config)
+
     _LOG.info('Done!')
 
 

@@ -24,10 +24,11 @@ import os
 from typing import List, Optional
 
 from nowcasting_dataset.utils import get_netcdf_filename
+from neptune.new.integrations.pytorch_lightning import NeptuneLogger
 
 import logging
 
-logging.basicConfig(format='%(asctime)s %(message)s')
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
 
@@ -51,7 +52,7 @@ DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, "train")
 DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, "validation")
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
-UPLOAD_EVERY_N_BATCHES = 64
+UPLOAD_EVERY_N_BATCHES = 16
 CLOUD = "aws" # either gcp or aws
 
 # Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
@@ -72,7 +73,7 @@ def get_data_module():
         sat_filename=f"gs://{SAT_FILENAME}",
         nwp_base_path=f"gs://{NWP_BASE_PATH}",
         pin_memory=True,  #: Passed to DataLoader.
-        num_workers=0,  #: Passed to DataLoader.
+        num_workers=6,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
         n_samples_per_timestep=8,  #: Passed to NowcastingDataset
         n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!
@@ -202,6 +203,9 @@ def check_directories():
 
 
 def main():
+
+    logger = NeptuneLogger(project='OpenClimateFix/nowcasting-data')
+
     check_directories()
     delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
     datamodule = get_data_module()

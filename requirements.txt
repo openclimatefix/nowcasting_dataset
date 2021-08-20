@@ -19,3 +19,4 @@ mypy
 tables
 boto3
 moto
+neptune-client

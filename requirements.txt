@@ -22,3 +22,4 @@ moto
 neptune-client
 pydantic
 pytest-cov
+plotly

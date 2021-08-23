@@ -147,6 +147,12 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     t0_datetimes: pd.DatetimeIndex  #: Valid t0 datetimes.
     collate_fn: Callable = torch.utils.data._utils.collate.default_collate
 
+    # useful way to skip batches if creating dataset fails halfway through.
+    # This might not be that useful, as re-running creation of datasets may cause off issues like duplicate data.
+    skip_batch_index: int = 0
+    batch_index: int = 0
+
+
     def __post_init__(self):
         super().__init__()
         self._per_worker_init_has_run = False
@@ -162,6 +168,9 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                 f'start_dt_index only has {len(self.start_dt_index)}'
                 ' timestamps.'
                 f'  Must have at least {self._n_timesteps_per_batch}!')
+
+        if self.skip_batch_index > 0:
+            _LOG.warning(f'Will be skipping {self.skip_batch_index}, is this correct?')
 
     def per_worker_init(self, worker_id: int) -> None:
         """Called by worker_init_fn on each copy of NowcastingDataset after
@@ -186,6 +195,14 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             yield self._get_batch()
 
     def _get_batch(self) -> torch.Tensor:
+
+        _LOG.debug(f'Getting batch {self.batch_index}')
+
+        self.batch_index += 1
+        if self.batch_index < self.skip_batch_index:
+            _LOG.debug(f'Skipping batch {self.batch_index}')
+            return []
+
         t0_datetimes = self._get_t0_datetimes_for_batch()
         x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)
 

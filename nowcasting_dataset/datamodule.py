@@ -47,6 +47,9 @@ class NowcastingDataModule(pl.LightningDataModule):
     n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
     collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
 
+    skip_n_train_batches: int = 0 # number of train batches to skip
+    skip_n_validation_batches: int = 0  # number of validation batches to skip
+
     def __post_init__(self):
         super().__init__()
         # Plus 1 because neither history_len nor forecast_len include t0.
@@ -163,6 +166,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.train_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
+            skip_batch_index=self.skip_n_train_batches,
             n_batches_per_epoch_per_worker=(
                 self._n_batches_per_epoch_per_worker(
                     self.n_training_batches_per_epoch)),
@@ -170,6 +174,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
+            skip_batch_index=self.skip_n_validation_batches,
             n_batches_per_epoch_per_worker=(
                 self._n_batches_per_epoch_per_worker(
                     self.n_validation_batches_per_epoch)),

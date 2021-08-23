@@ -1,10 +1,12 @@
 from nowcasting_dataset.config.load import load_yaml_configuration, load_configuration_from_gcs
-from nowcasting_dataset.config.save import save_yaml_configuration, save_configuration_to_gcs
+from nowcasting_dataset.config.save import save_yaml_configuration, save_configuration_to_gcs, save_configuration_to_aws
 from nowcasting_dataset.config.model import Configuration
 import nowcasting_dataset
 import os
 import tempfile
 import pytest
+import moto
+import boto3
 
 
 def test_default():
@@ -45,7 +47,7 @@ def test_yaml_save():
         _ = load_yaml_configuration(name)
 
 
-@pytest.mark.skip('Skiping test as CD does not have google credentials')
+@pytest.mark.skip("Skiping test as CD does not have google credentials")
 def test_save_to_gcs():
     """
     Check that configuration can be saved to gcs
@@ -53,11 +55,25 @@ def test_save_to_gcs():
     save_configuration_to_gcs(configuration=Configuration())
 
 
-@pytest.mark.skip('Skiping test as CD does not have google credentials')
+@moto.mock_s3()
+def test_save_to_aws():
+    """
+    Check that configuration can be saved to gcs
+    """
+
+    bucket_name = "test_bucket"
+
+    s3_client = boto3.client("s3")
+    s3_client.create_bucket(Bucket=bucket_name)
+
+    save_configuration_to_aws(configuration=Configuration(), bucket=bucket_name)
+
+
+@pytest.mark.skip("Skiping test as CD does not have google credentials")
 def test_load_to_gcs():
     """
     Check that configuration can be loaded to gcs
     """
-    config = load_configuration_from_gcs(gcp_dir='prepared_ML_training_data/v-default')
+    config = load_configuration_from_gcs(gcp_dir="prepared_ML_training_data/v-default")
 
     assert isinstance(config, Configuration)

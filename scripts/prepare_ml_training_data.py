@@ -17,7 +17,7 @@ from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.config.save import save_configuration_to_gcs
+from nowcasting_dataset.config.save import save_configuration_to_cloud
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.example import Example, DATETIME_FEATURE_NAMES
@@ -36,7 +36,7 @@ from neptune.new.integrations.python_logger import NeptuneHandler
 
 import logging
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
 
@@ -92,6 +92,8 @@ def get_data_module():
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
         normalise_sat=False,
+        skip_n_train_batches=14260,
+        skip_n_validation_batches=360,
     )
     _LOG.info("prepare_data()")
     data_module.prepare_data()
@@ -208,7 +210,8 @@ def iterate_over_dataloader_and_write_to_disk(dataloader: torch.utils.data.DataL
     _LOG.info("Getting first batch")
     for batch_i, batch in enumerate(dataloader):
         _LOG.info(f"Got batch {batch_i}")
-        write_batch_locally(batch, batch_i)
+        if len(batch) > 0:
+            write_batch_locally(batch, batch_i)
         if batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
             upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
     upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
@@ -239,8 +242,8 @@ def main():
     iterate_over_dataloader_and_write_to_disk(datamodule.val_dataloader(), DST_VALIDATION_PATH)
     _LOG.info("Done!")
 
-    # save configruation to gcs
-    save_configuration_to_gcs(configuration=config)
+    # save configuration to gcs
+    save_configuration_to_cloud(configuration=config, cloud=CLOUD)
 
 
 

@@ -69,3 +69,22 @@ def aws_download_to_local(
 
     # download file
     s3_resource.Bucket(bucket).download_file(remote_filename, local_filename)
+
+
+def upload_one_file(remote_filename: str,
+    local_filename: str,
+    bucket: str = "solar-pv-nowcasting-data",):
+    """
+    Upload one file to s3
+    @param remote_filename: the aws key name
+    @param local_filename: the local file name
+    @param bucket: the s3 bucket
+    """
+
+    # create s3 resource
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket(bucket)
+
+    _LOG.debug(f"uploading {local_filename} to {remote_filename} in bucket {bucket}")
+    with open(local_filename, "rb") as data:
+        bucket.put_object(Key=remote_filename, Body=data)

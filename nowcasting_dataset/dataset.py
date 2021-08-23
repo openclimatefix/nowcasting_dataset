@@ -1,14 +1,136 @@
 import pandas as pd
-import numpy as np
 from numbers import Number
 from typing import List, Tuple, Iterable, Callable
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
-import torch
 from concurrent import futures
 import logging
+import gcsfs
+import boto3
+import os
+import numpy as np
+import xarray as xr
+from nowcasting_dataset import utils as nd_utils
+from nowcasting_dataset import example
+import torch
+
+from nowcasting_dataset.cloud.gcp import gcp_download_to_local
+from nowcasting_dataset.cloud.aws import aws_download_to_local
+
+from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+
+
+SAT_MEAN = xr.DataArray(
+    data=[
+        93.23458, 131.71373, 843.7779 , 736.6148 , 771.1189 , 589.66034,
+        862.29816, 927.69586,  90.70885, 107.58985, 618.4583 , 532.47394],
+    dims=['sat_variable'],
+    coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
+
+SAT_STD = xr.DataArray(
+    data=[
+        115.34247 , 139.92636 ,  36.99538 ,  57.366386,  30.346825,
+        149.68007 ,  51.70631 ,  35.872967, 115.77212 , 120.997154,
+         98.57828 ,  99.76469],
+    dims=['sat_variable'],
+    coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
+
+
 
 _LOG = logging.getLogger('nowcasting_dataset')
+
+
+class NetCDFDataset(torch.utils.data.Dataset):
+    """Loads data saved by the `prepare_ml_training_data.py` script.
+    Moved from predict_pv_yield
+    """
+
+    def __init__(
+            self, n_batches: int, src_path: str, tmp_path: str, cloud: str = 'gcp'):
+        """
+        Args:
+          n_batches: Number of batches available on disk.
+          src_path: The full path (including 'gs://') to the data on
+            Google Cloud storage.
+          tmp_path: The full path to the local temporary directory
+            (on a local filesystem).
+        """
+        self.n_batches = n_batches
+        self.src_path = src_path
+        self.tmp_path = tmp_path
+        self.cloud = cloud
+
+        # setup cloud connections as None
+        self.gcs = None
+        self.s3_resource = None
+
+        assert cloud in ['gcp','aws']
+
+    def per_worker_init(self, worker_id: int):
+        if self.cloud == 'gcp':
+            self.gcs = gcsfs.GCSFileSystem()
+        else:
+            self.s3_resource = boto3.resource('s3')
+
+    def __len__(self):
+        return self.n_batches
+
+    def __getitem__(self, batch_idx: int) -> example.Example:
+        """Returns a whole batch at once.
+
+        Args:
+          batch_idx: The integer index of the batch. Must be in the range
+          [0, self.n_batches).
+
+        Returns:
+            NamedDict where each value is a numpy array. The size of this
+            array's first dimension is the batch size.
+        """
+        if not 0 <= batch_idx < self.n_batches:
+            raise IndexError(
+                'batch_idx must be in the range'
+                f' [0, {self.n_batches}), not {batch_idx}!')
+        netcdf_filename = nd_utils.get_netcdf_filename(batch_idx)
+        remote_netcdf_filename = os.path.join(self.src_path, netcdf_filename)
+        local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
+
+        if self.cloud == 'gcp':
+            gcp_download_to_local(remote_filename=remote_netcdf_filename,
+                                  local_filename=local_netcdf_filename,
+                                  gcs=self.gcs)
+        else:
+            aws_download_to_local(remote_filename=remote_netcdf_filename,
+                                  local_filename=local_netcdf_filename,
+                                  s3_resource=self.s3_resource)
+
+        netcdf_batch = xr.load_dataset(local_netcdf_filename)
+        os.remove(local_netcdf_filename)
+
+        batch = example.Example(
+            sat_datetime_index=netcdf_batch.sat_time_coords,
+            nwp_target_time=netcdf_batch.nwp_time_coords)
+        for key in [
+            'nwp', 'nwp_x_coords', 'nwp_y_coords',
+            'sat_data', 'sat_x_coords', 'sat_y_coords',
+            'pv_yield', 'pv_system_id', 'pv_system_row_number',
+            'pv_system_x_coords', 'pv_system_y_coords',
+            'x_meters_center', 'y_meters_center'
+        ] + list(example.DATETIME_FEATURE_NAMES):
+            try:
+                batch[key] = netcdf_batch[key]
+            except KeyError:
+                pass
+
+        sat_data = batch['sat_data']
+        if sat_data.dtype == np.int16:
+            sat_data = sat_data.astype(np.float32)
+            sat_data = sat_data - SAT_MEAN
+            sat_data /= SAT_STD
+            batch['sat_data'] = sat_data
+
+        batch = example.to_numpy(batch)
+
+        return batch
 
 
 @dataclass

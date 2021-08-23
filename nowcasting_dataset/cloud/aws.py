@@ -82,9 +82,8 @@ def upload_one_file(remote_filename: str,
     """
 
     # create s3 resource
-    s3 = boto3.resource("s3")
-    bucket = s3.Bucket(bucket)
+    s3 = boto3.client('s3')
 
     _LOG.debug(f"uploading {local_filename} to {remote_filename} in bucket {bucket}")
     with open(local_filename, "rb") as data:
-        bucket.put_object(Key=remote_filename, Body=data)
+        s3.upload_fileobj(data, bucket, remote_filename)

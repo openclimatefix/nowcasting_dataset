@@ -92,8 +92,8 @@ def get_data_module():
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
         normalise_sat=False,
-        skip_n_train_batches=14260,
-        skip_n_validation_batches=360,
+        skip_n_train_batches=0,
+        skip_n_validation_batches=0,
     )
     _LOG.info("prepare_data()")
     data_module.prepare_data()
@@ -120,59 +120,65 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
     """
     datasets = []
     for i, example in enumerate(batch):
-        individual_datasets = []
-        example_dim = {"example": np.array([i], dtype=np.int32)}
-        for name in ["sat_data", "nwp"]:
-            ds = example[name].to_dataset(name=name)
-            short_name = name.replace("_data", "")
-            if name == "nwp":
-                ds = ds.rename({"target_time": "time"})
-            for dim in ["time", "x", "y"]:
-                ds = coord_to_range(ds, dim, prefix=short_name)
-            ds = ds.rename(
-                {
-                    "variable": f"{short_name}_variable",
-                    "x": f"{short_name}_x",
-                    "y": f"{short_name}_y",
-                }
-            )
-            individual_datasets.append(ds)
+        try:
+            individual_datasets = []
+            example_dim = {"example": np.array([i], dtype=np.int32)}
+            for name in ["sat_data", "nwp"]:
+                ds = example[name].to_dataset(name=name)
+                short_name = name.replace("_data", "")
+                if name == "nwp":
+                    ds = ds.rename({"target_time": "time"})
+                for dim in ["time", "x", "y"]:
+                    ds = coord_to_range(ds, dim, prefix=short_name)
+                ds = ds.rename(
+                    {
+                        "variable": f"{short_name}_variable",
+                        "x": f"{short_name}_x",
+                        "y": f"{short_name}_y",
+                    }
+                )
+                individual_datasets.append(ds)
 
-        # Datetime features
-        for name in DATETIME_FEATURE_NAMES:
-            ds = example[name].rename(name).to_xarray().to_dataset().rename({"index": "time"})
-            ds = coord_to_range(ds, "time", prefix=None)
-            individual_datasets.append(ds)
+            # Datetime features
+            for name in DATETIME_FEATURE_NAMES:
+                ds = example[name].rename(name).to_xarray().to_dataset().rename({"index": "time"})
+                ds = coord_to_range(ds, "time", prefix=None)
+                individual_datasets.append(ds)
 
-        # PV
-        pv_yield = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
-        pv_yield = pv_yield.to_dataset(name="pv_yield")
-        n_pv_systems = len(example["pv_system_id"])
-        # This will expand all dataarrays to have an 'example' dim.
-        # 0D
-        for name in ["x_meters_center", "y_meters_center"]:
-            try:
-                pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
-            except Exception as e:
-                _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim}')
-                if name not in example.keys():
-                    _LOG.error(f'{name} not in data keys: {example.keys()}')
-                _LOG.error(e)
-                raise Exception
+            # PV
+            pv_yield = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
+            pv_yield = pv_yield.to_dataset(name="pv_yield")
+            n_pv_systems = len(example["pv_system_id"])
+            # This will expand all dataarrays to have an 'example' dim.
+            # 0D
+            for name in ["x_meters_center", "y_meters_center"]:
+                try:
+                    pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
+                except Exception as e:
+                    _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim}')
+                    if name not in example.keys():
+                        _LOG.error(f'{name} not in data keys: {example.keys()}')
+                    _LOG.error(e)
+                    raise Exception
 
-        # 1D
-        for name in ["pv_system_id", "pv_system_row_number", "pv_system_x_coords", "pv_system_y_coords"]:
-            pv_yield[name] = xr.DataArray(
-                example[name][None, :],
-                coords=example_dim | {"pv_system": np.arange(n_pv_systems, dtype=np.int32)},
-                dims=["example", "pv_system"],
-            )
+            # 1D
+            for name in ["pv_system_id", "pv_system_row_number", "pv_system_x_coords", "pv_system_y_coords"]:
+                pv_yield[name] = xr.DataArray(
+                    example[name][None, :],
+                    coords=example_dim | {"pv_system": np.arange(n_pv_systems, dtype=np.int32)},
+                    dims=["example", "pv_system"],
+                )
 
-        individual_datasets.append(pv_yield)
+            individual_datasets.append(pv_yield)
 
-        # Merge
-        merged_ds = xr.merge(individual_datasets)
-        datasets.append(merged_ds)
+            # Merge
+            merged_ds = xr.merge(individual_datasets)
+            datasets.append(merged_ds)
+        except Exception as e:
+            print(e)
+            _LOG.error(e)
+            raise Exception
+
     return xr.concat(datasets, dim="example")
 
 

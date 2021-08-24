@@ -21,8 +21,11 @@ filenames = get_all_filenames_in_path(remote_path=GCP_PATH)
 # only get .nc files
 filenames = [file for file in filenames if '.nc' in file]
 
+# sort list by (/.../.../yyyyyy_xxxx.nc) x
+filenames.sort(key=lambda x: int(x.split('/')[-1][7:].split('.')[0]))
+
 # make aws filenames
-aws_files = {file:file.split('/')[-1] for file in filenames}
+aws_files = {file: file.split('/')[-1] for file in filenames}
 
 # get gcs system
 gcs = gcsfs.GCSFileSystem()
@@ -31,6 +34,7 @@ gcs = gcsfs.GCSFileSystem()
 for filename in filenames:
     aws_filename = os.path.join(AWS_PATH, aws_files[filename])
 
+    # can use this index, only to copy files after a certain number
     file_index = int(aws_files[filename][7:].split('.')[0])
 
     if file_index > 0:

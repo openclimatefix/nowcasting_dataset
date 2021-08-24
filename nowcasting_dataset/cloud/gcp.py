@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import List
 
 import gcsfs
 
@@ -38,3 +39,16 @@ def gcp_download_to_local(remote_filename: str, local_filename: str, gcs: gcsfs.
     if gcs is None:
         gcs = gcsfs.GCSFileSystem()
     gcs.get(remote_filename, local_filename)
+
+
+def get_all_filenames_in_path(remote_path) -> List[str]:
+    """
+    Get all the files names from one folder in gcp
+    @param remote_path: the path that we should look in
+    @return: a list of strings, of files names
+    """
+    gcs = gcsfs.GCSFileSystem()
+
+    return gcs.ls(remote_path)
+
+

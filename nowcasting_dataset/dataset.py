@@ -66,6 +66,9 @@ class NetCDFDataset(torch.utils.data.Dataset):
 
         assert cloud in ['gcp','aws']
 
+        if not os.path.isdir(self.tmp_path):
+            os.mkdir(self.tmp_path)
+
     def per_worker_init(self, worker_id: int):
         if self.cloud == 'gcp':
             self.gcs = gcsfs.GCSFileSystem()

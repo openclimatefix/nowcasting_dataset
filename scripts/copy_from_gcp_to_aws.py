@@ -5,6 +5,7 @@ from nowcasting_dataset.cloud.utils import gcp_to_aws
 import gcsfs
 import os
 import logging
+from concurrent import futures
 
 logging.basicConfig()
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -30,17 +31,25 @@ aws_files = {file: file.split('/')[-1] for file in filenames}
 # get gcs system
 gcs = gcsfs.GCSFileSystem()
 
-# loop over files
-for filename in filenames:
+
+def one_file(filename):
     aws_filename = os.path.join(AWS_PATH, aws_files[filename])
 
     # can use this index, only to copy files after a certain number
     file_index = int(aws_files[filename][7:].split('.')[0])
 
-    if file_index > 0:
+    if file_index > 18000:
         print(filename)
         gcp_to_aws(gcp_filename=filename, aws_filename=aws_filename, aws_bucket=AWS_BUCKET, gcs=gcs)
 
 
-
+# loop over files
+with futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # Submit tasks to the executor.
+    future_examples_per_source = []
+    for filename in filenames:
+        task = executor.submit(
+            one_file,
+            filename=filename)
+        future_examples_per_source.append(task)
 

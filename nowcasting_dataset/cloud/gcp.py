@@ -6,7 +6,7 @@ import gcsfs
 
 from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 
-_LOG = logging.getLogger("nowcasting_dataset")
+_LOG = logging.getLogger(__name__)
 
 
 def check_path_exists(path: Path):
@@ -36,6 +36,9 @@ def gcp_download_to_local(remote_filename: str, local_filename: str, gcs: gcsfs.
     @param local_filename:
     @param gcs: gcsfs.GCSFileSystem connection, means a new one doesnt have to be made everytime.
     """
+
+    _LOG.debug(f'Downloading from GCP {remote_filename} to {local_filename}')
+
     if gcs is None:
         gcs = gcsfs.GCSFileSystem()
     gcs.get(remote_filename, local_filename)

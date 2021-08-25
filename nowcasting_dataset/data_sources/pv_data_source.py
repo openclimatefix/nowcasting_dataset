@@ -30,6 +30,7 @@ class PVDataSource(ImageDataSource):
     #: If less than this number exist in the data then pad with NaNs.
     n_pv_systems_per_example: int = 128
     load_azimuth_and_elevation: bool = False
+    load_from_gcs: bool = True # option to load data local file
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -74,10 +75,11 @@ class PVDataSource(ImageDataSource):
         logger.debug('Loading PV Power data')
 
         pv_power = load_solar_pv_data_from_gcs(
-            self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
+            self.filename, start_dt=self.start_dt, end_dt=self.end_dt, from_gcs=self.load_from_gcs)
 
         # A bit of hand-crafted cleaning
-        pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
+        if 30248 in pv_power.columns:
+            pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
 
         # Drop columns and rows with all NaNs.
         pv_power.dropna(axis='columns', how='all', inplace=True)
@@ -311,7 +313,8 @@ class PVDataSource(ImageDataSource):
 def load_solar_pv_data_from_gcs(
         filename: Union[str, Path],
         start_dt: Optional[datetime.datetime] = None,
-        end_dt: Optional[datetime.datetime] = None) -> pd.DataFrame:
+        end_dt: Optional[datetime.datetime] = None,
+        from_gcs: bool = True) -> pd.DataFrame:
     gcs = gcsfs.GCSFileSystem(access='read_only')
 
     logger.debug('Loading Solar PV Data from GCS')
@@ -321,8 +324,12 @@ def load_solar_pv_data_from_gcs(
     # in the first 'with' block, and delete the second 'with' block.
     # But that takes 1 minute to load the data, where as loading into memory
     # first and then loading from memory takes 23 seconds!
-    with gcs.open(filename, mode='rb') as file:
-        file_bytes = file.read()
+    if from_gcs:
+        with gcs.open(filename, mode='rb') as file:
+            file_bytes = file.read()
+    else:
+        with open(filename, mode='rb') as file:
+            file_bytes = file.read()
 
     with io.BytesIO(file_bytes) as file:
         pv_power = xr.open_dataset(file, engine='h5netcdf')

@@ -18,6 +18,14 @@ import time
 
 logger = logging.getLogger(__name__)
 
+PV_SYSTEM_ID = 'pv_system_id'
+PV_SYSTEM_ROW_NUMBER = 'pv_system_row_number'
+PV_SYSTEM_X_COORDS = 'pv_system_x_coords'
+PV_SYSTEM_Y_COORDS = 'pv_system_y_coords'
+PV_AZIMUTH_ANGLE = 'pv_azimuth_angle'
+PV_ELEVATION_ANGLE = 'pv_elevation_angle'
+PV_YIELD = 'pv_yield'
+
 
 @dataclass
 class PVDataSource(ImageDataSource):
@@ -209,22 +217,22 @@ class PVDataSource(ImageDataSource):
             pv_system_y_coords=pv_system_y_coords)
 
         if self.load_azimuth_and_elevation:
-            example['pv_azimuth_angle'] = selected_pv_azimuth_angle
-            example['pv_elevation_angle'] = selected_pv_elevation_angle
+            example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle
+            example[PV_ELEVATION_ANGLE] = selected_pv_elevation_angle
 
         # Pad (if necessary) so returned arrays are always of size
         # n_pv_systems_per_example.
         pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)
         pad_shape = (0, pad_size)  # (before, after)
         one_dimensional_arrays = [
-                'pv_system_id', 'pv_system_row_number',
-                'pv_system_x_coords', 'pv_system_y_coords']
+                PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER,
+                PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS]
         for name in one_dimensional_arrays:
             example[name] = utils.pad_nans(example[name], pad_width=pad_shape)
-        pad_nans_variables = ['pv_yield']
+        pad_nans_variables = [PV_YIELD]
         if self.load_azimuth_and_elevation:
-            pad_nans_variables.append('pv_azimuth_angle')
-            pad_nans_variables.append('pv_elevation_angle')
+            pad_nans_variables.append(PV_AZIMUTH_ANGLE)
+            pad_nans_variables.append(PV_ELEVATION_ANGLE)
 
         for variable in pad_nans_variables:
             example[variable] = utils.pad_nans(

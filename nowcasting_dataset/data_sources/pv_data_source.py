@@ -315,6 +315,14 @@ def load_solar_pv_data_from_gcs(
         start_dt: Optional[datetime.datetime] = None,
         end_dt: Optional[datetime.datetime] = None,
         from_gcs: bool = True) -> pd.DataFrame:
+    """
+    Load solar pv data from gcs (althought there is an option to load from loca - for testing)
+    @param filename: filename of file to be loaded
+    @param start_dt: the start datetime, which to trim the data to
+    @param end_dt: the end datetime, which to trim the data to
+    @param from_gcs: option to laod from gcs, or form local file
+    @return: dataframe of pv data
+    """
     gcs = gcsfs.GCSFileSystem(access='read_only')
 
     logger.debug('Loading Solar PV Data from GCS')

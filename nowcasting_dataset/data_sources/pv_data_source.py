@@ -30,7 +30,7 @@ class PVDataSource(ImageDataSource):
     #: If less than this number exist in the data then pad with NaNs.
     n_pv_systems_per_example: int = 128
     load_azimuth_and_elevation: bool = False
-    load_from_gcs: bool = True # option to load data local file
+    load_from_gcs: bool = True # option to load data from gcs, or local file
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)

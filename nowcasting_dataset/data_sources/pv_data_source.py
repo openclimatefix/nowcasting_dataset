@@ -18,6 +18,14 @@ import time
 
 logger = logging.getLogger(__name__)
 
+PV_SYSTEM_ID = 'pv_system_id'
+PV_SYSTEM_ROW_NUMBER = 'pv_system_row_number'
+PV_SYSTEM_X_COORDS = 'pv_system_x_coords'
+PV_SYSTEM_Y_COORDS = 'pv_system_y_coords'
+PV_AZIMUTH_ANGLE = 'pv_azimuth_angle'
+PV_ELEVATION_ANGLE = 'pv_elevation_angle'
+PV_YIELD = 'pv_yield'
+
 
 @dataclass
 class PVDataSource(ImageDataSource):
@@ -30,6 +38,7 @@ class PVDataSource(ImageDataSource):
     #: If less than this number exist in the data then pad with NaNs.
     n_pv_systems_per_example: int = 128
     load_azimuth_and_elevation: bool = False
+    load_from_gcs: bool = True # option to load data from gcs, or local file
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -74,10 +83,11 @@ class PVDataSource(ImageDataSource):
         logger.debug('Loading PV Power data')
 
         pv_power = load_solar_pv_data_from_gcs(
-            self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
+            self.filename, start_dt=self.start_dt, end_dt=self.end_dt, from_gcs=self.load_from_gcs)
 
         # A bit of hand-crafted cleaning
-        pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
+        if 30248 in pv_power.columns:
+            pv_power[30248]['2018-10-29':'2019-01-03'] = np.NaN
 
         # Drop columns and rows with all NaNs.
         pv_power.dropna(axis='columns', how='all', inplace=True)
@@ -209,22 +219,22 @@ class PVDataSource(ImageDataSource):
             pv_system_y_coords=pv_system_y_coords)
 
         if self.load_azimuth_and_elevation:
-            example['pv_azimuth_angle'] = selected_pv_azimuth_angle
-            example['pv_elevation_angle'] = selected_pv_elevation_angle
+            example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle
+            example[PV_ELEVATION_ANGLE] = selected_pv_elevation_angle
 
         # Pad (if necessary) so returned arrays are always of size
         # n_pv_systems_per_example.
         pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)
         pad_shape = (0, pad_size)  # (before, after)
         one_dimensional_arrays = [
-                'pv_system_id', 'pv_system_row_number',
-                'pv_system_x_coords', 'pv_system_y_coords']
+                PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER,
+                PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS]
         for name in one_dimensional_arrays:
             example[name] = utils.pad_nans(example[name], pad_width=pad_shape)
-        pad_nans_variables = ['pv_yield']
+        pad_nans_variables = [PV_YIELD]
         if self.load_azimuth_and_elevation:
-            pad_nans_variables.append('pv_azimuth_angle')
-            pad_nans_variables.append('pv_elevation_angle')
+            pad_nans_variables.append(PV_AZIMUTH_ANGLE)
+            pad_nans_variables.append(PV_ELEVATION_ANGLE)
 
         for variable in pad_nans_variables:
             example[variable] = utils.pad_nans(
@@ -311,7 +321,16 @@ class PVDataSource(ImageDataSource):
 def load_solar_pv_data_from_gcs(
         filename: Union[str, Path],
         start_dt: Optional[datetime.datetime] = None,
-        end_dt: Optional[datetime.datetime] = None) -> pd.DataFrame:
+        end_dt: Optional[datetime.datetime] = None,
+        from_gcs: bool = True) -> pd.DataFrame:
+    """
+    Load solar pv data from gcs (althought there is an option to load from loca - for testing)
+    @param filename: filename of file to be loaded
+    @param start_dt: the start datetime, which to trim the data to
+    @param end_dt: the end datetime, which to trim the data to
+    @param from_gcs: option to laod from gcs, or form local file
+    @return: dataframe of pv data
+    """
     gcs = gcsfs.GCSFileSystem(access='read_only')
 
     logger.debug('Loading Solar PV Data from GCS')
@@ -321,8 +340,12 @@ def load_solar_pv_data_from_gcs(
     # in the first 'with' block, and delete the second 'with' block.
     # But that takes 1 minute to load the data, where as loading into memory
     # first and then loading from memory takes 23 seconds!
-    with gcs.open(filename, mode='rb') as file:
-        file_bytes = file.read()
+    if from_gcs:
+        with gcs.open(filename, mode='rb') as file:
+            file_bytes = file.read()
+    else:
+        with open(filename, mode='rb') as file:
+            file_bytes = file.read()
 
     with io.BytesIO(file_bytes) as file:
         pv_power = xr.open_dataset(file, engine='h5netcdf')

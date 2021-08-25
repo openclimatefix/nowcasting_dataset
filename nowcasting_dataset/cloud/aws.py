@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import os
-
+from typing import List
 import boto3
 
 from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_path
@@ -59,7 +59,7 @@ def aws_download_to_local(
     @param bucket: The s3 bucket name, from which to load the file from.
     """
 
-    _LOG.debug(f'Downloading {remote_filename} from AWS to {local_filename}')
+    _LOG.debug(f"Downloading {remote_filename} from AWS to {local_filename}")
 
     if s3_resource is None:
         s3_resource = boto3.resource("s3")
@@ -71,9 +71,11 @@ def aws_download_to_local(
     s3_resource.Bucket(bucket).download_file(remote_filename, local_filename)
 
 
-def upload_one_file(remote_filename: str,
+def upload_one_file(
+    remote_filename: str,
     local_filename: str,
-    bucket: str = "solar-pv-nowcasting-data",):
+    bucket: str = "solar-pv-nowcasting-data",
+):
     """
     Upload one file to s3
     @param remote_filename: the aws key name
@@ -82,8 +84,37 @@ def upload_one_file(remote_filename: str,
     """
 
     # create s3 resource
-    s3 = boto3.client('s3')
+    s3 = boto3.client("s3")
 
     _LOG.debug(f"uploading {local_filename} to {remote_filename} in bucket {bucket}")
     with open(local_filename, "rb") as data:
         s3.upload_fileobj(data, bucket, remote_filename)
+
+
+def get_all_filenames_in_path_aws(remote_path, bucket: str = "solar-pv-nowcasting-data") -> List[str]:
+    """
+    Get all the files names from one folder in gcp
+    @param remote_path: the path that we should look in
+    @return: a list of strings, of files names
+    """
+    # get client
+    s3 = boto3.client("s3")
+
+    # get all objects, need to loop round as limit number are loaded each time
+    is_truncated = True
+    key_marker = ""
+    filenames = []
+    inputs = {"Bucket": bucket, "Prefix": remote_path, "MaxKeys": 1000}
+    while is_truncated:
+        all_objects = s3.list_objects_v2(**inputs)
+        is_truncated = all_objects["IsTruncated"]
+
+        if "NextContinuationToken" in all_objects.keys():
+            inputs["ContinuationToken"] = all_objects["NextContinuationToken"]
+
+        filenames = filenames + [obj["Key"] for obj in all_objects["Contents"]]
+
+    # remove remote path from file name
+    filenames = [file.replace(remote_path, "").replace("/", "") for file in filenames]
+
+    return filenames

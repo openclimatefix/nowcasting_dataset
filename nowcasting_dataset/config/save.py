@@ -46,6 +46,8 @@ def save_configuration_to_gcs(configuration: Configuration):
 def save_configuration_to_aws(configuration: Configuration, bucket: str = "solar-pv-nowcasting-data"):
     """
     Save configuration to aws
+    @param configuration: configuration pydantic class
+    @param bucket: the bucket which to save the configuration saved in
     """
 
     logger.info('Uploading configuration to AWS')
@@ -63,9 +65,9 @@ def save_configuration_to_aws(configuration: Configuration, bucket: str = "solar
 
 def save_configuration_to_cloud(configuration: Configuration, cloud: str):
     """
-    Save configuration file to cloud
-    @param configuration:
-    @param cloud:
+    Save configuration to aws
+    @param configuration: configuration pydantic class
+    @param cloud: either 'aws' or 'gcp'
     """
 
     assert cloud in ['aws', 'gcp']

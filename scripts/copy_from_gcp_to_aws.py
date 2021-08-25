@@ -1,6 +1,7 @@
 ## copy a folder from gcp to aws
 from pathlib import Path
 from nowcasting_dataset.cloud.gcp import get_all_filenames_in_path
+from nowcasting_dataset.cloud.aws import get_all_filenames_in_path_aws
 from nowcasting_dataset.cloud.utils import gcp_to_aws
 import gcsfs
 import os
@@ -52,4 +53,10 @@ with futures.ThreadPoolExecutor(max_workers=10) as executor:
             one_file,
             filename=filename)
         future_examples_per_source.append(task)
+
+
+filenames = get_all_filenames_in_path_aws(remote_path=AWS_PATH)
+
+print(len(filenames))
+print('Should be 25008 files')
 

@@ -1,4 +1,6 @@
-from nowcasting_dataset.data_sources.pv_data_source import PVDataSource
+import pandas as pd
+
+from nowcasting_dataset.data_sources.pv_data_source import PVDataSource, drop_pv_systems_which_produce_overnight
 from pathlib import Path
 from datetime import datetime
 import pytest
@@ -33,3 +35,9 @@ def test_get_example_and_batch():
 
     batch = pv_data_source.get_batch(pv_data_source.pv_power.index[0:5], x_locations[0:10], y_locations[0:10])
     assert len(batch) == 5
+
+
+def test_drop_pv_systems_which_produce_overnight():
+    pv_power = pd.DataFrame(index=pd.date_range('2010-01-01', '2010-01-02', freq='5 min'))
+
+    _ = drop_pv_systems_which_produce_overnight(pv_power=pv_power)

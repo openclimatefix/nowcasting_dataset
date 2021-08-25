@@ -88,7 +88,7 @@ alpha = 0.5  # the amount of background map
 frames = []
 for i in range(0, satellite_rgb_data.shape[0]):
     z = satellite_rgb_data[i] * alpha + map[:, :, 0:3] * (1 - alpha)
-    frames.append(go.Frame(data=[go.Image(z=z)],layout=go.Layout(title=str(sat_datetimes[i]))))
+    frames.append(go.Frame(data=[go.Image(z=z)], layout=go.Layout(title=str(sat_datetimes[i]))))
 
 fig = go.Figure(
     frames=frames,

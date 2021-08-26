@@ -109,88 +109,34 @@ fig.add_trace(trace_map)
 fig.update(frames=frames)
 
 
-buttons=[dict(label='Play',
-                                  method='animate',
-                                  args=[None,
-                                        dict(frame=dict(duration=300, redraw=True),  #MODIFY JUST THIS redraw to True
-                                             transition={'duration': 50, 'easing': 'elastic'},
-                                             easing='linear',
-                                             fromcurrent=True,
-                                             mode='immediate'
-                                             )]),]
-fig.update_layout(updatemenus=[dict(type='buttons',
-                              showactive=False,
-                              y=0,
-                              x=1.05,
-                              xanchor='left',
-                              yanchor='bottom',
-                              buttons=buttons )
-                                      ],
-                 width=800, height=500)
+buttons = [
+    dict(
+        label="Play",
+        method="animate",
+        args=[
+            None,
+            dict(
+                frame=dict(duration=300, redraw=True),  # MODIFY JUST THIS redraw to True
+                transition={"duration": 50, "easing": "elastic"},
+                easing="linear",
+                fromcurrent=True,
+                mode="immediate",
+            ),
+        ],
+    ),
+]
+fig.update_layout(
+    updatemenus=[
+        dict(type="buttons", showactive=False, y=0, x=1.05, xanchor="left", yanchor="bottom", buttons=buttons)
+    ],
+    width=800,
+    height=500,
+)
 
 
 fig.update_yaxes(showticklabels=False)
 fig.update_xaxes(showticklabels=False)
 fig.show(renderer="browser")
-
-#
-#
-#
-# sliders = [dict(active=10, currentvalue={"prefix": "Time: "}, pad={"t": 50}, steps=slider_steps)]
-
-# fig = make_subplots(rows=1, cols=2, subplot_titles=("Satellite", "PV Yield"), horizontal_spacing=0.051)
-#
-# images= []
-# for i in range(0, satellite_rgb_data.shape[0]):
-#     images.append(satellite_rgb_data[i])
-
-# fig = px.imshow(satellite_rgb_data, animation_frame=0)
-# for i in range(0, satellite_rgb_data.shape[0]):
-#     fig["frames"][i]["data"] += (go.Scatter(x=sat_datetimes[0:i], y=pv_yield[0:i]),)
-#     fig["frames"][i]["traces"] = [0,1]
-# # fig.add_traces(fig["frames"][-1]["data"][0])
-#
-# layout = make_subplots(rows=1, cols=2, subplot_titles=("Satellite", "PV Yield"), horizontal_spacing=0.051)
-#
-# button = {"label": "Play",
-#             "method": "animate",
-#             "args": [
-#                 None,
-#                 {
-#                     "frame": {"duration": 300, "redraw": False},
-#                     "fromcurrent": True,
-#                     "transition": {"duration": 300, "easing": "quadratic-in-out"},
-#                 },
-#             ],
-#           }
-#
-# buttons=[dict(label='Play',
-#                                   method='animate',
-#                                   args=[[f'{k}' for k in range(satellite_rgb_data.shape[0])],
-#                                         dict(frame=dict(duration=500, redraw=True),  #MODIFY JUST THIS redraw to True
-#                                              transition=dict(duration=0),
-#                                              easing='linear',
-#                                              fromcurrent=True,
-#                                              mode='immediate'
-#                                              )]),]
-#
-# layout.update_layout(updatemenus=[dict(type='buttons',
-#                               showactive=False,
-#                               y=0,
-#                               x=1.05,
-#                               xanchor='left',
-#                               yanchor='bottom',
-#                               buttons=buttons )
-#                                       ],
-#                  width=800, height=500)
-#
-# fig["layout"] = layout["layout"]
-#
-# # fig.add_trace(trace_map, row=1, col=1)
-# # fig.add_trace(go.Scatter(x=sat_datetimes, y=pv_yield), row=1, col=2)
-#
-# fig.show(renderer="browser")
-
 
 #### 2 subplots
 
@@ -199,9 +145,7 @@ for i in range(0, satellite_rgb_data.shape[0]):
     z = satellite_rgb_data[i] * alpha + map[:, :, 0:3] * (1 - alpha)
     frames.append(
         dict(
-            data=[go.Image(z=z)],
-            traces=[0],
-            layout=go.Layout(title=str(sat_datetimes[i])),
+            data=[go.Image(z=z)], traces=[0], layout=go.Layout(title=str(sat_datetimes[i])), name=str(sat_datetimes[i])
         )
     )
 
@@ -213,28 +157,70 @@ fig.add_trace(go.Scatter(x=sat_datetimes, y=pv_yield), row=1, col=2)
 fig.update(frames=frames)
 
 
-buttons=[dict(label='Play',
-                                  method='animate',
-                                  args=[None,
-                                        dict(frame=dict(duration=300, redraw=True),  #MODIFY JUST THIS redraw to True
-                                             transition={'duration': 50, 'easing': 'elastic'},
-                                             easing='linear',
-                                             fromcurrent=True,
-                                             mode='immediate'
-                                             )]),]
-fig.update_layout(updatemenus=[dict(type='buttons',
-                              showactive=False,
-                              y=0,
-                              x=1.05,
-                              xanchor='left',
-                              yanchor='bottom',
-                              buttons=buttons )
-                                      ],
-                 width=800, height=500)
+buttons = [
+    dict(
+        label="Play",
+        method="animate",
+        args=[
+            None,
+            dict(
+                frame=dict(duration=300, redraw=True),  # MODIFY JUST THIS redraw to True
+                transition={"duration": 50, "easing": "elastic"},
+                easing="linear",
+                fromcurrent=True,
+                mode="immediate",
+            ),
+        ],
+    ),
+    dict(
+        label="Pause",
+        method="animate",
+        args=[
+            [None],
+            dict(
+                frame=dict(duration=0, redraw=True),  # MODIFY JUST THIS redraw to True
+                transition={"duration": 0},
+                mode="immediate",
+            ),
+        ],
+    ),
+]
+fig.update_layout(
+    updatemenus=[
+        dict(type="buttons", showactive=False, y=0, x=1.05, xanchor="left", yanchor="bottom", buttons=buttons)
+    ],
+    width=800,
+    height=500,
+    sliders=[
+        {
+            "yanchor": "top",
+            "xanchor": "left",
+            "currentvalue": {"font": {"size": 16}, "prefix": "Frame: ", "visible": True, "xanchor": "right"},
+            "transition": {"duration": 500.0, "easing": "linear"},
+            "pad": {"b": 10, "t": 50},
+            "len": 0.9,
+            "x": 0.1,
+            "y": 0,
+            "steps": [
+                {
+                    "args": [
+                        [str(sat_datetimes[i])],
+                        {
+                            "frame": {"duration": 500.0, "easing": "linear", "redraw": True},
+                            "transition": {"duration": 0, "easing": "linear"},
+                        },
+                    ],
+                    "label": str(sat_datetimes[i]),
+                    "method": "animate",
+                }
+                for i in range(satellite_rgb_data.shape[0])
+            ],
+        }
+    ],
+)
 
 
-fig.update_yaxes(showticklabels=False,row=1,col=1)
-fig.update_xaxes(showticklabels=False,row=1,col=1)
+fig.update_yaxes(showticklabels=False, row=1, col=1)
+fig.update_xaxes(showticklabels=False, row=1, col=1)
 fig.show(renderer="browser")
-# plotly.offline.plot(fig, filename = 'filename.html', auto_open=False)
-
+plotly.offline.plot(fig, filename="filename_1.html", auto_open=False)

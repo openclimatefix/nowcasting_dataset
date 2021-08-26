@@ -53,5 +53,3 @@ def get_all_filenames_in_path(remote_path) -> List[str]:
     gcs = gcsfs.GCSFileSystem()
 
     return gcs.ls(remote_path)
-
-

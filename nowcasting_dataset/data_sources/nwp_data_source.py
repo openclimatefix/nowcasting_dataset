@@ -1,5 +1,3 @@
-import os
-import dask
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.example import Example, to_numpy
 from nowcasting_dataset import utils

@@ -14,8 +14,7 @@ def test_osgb_to_lat_lon():
         np.testing.assert_allclose(
             osgb_coords,
             (49.76680681317516, -7.557207277153569))
-
-    except:
+    except Exception as _:
         # Sometimes this test fails, then run the following code.
         # This forces a fresh 'grid' to be downloaded.
         geospatial.download_grids()
@@ -44,4 +43,3 @@ def test_calculate_azimuth_and_elevation_angle():
     # https://diamondgeezer.blogspot.com/2017/12/solar-elevation.html
     assert 170 < s['azimuth'][0] < 190
     assert 60 < s['elevation'][0] < 65
-

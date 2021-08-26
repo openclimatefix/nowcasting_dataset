@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 from nowcasting_dataset.dataset import NowcastingDataset
 import nowcasting_dataset.time as nd_time

@@ -5,7 +5,6 @@ import tempfile
 import os
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.cloud.aws import upload_one_file
-import boto3
 
 logger = logging.getLogger(__name__)
 

@@ -36,6 +36,7 @@ def test_nwp_data_source_open():
 
     nwp.open()
 
+
 def test_nwp_data_source_batch():
 
     path = os.path.dirname(nowcasting_dataset.__file__)
@@ -57,8 +58,6 @@ def test_nwp_data_source_batch():
     x = nwp._data.x[0:4].values
     y = nwp._data.x[0:4].values
 
-    batch = nwp.get_batch(t0_datetimes=t0_datetimes,
-                  x_locations=x,
-                  y_locations=y)
+    batch = nwp.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
 
     assert len(batch) == 4

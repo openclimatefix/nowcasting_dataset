@@ -86,5 +86,3 @@ def test_get_dataloaders_aws():
         data = next(t)
 
         assert 'sat_data' in data.keys()
-
-

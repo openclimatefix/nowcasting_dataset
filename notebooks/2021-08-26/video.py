@@ -9,6 +9,15 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 import cv2
 
+# get satellite image, currently from https://github.com/openclimatefix/py-staticmaps
+import staticmaps
+from nowcasting_dataset.geospatial import osgb_to_lat_lon
+
+
+##############
+# Setup data generator
+##############
+
 DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/"
 TEMP_PATH = "."
 
@@ -22,7 +31,7 @@ train_dataset_iterator = iter(train_dataset)
 data = next(train_dataset_iterator)
 
 # get the timestamp of the image
-batch_index = 1
+batch_index = 4
 sat_datetimes = pd.to_datetime(data["sat_datetime_index"][batch_index], unit="s")
 print(sat_datetimes)
 
@@ -38,22 +47,34 @@ y_min = np.min(y_coordinates)
 print(y_coordinates)
 print(y_min, y_max)
 
-# get satellite image, currently from https://github.com/openclimatefix/py-staticmaps
-import staticmaps
-from nowcasting_dataset.geospatial import osgb_to_lat_lon
+pv_x = data["pv_system_x_coords"][batch_index, 0]
+pv_y = data["pv_system_y_coords"][batch_index, 0]
+
+##############
+# get static map
+##############
 
 bottom_left = osgb_to_lat_lon(x=x_min, y=y_min)
 top_right = osgb_to_lat_lon(x=x_max, y=y_max)
+pv = osgb_to_lat_lon(x=pv_x, y=pv_y)
 
 bottom_left = staticmaps.create_latlng(bottom_left[0], bottom_left[1])
 top_right = staticmaps.create_latlng(top_right[0], top_right[1])
 
 context = staticmaps.Context()
+
+context.add_object(staticmaps.Marker(staticmaps.create_latlng(pv[0], pv[1]), size=5))
+
 map = context.make_clean_map_from_bounding_box(width=640, height=640, bottom_left=bottom_left, top_right=top_right)
 map.save("map.png")
 map = np.array(map)
 # height, weight, 4
 trace_map = go.Image(z=map)
+
+
+##############
+# Process satellite data
+##############
 
 # make rgb image sequence from satelight image
 # want to use IR_016, VIS006 and VIS008 for rgb
@@ -87,6 +108,10 @@ satellite_rgb_data = np.stack(satellite_reszied_data, axis=0).astype(np.uint8)
 
 # pv yield
 pv_yield = data["pv_yield"][batch_index][:, 0]
+
+##############
+# Plot one animation
+##############
 
 # overlay satellite images on top of static map
 alpha = 0.5  # the amount of background map
@@ -138,7 +163,9 @@ fig.update_yaxes(showticklabels=False)
 fig.update_xaxes(showticklabels=False)
 fig.show(renderer="browser")
 
-#### 2 subplots
+##############
+# Plot one animation, plus pv yeild on the side
+##############
 
 frames = []
 for i in range(0, satellite_rgb_data.shape[0]):
@@ -223,4 +250,4 @@ fig.update_layout(
 fig.update_yaxes(showticklabels=False, row=1, col=1)
 fig.update_xaxes(showticklabels=False, row=1, col=1)
 fig.show(renderer="browser")
-plotly.offline.plot(fig, filename="filename_1.html", auto_open=False)
+# plotly.offline.plot(fig, filename="filename_1.html", auto_open=False)

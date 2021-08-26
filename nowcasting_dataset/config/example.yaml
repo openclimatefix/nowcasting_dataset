@@ -9,7 +9,7 @@ input_data:
   solar_pv_metadata_filename: UK_PV_metadata.csv
   solar_pv_path: PV/PVOutput.org
 output_data:
-  filepath: solar-pv-nowcasting-data
+  filepath: prepared_ML_training_data/v4/
 process:
   batch_size: 32
   forecast_length: 12

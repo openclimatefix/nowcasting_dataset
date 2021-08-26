@@ -28,7 +28,7 @@ class InputData(BaseModel):
 
 
 class OutputData(BaseModel):
-    filepath: str = Field("solar-pv-nowcasting-data", description="Where the data is saved")
+    filepath: str = Field("prepared_ML_training_data/v4/", description="Where the data is saved")
 
 
 class Process(BaseModel):

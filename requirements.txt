@@ -17,5 +17,9 @@ flake8
 jedi
 mypy
 tables
+boto3
+moto
+neptune-client
 pydantic
 pytest-cov
+plotly

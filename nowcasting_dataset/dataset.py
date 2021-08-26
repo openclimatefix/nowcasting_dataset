@@ -35,8 +35,6 @@ SAT_STD = xr.DataArray(
     dims=['sat_variable'],
     coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
 
-
-
 _LOG = logging.getLogger('nowcasting_dataset')
 
 

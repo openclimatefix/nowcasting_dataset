@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import os
 import nowcasting_dataset
+from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
@@ -56,8 +57,6 @@ pv_power_new.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc")
 ############################
 # NWP, this makes a file that is 9.5MW big
 ###########################
-
-from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 
 # Numerical weather predictions
 NWP_BASE_PATH = "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/" \

@@ -102,7 +102,6 @@ def get_all_filenames_in_path_aws(remote_path, bucket: str = "solar-pv-nowcastin
 
     # get all objects, need to loop round as limit number are loaded each time
     is_truncated = True
-    key_marker = ""
     filenames = []
     inputs = {"Bucket": bucket, "Prefix": remote_path, "MaxKeys": 1000}
     while is_truncated:

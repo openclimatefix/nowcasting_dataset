@@ -17,3 +17,21 @@ def test_nwp_data_source_init():
         convert_to_numpy=True,
         n_timesteps_per_batch=8,
     )
+
+
+def test_nwp_data_source_open():
+
+    path = os.path.dirname(nowcasting_dataset.__file__)
+
+    # Solar PV data (test data)
+    NWP_FILENAME = f"{path}/tests/data/nwp_data/test.zarr"
+
+    nwp = NWPDataSource(
+        filename=NWP_FILENAME,
+        history_len=6,
+        forecast_len=12,
+        convert_to_numpy=True,
+        n_timesteps_per_batch=8,
+    )
+
+    nwp.open()

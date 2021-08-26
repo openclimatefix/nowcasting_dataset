@@ -5,8 +5,7 @@ from nowcasting_dataset.example import Example, to_numpy
 from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
 from dataclasses import dataclass, InitVar
-from typing import List, Tuple, Union, Iterable
-from pathlib import Path
+from typing import List, Tuple, Iterable
 import xarray as xr
 import itertools
 

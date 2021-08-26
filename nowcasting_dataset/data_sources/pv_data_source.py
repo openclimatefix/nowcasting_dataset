@@ -120,7 +120,6 @@ class PVDataSource(ImageDataSource):
 
         return selected_pv_power, selected_pv_azimuth_angle, selected_pv_elevation_angle
 
-
     def _get_central_pv_system_id(
             self,
             x_meters_center: Number,

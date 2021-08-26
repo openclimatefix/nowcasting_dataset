@@ -14,7 +14,7 @@ def test_osgb_to_lat_lon():
         np.testing.assert_allclose(
             osgb_coords,
             (49.76680681317516, -7.557207277153569))
-    except Exception as e:
+    except Exception as _:
         # Sometimes this test fails, then run the following code.
         # This forces a fresh 'grid' to be downloaded.
         geospatial.download_grids()

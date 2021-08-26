@@ -22,7 +22,7 @@ from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_N
 
 SAT_MEAN = xr.DataArray(
     data=[
-        93.23458, 131.71373, 843.7779, 736.6148 , 771.1189, 589.66034,
+        93.23458, 131.71373, 843.7779, 736.6148, 771.1189, 589.66034,
         862.29816, 927.69586,  90.70885, 107.58985, 618.4583, 532.47394],
     dims=['sat_variable'],
     coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
@@ -62,7 +62,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.gcs = None
         self.s3_resource = None
 
-        assert cloud in ['gcp','aws']
+        assert cloud in ['gcp', 'aws']
 
         if not os.path.isdir(self.tmp_path):
             os.mkdir(self.tmp_path)

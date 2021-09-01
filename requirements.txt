@@ -23,3 +23,4 @@ neptune-client
 pydantic
 pytest-cov
 plotly
+pip install git+https://github.com/SheffieldSolar/PV_Live-API

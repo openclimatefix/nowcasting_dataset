@@ -19,7 +19,7 @@ from nowcasting_dataset.geospatial import osgb_to_lat_lon
 ##############
 
 DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/"
-TEMP_PATH = "."
+TEMP_PATH = ""
 
 # set up data generator
 train_dataset = NetCDFDataset(24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"))

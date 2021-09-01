@@ -1,5 +1,5 @@
 import pandas as pd
-
+from typing import List
 
 import urllib
 import json
@@ -8,8 +8,6 @@ import logging
 
 from pvlive_api import PVLive
 from datetime import datetime, timedelta
-import pytz
-import plotly.graph_objects as go
 
 _LOG = logging.getLogger(__name__)
 
@@ -33,32 +31,67 @@ def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
-def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_gsp: int = 380) -> pd.DataFrame:
+def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
+    """
+    Get list of gsp ids from ESO metadata
+    @param maximum_number_of_gsp: clib list by this amount.
+    @return: list of gsp ids
+    """
+    # get a lit of gsp ids
+    metadata = get_pv_gsp_metadata_from_eso()
+
+    # get rid of nans, and duplicates
+    metadata = metadata[~metadata['gsp_id'].isna()]
+    metadata.drop_duplicates(subset=['gsp_id'], inplace=True)
+
+    # make into list
+    gsp_ids = metadata['gsp_id'].to_list()
+    gsp_ids = [int(gsp_id) for gsp_id in gsp_ids]
+
+    # adjust number of gsp_ids
+    if maximum_number_of_gsp is None:
+        maximum_number_of_gsp = len(metadata)
+    if maximum_number_of_gsp > len(metadata):
+        logging.warning(f'Only {len(metadata)} gsp available to load')
+    if maximum_number_of_gsp < len(metadata):
+        gsp_ids = gsp_ids[0: maximum_number_of_gsp]
+
+    return gsp_ids
+
+
+def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_gsp: int = None) -> pd.DataFrame:
     """
     Load raw pv gsp data from pvline. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
     @param start: the start date for gsp data to load
     @param end: the end date for gsp data to load
-    @param number_of_gsp: The number of gsp to load. Note that on 2021-09-01 there were 380 to load.
+    @param number_of_gsp: The number of gsp to load. Note that on 2021-09-01 there were 338 to load.
     @return: Data frame of time series of gsp data. Shows PV data for each GSP from {start} to {end}
     """
+
+    # get a lit of gsp ids
+    gsp_ids = get_list_of_gsp_ids(maximum_number_of_gsp=number_of_gsp)
+
+    # setup pv Live class, although here we are getting historic data
     pvl = PVLive()
 
     # set the first chunk of data, note that 30 day chunks are used accept if the end time is small than that
     first_start_chunk = start
     first_end_chunk = min([first_start_chunk + timedelta(days=30), end])
 
-    one_month_gsp_data_df = []
-    for i in range(0, number_of_gsp):
+    gsp_data_df = []
+    _LOG.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
+    for gsp_id in gsp_ids:
 
         # set the first chunk start and end times
         start_chunk = first_start_chunk
         end_chunk = first_end_chunk
 
         while start_chunk <= end:
-            _LOG.debug(f"Getting data for id {i} from {start_chunk} to {end_chunk}")
-            one_month_gsp_data_df.append(
+            _LOG.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
+
+            gsp_data_df.append(
                 pvl.between(
-                    start=start_chunk, end=end_chunk, entity_type="gsp", entity_id=i, extra_fields="", dataframe=True
+                    start=start_chunk, end=end_chunk, entity_type="gsp", entity_id=gsp_id, extra_fields="", dataframe=True
                 )
             )
 
@@ -69,15 +102,18 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
             if end_chunk > end:
                 end_chunk = end
 
-    one_month_gsp_data_df = pd.concat(one_month_gsp_data_df)
+    gsp_data_df = pd.concat(gsp_data_df)
 
     # remove any extra data loaded
-    one_month_gsp_data_df = one_month_gsp_data_df[one_month_gsp_data_df["datetime_gmt"] <= end]
+    gsp_data_df = gsp_data_df[gsp_data_df["datetime_gmt"] <= end]
 
     # remove any duplicates
-    one_month_gsp_data_df.drop_duplicates(inplace=True)
+    gsp_data_df.drop_duplicates(inplace=True)
 
     # sort dataframe
-    one_month_gsp_data_df = one_month_gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
+    gsp_data_df = gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
 
-    return one_month_gsp_data_df
+    # format data, remove timezone,
+    gsp_data_df['datetime_gmt'] = gsp_data_df['datetime_gmt'].dt.tz_localize(None)
+
+    return gsp_data_df

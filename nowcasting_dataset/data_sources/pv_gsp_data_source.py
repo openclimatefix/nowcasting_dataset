@@ -82,6 +82,8 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
     _LOG.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
     for gsp_id in gsp_ids:
 
+        one_gsp_data_df = []
+
         # set the first chunk start and end times
         start_chunk = first_start_chunk
         end_chunk = first_end_chunk
@@ -89,7 +91,7 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
         while start_chunk <= end:
             _LOG.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
 
-            gsp_data_df.append(
+            one_gsp_data_df.append(
                 pvl.between(
                     start=start_chunk, end=end_chunk, entity_type="gsp", entity_id=gsp_id, extra_fields="", dataframe=True
                 )
@@ -102,6 +104,13 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
             if end_chunk > end:
                 end_chunk = end
 
+        # join together one gsp data, and sort
+        one_gsp_data_df = pd.concat(one_gsp_data_df)
+        one_gsp_data_df = one_gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
+
+        # append to longer list
+        gsp_data_df.append(one_gsp_data_df)
+
     gsp_data_df = pd.concat(gsp_data_df)
 
     # remove any extra data loaded
@@ -109,9 +118,6 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
 
     # remove any duplicates
     gsp_data_df.drop_duplicates(inplace=True)
-
-    # sort dataframe
-    gsp_data_df = gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
 
     # format data, remove timezone,
     gsp_data_df['datetime_gmt'] = gsp_data_df['datetime_gmt'].dt.tz_localize(None)

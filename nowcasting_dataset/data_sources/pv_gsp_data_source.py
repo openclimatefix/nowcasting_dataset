@@ -1,15 +1,21 @@
-import pandas as pd
-from typing import List
-
 import urllib
 import json
-import pandas as pd
+import io
+import gcsfs
 import logging
+import zarr
+
+import pandas as pd
+import numpy as np
+import xarray as xr
 
 from pvlive_api import PVLive
+from typing import List, Union, Optional
+from pathlib import Path
 from datetime import datetime, timedelta
 
-_LOG = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:
@@ -79,7 +85,7 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
     first_end_chunk = min([first_start_chunk + timedelta(days=30), end])
 
     gsp_data_df = []
-    _LOG.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
+    logger.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
     for gsp_id in gsp_ids:
 
         one_gsp_data_df = []
@@ -89,7 +95,7 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
         end_chunk = first_end_chunk
 
         while start_chunk <= end:
-            _LOG.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
+            logger.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
 
             one_gsp_data_df.append(
                 pvl.between(
@@ -123,3 +129,34 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
     gsp_data_df['datetime_gmt'] = gsp_data_df['datetime_gmt'].dt.tz_localize(None)
 
     return gsp_data_df
+
+
+def load_solar_pv_gsp_data_from_gcs(
+        filename: Union[str, Path],
+        start_dt: Optional[datetime] = None,
+        end_dt: Optional[datetime] = None) -> pd.DataFrame:
+    """
+    Load solar pv gsp data from gcs (although there is an option to load from local - for testing)
+    @param filename: filename of file to be loaded, can put 'gs://' files in here too
+    @param start_dt: the start datetime, which to trim the data to
+    @param end_dt: the end datetime, which to trim the data to
+    @return: dataframe of pv data
+    """
+    logger.debug('Loading Solar PV GCP Data from GCS')
+    # Open data - it maye be quicker to open byte file first, but decided just to keep it like this at the moment
+    pv_power = xr.open_zarr(filename)
+
+    pv_power = pv_power.sel(datetime_gmt=slice(start_dt, end_dt))
+    pv_power_df = pv_power.to_dataframe()
+
+    # Save memory
+    del pv_power
+
+    # Process the data a little
+    pv_power_df = pv_power_df.dropna(axis='columns', how='all')
+    pv_power_df = pv_power_df.clip(lower=0, upper=5E7)
+
+    # make column names ints, not strings
+    pv_power_df.columns = [int(col) for col in pv_power_df.columns]
+
+    return pv_power_df

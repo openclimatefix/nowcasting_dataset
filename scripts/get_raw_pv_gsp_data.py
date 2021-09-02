@@ -4,6 +4,7 @@
 # 2021-09-01
 # Peter Dudfield
 #
+# The data is about 1MB for a month of data
 ############
 from datetime import datetime
 import pytz
@@ -35,6 +36,12 @@ delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 
 # get data
 data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
+
+# pivot to index as datetime_gmt, and columns as gsp_id
+data_df = data_df.pivot(index='datetime_gmt', columns='gsp_id', values='generation_mw')
+data_df.columns = [str(col) for col in data_df.columns]
+
+# change to xarray
 data_xarray = data_df.to_xarray()
 
 # save config to file

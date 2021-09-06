@@ -4,6 +4,8 @@ import io
 import gcsfs
 import logging
 import zarr
+from urllib.request import urlopen
+import geopandas as gpd
 
 import pandas as pd
 import numpy as np
@@ -16,6 +18,8 @@ from datetime import datetime, timedelta
 
 
 logger = logging.getLogger(__name__)
+
+WGS84_CRS = "EPSG:4326"
 
 
 def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:
@@ -35,6 +39,22 @@ def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:
     # make dataframe
     results = d["result"]["records"]
     return pd.DataFrame(results)
+
+
+def get_pv_gsp_shape() -> gpd.GeoDataFrame:
+    """
+    Get the the gsp shape file
+    """
+
+    logger.debug('Loading GSP shape file')
+
+    url = (
+        "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/resource/"
+        "a3ed5711-407a-42a9-a63a-011615eea7e0/download/gsp_regions_20181031.geojson"
+    )
+
+    with urlopen(url) as response:
+        return gpd.read_file(response).to_crs(WGS84_CRS)
 
 
 def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:

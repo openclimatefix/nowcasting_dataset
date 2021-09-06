@@ -1,8 +1,10 @@
 from nowcasting_dataset.data_sources.pv_gsp_data_source import (
     get_pv_gsp_metadata_from_eso,
     load_pv_gsp_raw_data_from_pvlive,
+    get_pv_gsp_shape
 )
 import pandas as pd
+import geopandas as gpd
 from datetime import datetime
 import pytz
 
@@ -19,6 +21,20 @@ def test_get_gsp_metadata_from_eso():
     assert "gnode_name" in metadata.columns
     assert "gnode_lat" in metadata.columns
     assert "gnode_lon" in metadata.columns
+
+
+def test_get_pv_gsp_shape():
+    """
+    Test to get the gsp metadata from eso. This should take ~1 second.
+    @return:
+    """
+
+    gsp_shapes = get_pv_gsp_shape()
+
+    assert isinstance(gsp_shapes, gpd.GeoDataFrame)
+    assert "RegionID" in gsp_shapes.columns
+    assert "RegionName" in gsp_shapes.columns
+    assert "geometry" in gsp_shapes.columns
 
 
 def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day():

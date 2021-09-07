@@ -31,3 +31,12 @@ fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 fig.show(renderer="browser")
 fig.write_html('gsp.html')
 
+
+# find out if point is in gsp
+from shapely.geometry import Point, Polygon
+
+_pnts = [Point(3, 3), Point(8, 8), Point(0, 51.38)]
+pnts = gpd.GeoDataFrame(geometry=_pnts, index=['A', 'B', 'C'])
+
+# useful way to see if a point is in a polygon
+pnts = pnts.assign(**{str(key): pnts.within(geom['geometry']) for key, geom in shapes_gdp.iterrows()})

@@ -14,8 +14,8 @@ def test_get_example_and_batch():
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)
-    PV_DATA_FILENAME = f"{path}/tests/data/pv_data/test.nc"
-    PV_METADATA_FILENAME = f"{path}/tests/data/pv_metadata/UK_PV_metadata.csv"
+    PV_DATA_FILENAME = f"{path}/../tests/data/pv_data/test.nc"
+    PV_METADATA_FILENAME = f"{path}/../tests/data/pv_metadata/UK_PV_metadata.csv"
 
     pv_data_source = PVDataSource(
         history_len=6,
@@ -45,8 +45,8 @@ def test_get_example_and_batch_azimuth():
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)
-    PV_DATA_FILENAME = f"{path}/tests/data/pv_data/test.nc"
-    PV_METADATA_FILENAME = f"{path}/tests/data/pv_metadata/UK_PV_metadata.csv"
+    PV_DATA_FILENAME = f"{path}/../tests/data/pv_data/test.nc"
+    PV_METADATA_FILENAME = f"{path}/../tests/data/pv_metadata/UK_PV_metadata.csv"
 
     pv_data_source = PVDataSource(
         history_len=6,

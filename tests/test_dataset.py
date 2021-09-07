@@ -1,5 +1,5 @@
 import numpy as np
-from nowcasting_dataset.dataset import NowcastingDataset
+from nowcasting_dataset.dataset import NowcastingDataset, NetCDFDataset
 import nowcasting_dataset.time as nd_time
 import pytest
 

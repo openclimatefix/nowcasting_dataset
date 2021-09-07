@@ -12,7 +12,7 @@ from pathlib import Path
 @pytest.mark.skip("CD does not have access to GCS")
 def test_get_dataloaders_gcp():
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/"
-    TEMP_PATH = ".."
+    TEMP_PATH = "../nowcasting_dataset"
 
     train_dataset = NetCDFDataset(24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"))
 

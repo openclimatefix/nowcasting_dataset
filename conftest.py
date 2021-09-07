@@ -26,7 +26,7 @@ def sat_filename(use_cloud_data: bool) -> Path:
     else:
         filename = (
             Path(__file__).parent.absolute() /
-            'nowcasting_dataset' / 'tests' / 'data' / 'sat_data.zarr')
+             'tests' / 'data' / 'sat_data.zarr')
         assert filename.exists()
         return filename
 

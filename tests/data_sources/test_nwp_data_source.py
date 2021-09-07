@@ -8,7 +8,7 @@ def test_nwp_data_source_init():
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)
-    NWP_FILENAME = f"{path}/tests/data/nwp_data/test.zarr"
+    NWP_FILENAME = f"{path}/../tests/data/nwp_data/test.zarr"
 
     _ = NWPDataSource(
         filename=NWP_FILENAME,
@@ -24,7 +24,7 @@ def test_nwp_data_source_open():
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)
-    NWP_FILENAME = f"{path}/tests/data/nwp_data/test.zarr"
+    NWP_FILENAME = f"{path}/../tests/data/nwp_data/test.zarr"
 
     nwp = NWPDataSource(
         filename=NWP_FILENAME,
@@ -42,7 +42,7 @@ def test_nwp_data_source_batch():
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)
-    NWP_FILENAME = f"{path}/tests/data/nwp_data/test.zarr"
+    NWP_FILENAME = f"{path}/../tests/data/nwp_data/test.zarr"
 
     nwp = NWPDataSource(
         filename=NWP_FILENAME,

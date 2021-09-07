@@ -1,11 +1,14 @@
 import json
 import urllib
+import logging
 from urllib.request import urlopen
 
 import geopandas as gpd
 import pandas as pd
 
-from nowcasting_dataset.data_sources.gsp.pv_gsp_data_source import logger, WGS84_CRS
+logger = logging.getLogger(__name__)
+
+WGS84_CRS = "EPSG:4326"
 
 
 def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:

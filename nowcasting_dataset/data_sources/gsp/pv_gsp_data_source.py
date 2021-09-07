@@ -11,8 +11,6 @@ from nowcasting_dataset.data_sources.gsp.eso import get_pv_gsp_metadata_from_eso
 
 logger = logging.getLogger(__name__)
 
-WGS84_CRS = "EPSG:4326"
-
 
 def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
     """

@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
-
+import logging
 import pandas as pd
 from pvlive_api import PVLive
 
-from nowcasting_dataset.data_sources.gsp.pv_gsp_data_source import get_list_of_gsp_ids, logger
+from nowcasting_dataset.data_sources.gsp.pv_gsp_data_source import get_list_of_gsp_ids
+
+logger = logging.getLogger(__name__)
 
 
 def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_gsp: int = None) -> pd.DataFrame:

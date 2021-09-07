@@ -1,8 +1,5 @@
-from nowcasting_dataset.data_sources.pv_gsp_data_source import (
-    get_pv_gsp_metadata_from_eso,
-    load_pv_gsp_raw_data_from_pvlive,
-    get_pv_gsp_shape
-)
+from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
+from nowcasting_dataset.data_sources.gsp.eso import get_pv_gsp_metadata_from_eso, get_pv_gsp_shape_from_eso
 import pandas as pd
 import geopandas as gpd
 from datetime import datetime
@@ -29,7 +26,7 @@ def test_get_pv_gsp_shape():
     @return:
     """
 
-    gsp_shapes = get_pv_gsp_shape()
+    gsp_shapes = get_pv_gsp_shape_from_eso()
 
     assert isinstance(gsp_shapes, gpd.GeoDataFrame)
     assert "RegionID" in gsp_shapes.columns

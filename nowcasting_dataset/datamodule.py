@@ -35,8 +35,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     batch_size: int = 8
     n_training_batches_per_epoch: int = 25_000
     n_validation_batches_per_epoch: int = 1_000
-    history_minutes: int = 2  #: Number of minutes of history, not including t0.
-    forecast_minutes: int = 12  #: Number of minutes of forecast, not including t0.
+    history_minutes: int = 30  #: Number of minutes of history, not including t0.
+    forecast_minutes: int = 60  #: Number of minutes of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     sat_channels: Iterable[str] = ("HRV",)
     normalise_sat: bool = True
@@ -56,14 +56,15 @@ class NowcastingDataModule(pl.LightningDataModule):
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
 
-    history_len_5_minutes = history_minutes // 5
-    forecast_len_5_minutes = forecast_minutes // 5
-
-    history_len_30_minutes = history_minutes // 30
-    forecast_len_30_minutes = forecast_minutes // 30
-
     def __post_init__(self):
         super().__init__()
+
+        self.history_len_30_minutes = self.history_minutes // 30
+        self.forecast_len_30_minutes = self.forecast_minutes // 30
+
+        self.history_len_5_minutes = self.history_minutes // 5
+        self.forecast_len_5_minutes = self.forecast_minutes // 5
+
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len_5_minutes = self.history_len_5_minutes + self.forecast_len_5_minutes + 1
         self._total_seq_len_30_minutes = self.history_len_30_minutes + self.forecast_len_30_minutes + 1
@@ -235,11 +236,12 @@ class NowcastingDataModule(pl.LightningDataModule):
         self._check_has_prepared_data()
         all_datetimes = self._get_datetimes()
 
+
         t0_datetimes = nd_time.get_t0_datetimes(
             datetimes=all_datetimes, total_seq_len=self._total_seq_len_30_minutes, history_len=self.history_len_30_minutes
         )
 
-        logger.debug('Got all start times')
+        logger.debug(f'Got all start times, there are {len(t0_datetimes)}')
 
         del all_datetimes
 
@@ -254,10 +256,12 @@ class NowcastingDataModule(pl.LightningDataModule):
         split = len(t0_datetimes) // split_number
         assert split > 0
         split = len(t0_datetimes) - split
+        logger.debug(f'{split=}')
         self.train_t0_datetimes = t0_datetimes[:split]
         self.val_t0_datetimes = t0_datetimes[split:]
 
-        logger.debug('Split data done')
+        logger.debug(f'Split data done, train has {len(self.train_t0_datetimes)}, '
+                     f'validation has {len(self.val_t0_datetimes)}')
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(self.train_dataset, **self._common_dataloader_params())
@@ -310,7 +314,6 @@ class NowcastingDataModule(pl.LightningDataModule):
         for data_source in self.data_sources:
             logger.debug(f'Getting datetimes for {type(data_source).__name__}')
             try:
-                logger.debug(data_source.datetime_index())
                 all_datetime_indexes.append(data_source.datetime_index())
             except NotImplementedError:
                 pass

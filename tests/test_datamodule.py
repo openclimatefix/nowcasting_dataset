@@ -76,7 +76,7 @@ def test_data_module():
         pin_memory=True,  #: Passed to DataLoader.
         num_workers=0,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
-        n_samples_per_timestep=8,  #: Passed to NowcastingDataset
+        n_samples_per_timestep=16,  #: Passed to NowcastingDataset
         n_training_batches_per_epoch=200,  # Add pre-fetch factor!
         n_validation_batches_per_epoch=200,
         collate_fn=lambda x: x,
@@ -84,10 +84,13 @@ def test_data_module():
         normalise_sat=False,
         skip_n_train_batches=0,
         skip_n_validation_batches=0,
-        train_validation_percentage_split=50
+        train_validation_percentage_split=50,
     )
 
     _LOG.info("prepare_data()")
     data_module.prepare_data()
     _LOG.info("setup()")
     data_module.setup()
+
+    data_generator = iter(data_module.train_dataset)
+    x = next(data_generator)

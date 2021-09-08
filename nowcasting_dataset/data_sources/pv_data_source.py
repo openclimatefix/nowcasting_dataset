@@ -168,18 +168,26 @@ class PVDataSource(ImageDataSource):
     ) -> pd.Int64Index:
         """Find the PV system IDs for all the PV systems within the geospatial
         region of interest, defined by self.square."""
+
+        logger.info(f'Getting PV example data for {x_meters_center} and {y_meters_center}')
+
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center)
         x = self.pv_metadata.location_x
         y = self.pv_metadata.location_y
+
         pv_system_ids = self.pv_metadata.index[
             (x >= bounding_box.left) &
             (x <= bounding_box.right) &
             (y >= bounding_box.bottom) &
             (y <= bounding_box.top)]
+
         pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(
             pv_system_ids)
-        assert len(pv_system_ids) > 0
+
+        # there may not be any pv systems in a GSP region
+        # assert len(pv_system_ids) > 0
+
         return pv_system_ids
 
     def get_example(
@@ -187,6 +195,8 @@ class PVDataSource(ImageDataSource):
             t0_dt: pd.Timestamp,
             x_meters_center: Number,
             y_meters_center: Number) -> Example:
+
+        logger.debug('Getting PV example data')
 
         selected_pv_power, selected_pv_azimuth_angle, selected_pv_elevation_angle = self._get_time_slice(t0_dt)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(

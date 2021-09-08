@@ -183,6 +183,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         # Initialise each data_source.
         for data_source in self.data_sources:
+            _LOG.debug(f'Opening {type(data_source).__name__}')
             data_source.open()
 
         self._per_worker_init_has_run = True

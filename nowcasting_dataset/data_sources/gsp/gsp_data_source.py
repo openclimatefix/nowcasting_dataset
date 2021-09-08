@@ -15,14 +15,14 @@ import pandas as pd
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.example import Example
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.data_sources.gsp.eso import get_pv_gsp_metadata_from_eso
+from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class GSPPVDataSource(ImageDataSource):
+class GSPDataSource(ImageDataSource):
     """
     Data source for GSP PV Data
 
@@ -50,21 +50,21 @@ class GSPPVDataSource(ImageDataSource):
         """
 
         # load metadata
-        self.metadata = get_pv_gsp_metadata_from_eso()
+        self.metadata = get_gsp_metadata_from_eso()
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
             self.metadata["gsp_lat"], self.metadata["gsp_lon"]
         )
 
-        self.gsp_pv_power = load_solar_pv_gsp_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
+        self.gsp_power = load_solar_gsp_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
-        self.gsp_pv_power, self.metadata = drop_gcp_system_by_threshold(
-            self.gsp_pv_power, self.metadata, threshold=self.threshold
+        self.gsp_power, self.metadata = drop_gcp_system_by_threshold(
+            self.gsp_power, self.metadata, threshold=self.threshold
         )
 
     def datetime_index(self):
-        return self.gsp_pv_power.index
+        return self.gsp_power.index
 
     def get_locations_for_batch(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """
@@ -84,19 +84,19 @@ class GSPPVDataSource(ImageDataSource):
         for _ in t0_datetimes:
 
             # get random index
-            random_index = self.rng.choice(self.gsp_pv_power.columns)
+            random_index = self.rng.choice(self.gsp_power.columns)
             meta_data = self.metadata[(self.metadata["gsp_id"] == random_index)]
 
             # make sure there is only one
-            metadata_for_pv_system = meta_data.iloc[0]
+            metadata_for_gsp_system = meta_data.iloc[0]
 
             # Get metadata for PV system
-            x_locations.append(metadata_for_pv_system.location_x)
-            y_locations.append(metadata_for_pv_system.location_y)
+            x_locations.append(metadata_for_gsp_system.location_x)
+            y_locations.append(metadata_for_gsp_system.location_y)
 
             logger.debug(
-                f"Found locations for gsp id {random_index} of {metadata_for_pv_system.location_x} and"
-                f"{metadata_for_pv_system.location_y}"
+                f"Found locations for gsp id {random_index} of {metadata_for_gsp_system.location_x} and"
+                f"{metadata_for_gsp_system.location_y}"
             )
 
         return x_locations, y_locations
@@ -145,14 +145,14 @@ class GSPPVDataSource(ImageDataSource):
         return example
 
     def _get_central_gsp_system_id(
-        self, x_meters_center: Number, y_meters_center: Number, gcp_pv_system_ids_with_data_for_timeslice: pd.Int64Index
+        self, x_meters_center: Number, y_meters_center: Number, gcp_system_ids_with_data_for_timeslice: pd.Int64Index
     ) -> int:
         """
 
         Args:
             x_meters_center:
             y_meters_center:
-            gcp_pv_system_ids_with_data_for_timeslice:
+            gcp_system_ids_with_data_for_timeslice:
 
         Returns:
 
@@ -181,12 +181,12 @@ class GSPPVDataSource(ImageDataSource):
                 " y_meters_center."
             )
 
-        gcp_system_ids = gcp_pv_system_ids_with_data_for_timeslice.intersection(gcp_system_ids)
+        gcp_system_ids = gcp_system_ids_with_data_for_timeslice.intersection(gcp_system_ids)
 
         if len(gcp_system_ids) == 0:
             raise NotImplementedError(
                 f"Could not find gcp system id for {x_meters_center}, {y_meters_center} "
-                f"({gcp_system_ids}) and {gcp_pv_system_ids_with_data_for_timeslice}"
+                f"({gcp_system_ids}) and {gcp_system_ids_with_data_for_timeslice}"
             )
 
         return int(gcp_system_ids[0])
@@ -204,7 +204,7 @@ class GSPPVDataSource(ImageDataSource):
         Returns:
 
         """
-        """Find the PV system IDs for all the PV systems within the geospatial
+        """Find the GSP IDs for all the GSP within the geospatial
         region of interest, defined by self.square."""
 
         logger.debug("Getting all gcp in ROI")
@@ -240,7 +240,7 @@ class GSPPVDataSource(ImageDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
-        power = self.gsp_pv_power.loc[start_dt:end_dt]
+        power = self.gsp_power.loc[start_dt:end_dt]
         logger.debug(power)
 
         power = power.dropna(axis="columns", how="any")
@@ -249,23 +249,23 @@ class GSPPVDataSource(ImageDataSource):
         return power
 
 
-def drop_gcp_system_by_threshold(gsp_pv_power: pd.DataFrame, meta_data: pd.DataFrame, threshold: int = 20):
+def drop_gcp_system_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold: int = 20):
 
-    maximum_gsp_pv = gsp_pv_power.max()
+    maximum_gsp = gsp_power.max()
 
-    keep_index = maximum_gsp_pv >= threshold
+    keep_index = maximum_gsp >= threshold
 
     logger.debug(f"Dropping {sum(~keep_index)} GCPs as maximum is not greater {threshold} MW")
     logger.debug(f"Keeping {sum(keep_index)} GCPs as maximum is greater {threshold} MW")
 
-    gsp_pv_power = gsp_pv_power[keep_index.index]
-    gsp_ids = gsp_pv_power.columns
+    gsp_power = gsp_power[keep_index.index]
+    gsp_ids = gsp_power.columns
     meta_data = meta_data[meta_data["gsp_id"].isin(gsp_ids)]
 
-    return gsp_pv_power[keep_index.index], meta_data
+    return gsp_power[keep_index.index], meta_data
 
 
-def load_solar_pv_gsp_data(
+def load_solar_gsp_data(
     filename: Union[str, Path], start_dt: Optional[datetime] = None, end_dt: Optional[datetime] = None
 ) -> pd.DataFrame:
     """
@@ -277,19 +277,19 @@ def load_solar_pv_gsp_data(
     """
     logger.debug("Loading Solar PV GCP Data from GCS")
     # Open data - it maye be quicker to open byte file first, but decided just to keep it like this at the moment
-    pv_power = xr.open_zarr(filename)
+    gsp_power = xr.open_zarr(filename)
 
-    pv_power = pv_power.sel(datetime_gmt=slice(start_dt, end_dt))
-    pv_power_df = pv_power.to_dataframe()
+    gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
+    gsp_power_df = gsp_power.to_dataframe()
 
     # Save memory
-    del pv_power
+    del gsp_power
 
     # Process the data a little
-    pv_power_df = pv_power_df.dropna(axis="columns", how="all")
-    pv_power_df = pv_power_df.clip(lower=0, upper=5e7)
+    gsp_power_df = gsp_power_df.dropna(axis="columns", how="all")
+    gsp_power_df = gsp_power_df.clip(lower=0, upper=5e7)
 
     # make column names ints, not strings
-    pv_power_df.columns = [int(col) for col in pv_power_df.columns]
+    gsp_power_df.columns = [int(col) for col in gsp_power_df.columns]
 
-    return pv_power_df
+    return gsp_power_df

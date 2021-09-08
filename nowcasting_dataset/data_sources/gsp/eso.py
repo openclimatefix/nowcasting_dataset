@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 WGS84_CRS = "EPSG:4326"
 
 
-def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:
+def get_gsp_metadata_from_eso() -> pd.DataFrame:
     """
-    Get the metadata for the pv gsp, from ESO.
+    Get the metadata for the gsp, from ESO.
     @return:
     """
 
@@ -31,7 +31,7 @@ def get_pv_gsp_metadata_from_eso() -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
-def get_pv_gsp_shape_from_eso() -> gpd.GeoDataFrame:
+def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:
     """
     Get the the gsp shape file
     """
@@ -54,7 +54,7 @@ def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
     @return: list of gsp ids
     """
     # get a lit of gsp ids
-    metadata = get_pv_gsp_metadata_from_eso()
+    metadata = get_gsp_metadata_from_eso()
 
     # get rid of nans, and duplicates
     metadata = metadata[~metadata['gsp_id'].isna()]

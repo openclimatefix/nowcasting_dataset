@@ -1,6 +1,6 @@
 from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
-from nowcasting_dataset.data_sources.gsp.eso import get_pv_gsp_metadata_from_eso, get_pv_gsp_shape_from_eso
-from nowcasting_dataset.data_sources.gsp.pv_gsp_data_source import GSPPVDataSource
+from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso, get_gsp_shape_from_eso
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 import pandas as pd
 import geopandas as gpd
 from datetime import datetime
@@ -12,7 +12,7 @@ import os
 def test_gsp_pv_data_source_init():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
-    gsp = GSPPVDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
+    gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
                           start_dt=datetime(2020, 1, 1),
                           end_dt=datetime(2020, 1, 2),
                           history_len=6,
@@ -25,7 +25,7 @@ def test_gsp_pv_data_source_init():
 def test_gsp_pv_data_source_get_locations_for_batch():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
-    gsp = GSPPVDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
+    gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
                           start_dt=datetime(2020, 1, 1),
                           end_dt=datetime(2020, 1, 2),
                           history_len=6,
@@ -34,7 +34,7 @@ def test_gsp_pv_data_source_get_locations_for_batch():
                           image_size_pixels=64,
                           meters_per_pixel=2000)
 
-    locations_x, locations_y = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_pv_power.index[0:10])
+    locations_x, locations_y = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:10])
 
     assert len(locations_x) == len(locations_y)
 
@@ -42,7 +42,7 @@ def test_gsp_pv_data_source_get_locations_for_batch():
 def test_gsp_pv_data_source_get_example():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
-    gsp = GSPPVDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
+    gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
                           start_dt=datetime(2020, 1, 1),
                           end_dt=datetime(2020, 1, 2),
                           history_len=6,
@@ -51,8 +51,8 @@ def test_gsp_pv_data_source_get_example():
                           image_size_pixels=64,
                           meters_per_pixel=2000)
 
-    x_locations, y_locations = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_pv_power.index[0:10])
-    l = gsp.get_example(t0_dt=gsp.gsp_pv_power.index[0], x_meters_center=x_locations[0], y_meters_center=y_locations[0])
+    x_locations, y_locations = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:10])
+    l = gsp.get_example(t0_dt=gsp.gsp_power.index[0], x_meters_center=x_locations[0], y_meters_center=y_locations[0])
 
     assert len(l['gsp_system_id']) == len(l['gsp_yield'].columns)
     assert len(l['gsp_system_x_coords']) == len(l['gsp_system_y_coords'])
@@ -62,7 +62,7 @@ def test_gsp_pv_data_source_get_example():
 def test_gsp_pv_data_source_get_batch():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
-    gsp = GSPPVDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
+    gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
                           start_dt=datetime(2020, 1, 1),
                           end_dt=datetime(2020, 1, 2),
                           minute_delta=30,
@@ -74,9 +74,9 @@ def test_gsp_pv_data_source_get_batch():
 
     batch_size = 10
 
-    x_locations, y_locations = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_pv_power.index[0:batch_size])
+    x_locations, y_locations = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:batch_size])
 
-    batch = gsp.get_batch(t0_datetimes=gsp.gsp_pv_power.index[batch_size:2*batch_size],
+    batch = gsp.get_batch(t0_datetimes=gsp.gsp_power.index[batch_size:2*batch_size],
                       x_locations=x_locations[0:batch_size],
                       y_locations=y_locations[0:batch_size])
 
@@ -93,7 +93,7 @@ def test_get_gsp_metadata_from_eso():
     Test to get the gsp metadata from eso. This should take ~1 second.
     @return:
     """
-    metadata = get_pv_gsp_metadata_from_eso()
+    metadata = get_gsp_metadata_from_eso()
 
     assert isinstance(metadata, pd.DataFrame)
     assert len(metadata) > 100
@@ -108,7 +108,7 @@ def test_get_pv_gsp_shape():
     @return:
     """
 
-    gsp_shapes = get_pv_gsp_shape_from_eso()
+    gsp_shapes = get_gsp_shape_from_eso()
 
     assert isinstance(gsp_shapes, gpd.GeoDataFrame)
     assert "RegionID" in gsp_shapes.columns

@@ -13,10 +13,10 @@ def test_gsp_pv_data_source_init():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
     gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
-                          start_dt=datetime(2020, 1, 1),
-                          end_dt=datetime(2020, 1, 2),
-                          history_len=6,
-                          forecast_len=12,
+                          start_dt=datetime(2019, 1, 1),
+                          end_dt=datetime(2019, 1, 2),
+                          history_minutes=30,
+                          forecast_minutes=60,
                           convert_to_numpy=True,
                           image_size_pixels=64,
                           meters_per_pixel=2000)
@@ -26,10 +26,10 @@ def test_gsp_pv_data_source_get_locations_for_batch():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
     gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
-                          start_dt=datetime(2020, 1, 1),
-                          end_dt=datetime(2020, 1, 2),
-                          history_len=6,
-                          forecast_len=12,
+                          start_dt=datetime(2019, 1, 1),
+                          end_dt=datetime(2019, 1, 2),
+                          history_minutes=30,
+                          forecast_minutes=60,
                           convert_to_numpy=True,
                           image_size_pixels=64,
                           meters_per_pixel=2000)
@@ -43,10 +43,10 @@ def test_gsp_pv_data_source_get_example():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
     gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
-                          start_dt=datetime(2020, 1, 1),
-                          end_dt=datetime(2020, 1, 2),
-                          history_len=6,
-                          forecast_len=12,
+                          start_dt=datetime(2019, 1, 1),
+                          end_dt=datetime(2019, 1, 2),
+                          history_minutes=30,
+                          forecast_minutes=60,
                           convert_to_numpy=True,
                           image_size_pixels=64,
                           meters_per_pixel=2000)
@@ -63,11 +63,11 @@ def test_gsp_pv_data_source_get_batch():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
 
     gsp = GSPDataSource(filename=f"{local_path}/tests/data/gsp/test.zarr",
-                          start_dt=datetime(2020, 1, 1),
-                          end_dt=datetime(2020, 1, 2),
+                          start_dt=datetime(2019, 1, 1),
+                          end_dt=datetime(2019, 1, 2),
+                          history_minutes=30,
+                          forecast_minutes=60,
                           minute_delta=30,
-                          history_len=6,
-                          forecast_len=12,
                           convert_to_numpy=True,
                           image_size_pixels=64,
                           meters_per_pixel=2000)
@@ -81,7 +81,7 @@ def test_gsp_pv_data_source_get_batch():
                       y_locations=y_locations[0:batch_size])
 
     assert len(batch) == batch_size
-    assert len(batch[0]['gsp_yield']) == 19
+    assert len(batch[0]['gsp_yield']) == 4
     assert len(batch[0]['gsp_system_id']) == len(batch[0]['gsp_system_x_coords'])
     assert len(batch[1]['gsp_system_x_coords']) == len(batch[1]['gsp_system_y_coords'])
     assert len(batch[2]['gsp_system_x_coords']) > 0

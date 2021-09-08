@@ -18,8 +18,8 @@ def test_get_example_and_batch():
     PV_METADATA_FILENAME = f"{path}/../tests/data/pv_metadata/UK_PV_metadata.csv"
 
     pv_data_source = PVDataSource(
-        history_len=6,
-        forecast_len=12,
+        history_minutes=30,
+        forecast_minutes=60,
         convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,
@@ -49,8 +49,8 @@ def test_get_example_and_batch_azimuth():
     PV_METADATA_FILENAME = f"{path}/../tests/data/pv_metadata/UK_PV_metadata.csv"
 
     pv_data_source = PVDataSource(
-        history_len=6,
-        forecast_len=12,
+        history_minutes=30,
+        forecast_minutes=60,
         convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,

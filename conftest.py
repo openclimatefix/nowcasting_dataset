@@ -36,8 +36,8 @@ def sat_data_source(sat_filename: Path):
     return SatelliteDataSource(
         image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
         filename=sat_filename,
-        history_len=0,
-        forecast_len=1,
+        history_minutes=0,
+        forecast_minutes=5,
         channels=('HRV', ),
         n_timesteps_per_batch=2,
         convert_to_numpy=True)

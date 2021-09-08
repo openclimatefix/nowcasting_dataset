@@ -39,6 +39,9 @@ class GSPDataSource(ImageDataSource):
     n_gsp_systems_per_example: int = 32
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """
+        Set random seed and load data
+        """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
@@ -46,7 +49,7 @@ class GSPDataSource(ImageDataSource):
 
     def load(self):
         """
-        Load the meta data and load he gsp pv power data
+        Load the meta data and load the gsp power data
         """
 
         # load metadata
@@ -64,13 +67,17 @@ class GSPDataSource(ImageDataSource):
         )
 
     def datetime_index(self):
+        """
+        Return the datetime that are available
+        """
         return self.gsp_power.index
 
     def get_locations_for_batch(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """
-
-        Returns:
-
+        Get x and locations for a batch. Assume that all data is available for all GSP.
+        Random GSP are taken, and the locations of them are returned. This is useful as other datasources need to know
+        which x,y locations to get
+        Returns: list of x and y locations
         """
 
         logger.debug("Getting locations for the batch")
@@ -102,7 +109,19 @@ class GSPDataSource(ImageDataSource):
         return x_locations, y_locations
 
     def get_example(self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number) -> Example:
+        """
+        Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
 
+        Get data at the location of x,y and get surrounding gsp power data also.
+
+        Args:
+            t0_dt: datetime of data. History and forecast are also returned
+            x_meters_center: x location of centroid gsp.
+            y_meters_center: y location of centroid gsp.
+
+        Returns: Dictionary with GSP data in it
+
+        """
         logger.debug("Getting example data")
 
         # get the power for the on time stamp, including history and forecaster
@@ -148,14 +167,13 @@ class GSPDataSource(ImageDataSource):
         self, x_meters_center: Number, y_meters_center: Number, gcp_system_ids_with_data_for_timeslice: pd.Int64Index
     ) -> int:
         """
-
+        Get the system id of the central system from coordinates
         Args:
-            x_meters_center:
-            y_meters_center:
-            gcp_system_ids_with_data_for_timeslice:
+            x_meters_center: the location of the gsp (x)
+            y_meters_center: the location of the gsp (y)
+            gcp_system_ids_with_data_for_timeslice: List of gsp ids that are available for a certain timeslice
 
-        Returns:
-
+        Returns: gsp id
         """
 
         logger.debug("Getting Central gcp")
@@ -195,17 +213,15 @@ class GSPDataSource(ImageDataSource):
         self, x_meters_center: Number, y_meters_center: Number, gsp_system_ids_with_data_for_timeslice: pd.Int64Index
     ) -> pd.Int64Index:
         """
-
+        Find the GSP IDs for all the GSP within the geospatial region of interest, defined by self.square.
         Args:
-            x_meters_center:
-            y_meters_center:
-            gsp_system_ids_with_data_for_timeslice:
+            x_meters_center: centroid of area of interest (x coords)
+            y_meters_center: centroid of area of interest (y coords)
+            gsp_system_ids_with_data_for_timeslice: ids that are avialble for a specific time slice
 
-        Returns:
+        Returns: list of gsp ids that are in area of interest
 
         """
-        """Find the GSP IDs for all the GSP within the geospatial
-        region of interest, defined by self.square."""
 
         logger.debug("Getting all gcp in ROI")
 
@@ -218,6 +234,7 @@ class GSPDataSource(ImageDataSource):
         x = self.metadata.location_x
         y = self.metadata.location_y
 
+        # make mask of gsp_ids
         mask = (
             (x >= bounding_box.left) & (x <= bounding_box.right) & (y >= bounding_box.bottom) & (y <= bounding_box.top)
         )
@@ -229,34 +246,43 @@ class GSPDataSource(ImageDataSource):
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> [pd.DataFrame]:
         """
-
+        Get time slice of gsp power data for give time.
+        Note the time is extended backwards by history lenght and forward by prediction time
         Args:
-            t0_dt:
+            t0_dt: timestamp of interest
 
-        Returns:
-
+        Returns: pandas data frame of gsp power data
         """
 
+        # get start and end datetime, takening into account history and forecast length.
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
+        # select power for certain times
         power = self.gsp_power.loc[start_dt:end_dt]
-        logger.debug(power)
 
+        # remove any nans
         power = power.dropna(axis="columns", how="any")
-        logger.debug(power)
 
         return power
 
 
-def drop_gcp_system_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold: int = 20):
+def drop_gcp_system_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
+    """
+    Drop gcp system where the max power is below a certain threshold
+    Args:
+        gsp_power: gsp power data
+        meta_data: the gsp meta data
+        threshold_mw: the threshold where we only taken gsp system with a maximum power, above this value.
 
+    Returns: power data and metadata
+    """
     maximum_gsp = gsp_power.max()
 
-    keep_index = maximum_gsp >= threshold
+    keep_index = maximum_gsp >= threshold_mw
 
-    logger.debug(f"Dropping {sum(~keep_index)} GCPs as maximum is not greater {threshold} MW")
-    logger.debug(f"Keeping {sum(keep_index)} GCPs as maximum is greater {threshold} MW")
+    logger.debug(f"Dropping {sum(~keep_index)} GCPs as maximum is not greater {threshold_mw} MW")
+    logger.debug(f"Keeping {sum(keep_index)} GCPs as maximum is greater {threshold_mw} MW")
 
     gsp_power = gsp_power[keep_index.index]
     gsp_ids = gsp_power.columns

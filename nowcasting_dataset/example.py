@@ -80,6 +80,9 @@ class Example(TypedDict):
     gsp_system_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
     gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
+    # if the centroid type is a GSP, or a PV system
+    centroid_type: str  #: shape = [batch_size, ]
+
 def to_numpy(example: Example) -> Example:
     for key, value in example.items():
         if isinstance(value, xr.DataArray):

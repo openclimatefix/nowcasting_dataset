@@ -39,6 +39,7 @@ class PVDataSource(ImageDataSource):
     n_pv_systems_per_example: int = 128
     load_azimuth_and_elevation: bool = False
     load_from_gcs: bool = True  # option to load data from gcs, or local file
+    get_centroid: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -185,16 +186,17 @@ class PVDataSource(ImageDataSource):
             y_meters_center: Number) -> Example:
 
         selected_pv_power, selected_pv_azimuth_angle, selected_pv_elevation_angle = self._get_time_slice(t0_dt)
-        central_pv_system_id = self._get_central_pv_system_id(
-            x_meters_center, y_meters_center, selected_pv_power.columns)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
             x_meters_center, y_meters_center, selected_pv_power.columns)
+        if self.get_centroid:
+            central_pv_system_id = self._get_central_pv_system_id(
+                x_meters_center, y_meters_center, selected_pv_power.columns)
 
-        # By convention, the 'target' PV system ID (the one in the center
-        # of the image) must be in the first position of the returned arrays.
-        all_pv_system_ids = all_pv_system_ids.drop(central_pv_system_id)
-        all_pv_system_ids = all_pv_system_ids.insert(
-            loc=0, item=central_pv_system_id)
+            # By convention, the 'target' PV system ID (the one in the center
+            # of the image) must be in the first position of the returned arrays.
+            all_pv_system_ids = all_pv_system_ids.drop(central_pv_system_id)
+            all_pv_system_ids = all_pv_system_ids.insert(
+                loc=0, item=central_pv_system_id)
 
         all_pv_system_ids = all_pv_system_ids[:self.n_pv_systems_per_example]
 
@@ -220,6 +222,9 @@ class PVDataSource(ImageDataSource):
         if self.load_azimuth_and_elevation:
             example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle
             example[PV_ELEVATION_ANGLE] = selected_pv_elevation_angle
+
+        if self.get_centroid:
+            example['centroid_type'] = 'pv'
 
         # Pad (if necessary) so returned arrays are always of size
         # n_pv_systems_per_example.

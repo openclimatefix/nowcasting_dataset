@@ -4,12 +4,14 @@ import pandas as pd
 from copy import deepcopy
 import torch
 from nowcasting_dataset import data_sources
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset import consts
 from nowcasting_dataset import dataset
 from dataclasses import dataclass
 import warnings
+
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import pytorch_lightning as pl
@@ -25,6 +27,7 @@ class NowcastingDataModule(pl.LightningDataModule):
       train_t0_datetimes: pd.DatetimeIndex
       val_t0_datetimes: pd.DatetimeIndex
     """
+
     pv_power_filename: Optional[Union[str, Path]] = None
     pv_metadata_filename: Optional[Union[str, Path]] = None
     batch_size: int = 8
@@ -33,11 +36,10 @@ class NowcastingDataModule(pl.LightningDataModule):
     history_len: int = 2  #: Number of timesteps of history, not including t0.
     forecast_len: int = 12  #: Number of timesteps of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
-    sat_channels: Iterable[str] = ('HRV', )
+    sat_channels: Iterable[str] = ("HRV",)
     normalise_sat: bool = True
     nwp_base_path: Optional[str] = None
-    nwp_channels: Optional[Iterable[str]] = (
-        't', 'dswrf', 'prate', 'r', 'sde', 'si10', 'vis', 'lcc', 'mcc', 'hcc')
+    nwp_channels: Optional[Iterable[str]] = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
     image_size_pixels: int = 128  #: Passed to Data Sources.
     meters_per_pixel: int = 2000  #: Passed to Data Sources.
     convert_to_numpy: bool = True  #: Passed to Data Sources.
@@ -46,8 +48,9 @@ class NowcastingDataModule(pl.LightningDataModule):
     prefetch_factor: int = 64  #: Passed to DataLoader.
     n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
     collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
+    gsp_filename: Optional[Union[str, Path]] = None
 
-    skip_n_train_batches: int = 0 # number of train batches to skip
+    skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
 
     def __post_init__(self):
@@ -60,8 +63,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def prepare_data(self) -> None:
         # Satellite data
-        n_timesteps_per_batch = (
-                self.batch_size // self.n_samples_per_timestep)
+        n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
 
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
@@ -72,13 +74,14 @@ class NowcastingDataModule(pl.LightningDataModule):
             channels=self.sat_channels,
             n_timesteps_per_batch=n_timesteps_per_batch,
             convert_to_numpy=self.convert_to_numpy,
-            normalise=self.normalise_sat)
+            normalise=self.normalise_sat,
+        )
 
         self.data_sources = [self.sat_data_source]
+        sat_datetimes = self.sat_data_source.datetime_index()
 
         # PV
         if self.pv_power_filename is not None:
-            sat_datetimes = self.sat_data_source.datetime_index()
 
             self.pv_data_source = data_sources.PVDataSource(
                 filename=self.pv_power_filename,
@@ -89,9 +92,28 @@ class NowcastingDataModule(pl.LightningDataModule):
                 forecast_len=self.forecast_len,
                 convert_to_numpy=self.convert_to_numpy,
                 image_size_pixels=self.image_size_pixels,
-                meters_per_pixel=self.meters_per_pixel)
+                meters_per_pixel=self.meters_per_pixel,
+                get_centroid=False
+            )
 
             self.data_sources = [self.pv_data_source, self.sat_data_source]
+
+        if self.gsp_filename is not None:
+            self.gsp_data_source = GSPDataSource(
+                filename=self.pv_power_filename,
+                start_dt=sat_datetimes[0],
+                end_dt=sat_datetimes[-1],
+                history_len=self.history_len,
+                forecast_len=self.forecast_len,
+                convert_to_numpy=self.convert_to_numpy,
+                image_size_pixels=self.image_size_pixels,
+                meters_per_pixel=self.meters_per_pixel,
+                get_centroid=True
+            )
+
+            # put gsp data source at the start, so data is centered around GSP. This is the current approach,
+            # but in the future we may take a mix of GSP and PV data as the centroid
+            self.data_sources = [self.gsp_data_source, self.data_sources]
 
         # NWP data
         if self.nwp_base_path is not None:
@@ -103,17 +125,17 @@ class NowcastingDataModule(pl.LightningDataModule):
                 forecast_len=self.forecast_len,
                 channels=self.nwp_channels,
                 n_timesteps_per_batch=n_timesteps_per_batch,
-                convert_to_numpy=self.convert_to_numpy)
+                convert_to_numpy=self.convert_to_numpy,
+            )
 
             self.data_sources.append(self.nwp_data_source)
 
         self.datetime_data_source = data_sources.DatetimeDataSource(
-            history_len=self.history_len,
-            forecast_len=self.forecast_len,
-            convert_to_numpy=self.convert_to_numpy)
+            history_len=self.history_len, forecast_len=self.forecast_len, convert_to_numpy=self.convert_to_numpy
+        )
         self.data_sources.append(self.datetime_data_source)
 
-    def setup(self, stage='fit'):
+    def setup(self, stage="fit"):
         """Split data, etc.
 
         Args:
@@ -167,18 +189,16 @@ class NowcastingDataModule(pl.LightningDataModule):
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
             skip_batch_index=self.skip_n_train_batches,
-            n_batches_per_epoch_per_worker=(
-                self._n_batches_per_epoch_per_worker(
-                    self.n_training_batches_per_epoch)),
-            **self._common_dataset_params())
+            n_batches_per_epoch_per_worker=(self._n_batches_per_epoch_per_worker(self.n_training_batches_per_epoch)),
+            **self._common_dataset_params(),
+        )
         self.val_dataset = dataset.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
             skip_batch_index=self.skip_n_validation_batches,
-            n_batches_per_epoch_per_worker=(
-                self._n_batches_per_epoch_per_worker(
-                    self.n_validation_batches_per_epoch)),
-            **self._common_dataset_params())
+            n_batches_per_epoch_per_worker=(self._n_batches_per_epoch_per_worker(self.n_validation_batches_per_epoch)),
+            **self._common_dataset_params(),
+        )
 
         if self.num_workers == 0:
             self.train_dataset.per_worker_init(worker_id=0)
@@ -195,8 +215,8 @@ class NowcastingDataModule(pl.LightningDataModule):
         self._check_has_prepared_data()
         all_datetimes = self._get_datetimes()
         t0_datetimes = nd_time.get_t0_datetimes(
-            datetimes=all_datetimes, total_seq_len=self._total_seq_len,
-            history_len=self.history_len)
+            datetimes=all_datetimes, total_seq_len=self._total_seq_len, history_len=self.history_len
+        )
         del all_datetimes
 
         # Split t0_datetimes into train and test.
@@ -210,12 +230,10 @@ class NowcastingDataModule(pl.LightningDataModule):
         self.val_t0_datetimes = t0_datetimes[split:]
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        return torch.utils.data.DataLoader(
-            self.train_dataset, **self._common_dataloader_params())
+        return torch.utils.data.DataLoader(self.train_dataset, **self._common_dataloader_params())
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
-        return torch.utils.data.DataLoader(
-            self.val_dataset, **self._common_dataloader_params())
+        return torch.utils.data.DataLoader(self.val_dataset, **self._common_dataloader_params())
 
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
         if self.contiguous_dataset is None:
@@ -225,19 +243,17 @@ class NowcastingDataModule(pl.LightningDataModule):
             self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
                 t0_datetimes=self.val_t0_datetimes,
                 data_sources=data_sources,
-                n_batches_per_epoch_per_worker=(
-                    self._n_batches_per_epoch_per_worker(32)),
-                **self._common_dataset_params())
+                n_batches_per_epoch_per_worker=(self._n_batches_per_epoch_per_worker(32)),
+                **self._common_dataset_params(),
+            )
             if self.num_workers == 0:
                 self.contiguous_dataset.per_worker_init(worker_id=0)
-        return torch.utils.data.DataLoader(
-            self.contiguous_dataset, **self._common_dataloader_params())
+        return torch.utils.data.DataLoader(self.contiguous_dataset, **self._common_dataloader_params())
 
     def _common_dataset_params(self) -> Dict:
         return dict(
-            batch_size=self.batch_size,
-            n_samples_per_timestep=self.n_samples_per_timestep,
-            collate_fn=self.collate_fn)
+            batch_size=self.batch_size, n_samples_per_timestep=self.n_samples_per_timestep, collate_fn=self.collate_fn
+        )
 
     def _common_dataloader_params(self) -> Dict:
         return dict(
@@ -245,11 +261,11 @@ class NowcastingDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             worker_init_fn=dataset.worker_init_fn,
             prefetch_factor=self.prefetch_factor,
-
             # Disable automatic batching because NowcastingDataset.__iter__
             # returns complete batches
             batch_size=None,
-            batch_sampler=None)
+            batch_sampler=None,
+        )
 
     def _get_datetimes(self) -> pd.DatetimeIndex:
         """Compute the datetime index.
@@ -265,14 +281,12 @@ class NowcastingDataModule(pl.LightningDataModule):
                 all_datetime_indexes.append(data_source.datetime_index())
             except NotImplementedError:
                 pass
-        datetimes = nd_time.intersection_of_datetimeindexes(
-            all_datetime_indexes)
+        datetimes = nd_time.intersection_of_datetimeindexes(all_datetime_indexes)
         del all_datetime_indexes  # save memory
 
         # Select datetimes that have at least some sunlight
         border_locations = self.sat_data_source.geospatial_border()
-        dt_index = nd_time.select_daylight_datetimes(
-            datetimes=datetimes, locations=border_locations)
+        dt_index = nd_time.select_daylight_datetimes(datetimes=datetimes, locations=border_locations)
 
         # Sanity check
         assert len(dt_index) > 2
@@ -281,4 +295,4 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:
-            raise RuntimeError('Must run prepare_data() first!')
+            raise RuntimeError("Must run prepare_data() first!")

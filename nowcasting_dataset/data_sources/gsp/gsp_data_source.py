@@ -1,6 +1,5 @@
 import logging
 
-import pandas as pd
 import xarray as xr
 
 from typing import Union, Optional, Tuple, List
@@ -12,6 +11,7 @@ import torch
 import numpy as np
 import pandas as pd
 
+from nowcasting_dataset.utils import scale_to_0_to_1
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.example import Example
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
@@ -35,6 +35,7 @@ class GSPDataSource(ImageDataSource):
     end_dt: Optional[datetime] = None
     threshold: int = 20
     minute_delta: int = 30
+    get_centroid: bool = True
 
     n_gsp_systems_per_example: int = 32
 
@@ -60,11 +61,16 @@ class GSPDataSource(ImageDataSource):
             self.metadata["gsp_lat"], self.metadata["gsp_lon"]
         )
 
+        # load gsp data from file / gcp
         self.gsp_power = load_solar_gsp_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
+        # drop any gcp below 20 MW (or set threshold)
         self.gsp_power, self.metadata = drop_gcp_system_by_threshold(
-            self.gsp_power, self.metadata, threshold=self.threshold
+            self.gsp_power, self.metadata, threshold_mw=self.threshold
         )
+
+        # scale from 0 to 1
+        self.gsp_power = scale_to_0_to_1(self.gsp_power)
 
     def datetime_index(self):
         """
@@ -128,18 +134,19 @@ class GSPDataSource(ImageDataSource):
         selected_gsp_power = self._get_time_slice(t0_dt)
 
         # get the main gsp id, and the ids of the gsp in the bounding box
-        central_gsp_system_id = self._get_central_gsp_system_id(
-            x_meters_center, y_meters_center, selected_gsp_power.columns
-        )
         all_gsp_system_ids = self._get_all_gsp_system_ids_in_roi(
             x_meters_center, y_meters_center, selected_gsp_power.columns
         )
-        assert central_gsp_system_id in all_gsp_system_ids
+        if self.get_centroid:
+            central_gsp_system_id = self._get_central_gsp_system_id(
+                x_meters_center, y_meters_center, selected_gsp_power.columns
+            )
+            assert central_gsp_system_id in all_gsp_system_ids
 
-        # By convention, the 'target' PV system ID (the one in the center
-        # of the image) must be in the first position of the returned arrays.
-        all_gsp_system_ids = all_gsp_system_ids.drop(central_gsp_system_id)
-        all_gsp_system_ids = all_gsp_system_ids.insert(loc=0, item=central_gsp_system_id)
+            # By convention, the 'target' PV system ID (the one in the center
+            # of the image) must be in the first position of the returned arrays.
+            all_gsp_system_ids = all_gsp_system_ids.drop(central_gsp_system_id)
+            all_gsp_system_ids = all_gsp_system_ids.insert(loc=0, item=central_gsp_system_id)
 
         # only select at most {n_gsp_systems_per_example} at most
         all_gsp_system_ids = all_gsp_system_ids[: self.n_gsp_systems_per_example]
@@ -160,6 +167,9 @@ class GSPDataSource(ImageDataSource):
             gsp_system_y_coords=gsp_system_y_coords,
             gsp_datetime_index=selected_gsp_power.index,
         )
+
+        if self.get_centroid:
+            example['centroid_type'] = 'gsp'
 
         return example
 

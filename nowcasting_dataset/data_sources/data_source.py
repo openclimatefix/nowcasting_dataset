@@ -8,6 +8,10 @@ from dataclasses import dataclass, InitVar
 from typing import List, Tuple, Iterable
 import xarray as xr
 import itertools
+import logging
+from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,6 +27,7 @@ class DataSource:
         at t0.  If both history_len and forecast_len are 0, then the example
         will consist of a single timestep at t0.
       convert_to_numpy: Whether or not to convert each example to numpy.
+      minute_delta: The time delta between each data point
     """
     history_len: int
     forecast_len: int
@@ -31,10 +36,15 @@ class DataSource:
     def __post_init__(self):
         assert self.history_len >= 0
         assert self.forecast_len >= 0
+
+        if not hasattr(self, 'minute_delta'):
+            logging.debug('Setting minute_delta attribute to 5 minutes. This means the data is spaced 5 minutes apart')
+            self.minute_delta = 5
+
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
-        self._history_dur = nd_time.timesteps_to_duration(self.history_len)
-        self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len)
+        self._history_dur = nd_time.timesteps_to_duration(self.history_len, self.minute_delta)
+        self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len, self.minute_delta)
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt - self._history_dur

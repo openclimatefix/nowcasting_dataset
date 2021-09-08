@@ -112,9 +112,9 @@ def get_t0_datetimes(
     return t0_datetimes
 
 
-def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:
+def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
     assert n_timesteps >= 0
-    return pd.Timedelta(n_timesteps * 5, unit='minutes')
+    return pd.Timedelta(n_timesteps * minute_delta, unit='minutes')
 
 
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:

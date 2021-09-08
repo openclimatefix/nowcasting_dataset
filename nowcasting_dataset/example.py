@@ -70,6 +70,15 @@ class Example(TypedDict):
     day_of_year_sin: Array
     day_of_year_cos: Array
 
+    #: GSP PV yield from all GSP in the region of interest (ROI).
+    # : Includes central GSP, which will always be the first entry.
+    gsp_yield: Array   #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
+    # GSP identification.
+    gsp_system_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    #: GSP geographical location (in OSGB coords).
+    gsp_system_x_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_system_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
 def to_numpy(example: Example) -> Example:
     for key, value in example.items():

@@ -1,6 +1,7 @@
 import json
 import urllib
 import logging
+from typing import List
 from urllib.request import urlopen
 
 import geopandas as gpd
@@ -44,3 +45,31 @@ def get_pv_gsp_shape_from_eso() -> gpd.GeoDataFrame:
 
     with urlopen(url) as response:
         return gpd.read_file(response).to_crs(WGS84_CRS)
+
+
+def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
+    """
+    Get list of gsp ids from ESO metadata
+    @param maximum_number_of_gsp: clib list by this amount.
+    @return: list of gsp ids
+    """
+    # get a lit of gsp ids
+    metadata = get_pv_gsp_metadata_from_eso()
+
+    # get rid of nans, and duplicates
+    metadata = metadata[~metadata['gsp_id'].isna()]
+    metadata.drop_duplicates(subset=['gsp_id'], inplace=True)
+
+    # make into list
+    gsp_ids = metadata['gsp_id'].to_list()
+    gsp_ids = [int(gsp_id) for gsp_id in gsp_ids]
+
+    # adjust number of gsp_ids
+    if maximum_number_of_gsp is None:
+        maximum_number_of_gsp = len(metadata)
+    if maximum_number_of_gsp > len(metadata):
+        logging.warning(f'Only {len(metadata)} gsp available to load')
+    if maximum_number_of_gsp < len(metadata):
+        gsp_ids = gsp_ids[0: maximum_number_of_gsp]
+
+    return gsp_ids

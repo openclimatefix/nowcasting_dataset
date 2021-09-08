@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 from pvlive_api import PVLive
 
-from nowcasting_dataset.data_sources.gsp.pv_gsp_data_source import get_list_of_gsp_ids
+from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
 
 logger = logging.getLogger(__name__)
 

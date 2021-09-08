@@ -83,6 +83,9 @@ class PVDataSource(ImageDataSource):
 
         logger.debug('Loading PV Power data')
 
+        if 'gs://' not in self.filename:
+            self.load_from_gcs = False
+
         pv_power = load_solar_pv_data_from_gcs(
             self.filename, start_dt=self.start_dt, end_dt=self.end_dt, from_gcs=self.load_from_gcs)
 

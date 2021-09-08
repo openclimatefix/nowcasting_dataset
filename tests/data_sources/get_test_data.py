@@ -8,7 +8,7 @@ import pandas as pd
 import os
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.gsp.pv_gsp_data_source import GSPPVDataSource
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.satellite_data_source import SatelliteDataSource
 
 # set up
@@ -74,20 +74,20 @@ nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 
 # ### GSP data
 
-gsp = GSPPVDataSource(filename="gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr",
-                          start_dt=datetime(2020, 1, 1),
-                          end_dt=datetime(2020, 1, 2),
-                          history_len=6,
-                          forecast_len=12,
+gsp = GSPDataSource(filename="gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr",
+                          start_dt=start_dt,
+                          end_dt=end_dt,
+                          history_minutes=30,
+                          forecast_minutes=60,
                           convert_to_numpy=True,
                           image_size_pixels=64,
                           meters_per_pixel=2000)
 
 
-gsp.gsp_pv_power.columns = [str(col) for col in gsp.gsp_pv_power.columns]
+gsp.gsp_power.columns = [str(col) for col in gsp.gsp_power.columns]
 
 # select limited data
-data = gsp.gsp_pv_power
+data = gsp.gsp_power
 data = data[data.columns[0:20]]
 
 data_xarray = data.to_xarray()

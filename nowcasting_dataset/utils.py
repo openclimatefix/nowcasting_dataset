@@ -20,7 +20,7 @@ def is_monotonically_increasing(a: Array) -> bool:
     assert a is not None
     assert len(a) > 0
     if isinstance(a, pd.DatetimeIndex):
-        a = a.astype(int)
+        a = a.view(int)
     a = np.asarray(a)
     return np.all(np.diff(a) > 0)
 

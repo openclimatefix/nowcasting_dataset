@@ -5,9 +5,13 @@ from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.example import Example
 import warnings
 import pvlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 FIVE_MINUTES = pd.Timedelta('5 minutes')
+THIRTY_MINUTES = pd.Timedelta('30 minutes')
 
 
 def select_daylight_datetimes(
@@ -57,7 +61,7 @@ def intersection_of_datetimeindexes(
 def get_start_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
-        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+        max_gap: pd.Timedelta = THIRTY_MINUTES) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
@@ -97,6 +101,8 @@ def get_start_datetimes(
             start_dt_index.append(datetimes[start_i:end_i])
         start_i = next_start_i
 
+    assert len(start_dt_index) > 0
+
     return pd.DatetimeIndex(np.concatenate(start_dt_index))
 
 
@@ -104,11 +110,17 @@ def get_t0_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
         history_len: int,
-        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+        max_gap: pd.Timedelta = THIRTY_MINUTES) -> pd.DatetimeIndex:
+
+    logger.debug('Getting t0 datetimes')
+
     start_datetimes = get_start_datetimes(
         datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap)
-    history_dur = timesteps_to_duration(history_len)
+
+    logger.debug('Adding history during to t0 datetimes')
+    history_dur = timesteps_to_duration(history_len, minute_delta=30)
     t0_datetimes = start_datetimes + history_dur
+
     return t0_datetimes
 
 

@@ -29,17 +29,21 @@ class DataSource:
       convert_to_numpy: Whether or not to convert each example to numpy.
       minute_delta: The time delta between each data point
     """
-    history_len: int
-    forecast_len: int
+    history_minutes: int
+    forecast_minutes: int
     convert_to_numpy: bool
 
     def __post_init__(self):
-        assert self.history_len >= 0
-        assert self.forecast_len >= 0
 
         if not hasattr(self, 'minute_delta'):
             logging.debug('Setting minute_delta attribute to 5 minutes. This means the data is spaced 5 minutes apart')
             self.minute_delta = 5
+
+        self.history_len = self.history_minutes // self.minute_delta
+        self.forecast_len = self.forecast_minutes // self.minute_delta
+
+        assert self.history_len >= 0
+        assert self.forecast_len >= 0
 
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1

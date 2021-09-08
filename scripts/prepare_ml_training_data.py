@@ -57,6 +57,8 @@ SAT_FILENAME = BUCKET / config.input_data.satelite_filename
 # Numerical weather predictions
 NWP_BASE_PATH = BUCKET / config.input_data.npw_base_path
 
+# GSP data
+GSP_FILENAME = BUCKET / config.input_data.gsp_filename
 
 DST_NETCDF4_PATH = config.output_data.filepath
 DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
@@ -83,6 +85,7 @@ def get_data_module():
         pv_metadata_filename=f"gs://{PV_METADATA_FILENAME}",
         sat_filename=f"gs://{SAT_FILENAME}",
         nwp_base_path=f"gs://{NWP_BASE_PATH}",
+        gsp_filename=f"gs://{GSP_FILENAME}",
         pin_memory=True,  #: Passed to DataLoader.
         num_workers=6,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.

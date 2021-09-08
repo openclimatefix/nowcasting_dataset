@@ -26,9 +26,11 @@ class InputData(BaseModel):
         description="TODO",
     )
 
+    gsp_filename: str = Field("PV/GSP/v0/pv_gsp.zarr")
+
 
 class OutputData(BaseModel):
-    filepath: str = Field("prepared_ML_training_data/v4/", description="Where the data is saved")
+    filepath: str = Field("prepared_ML_training_data/v5/", description="Where the data is saved")
 
 
 class Process(BaseModel):

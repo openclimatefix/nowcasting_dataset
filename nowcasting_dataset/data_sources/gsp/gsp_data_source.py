@@ -74,7 +74,7 @@ class GSPDataSource(ImageDataSource):
 
         # scale from 0 to 1
         self.gsp_power = scale_to_0_to_1(self.gsp_power)
-        
+
         logger.debug(f'There are {len(self.gsp_power.columns)} gsp systems')
 
     def datetime_index(self):
@@ -98,11 +98,18 @@ class GSPDataSource(ImageDataSource):
         x_locations = []
         y_locations = []
 
-        # assume that all gsp data is there for all timestamps
-        for _ in t0_datetimes:
+
+        for t0_dt in t0_datetimes:
+
+            # choice start and end times
+            start_dt = self._get_start_dt(t0_dt)
+            end_dt = self._get_end_dt(t0_dt)
+
+            # remove any nans
+            gsp_power = self.gsp_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
 
             # get random index
-            random_index = self.rng.choice(self.gsp_power.columns)
+            random_index = self.rng.choice(gsp_power.columns)
             meta_data = self.metadata[(self.metadata["gsp_id"] == random_index)]
 
             # make sure there is only one
@@ -286,7 +293,7 @@ class GSPDataSource(ImageDataSource):
         # remove any nans
         power = power.dropna(axis="columns", how="any")
 
-        logger.debug(f'Found {power.columns} systems')
+        logger.debug(f'Found {len(power.columns)} systems')
 
         return power
 

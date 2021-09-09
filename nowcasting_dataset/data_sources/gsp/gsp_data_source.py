@@ -74,6 +74,8 @@ class GSPDataSource(ImageDataSource):
 
         # scale from 0 to 1
         self.gsp_power = scale_to_0_to_1(self.gsp_power)
+        
+        logger.debug(f'There are {len(self.gsp_power.columns)} gsp systems')
 
     def datetime_index(self):
         """

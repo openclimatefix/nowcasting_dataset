@@ -86,6 +86,7 @@ def test_data_module():
         skip_n_train_batches=0,
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
+        pv_load_azimuth_and_elevation=True,
     )
 
     _LOG.info("prepare_data()")

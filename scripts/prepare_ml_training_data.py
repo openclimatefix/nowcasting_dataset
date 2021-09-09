@@ -41,11 +41,10 @@ from neptune.new.integrations.python_logger import NeptuneHandler
 import logging
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
-_LOG = logging.getLogger("nowcasting_dataset.data_source")
-_LOG.setLevel(logging.WARNING)
-
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
+
+logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
 # load configuration, this can be changed to a different filename as needed
 filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), 'config', 'gcp.yaml')

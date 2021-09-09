@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import pandas as pd
 import numpy as np
 import torch
+from tqdm import tqdm
 from numbers import Number
 from typing import List, Tuple, Union, Optional
 import datetime
@@ -308,7 +309,7 @@ class PVDataSource(ImageDataSource):
         # loop over all metadata and fine azimuth and elevation angles,
         # not sure this is the best method to use, as currently this step takes ~2 minute for 745 pv systems,
         # and 235 datestamps (~100,000 point). But this only needs to be done once.
-        for i in range(0, len(self.pv_metadata)):
+        for i in tqdm(range(len(self.pv_metadata))):
 
             row = self.pv_metadata.iloc[i]
 

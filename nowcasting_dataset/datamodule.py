@@ -52,6 +52,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
     gsp_filename: Optional[Union[str, Path]] = None
     train_validation_percentage_split: float = 20
+    pv_load_azimuth_and_elevation: bool = False
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
@@ -105,7 +106,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 image_size_pixels=self.image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 get_centroid=False,
-                load_azimuth_and_elevation=False,
+                load_azimuth_and_elevation=self.pv_load_azimuth_and_elevation,
             )
 
             self.data_sources = [self.pv_data_source, self.sat_data_source]

@@ -204,8 +204,8 @@ class GSPDataSource(ImageDataSource):
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.
         meta_data_index = self.metadata.index[
-            np.isclose(self.metadata.location_x, x_meters_center)
-            & np.isclose(self.metadata.location_y, y_meters_center)
+            np.isclose(self.metadata.location_x, x_meters_center, rtol=1E-05, atol=1E-05)
+            & np.isclose(self.metadata.location_y, y_meters_center, rtol=1E-05, atol=1E-05)
         ]
         gsp_system_ids = self.metadata.loc[meta_data_index].gsp_id.values
 

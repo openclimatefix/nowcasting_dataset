@@ -54,7 +54,7 @@ def test_gsp_pv_data_source_get_example():
     x_locations, y_locations = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:10])
     l = gsp.get_example(t0_dt=gsp.gsp_power.index[0], x_meters_center=x_locations[0], y_meters_center=y_locations[0])
 
-    assert len(l['gsp_system_id']) == len(l['gsp_yield'].columns)
+    assert len(l['gsp_system_id']) == len(l['gsp_yield'][0])
     assert len(l['gsp_system_x_coords']) == len(l['gsp_system_y_coords'])
     assert len(l['gsp_system_x_coords']) > 0
 

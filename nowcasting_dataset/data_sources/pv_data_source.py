@@ -78,7 +78,7 @@ class PVDataSource(ImageDataSource):
 
         logger.debug('Loading PV Power data')
 
-        if 'gs://' not in self.filename:
+        if 'gs://' not in str(self.filename):
             self.load_from_gcs = False
 
         pv_power = load_solar_pv_data_from_gcs(

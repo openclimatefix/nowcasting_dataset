@@ -20,7 +20,8 @@ from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_configuration_to_cloud
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.example import Example, DATETIME_FEATURE_NAMES
+from nowcasting_dataset.example import Example
+from nowcasting_dataset.data_sources.constants import DATETIME_FEATURE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from pathlib import Path
@@ -41,7 +42,7 @@ _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
 
 # load configuration, this can be changed to a different filename as needed
-filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), 'config', 'example.yaml')
+filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), 'config', 'gcp.yaml')
 config = load_yaml_configuration(filename)
 
 # set the gcs bucket name
@@ -66,7 +67,7 @@ DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
 
 UPLOAD_EVERY_N_BATCHES = 16
-CLOUD = "aws" # either gcp or aws
+CLOUD = "gcp" # either gcp or aws
 
 # Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
 # https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999/2
@@ -76,18 +77,18 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 def get_data_module():
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
-        history_len=config.process.history_length,  #: Number of timesteps of history, not including t0.
-        forecast_len=config.process.forecast_length,  #: Number of timesteps of forecast.
+        history_minutes=config.process.history_length*5,  #: Number of timesteps of history, not including t0.
+        forecast_minutes=config.process.forecast_length*5,  #: Number of timesteps of forecast.
         image_size_pixels=config.process.image_size_pixels,
         nwp_channels=NWP_VARIABLE_NAMES,
         sat_channels=SAT_VARIABLE_NAMES,
-        pv_power_filename=PV_DATA_FILENAME,
+        pv_power_filename=f"gs://{PV_DATA_FILENAME}",
         pv_metadata_filename=f"gs://{PV_METADATA_FILENAME}",
         sat_filename=f"gs://{SAT_FILENAME}",
         nwp_base_path=f"gs://{NWP_BASE_PATH}",
         gsp_filename=f"gs://{GSP_FILENAME}",
         pin_memory=True,  #: Passed to DataLoader.
-        num_workers=6,  #: Passed to DataLoader.
+        num_workers=0,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
         n_samples_per_timestep=8,  #: Passed to NowcastingDataset
         n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!

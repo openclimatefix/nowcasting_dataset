@@ -257,7 +257,8 @@ class NowcastingDataModule(pl.LightningDataModule):
         split = len(t0_datetimes) // split_number
         assert split > 0
         split = len(t0_datetimes) - split
-        logger.debug(f'{split=}')
+
+        # set train and validation times
         self.train_t0_datetimes = t0_datetimes[:split]
         self.val_t0_datetimes = t0_datetimes[split:]
 

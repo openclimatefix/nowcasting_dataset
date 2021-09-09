@@ -12,13 +12,14 @@ import numpy as np
 import pandas as pd
 
 from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
+from nowcasting_dataset.square import get_bounding_box_mask
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.example import Example
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 
 from nowcasting_dataset.data_sources.constants import GSP_YIELD, GSP_SYSTEM_ID, GSP_SYSTEM_X_COORDS, \
-    GSP_SYSTEM_Y_COORDS, GSP_DATETIME_INDEX, N_GSP_PER_EXAMPLE, CENTROID_TYPE
+    GSP_SYSTEM_Y_COORDS, DEFAULT_N_GSP_PER_EXAMPLE, CENTROID_TYPE
 
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class GSPDataSource(ImageDataSource):
     threshold: int = 20
     minute_delta: int = 30
     get_centroid: bool = True
-    n_gsp_systems_per_example: int = N_GSP_PER_EXAMPLE
+    n_gsp_systems_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -66,8 +67,8 @@ class GSPDataSource(ImageDataSource):
         # load gsp data from file / gcp
         self.gsp_power = load_solar_gsp_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
-        # drop any gcp below 20 MW (or set threshold)
-        self.gsp_power, self.metadata = drop_gcp_system_by_threshold(
+        # drop any gsp below 20 MW (or set threshold)
+        self.gsp_power, self.metadata = drop_gsp_system_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold
         )
 
@@ -105,7 +106,7 @@ class GSPDataSource(ImageDataSource):
             # make sure there is only one
             metadata_for_gsp_system = meta_data.iloc[0]
 
-            # Get metadata for PV system
+            # Get metadata for GSP
             x_locations.append(metadata_for_gsp_system.location_x)
             y_locations.append(metadata_for_gsp_system.location_y)
 
@@ -145,7 +146,7 @@ class GSPDataSource(ImageDataSource):
             )
             assert central_gsp_system_id in all_gsp_system_ids
 
-            # By convention, the 'target' PV system ID (the one in the center
+            # By convention, the 'target' GSP system ID (the one in the center
             # of the image) must be in the first position of the returned arrays.
             all_gsp_system_ids = all_gsp_system_ids.drop(central_gsp_system_id)
             all_gsp_system_ids = all_gsp_system_ids.insert(loc=0, item=central_gsp_system_id)
@@ -183,50 +184,50 @@ class GSPDataSource(ImageDataSource):
         return example
 
     def _get_central_gsp_system_id(
-        self, x_meters_center: Number, y_meters_center: Number, gcp_system_ids_with_data_for_timeslice: pd.Int64Index
+        self, x_meters_center: Number, y_meters_center: Number, gsp_system_ids_with_data_for_timeslice: pd.Int64Index
     ) -> int:
         """
         Get the system id of the central system from coordinates
         Args:
             x_meters_center: the location of the gsp (x)
             y_meters_center: the location of the gsp (y)
-            gcp_system_ids_with_data_for_timeslice: List of gsp ids that are available for a certain timeslice
+            gsp_system_ids_with_data_for_timeslice: List of gsp ids that are available for a certain timeslice
 
         Returns: gsp id
         """
 
-        logger.debug("Getting Central gcp")
+        logger.debug("Getting Central gsp")
 
         # If x_meters_center and y_meters_center have been chosen
-        # by PVDataSource.pick_locations_for_batch() then we just have
-        # to find the pv_system_ids at that exact location.  This is
+        # by {}.get_locations_for_batch() then we just have
+        # to find the gsp_ids at that exact location.  This is
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.
         meta_data_index = self.metadata.index[
             np.isclose(self.metadata.location_x, x_meters_center)
             & np.isclose(self.metadata.location_y, y_meters_center)
         ]
-        gcp_system_ids = self.metadata.loc[meta_data_index].gsp_id.values
+        gsp_system_ids = self.metadata.loc[meta_data_index].gsp_id.values
 
-        if len(gcp_system_ids) == 0:
-            # TODO: Implement finding PV systems closest to x_meters_center,
+        if len(gsp_system_ids) == 0:
+            # TODO: Implement finding GSP systems closest to x_meters_center,
             # y_meters_center.  This will probably be quite slow, so always
             # try finding an exact match first (which is super-fast).
             raise NotImplementedError(
-                "Not yet implemented the ability to find GCP PV systems *nearest*"
+                "Not yet implemented the ability to find GSP systems *nearest*"
                 " (but not at the identical location to) x_meters_center and"
                 " y_meters_center."
             )
 
-        gcp_system_ids = gcp_system_ids_with_data_for_timeslice.intersection(gcp_system_ids)
+        gsp_system_ids = gsp_system_ids_with_data_for_timeslice.intersection(gsp_system_ids)
 
-        if len(gcp_system_ids) == 0:
+        if len(gsp_system_ids) == 0:
             raise NotImplementedError(
-                f"Could not find gcp system id for {x_meters_center}, {y_meters_center} "
-                f"({gcp_system_ids}) and {gcp_system_ids_with_data_for_timeslice}"
+                f"Could not find gsp system id for {x_meters_center}, {y_meters_center} "
+                f"({gsp_system_ids}) and {gsp_system_ids_with_data_for_timeslice}"
             )
 
-        return int(gcp_system_ids[0])
+        return int(gsp_system_ids[0])
 
     def _get_all_gsp_system_ids_in_roi(
         self, x_meters_center: Number, y_meters_center: Number, gsp_system_ids_with_data_for_timeslice: pd.Int64Index
@@ -242,7 +243,7 @@ class GSPDataSource(ImageDataSource):
 
         """
 
-        logger.debug("Getting all gcp in ROI")
+        logger.debug("Getting all gsp in ROI")
 
         # creating bounding box
         bounding_box = self._square.bounding_box_centered_on(
@@ -254,9 +255,7 @@ class GSPDataSource(ImageDataSource):
         y = self.metadata.location_y
 
         # make mask of gsp_ids
-        mask = (
-            (x >= bounding_box.left) & (x <= bounding_box.right) & (y >= bounding_box.bottom) & (y <= bounding_box.top)
-        )
+        mask = get_bounding_box_mask(bounding_box, x, y)
 
         gsp_system_ids = self.metadata[mask].gsp_id
         gsp_system_ids = gsp_system_ids_with_data_for_timeslice.intersection(gsp_system_ids)
@@ -286,9 +285,9 @@ class GSPDataSource(ImageDataSource):
         return power
 
 
-def drop_gcp_system_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
+def drop_gsp_system_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
     """
-    Drop gcp system where the max power is below a certain threshold
+    Drop gsp system where the max power is below a certain threshold
     Args:
         gsp_power: gsp power data
         meta_data: the gsp meta data
@@ -300,8 +299,8 @@ def drop_gcp_system_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFram
 
     keep_index = maximum_gsp >= threshold_mw
 
-    logger.debug(f"Dropping {sum(~keep_index)} GCPs as maximum is not greater {threshold_mw} MW")
-    logger.debug(f"Keeping {sum(keep_index)} GCPs as maximum is greater {threshold_mw} MW")
+    logger.debug(f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW")
+    logger.debug(f"Keeping {sum(keep_index)} GSPs as maximum is greater {threshold_mw} MW")
 
     gsp_power = gsp_power[keep_index.index]
     gsp_ids = gsp_power.columns

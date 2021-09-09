@@ -7,6 +7,8 @@ from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
 
 logger = logging.getLogger(__name__)
 
+DAY_DELTA_CHUNK = 30
+
 
 def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_gsp: int = None) -> pd.DataFrame:
     """
@@ -25,10 +27,11 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
 
     # set the first chunk of data, note that 30 day chunks are used accept if the end time is small than that
     first_start_chunk = start
-    first_end_chunk = min([first_start_chunk + timedelta(days=30), end])
+    first_end_chunk = min([first_start_chunk + timedelta(days=DAY_DELTA_CHUNK), end])
 
     gsp_data_df = []
     logger.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
+    # loop over gsp ids
     for gsp_id in gsp_ids:
 
         one_gsp_data_df = []
@@ -37,6 +40,8 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
         start_chunk = first_start_chunk
         end_chunk = first_end_chunk
 
+        # loop over 30 days chunks (nice to see progress instead of waiting a long time for one command - this might
+        # not be the fastest)
         while start_chunk <= end:
             logger.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
 
@@ -47,8 +52,8 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
             )
 
             # add 30 days to the chunk, to get the next chunk
-            start_chunk = start_chunk + timedelta(days=30)
-            end_chunk = end_chunk + timedelta(days=30)
+            start_chunk = start_chunk + timedelta(days=DAY_DELTA_CHUNK)
+            end_chunk = end_chunk + timedelta(days=DAY_DELTA_CHUNK)
 
             if end_chunk > end:
                 end_chunk = end

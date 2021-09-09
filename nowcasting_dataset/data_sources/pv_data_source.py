@@ -1,8 +1,9 @@
 from nowcasting_dataset.data_sources.constants import PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER, PV_SYSTEM_X_COORDS, \
-    PV_SYSTEM_Y_COORDS, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, N_PV_SYSTEMS_PER_EXAMPLE
+    PV_SYSTEM_Y_COORDS, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import geospatial, utils
+from nowcasting_dataset.square import get_bounding_box_mask
 from dataclasses import dataclass
 import pandas as pd
 import numpy as np
@@ -30,7 +31,7 @@ class PVDataSource(ImageDataSource):
     random_pv_system_for_given_location: Optional[bool] = True
     #: Each example will always have this many PV systems.
     #: If less than this number exist in the data then pad with NaNs.
-    n_pv_systems_per_example: int = N_PV_SYSTEMS_PER_EXAMPLE
+    n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
     load_azimuth_and_elevation: bool = False
     load_from_gcs: bool = True  # option to load data from gcs, or local file
     get_centroid: bool = True
@@ -170,11 +171,9 @@ class PVDataSource(ImageDataSource):
         x = self.pv_metadata.location_x
         y = self.pv_metadata.location_y
 
-        pv_system_ids = self.pv_metadata.index[
-            (x >= bounding_box.left) &
-            (x <= bounding_box.right) &
-            (y >= bounding_box.bottom) &
-            (y <= bounding_box.top)]
+        # make mask of pv system ids
+        mask = get_bounding_box_mask(bounding_box, x, y)
+        pv_system_ids = self.pv_metadata.index[mask]
 
         pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(
             pv_system_ids)

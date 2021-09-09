@@ -109,25 +109,27 @@ def validate_example(
     sat_image_size: int = 64,
     n_sat_channels: int = 1,
     nwp_image_size: int = 0,
-    n_nwp_channels: int = 1
+    n_nwp_channels: int = 1,
+    n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+    n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE,
+
 
 ):
     """
     Validate the size and shape of the data
     Args:
-        data:
-        seq_len_30_minutes:
-        seq_len_5_minutes:
-        sat_image_size:
-        n_sat_channels:
-        nwp_image_size:
-        n_nwp_channels:
-
-    Returns:
-
+        data: Typed dictionary of the data
+        seq_len_30_minutes: the length of the sequence for 30 minutely data
+        seq_len_5_minutes: the length of the sequence for 5 minutely data
+        sat_image_size: the satellite image size
+        n_sat_channels: the number of satellite channgles
+        nwp_image_size: the nwp image size
+        n_nwp_channels: the number of nwp channels
+        n_pv_systems_per_example: the number pv systems with nan padding
+        n_gsp_per_example: the number gsp systems with nan padding
     """
 
-    assert len(data[GSP_SYSTEM_ID]) == N_GSP_PER_EXAMPLE  # TODO should pad this out to 32
+    assert len(data[GSP_SYSTEM_ID]) == n_gsp_per_example
     n_gsp_system_id = len(data[GSP_SYSTEM_ID])
     assert data[GSP_YIELD].shape == (seq_len_30_minutes, n_gsp_system_id)
     assert len(data[GSP_SYSTEM_X_COORDS]) == n_gsp_system_id
@@ -140,12 +142,12 @@ def validate_example(
 
     n_pv_systems = len(data[PV_SYSTEM_ID][~np.isnan(data[PV_SYSTEM_ID])])
 
-    assert len(data[PV_SYSTEM_ID]) == N_PV_SYSTEMS_PER_EXAMPLE
-    assert data[PV_YIELD].shape == (seq_len_5_minutes, N_PV_SYSTEMS_PER_EXAMPLE)
-    assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, N_PV_SYSTEMS_PER_EXAMPLE)
-    assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, N_PV_SYSTEMS_PER_EXAMPLE)
-    assert len(data[PV_SYSTEM_X_COORDS]) == N_PV_SYSTEMS_PER_EXAMPLE
-    assert len(data[PV_SYSTEM_Y_COORDS]) == N_PV_SYSTEMS_PER_EXAMPLE
+    assert len(data[PV_SYSTEM_ID]) == n_pv_systems_per_example
+    assert data[PV_YIELD].shape == (seq_len_5_minutes, n_pv_systems_per_example)
+    assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
+    assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
+    assert len(data[PV_SYSTEM_X_COORDS]) == n_pv_systems_per_example
+    assert len(data[PV_SYSTEM_Y_COORDS]) == n_pv_systems_per_example
     assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
     assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
 

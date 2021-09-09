@@ -166,7 +166,7 @@ class PVDataSource(ImageDataSource):
         """Find the PV system IDs for all the PV systems within the geospatial
         region of interest, defined by self.square."""
 
-        logger.info(f'Getting PV example data for {x_meters_center} and {y_meters_center}')
+        logger.debug(f'Getting PV example data for {x_meters_center} and {y_meters_center}')
 
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center)
@@ -320,6 +320,9 @@ def calculate_azimuth_and_elevation_all_pv_systems(datestamps: List[datetime.dat
     # not sure this is the best method to use, as currently this step takes ~2 minute for 745 pv systems,
     # and 235 datestamps (~100,000 point). But this only needs to be done once.
     with futures.ThreadPoolExecutor(max_workers=len(pv_metadata)) as executor:
+
+        logger.debug('Setting up jobs')
+
         # Submit tasks to the executor.
         future_azimuth_and_elevation_per_pv_system = []
         for i in tqdm(range(len(pv_metadata))):
@@ -329,6 +332,8 @@ def calculate_azimuth_and_elevation_all_pv_systems(datestamps: List[datetime.dat
                 longitude=pv_metadata.iloc[i].longitude,
                 datestamps=datestamps)
             future_azimuth_and_elevation_per_pv_system.append([future_azimuth_and_elevation, pv_metadata.iloc[i].name])
+
+        logger.debug(f'Getting results')
 
         # Collect results from each thread.
         for i in tqdm(range(len(future_azimuth_and_elevation_per_pv_system))):

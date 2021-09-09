@@ -8,6 +8,9 @@ First, manually create the GCS directories given by the constants
 DST_TRAIN_PATH and DST_VALIDATION_PATH, and create the
 LOCAL_TEMP_PATH.  Note that all files will be deleted from
 LOCAL_TEMP_PATH when this script starts up.
+
+Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548 PV systems, for about 1 year
+
 """
 
 from nowcasting_dataset.cloud.gcp import check_path_exists
@@ -88,7 +91,7 @@ def get_data_module():
         nwp_base_path=f"gs://{NWP_BASE_PATH}",
         gsp_filename=f"gs://{GSP_FILENAME}",
         pin_memory=True,  #: Passed to DataLoader.
-        num_workers=0,  #: Passed to DataLoader.
+        num_workers=6,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
         n_samples_per_timestep=8,  #: Passed to NowcastingDataset
         n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!

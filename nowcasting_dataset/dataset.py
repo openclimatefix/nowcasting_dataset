@@ -18,7 +18,7 @@ import torch
 
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
-from nowcasting_dataset.data_sources.constants import DATETIME_FEATURE_NAMES
+from nowcasting_dataset.data_sources.constants import *
 
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.example import Example
@@ -326,6 +326,11 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             pv_yield = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
             pv_yield = pv_yield.to_dataset(name="pv_yield")
             n_pv_systems = len(example["pv_system_id"])
+
+            # GSP
+            n_gsp_systems = len(example[GSP_SYSTEM_ID])
+            pv_yield['gsp_yield'] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp_system"])
+
             # This will expand all dataarrays to have an 'example' dim.
             # 0D
             for name in ["x_meters_center", "y_meters_center"]:
@@ -346,11 +351,20 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                     dims=["example", "pv_system"],
                 )
 
+            # GSP
+            for name in [GSP_SYSTEM_ID, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS]:
+                pv_yield[name] = xr.DataArray(
+                    example[name][None, :],
+                    coords={**example_dim, **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)}},
+                    dims=["example", "gsp_system"],
+                )
+
             individual_datasets.append(pv_yield)
 
             # Merge
             merged_ds = xr.merge(individual_datasets)
             datasets.append(merged_ds)
+
         except Exception as e:
             print(e)
             _LOG.error(e)

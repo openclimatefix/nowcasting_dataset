@@ -1,6 +1,7 @@
 import pandas as pd
+import numpy as np
 
-from nowcasting_dataset.data_sources.pv_data_source import PVDataSource, drop_pv_systems_which_produce_overnight
+from nowcasting_dataset.data_sources.pv_data_source import PVDataSource, drop_pv_systems_which_produce_overnight, calculate_azimuth_and_elevation_all_pv_systems
 from datetime import datetime
 import nowcasting_dataset
 import os
@@ -75,3 +76,20 @@ def test_drop_pv_systems_which_produce_overnight():
     pv_power = pd.DataFrame(index=pd.date_range('2010-01-01', '2010-01-02', freq='5 min'))
 
     _ = drop_pv_systems_which_produce_overnight(pv_power=pv_power)
+
+
+def test_calculate_azimuth_and_elevation_all_pv_systems():
+    datestamps = pd.date_range('2010-01-01', '2010-01-02', freq='5 min')
+    N = 2548
+    pv_metadata = pd.DataFrame(index=range(0, N))
+
+    pv_metadata['latitude'] = np.random.random(N)
+    pv_metadata['longitude'] = np.random.random(N)
+    pv_metadata['name'] = np.random.random(N)
+
+    azimuth, elevation = calculate_azimuth_and_elevation_all_pv_systems(datestamps=datestamps, pv_metadata=pv_metadata)
+
+    assert len(azimuth) == len(datestamps)
+    assert len(azimuth.columns) == N
+
+    # 49 * 2548 = 100,000 takes 26 seconds

@@ -19,6 +19,7 @@ import xarray as xr
 import functools
 import logging
 import time
+from concurrent import futures
 
 logger = logging.getLogger(__name__)
 
@@ -299,34 +300,53 @@ class PVDataSource(ImageDataSource):
 
         logger.debug('Calculating azimuth and elevation angles')
 
-        datestamps = self.datetime_index().to_pydatetime()
+        self.pv_azimuth, self.pv_elevation \
+            = calculate_azimuth_and_elevation_all_pv_systems(self.datetime_index().to_pydatetime(), self.pv_metadata)
 
-        logger.debug(f'Will be calculating for {len(datestamps)} datestamps and {len(self.pv_metadata)} pv systems')
 
-        # create array of index datetime, columns of system_id for both azimuth and elevation
-        pv_azimuth = []
-        pv_elevation = []
+def calculate_azimuth_and_elevation_all_pv_systems(datestamps: List[datetime.datetime], pv_metadata: pd.DataFrame) -> (pd.Series, pd.Series):
+    """
+    Calculate the azimuth and elevation angles for each datestamp, for each pv system.
+    """
 
-        t = time.time()
-        # loop over all metadata and fine azimuth and elevation angles,
-        # not sure this is the best method to use, as currently this step takes ~2 minute for 745 pv systems,
-        # and 235 datestamps (~100,000 point). But this only needs to be done once.
-        for i in tqdm(range(len(self.pv_metadata))):
+    logger.debug(f'Will be calculating for {len(datestamps)} datestamps and {len(pv_metadata)} pv systems')
 
-            row = self.pv_metadata.iloc[i]
+    # create array of index datetime, columns of system_id for both azimuth and elevation
+    pv_azimuth = []
+    pv_elevation = []
 
-            azimuth_and_elevation \
-                = geospatial.calculate_azimuth_and_elevation_angle(latitude=row.latitude,
-                                                                   longitude=row.longitude,
-                                                                   datestamps=datestamps)
+    t = time.time()
+    # loop over all metadata and fine azimuth and elevation angles,
+    # not sure this is the best method to use, as currently this step takes ~2 minute for 745 pv systems,
+    # and 235 datestamps (~100,000 point). But this only needs to be done once.
+    with futures.ThreadPoolExecutor(max_workers=len(pv_metadata)) as executor:
+        # Submit tasks to the executor.
+        future_azimuth_and_elevation_per_pv_system = []
+        for i in tqdm(range(len(pv_metadata))):
+            future_azimuth_and_elevation = executor.submit(
+                geospatial.calculate_azimuth_and_elevation_angle,
+                latitude=pv_metadata.iloc[i].latitude,
+                longitude=pv_metadata.iloc[i].longitude,
+                datestamps=datestamps)
+            future_azimuth_and_elevation_per_pv_system.append([future_azimuth_and_elevation, pv_metadata.iloc[i].name])
 
-            pv_azimuth.append(azimuth_and_elevation.loc[:, 'azimuth'].rename(row.name))
-            pv_elevation.append(azimuth_and_elevation.loc[:, 'elevation'].rename(row.name))
+        # Collect results from each thread.
+        for i in tqdm(range(len(future_azimuth_and_elevation_per_pv_system))):
+            future_azimuth_and_elevation, name = future_azimuth_and_elevation_per_pv_system[i]
+            azimuth_and_elevation = future_azimuth_and_elevation.result()
 
-        self.pv_azimuth = pd.concat(pv_azimuth, axis=1)
-        self.pv_elevation = pd.concat(pv_elevation, axis=1)
+            azimuth = azimuth_and_elevation.loc[:, 'azimuth'].rename(name)
+            elevation = azimuth_and_elevation.loc[:, 'elevation'].rename(name)
 
-        logger.debug(f'Calculated Azimuth and Elevation angles in {time.time() - t} seconds')
+            pv_azimuth.append(azimuth)
+            pv_elevation.append(elevation)
+
+    pv_azimuth = pd.concat(pv_azimuth, axis=1)
+    pv_elevation = pd.concat(pv_elevation, axis=1)
+
+    logger.debug(f'Calculated Azimuth and Elevation angles in {time.time() - t} seconds')
+
+    return pv_azimuth, pv_elevation
 
 
 def load_solar_pv_data_from_gcs(

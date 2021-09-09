@@ -23,8 +23,8 @@ from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_configuration_to_cloud
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
+from nowcasting_dataset.dataset import batch_to_dataset
 from nowcasting_dataset.example import Example
-from nowcasting_dataset.data_sources.constants import DATETIME_FEATURE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from pathlib import Path
@@ -41,6 +41,9 @@ from neptune.new.integrations.python_logger import NeptuneHandler
 import logging
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
+_LOG = logging.getLogger("nowcasting_dataset.data_source")
+_LOG.setLevel(logging.WARNING)
+
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
 
@@ -107,86 +110,6 @@ def get_data_module():
     _LOG.info("setup()")
     data_module.setup()
     return data_module
-
-
-def coord_to_range(da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32) -> xr.DataArray:
-    # TODO: Actually, I think this is over-complicated?  I think we can
-    # just strip off the 'coord' from the dimension.
-    coord = da[dim]
-    da[dim] = np.arange(len(coord), dtype=dtype)
-    if prefix is not None:
-        da[f"{prefix}_{dim}_coords"] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
-    return da
-
-
-def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
-    """Concat all the individual fields in an Example into a single Dataset.
-
-    Args:
-      batch: List of Example objects, which together constitute a single batch.
-    """
-    datasets = []
-    for i, example in enumerate(batch):
-        try:
-            individual_datasets = []
-            example_dim = {"example": np.array([i], dtype=np.int32)}
-            for name in ["sat_data", "nwp"]:
-                ds = example[name].to_dataset(name=name)
-                short_name = name.replace("_data", "")
-                if name == "nwp":
-                    ds = ds.rename({"target_time": "time"})
-                for dim in ["time", "x", "y"]:
-                    ds = coord_to_range(ds, dim, prefix=short_name)
-                ds = ds.rename(
-                    {
-                        "variable": f"{short_name}_variable",
-                        "x": f"{short_name}_x",
-                        "y": f"{short_name}_y",
-                    }
-                )
-                individual_datasets.append(ds)
-
-            # Datetime features
-            for name in DATETIME_FEATURE_NAMES:
-                ds = example[name].rename(name).to_xarray().to_dataset().rename({"index": "time"})
-                ds = coord_to_range(ds, "time", prefix=None)
-                individual_datasets.append(ds)
-
-            # PV
-            pv_yield = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
-            pv_yield = pv_yield.to_dataset(name="pv_yield")
-            n_pv_systems = len(example["pv_system_id"])
-            # This will expand all dataarrays to have an 'example' dim.
-            # 0D
-            for name in ["x_meters_center", "y_meters_center"]:
-                try:
-                    pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
-                except Exception as e:
-                    _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim}')
-                    if name not in example.keys():
-                        _LOG.error(f'{name} not in data keys: {example.keys()}')
-                    _LOG.error(e)
-                    raise Exception
-
-            # 1D
-            for name in ["pv_system_id", "pv_system_row_number", "pv_system_x_coords", "pv_system_y_coords"]:
-                pv_yield[name] = xr.DataArray(
-                    example[name][None, :],
-                    coords=example_dim | {"pv_system": np.arange(n_pv_systems, dtype=np.int32)},
-                    dims=["example", "pv_system"],
-                )
-
-            individual_datasets.append(pv_yield)
-
-            # Merge
-            merged_ds = xr.merge(individual_datasets)
-            datasets.append(merged_ds)
-        except Exception as e:
-            print(e)
-            _LOG.error(e)
-            raise Exception
-
-    return xr.concat(datasets, dim="example")
 
 
 def fix_dtypes(concat_ds):

@@ -301,6 +301,8 @@ class PVDataSource(ImageDataSource):
 
         datestamps = self.datetime_index().to_pydatetime()
 
+        logger.debug(f'Will be calculating for {len(datestamps)} datestamps and {len(self.pv_metadata)} pv systems')
+
         # create array of index datetime, columns of system_id for both azimuth and elevation
         pv_azimuth = []
         pv_elevation = []

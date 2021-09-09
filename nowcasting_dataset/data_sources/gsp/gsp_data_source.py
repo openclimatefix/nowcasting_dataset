@@ -284,7 +284,7 @@ class GSPDataSource(ImageDataSource):
         # remove any nans
         power = power.dropna(axis="columns", how="any")
 
-        logger.debug(f'Found {power.column} systems')
+        logger.debug(f'Found {power.columns} systems')
 
         return power
 

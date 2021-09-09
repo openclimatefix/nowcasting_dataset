@@ -4,10 +4,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
-
-requirementPath = (this_directory / 'requirements.txt')
-with open(requirementPath) as f:
-    install_requires = f.read().splitlines()
+install_requires = (this_directory / 'requirements.txt').read_text().splitlines()
 
 setup(
     name="nowcasting_dataset",

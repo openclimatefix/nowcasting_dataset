@@ -5,9 +5,7 @@ import numpy as np
 from nowcasting_dataset.consts import Array
 from numbers import Number
 
-
-DATETIME_FEATURE_NAMES = ('hour_of_day_sin', 'hour_of_day_cos',
-                          'day_of_year_sin', 'day_of_year_cos')
+from nowcasting_dataset.data_sources.constants import *
 
 
 class Example(TypedDict):
@@ -22,6 +20,7 @@ class Example(TypedDict):
     which would provide runtime checks, but the deal-breaker with Tuples is
     that they're immutable so we cannot change the values in the transforms.
     """
+
     # IMAGES
     # Shape: [batch_size,] seq_length, width, height, channel
     sat_data: Array
@@ -72,7 +71,7 @@ class Example(TypedDict):
 
     #: GSP PV yield from all GSP in the region of interest (ROI).
     # : Includes central GSP, which will always be the first entry.
-    gsp_yield: Array   #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
+    gsp_yield: Array  #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
     # GSP identification.
     gsp_system_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
     #: GSP geographical location (in OSGB coords).
@@ -83,6 +82,7 @@ class Example(TypedDict):
     # if the centroid type is a GSP, or a PV system
     centroid_type: str  #: shape = [batch_size, ]
 
+
 def to_numpy(example: Example) -> Example:
     for key, value in example.items():
         if isinstance(value, xr.DataArray):
@@ -92,12 +92,72 @@ def to_numpy(example: Example) -> Example:
         if isinstance(value, (pd.Series, pd.DataFrame)):
             value = value.values
         elif isinstance(value, pd.DatetimeIndex):
-            value = value.values.astype('datetime64[s]').astype(np.int32)
+            value = value.values.astype("datetime64[s]").astype(np.int32)
         elif isinstance(value, pd.Timestamp):
             value = np.int32(value.timestamp())
-        elif (isinstance(value, np.ndarray) and
-              np.issubdtype(value.dtype, np.datetime64)):
-            value = value.astype('datetime64[s]').astype(np.int32)
+        elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
+            value = value.astype("datetime64[s]").astype(np.int32)
 
         example[key] = value
     return example
+
+
+def validate_example(
+    data: Example,
+    seq_len_30_minutes: int,
+    seq_len_5_minutes: int,
+    sat_image_size: int = 64,
+    n_sat_channels: int = 1,
+    nwp_image_size: int = 0,
+    n_nwp_channels: int = 1
+
+):
+    """
+    Validate the size and shape of the data
+    Args:
+        data:
+        seq_len_30_minutes:
+        seq_len_5_minutes:
+        sat_image_size:
+        n_sat_channels:
+        nwp_image_size:
+        n_nwp_channels:
+
+    Returns:
+
+    """
+
+    assert len(data[GSP_SYSTEM_ID]) == N_GSP_PER_EXAMPLE  # TODO should pad this out to 32
+    n_gsp_system_id = len(data[GSP_SYSTEM_ID])
+    assert data[GSP_YIELD].shape == (seq_len_30_minutes, n_gsp_system_id)
+    assert len(data[GSP_SYSTEM_X_COORDS]) == n_gsp_system_id
+    assert len(data[GSP_SYSTEM_Y_COORDS]) == n_gsp_system_id
+    assert len(data[GSP_DATETIME_INDEX]) == seq_len_30_minutes
+
+    assert data["centroid_type"] == "gsp"
+    assert type(data["x_meters_center"]) == np.float64
+    assert type(data["y_meters_center"]) == np.float64
+
+    n_pv_systems = len(data[PV_SYSTEM_ID][~np.isnan(data[PV_SYSTEM_ID])])
+
+    assert len(data[PV_SYSTEM_ID]) == N_PV_SYSTEMS_PER_EXAMPLE
+    assert data[PV_YIELD].shape == (seq_len_5_minutes, N_PV_SYSTEMS_PER_EXAMPLE)
+    assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, N_PV_SYSTEMS_PER_EXAMPLE)
+    assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, N_PV_SYSTEMS_PER_EXAMPLE)
+    assert len(data[PV_SYSTEM_X_COORDS]) == N_PV_SYSTEMS_PER_EXAMPLE
+    assert len(data[PV_SYSTEM_Y_COORDS]) == N_PV_SYSTEMS_PER_EXAMPLE
+    assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
+    assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
+
+    assert data["sat_data"].shape == (seq_len_5_minutes, sat_image_size, sat_image_size, n_sat_channels)
+    assert len(data["sat_x_coords"]) == sat_image_size
+    assert len(data["sat_y_coords"]) == sat_image_size
+    assert len(data["sat_datetime_index"]) == seq_len_5_minutes
+
+    assert data["nwp"].shape == (n_nwp_channels, seq_len_5_minutes, nwp_image_size, nwp_image_size)
+    assert len(data["nwp_x_coords"]) == nwp_image_size
+    assert len(data["nwp_y_coords"]) == nwp_image_size
+    assert len(data["nwp_target_time"]) == seq_len_5_minutes
+
+    for feature in DATETIME_FEATURE_NAMES:
+        assert len(data[feature]) == seq_len_5_minutes

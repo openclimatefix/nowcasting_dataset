@@ -11,6 +11,7 @@ from nowcasting_dataset import datamodule
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.datamodule import NowcastingDataModule
+from nowcasting_dataset.example import validate_example
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -66,8 +67,8 @@ def test_data_module():
         history_minutes=30,  #: Number of timesteps of history, not including t0.
         forecast_minutes=60,  #: Number of timesteps of forecast.
         image_size_pixels=config.process.image_size_pixels,
-        nwp_channels=NWP_VARIABLE_NAMES,
-        sat_channels=['HRV'], # reduced for test data
+        nwp_channels=config.process.nwp_channels,
+        sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
         sat_filename=config.input_data.satelite_filename,
@@ -93,4 +94,23 @@ def test_data_module():
     data_module.setup()
 
     data_generator = iter(data_module.train_dataset)
-    x = next(data_generator)
+    batch = next(data_generator)
+
+    assert len(batch) == config.process.batch_size
+    from nowcasting_dataset.example import Example
+
+    for key in list(Example.__annotations__.keys()):
+        assert key in batch[0].keys()
+
+    seq_len_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
+    seq_len_5_minutes = 19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
+
+    for x in batch:
+        validate_example(data=x,
+                         n_nwp_channels=len(config.process.nwp_channels),
+                         nwp_image_size=0,# TODO why is this zero
+                         n_sat_channels=len(config.process.sat_channels),
+                         sat_image_size=config.process.image_size_pixels,
+                         seq_len_30_minutes=seq_len_30_minutes,
+                         seq_len_5_minutes=seq_len_5_minutes)
+

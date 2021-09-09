@@ -105,6 +105,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 image_size_pixels=self.image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 get_centroid=False,
+                load_azimuth_and_elevation=True,
             )
 
             self.data_sources = [self.pv_data_source, self.sat_data_source]

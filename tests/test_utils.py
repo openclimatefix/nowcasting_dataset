@@ -1,4 +1,5 @@
 from nowcasting_dataset import utils
+from nowcasting_dataset.example import Example
 import pandas as pd
 import pytest
 import numpy as np
@@ -31,3 +32,21 @@ def test_sin_and_cos():
 
 def test_get_netcdf_filename():
     assert utils.get_netcdf_filename(10) == '77eb6f_10.nc'
+
+
+def test_pad_data():
+    seq_length = 4
+    n_gsp_system_ids = 17
+
+    data = Example()
+    data['gsp_yield'] = np.random.random((seq_length, n_gsp_system_ids))
+    data['gsp_system_id'] = np.random.random((n_gsp_system_ids))
+
+    data = utils.pad_data(data=data,
+                   pad_size=1,
+                   one_dimensional_arrays=['gsp_system_id'],
+                   two_dimensional_arrays=['gsp_yield'])
+
+    assert data['gsp_yield'].shape == (seq_length, n_gsp_system_ids+1)
+    assert data['gsp_system_id'].shape == (n_gsp_system_ids + 1,)
+

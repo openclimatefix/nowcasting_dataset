@@ -1,3 +1,5 @@
+from nowcasting_dataset.data_sources.constants import PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER, PV_SYSTEM_X_COORDS, \
+    PV_SYSTEM_Y_COORDS, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.example import Example
 from nowcasting_dataset import geospatial, utils
@@ -18,14 +20,6 @@ import time
 
 logger = logging.getLogger(__name__)
 
-PV_SYSTEM_ID = 'pv_system_id'
-PV_SYSTEM_ROW_NUMBER = 'pv_system_row_number'
-PV_SYSTEM_X_COORDS = 'pv_system_x_coords'
-PV_SYSTEM_Y_COORDS = 'pv_system_y_coords'
-PV_AZIMUTH_ANGLE = 'pv_azimuth_angle'
-PV_ELEVATION_ANGLE = 'pv_elevation_angle'
-PV_YIELD = 'pv_yield'
-
 
 @dataclass
 class PVDataSource(ImageDataSource):
@@ -36,7 +30,7 @@ class PVDataSource(ImageDataSource):
     random_pv_system_for_given_location: Optional[bool] = True
     #: Each example will always have this many PV systems.
     #: If less than this number exist in the data then pad with NaNs.
-    n_pv_systems_per_example: int = 128
+    n_pv_systems_per_example: int = N_PV_SYSTEMS_PER_EXAMPLE
     load_azimuth_and_elevation: bool = False
     load_from_gcs: bool = True  # option to load data from gcs, or local file
     get_centroid: bool = True
@@ -239,24 +233,22 @@ class PVDataSource(ImageDataSource):
         if self.get_centroid:
             example['centroid_type'] = 'pv'
 
-        # Pad (if necessary) so returned arrays are always of size
-        # n_pv_systems_per_example.
+        # Pad (if necessary) so returned arrays are always of size n_pv_systems_per_example.
         pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)
-        pad_shape = (0, pad_size)  # (before, after)
+
         one_dimensional_arrays = [
-                PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER,
-                PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS]
-        for name in one_dimensional_arrays:
-            example[name] = utils.pad_nans(example[name], pad_width=pad_shape)
+            PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER,
+            PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS]
+
         pad_nans_variables = [PV_YIELD]
         if self.load_azimuth_and_elevation:
             pad_nans_variables.append(PV_AZIMUTH_ANGLE)
             pad_nans_variables.append(PV_ELEVATION_ANGLE)
 
-        for variable in pad_nans_variables:
-            example[variable] = utils.pad_nans(
-                example[variable],
-                pad_width=((0, 0), pad_shape))  # (axis0, axis1)
+        example = utils.pad_data(data=example,
+                                 one_dimensional_arrays=one_dimensional_arrays,
+                                 two_dimensional_arrays=pad_nans_variables,
+                                 pad_size=pad_size)
 
         return example
 

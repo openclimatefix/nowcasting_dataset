@@ -2,8 +2,10 @@ import numpy as np
 import pandas as pd
 from nowcasting_dataset.consts import Array
 import fsspec.asyn
+from typing import List
 from pathlib import Path
 import hashlib
+from nowcasting_dataset.example import Example
 
 
 def set_fsspec_for_multiprocess() -> None:
@@ -84,3 +86,32 @@ def get_netcdf_filename(batch_idx: int) -> Path:
 def pad_nans(array, pad_width) -> np.ndarray:
     array = array.astype(np.float32)
     return np.pad(array, pad_width, constant_values=np.NaN)
+
+
+def pad_data(data: Example, pad_size: int, one_dimensional_arrays: List[str], two_dimensional_arrays: List[str]) -> Example:
+    """
+    Pad (if necessary) so returned arrays are always of size
+
+    data has two types of arrays in it, one dimensional arrays and two dimensional arrays
+    the one dimensional arrays are padded in that dimension
+    the two dimensional arrays are padded in the second dimension
+
+    Args:
+        data: typed dictionary of data objects
+        pad_size: the maount that should be padded
+        one_dimensional_arrays: list of data items that should be padded by one dimension
+        two_dimensional_arrays: list of data tiems that should be padded in the third dimension (and more)
+
+    Returns:
+
+    """
+    # Pad (if necessary) so returned arrays are always of size
+    pad_shape = (0, pad_size)  # (before, after)
+
+    for name in one_dimensional_arrays:
+        data[name] = pad_nans(data[name], pad_width=pad_shape)
+
+    for variable in two_dimensional_arrays:
+        data[variable] = pad_nans(data[variable], pad_width=((0, 0), pad_shape))  # (axis0, axis1)
+
+    return data

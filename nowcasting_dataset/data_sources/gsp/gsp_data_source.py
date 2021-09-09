@@ -11,11 +11,14 @@ import torch
 import numpy as np
 import pandas as pd
 
-from nowcasting_dataset.utils import scale_to_0_to_1
+from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.example import Example
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
+
+from nowcasting_dataset.data_sources.constants import GSP_YIELD, GSP_SYSTEM_ID, GSP_SYSTEM_X_COORDS, \
+    GSP_SYSTEM_Y_COORDS, GSP_DATETIME_INDEX, N_GSP_PER_EXAMPLE, CENTROID_TYPE
 
 
 logger = logging.getLogger(__name__)
@@ -36,8 +39,7 @@ class GSPDataSource(ImageDataSource):
     threshold: int = 20
     minute_delta: int = 30
     get_centroid: bool = True
-
-    n_gsp_systems_per_example: int = 32
+    n_gsp_systems_per_example: int = N_GSP_PER_EXAMPLE
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -169,7 +171,14 @@ class GSPDataSource(ImageDataSource):
         )
 
         if self.get_centroid:
-            example['centroid_type'] = 'gsp'
+            example[CENTROID_TYPE] = 'gsp'
+
+        # Pad (if necessary) so returned arrays are always of size n_gsp_systems_per_example.
+        pad_size = self.n_gsp_systems_per_example - len(all_gsp_system_ids)
+        example = pad_data(data=example,
+                           one_dimensional_arrays=[GSP_SYSTEM_ID, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS],
+                           two_dimensional_arrays=[GSP_YIELD],
+                           pad_size=pad_size)
 
         return example
 

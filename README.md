@@ -38,6 +38,8 @@ pip install -e .
 sudo apt install libgl1-mesa-glx  # For optical flow
 ```
 
+A (probably older) version is also available through `pip install nowcasting-dataset`
+
 # Testing
 
 To test using the small amount of data stored in this repo: `py.test -s`

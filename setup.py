@@ -1,8 +1,13 @@
 from setuptools import setup, find_packages
 
+# read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(
     name="nowcasting_dataset",
-    version="0.1.1",
+    version="0.1.2",
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",
@@ -34,5 +39,7 @@ setup(
         "pytest-cov",
         "plotly",
     ],
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     packages=find_packages(),
 )

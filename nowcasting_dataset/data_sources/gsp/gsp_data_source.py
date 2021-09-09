@@ -111,7 +111,7 @@ class GSPDataSource(ImageDataSource):
             y_locations.append(metadata_for_gsp_system.location_y)
 
             logger.debug(
-                f"Found locations for gsp id {random_index} of {metadata_for_gsp_system.location_x} and"
+                f"Found locations for gsp id {random_index} of {metadata_for_gsp_system.location_x} and "
                 f"{metadata_for_gsp_system.location_y}"
             )
 
@@ -272,6 +272,8 @@ class GSPDataSource(ImageDataSource):
         Returns: pandas data frame of gsp power data
         """
 
+        logger.debug(f'Getting power slice for {t0_dt}')
+
         # get start and end datetime, takening into account history and forecast length.
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
@@ -281,6 +283,8 @@ class GSPDataSource(ImageDataSource):
 
         # remove any nans
         power = power.dropna(axis="columns", how="any")
+
+        logger.debug(f'Found {power.column} systems')
 
         return power
 

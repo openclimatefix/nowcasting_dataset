@@ -236,18 +236,11 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug('Going to split data')
 
         self._check_has_prepared_data()
-        all_datetimes = self._get_datetimes(refactor_for_30_minute_data=True)
-
-        t0_datetimes = nd_time.get_t0_datetimes(
-            datetimes=all_datetimes, total_seq_len=self._total_seq_len_5_minutes, history_len=self.history_len_5_minutes
-        )
-
-        # only select datetimes for half hours, ignore 5 minute timestamps
-        t0_datetimes = [t0 for t0 in t0_datetimes if (t0.minute in [0, 30])]
+        t0_datetimes = self._get_datetimes(refactor_for_30_minute_data=True)
 
         logger.debug(f'Got all start times, there are {len(t0_datetimes)}')
 
-        del all_datetimes
+        # del all_datetimes
 
         # Split t0_datetimes into train and test.
         # TODO: Better way to split into train and val date ranges!
@@ -347,7 +340,19 @@ class NowcastingDataModule(pl.LightningDataModule):
         # Sanity check
         assert len(dt_index) > 2
         assert utils.is_monotonically_increasing(dt_index)
-        return dt_index
+
+        # get t0 datetime which depend on the sequence length in the dataset
+        t0_datetimes = nd_time.get_t0_datetimes(
+            datetimes=dt_index, total_seq_len=self._total_seq_len_5_minutes, history_len=self.history_len_5_minutes
+        )
+
+        # only select datetimes for half hours, ignore 5 minute timestamps
+        if refactor_for_30_minute_data:
+            t0_datetimes = [t0 for t0 in t0_datetimes if (t0.minute in [0, 30])]
+
+        del dt_index
+
+        return t0_datetimes
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

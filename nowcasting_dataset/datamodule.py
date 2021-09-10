@@ -236,9 +236,9 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug('Going to split data')
 
         self._check_has_prepared_data()
-        t0_datetimes = self._get_datetimes(refactor_for_30_minute_data=True)
+        self.t0_datetimes = self._get_datetimes(refactor_for_30_minute_data=True)
 
-        logger.debug(f'Got all start times, there are {len(t0_datetimes)}')
+        logger.debug(f'Got all start times, there are {len(self.t0_datetimes)}')
 
         # del all_datetimes
 
@@ -249,14 +249,14 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug(f'Taking {self.train_validation_percentage_split}% into validation')
 
         split_number = int(100 / self.train_validation_percentage_split)
-        assert len(t0_datetimes) > split_number
-        split = len(t0_datetimes) // split_number
+        assert len(self.t0_datetimes) > split_number
+        split = len(self.t0_datetimes) // split_number
         assert split > 0
-        split = len(t0_datetimes) - split
+        split = len(self.t0_datetimes) - split
 
         # set train and validation times
-        self.train_t0_datetimes = t0_datetimes[:split]
-        self.val_t0_datetimes = t0_datetimes[split:]
+        self.train_t0_datetimes = self.t0_datetimes[:split]
+        self.val_t0_datetimes = self.t0_datetimes[split:]
 
         logger.debug(f'Split data done, train has {len(self.train_t0_datetimes)}, '
                      f'validation has {len(self.val_t0_datetimes)}')
@@ -326,8 +326,8 @@ class NowcastingDataModule(pl.LightningDataModule):
                 # get datetimes from data source
                 datetime_index = data_source.datetime_index()
 
-                if refactor_for_30_minute_data:
-                    # change 30 min data to 5 mins
+                if refactor_for_30_minute_data and type(data_source).__name__ == 'GSPDataSource':
+                    # change 30 min data to 5 mins, only for GSP Data
                     datetime_index = nd_time.fill_30_minutes_timestamps_to_5_minutes(index=datetime_index)
 
                 all_datetime_indexes.append(datetime_index)

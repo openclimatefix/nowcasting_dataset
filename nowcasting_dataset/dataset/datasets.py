@@ -21,6 +21,14 @@ from nowcasting_dataset.cloud.aws import aws_download_to_local
 
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
+
+"""
+This file contains the following classes
+NetCDFDatase- torch.utils.data.Dataset: Use for loading pre-made batcches
+NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making bacthes
+ContiguousNowcastingDataset - NowcastingDataset 
+"""
+
 SAT_MEAN = xr.DataArray(
     data=[
         93.23458, 131.71373, 843.7779, 736.6148, 771.1189, 589.66034,

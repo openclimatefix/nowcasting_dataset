@@ -38,7 +38,8 @@ def test_get_daylight_datetime_index(
     with pytest.raises(RuntimeError):
         nowcasting_datamodule._get_datetimes()
     nowcasting_datamodule.prepare_data()
-    datetimes = nowcasting_datamodule._get_datetimes()
+    datetimes = nowcasting_datamodule._get_datetimes(refactor_for_30_minute_data=False,
+                                                     adjust_for_sequence_length=False)
     assert isinstance(datetimes, pd.DatetimeIndex)
     if not use_cloud_data:
         correct_datetimes = pd.date_range(

@@ -299,13 +299,16 @@ class NowcastingDataModule(pl.LightningDataModule):
             batch_sampler=None,
         )
 
-    def _get_datetimes(self, refactor_for_30_minute_data:bool = False) -> pd.DatetimeIndex:
+    def _get_datetimes(self, refactor_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True ) -> pd.DatetimeIndex:
         """Compute the datetime index.
 
         refactor_for_30_minute_data: If True,
         1. all datetimes from source will be interpolated to 5 min intervals,
         2. the total intersection will be taken
         3. only 30 mins datetimes will be selected
+
+        adjust_for_sequence_length, if true, adjust the datetimes by sequence history and length.
+        This means that all the datetimes from [datetime - history_delta: datetime + forecast_delta] should be available
 
         This deals with a mixture of data sources that have 5 mins and 30 min datatime.
 
@@ -340,6 +343,9 @@ class NowcastingDataModule(pl.LightningDataModule):
         # Sanity check
         assert len(dt_index) > 2
         assert utils.is_monotonically_increasing(dt_index)
+
+        if not adjust_for_sequence_length:
+            return dt_index
 
         # get t0 datetime which depend on the sequence length in the dataset
         t0_datetimes = nd_time.get_t0_datetimes(

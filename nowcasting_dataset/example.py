@@ -1,11 +1,7 @@
 from typing import TypedDict
 import pandas as pd
-import xarray as xr
-import numpy as np
-from nowcasting_dataset.consts import Array
+from nowcasting_dataset.consts import *
 from numbers import Number
-
-from nowcasting_dataset.data_sources.constants import *
 
 
 class Example(TypedDict):

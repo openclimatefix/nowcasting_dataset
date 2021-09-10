@@ -1,6 +1,6 @@
 import os
 import torch
-from nowcasting_dataset.dataset.dataset import NetCDFDataset, worker_init_fn
+from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
 import plotly.graph_objects as go
 import plotly
 import pandas as pd

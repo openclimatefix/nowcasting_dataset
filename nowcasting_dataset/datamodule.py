@@ -9,7 +9,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset import consts
-from nowcasting_dataset import dataset
+from nowcasting_dataset.dataset import datasets
 from dataclasses import dataclass
 import warnings
 
@@ -201,7 +201,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         # Create datasets
         logger.debug('Making train dataset')
-        self.train_dataset = dataset.NowcastingDataset(
+        self.train_dataset = datasets.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
             skip_batch_index=self.skip_n_train_batches,
@@ -209,7 +209,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             **self._common_dataset_params(),
         )
         logger.debug('Making validation dataset')
-        self.val_dataset = dataset.NowcastingDataset(
+        self.val_dataset = datasets.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
             skip_batch_index=self.skip_n_validation_batches,
@@ -236,11 +236,14 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug('Going to split data')
 
         self._check_has_prepared_data()
-        all_datetimes = self._get_datetimes()
+        all_datetimes = self._get_datetimes(refactor_for_30_minute_data=True)
 
         t0_datetimes = nd_time.get_t0_datetimes(
-            datetimes=all_datetimes, total_seq_len=self._total_seq_len_30_minutes, history_len=self.history_len_30_minutes
+            datetimes=all_datetimes, total_seq_len=self._total_seq_len_5_minutes, history_len=self.history_len_5_minutes
         )
+
+        # only select datetimes for half hours, ignore 5 minute timestamps
+        t0_datetimes = [t0 for t0 in t0_datetimes if (t0.minute in [0, 30])]
 
         logger.debug(f'Got all start times, there are {len(t0_datetimes)}')
 
@@ -303,8 +306,15 @@ class NowcastingDataModule(pl.LightningDataModule):
             batch_sampler=None,
         )
 
-    def _get_datetimes(self) -> pd.DatetimeIndex:
+    def _get_datetimes(self, refactor_for_30_minute_data:bool = False) -> pd.DatetimeIndex:
         """Compute the datetime index.
+
+        refactor_for_30_minute_data: If True,
+        1. all datetimes from source will be interpolated to 5 min intervals,
+        2. the total intersection will be taken
+        3. only 30 mins datetimes will be selected
+
+        This deals with a mixture of data sources that have 5 mins and 30 min datatime.
 
         Returns the intersection of the datetime indicies of all the
         data_sources, filtered by daylight hours."""
@@ -316,7 +326,15 @@ class NowcastingDataModule(pl.LightningDataModule):
         for data_source in self.data_sources:
             logger.debug(f'Getting datetimes for {type(data_source).__name__}')
             try:
-                all_datetime_indexes.append(data_source.datetime_index())
+
+                # get datetimes from data source
+                datetime_index = data_source.datetime_index()
+
+                if refactor_for_30_minute_data:
+                    # change 30 min data to 5 mins
+                    datetime_index = nd_time.fill_30_minutes_timestamps_to_5_minutes(index=datetime_index)
+
+                all_datetime_indexes.append(datetime_index)
             except NotImplementedError:
                 pass
         datetimes = nd_time.intersection_of_datetimeindexes(all_datetime_indexes)

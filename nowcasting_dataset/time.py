@@ -7,6 +7,7 @@ import warnings
 import pvlib
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -145,3 +146,23 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
     for col_name, series in dt_features.iteritems():
         example[col_name] = series
     return example
+
+
+def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex):
+    """
+    Fill a 30 minute index with 5 minute timestamps too. Note any gaps in 30 mins are not filled
+    """
+
+    # make new 5 index
+    idx = pd.date_range(min(index), max(index), freq='5T')
+
+    # take only 5 min that are near original index, this deals with gaps in the 30 index
+    idx_with_gaps = [i for i in idx if (i in index)
+                or ((i + pd.Timedelta(minutes=5) in index) and (i - pd.Timedelta(minutes=25) in index))
+                or ((i + pd.Timedelta(minutes=10) in index) and (i - pd.Timedelta(minutes=20) in index))
+                or ((i + pd.Timedelta(minutes=15) in index) and (i - pd.Timedelta(minutes=15) in index))
+                or ((i + pd.Timedelta(minutes=20) in index) and (i - pd.Timedelta(minutes=10) in index))
+                or ((i + pd.Timedelta(minutes=25) in index) and (i - pd.Timedelta(minutes=5) in index))]
+
+    # move back to a pd.DatetimeIndex
+    return pd.DatetimeIndex(idx_with_gaps)

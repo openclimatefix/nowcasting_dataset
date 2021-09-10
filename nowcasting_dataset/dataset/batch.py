@@ -3,15 +3,17 @@ import logging
 
 import numpy as np
 import xarray as xr
+from pathlib import Path
 
-from nowcasting_dataset.data_sources.constants import DATETIME_FEATURE_NAMES, GSP_SYSTEM_ID, GSP_YIELD, \
-    GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS
+from nowcasting_dataset.consts import GSP_SYSTEM_ID, GSP_YIELD, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS, \
+    DATETIME_FEATURE_NAMES
 
 from nowcasting_dataset.example import Example
 from nowcasting_dataset.utils import get_netcdf_filename
-from scripts.prepare_ml_training_data import LOCAL_TEMP_PATH
 
 _LOG = logging.getLogger(__name__)
+
+LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
 
 
 def write_batch_locally(batch: List[Example], batch_i: int):

@@ -2,7 +2,7 @@ import pandas as pd
 from numbers import Number
 from typing import List, Tuple, Iterable, Callable
 
-import nowcasting_dataset.data_sources.constants
+import nowcasting_dataset.consts
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 from concurrent import futures
@@ -117,7 +117,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             'pv_yield', 'pv_system_id', 'pv_system_row_number',
             'pv_system_x_coords', 'pv_system_y_coords',
             'x_meters_center', 'y_meters_center'
-        ] + list(nowcasting_dataset.data_sources.constants.DATETIME_FEATURE_NAMES):
+        ] + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:

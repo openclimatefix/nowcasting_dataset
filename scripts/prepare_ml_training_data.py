@@ -23,7 +23,7 @@ from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_configuration_to_cloud
 
 from nowcasting_dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.dataset.utils import write_batch_locally
+from nowcasting_dataset.dataset.batch import write_batch_locally
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from pathlib import Path

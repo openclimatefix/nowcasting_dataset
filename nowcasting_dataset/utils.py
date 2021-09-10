@@ -76,9 +76,10 @@ def get_netcdf_filename(batch_idx: int) -> Path:
     as recommended by Google Cloud in order to distribute data across
     multiple back-end servers.
     """
-    filename = f'{batch_idx}.nc'
-    hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
-    return f'{hash_of_filename[:6]}_{filename}'
+    # Remove 'hash' at the moment. In the future could has the configuration file, and use this to make sure we are
+    # saving and loading the same thing
+    # hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
+    return f'{batch_idx}.nc'
 
 
 def pad_nans(array, pad_width) -> np.ndarray:

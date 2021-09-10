@@ -22,19 +22,14 @@ import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_configuration_to_cloud
 
-from nowcasting_dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.dataset import batch_to_dataset
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
+from nowcasting_dataset.dataset.batch import write_batch_locally
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from pathlib import Path
-import numpy as np
-import xarray as xr
 import torch
 import os
-from typing import List, Optional
 
-from nowcasting_dataset.utils import get_netcdf_filename
 import neptune.new as neptune
 from neptune.new.integrations.python_logger import NeptuneHandler
 
@@ -42,7 +37,7 @@ import logging
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
-_LOG.setLevel(logging.DEBUG)
+_LOG.setLevel(logging.INFO)
 
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
@@ -72,7 +67,7 @@ DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
 LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
 
 UPLOAD_EVERY_N_BATCHES = 16
-CLOUD = "gcp" # either gcp or aws
+CLOUD = "gcp"  # either gcp or aws
 
 # Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
 # https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999/2
@@ -109,36 +104,6 @@ def get_data_module():
     _LOG.info("setup()")
     data_module.setup()
     return data_module
-
-
-def fix_dtypes(concat_ds):
-    ds_dtypes = {
-        "example": np.int32,
-        "sat_x_coords": np.int32,
-        "sat_y_coords": np.int32,
-        "nwp": np.float32,
-        "nwp_x_coords": np.float32,
-        "nwp_y_coords": np.float32,
-        "pv_system_id": np.float32,
-        "pv_system_row_number": np.float32,
-        "pv_system_x_coords": np.float32,
-        "pv_system_y_coords": np.float32,
-    }
-
-    for name, dtype in ds_dtypes.items():
-        concat_ds[name] = concat_ds[name].astype(dtype)
-
-    assert concat_ds["sat_data"].dtype == np.int16
-    return concat_ds
-
-
-def write_batch_locally(batch: List[Example], batch_i: int):
-    dataset = batch_to_dataset(batch)
-    dataset = fix_dtypes(dataset)
-    encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
-    filename = get_netcdf_filename(batch_i)
-    local_filename = LOCAL_TEMP_PATH / filename
-    dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
 
 def iterate_over_dataloader_and_write_to_disk(dataloader: torch.utils.data.DataLoader, dst_path: str):

@@ -9,7 +9,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset import consts
-from nowcasting_dataset import dataset
+from nowcasting_dataset.dataset import datasets
 from dataclasses import dataclass
 import warnings
 
@@ -201,7 +201,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         # Create datasets
         logger.debug('Making train dataset')
-        self.train_dataset = dataset.NowcastingDataset(
+        self.train_dataset = datasets.NowcastingDataset(
             t0_datetimes=self.train_t0_datetimes,
             data_sources=self.data_sources,
             skip_batch_index=self.skip_n_train_batches,
@@ -209,7 +209,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             **self._common_dataset_params(),
         )
         logger.debug('Making validation dataset')
-        self.val_dataset = dataset.NowcastingDataset(
+        self.val_dataset = datasets.NowcastingDataset(
             t0_datetimes=self.val_t0_datetimes,
             data_sources=self.data_sources,
             skip_batch_index=self.skip_n_validation_batches,
@@ -236,16 +236,11 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug('Going to split data')
 
         self._check_has_prepared_data()
-        all_datetimes = self._get_datetimes()
+        self.t0_datetimes = self._get_datetimes(interpolate_for_30_minute_data=True)
 
+        logger.debug(f'Got all start times, there are {len(self.t0_datetimes)}')
 
-        t0_datetimes = nd_time.get_t0_datetimes(
-            datetimes=all_datetimes, total_seq_len=self._total_seq_len_30_minutes, history_len=self.history_len_30_minutes
-        )
-
-        logger.debug(f'Got all start times, there are {len(t0_datetimes)}')
-
-        del all_datetimes
+        # del all_datetimes
 
         # Split t0_datetimes into train and test.
         # TODO: Better way to split into train and val date ranges!
@@ -254,14 +249,14 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug(f'Taking {self.train_validation_percentage_split}% into validation')
 
         split_number = int(100 / self.train_validation_percentage_split)
-        assert len(t0_datetimes) > split_number
-        split = len(t0_datetimes) // split_number
+        assert len(self.t0_datetimes) > split_number
+        split = len(self.t0_datetimes) // split_number
         assert split > 0
-        split = len(t0_datetimes) - split
+        split = len(self.t0_datetimes) - split
 
         # set train and validation times
-        self.train_t0_datetimes = t0_datetimes[:split]
-        self.val_t0_datetimes = t0_datetimes[split:]
+        self.train_t0_datetimes = self.t0_datetimes[:split]
+        self.val_t0_datetimes = self.t0_datetimes[split:]
 
         logger.debug(f'Split data done, train has {len(self.train_t0_datetimes)}, '
                      f'validation has {len(self.val_t0_datetimes)}')
@@ -277,7 +272,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             pv_data_source = deepcopy(self.pv_data_source)
             pv_data_source.random_pv_system_for_given_location = False
             data_sources = [pv_data_source, self.sat_data_source]
-            self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
+            self.contiguous_dataset = datasets.ContiguousNowcastingDataset(
                 t0_datetimes=self.val_t0_datetimes,
                 data_sources=data_sources,
                 n_batches_per_epoch_per_worker=(self._n_batches_per_epoch_per_worker(32)),
@@ -296,7 +291,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         return dict(
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
-            worker_init_fn=dataset.worker_init_fn,
+            worker_init_fn=datasets.worker_init_fn,
             prefetch_factor=self.prefetch_factor,
             # Disable automatic batching because NowcastingDataset.__iter__
             # returns complete batches
@@ -304,8 +299,18 @@ class NowcastingDataModule(pl.LightningDataModule):
             batch_sampler=None,
         )
 
-    def _get_datetimes(self) -> pd.DatetimeIndex:
+    def _get_datetimes(self, interpolate_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True) -> pd.DatetimeIndex:
         """Compute the datetime index.
+
+        interpolate_for_30_minute_data: If True,
+        1. all datetimes from source will be interpolated to 5 min intervals,
+        2. the total intersection will be taken
+        3. only 30 mins datetimes will be selected
+
+        adjust_for_sequence_length, if true, adjust the datetimes by sequence history and length.
+        This means that all the datetimes from [datetime - history_delta: datetime + forecast_delta] should be available
+
+        This deals with a mixture of data sources that have 5 mins and 30 min datatime.
 
         Returns the intersection of the datetime indicies of all the
         data_sources, filtered by daylight hours."""
@@ -317,7 +322,15 @@ class NowcastingDataModule(pl.LightningDataModule):
         for data_source in self.data_sources:
             logger.debug(f'Getting datetimes for {type(data_source).__name__}')
             try:
-                all_datetime_indexes.append(data_source.datetime_index())
+
+                # get datetimes from data source
+                datetime_index = data_source.datetime_index()
+
+                if interpolate_for_30_minute_data and type(data_source).__name__ == 'GSPDataSource':
+                    # change 30 min data to 5 mins, only for GSP Data
+                    datetime_index = nd_time.fill_30_minutes_timestamps_to_5_minutes(index=datetime_index)
+
+                all_datetime_indexes.append(datetime_index)
             except NotImplementedError:
                 pass
         datetimes = nd_time.intersection_of_datetimeindexes(all_datetime_indexes)
@@ -330,7 +343,22 @@ class NowcastingDataModule(pl.LightningDataModule):
         # Sanity check
         assert len(dt_index) > 2
         assert utils.is_monotonically_increasing(dt_index)
-        return dt_index
+
+        if not adjust_for_sequence_length:
+            return dt_index
+
+        # get t0 datetime which depend on the sequence length in the dataset
+        t0_datetimes = nd_time.get_t0_datetimes(
+            datetimes=dt_index, total_seq_len=self._total_seq_len_5_minutes, history_len=self.history_len_5_minutes
+        )
+
+        # only select datetimes for half hours, ignore 5 minute timestamps
+        if interpolate_for_30_minute_data:
+            t0_datetimes = [t0 for t0 in t0_datetimes if (t0.minute in [0, 30])]
+
+        del dt_index
+
+        return t0_datetimes
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

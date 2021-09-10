@@ -1,11 +1,7 @@
 from typing import TypedDict
 import pandas as pd
-import xarray as xr
-import numpy as np
-from nowcasting_dataset.consts import Array
+from nowcasting_dataset.consts import *
 from numbers import Number
-
-from nowcasting_dataset.data_sources.constants import *
 
 
 class Example(TypedDict):
@@ -46,6 +42,7 @@ class Example(TypedDict):
     #: shape = [batch_size, ] n_pv_systems_per_example
     pv_system_x_coords: Array
     pv_system_y_coords: Array
+    pv_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
     # Numerical weather predictions (NWPs)
     nwp: Array  #: Shape: [batch_size,] channel, seq_length, width, height
@@ -144,12 +141,15 @@ def validate_example(
 
     assert len(data[PV_SYSTEM_ID]) == n_pv_systems_per_example
     assert data[PV_YIELD].shape == (seq_len_5_minutes, n_pv_systems_per_example)
-    assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
-    assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
     assert len(data[PV_SYSTEM_X_COORDS]) == n_pv_systems_per_example
     assert len(data[PV_SYSTEM_Y_COORDS]) == n_pv_systems_per_example
     assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
     assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
+
+    if PV_AZIMUTH_ANGLE in data.keys():
+        assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
+    if PV_AZIMUTH_ANGLE in data.keys():
+        assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
 
     assert data["sat_data"].shape == (seq_len_5_minutes, sat_image_size, sat_image_size, n_sat_channels)
     assert len(data["sat_x_coords"]) == sat_image_size

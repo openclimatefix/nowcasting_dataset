@@ -1,7 +1,7 @@
 from numbers import Number
 import pandas as pd
 import numpy as np
-from nowcasting_dataset.example import Example, to_numpy
+from nowcasting_dataset.dataset.example import Example, to_numpy
 from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
 from dataclasses import dataclass, InitVar
@@ -9,7 +9,6 @@ from typing import List, Tuple, Iterable
 import xarray as xr
 import itertools
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -199,8 +198,9 @@ class ZarrDataSource(ImageDataSource):
                 f'x_meters_center={x_meters_center}\n'
                 f'y_meters_center={y_meters_center}\n'
                 f't0_dt={t0_dt}\n'
+                f'times are {selected_data.time}\n'
                 f'expected shape={self._shape_of_example}\n'
-                f'actual shape   {selected_data.shape}')
+                f'actual shape {selected_data.shape}')
 
         return self._put_data_into_example(selected_data)
 

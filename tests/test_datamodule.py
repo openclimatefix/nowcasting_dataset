@@ -8,13 +8,12 @@ import xarray as xr
 import pytest
 
 import nowcasting_dataset
-from nowcasting_dataset import datamodule
+from nowcasting_dataset.dataset import datamodule
 from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
-from nowcasting_dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.example import validate_example
-from nowcasting_dataset.dataset import batch_to_dataset
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
+from nowcasting_dataset.dataset.example import validate_example
+from nowcasting_dataset.dataset.batch import batch_to_dataset
+from nowcasting_dataset.dataset.example import Example
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -39,7 +38,8 @@ def test_get_daylight_datetime_index(
     with pytest.raises(RuntimeError):
         nowcasting_datamodule._get_datetimes()
     nowcasting_datamodule.prepare_data()
-    datetimes = nowcasting_datamodule._get_datetimes()
+    datetimes = nowcasting_datamodule._get_datetimes(interpolate_for_30_minute_data=False,
+                                                     adjust_for_sequence_length=False)
     assert isinstance(datetimes, pd.DatetimeIndex)
     if not use_cloud_data:
         correct_datetimes = pd.date_range(

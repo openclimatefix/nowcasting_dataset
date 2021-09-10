@@ -1,7 +1,7 @@
-from nowcasting_dataset.data_sources.constants import PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER, PV_SYSTEM_X_COORDS, \
-    PV_SYSTEM_Y_COORDS, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
+from nowcasting_dataset.consts import PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER, PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS, \
+    PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.square import get_bounding_box_mask
 from dataclasses import dataclass
@@ -225,7 +225,8 @@ class PVDataSource(ImageDataSource):
             x_meters_center=x_meters_center,
             y_meters_center=y_meters_center,
             pv_system_x_coords=pv_system_x_coords,
-            pv_system_y_coords=pv_system_y_coords)
+            pv_system_y_coords=pv_system_y_coords,
+            pv_datetime_index=selected_pv_power.index)
 
         if self.load_azimuth_and_elevation:
             example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle

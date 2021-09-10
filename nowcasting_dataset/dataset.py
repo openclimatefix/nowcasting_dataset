@@ -1,6 +1,6 @@
 import pandas as pd
 from numbers import Number
-from typing import List, Tuple, Iterable, Callable
+from typing import List, Tuple, Iterable, Callable, Union
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 from concurrent import futures
@@ -44,7 +44,23 @@ class NetCDFDataset(torch.utils.data.Dataset):
     """
 
     def __init__(
-            self, n_batches: int, src_path: str, tmp_path: str, cloud: str = 'gcp'):
+            self, n_batches: int,
+            src_path: str,
+            tmp_path: str,
+            cloud: str = 'gcp',
+            required_keys: Union[Tuple[str], List[str]] = ('nwp',
+                                                           'nwp_x_coords',
+                                                           'nwp_y_coords',
+                                                           'sat_data',
+                                                           'sat_x_coords',
+                                                           'sat_y_coords',
+                                                           'pv_yield',
+                                                           'pv_system_id',
+                                                           'pv_system_row_number',
+                                                           'pv_system_x_coords',
+                                                           'pv_system_y_coords',
+                                                           'x_meters_center',
+                                                           'y_meters_center')):
         """
         Args:
           n_batches: Number of batches available on disk.
@@ -52,11 +68,13 @@ class NetCDFDataset(torch.utils.data.Dataset):
             Google Cloud storage.
           tmp_path: The full path to the local temporary directory
             (on a local filesystem).
+          required_keys: Tuple or list of keys required in the example for it to be considered usable
         """
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
+        self.required_keys = list(required_keys)
 
         # setup cloud connections as None
         self.gcs = None
@@ -110,13 +128,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,
             nwp_target_time=netcdf_batch.nwp_time_coords)
-        for key in [
-            'nwp', 'nwp_x_coords', 'nwp_y_coords',
-            'sat_data', 'sat_x_coords', 'sat_y_coords',
-            'pv_yield', 'pv_system_id', 'pv_system_row_number',
-            'pv_system_x_coords', 'pv_system_y_coords',
-            'x_meters_center', 'y_meters_center'
-        ] + list(example.DATETIME_FEATURE_NAMES):
+        for key in self.required_keys + list(example.DATETIME_FEATURE_NAMES):
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:

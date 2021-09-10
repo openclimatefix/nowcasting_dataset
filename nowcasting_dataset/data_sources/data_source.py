@@ -198,9 +198,10 @@ class ZarrDataSource(ImageDataSource):
                 'Example is wrong shape! '
                 f'x_meters_center={x_meters_center}\n'
                 f'y_meters_center={y_meters_center}\n'
-                f't0_dt={t0_dt}\n'
+                f't0_dt={selected_data.index}\n'
+                f'datimes are ={t0_dt}\n'
                 f'expected shape={self._shape_of_example}\n'
-                f'actual shape   {selected_data.shape}')
+                f'actual shape {selected_data.shape}')
 
         return self._put_data_into_example(selected_data)
 

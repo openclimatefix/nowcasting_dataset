@@ -236,7 +236,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug('Going to split data')
 
         self._check_has_prepared_data()
-        self.t0_datetimes = self._get_datetimes(refactor_for_30_minute_data=True)
+        self.t0_datetimes = self._get_datetimes(interpolate_for_30_minute_data=True)
 
         logger.debug(f'Got all start times, there are {len(self.t0_datetimes)}')
 
@@ -299,10 +299,10 @@ class NowcastingDataModule(pl.LightningDataModule):
             batch_sampler=None,
         )
 
-    def _get_datetimes(self, refactor_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True ) -> pd.DatetimeIndex:
+    def _get_datetimes(self, interpolate_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True) -> pd.DatetimeIndex:
         """Compute the datetime index.
 
-        refactor_for_30_minute_data: If True,
+        interpolate_for_30_minute_data: If True,
         1. all datetimes from source will be interpolated to 5 min intervals,
         2. the total intersection will be taken
         3. only 30 mins datetimes will be selected
@@ -326,7 +326,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 # get datetimes from data source
                 datetime_index = data_source.datetime_index()
 
-                if refactor_for_30_minute_data and type(data_source).__name__ == 'GSPDataSource':
+                if interpolate_for_30_minute_data and type(data_source).__name__ == 'GSPDataSource':
                     # change 30 min data to 5 mins, only for GSP Data
                     datetime_index = nd_time.fill_30_minutes_timestamps_to_5_minutes(index=datetime_index)
 
@@ -353,7 +353,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         )
 
         # only select datetimes for half hours, ignore 5 minute timestamps
-        if refactor_for_30_minute_data:
+        if interpolate_for_30_minute_data:
             t0_datetimes = [t0 for t0 in t0_datetimes if (t0.minute in [0, 30])]
 
         del dt_index

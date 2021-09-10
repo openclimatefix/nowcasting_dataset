@@ -1,7 +1,7 @@
+import datetime
 import pandas as pd
 from numbers import Number
-from typing import List, Tuple, Iterable, Callable
-
+from typing import List, Tuple, Iterable, Callable, Union, Optional
 import nowcasting_dataset.consts
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
@@ -54,7 +54,22 @@ class NetCDFDataset(torch.utils.data.Dataset):
     """
 
     def __init__(
-            self, n_batches: int, src_path: str, tmp_path: str, cloud: str = 'gcp'):
+            self, n_batches: int, src_path: str, tmp_path: str, cloud: str = 'gcp',            required_keys: Union[Tuple[str], List[str]] = ('nwp',
+                                                                                                                                              'nwp_x_coords',
+                                                                                                                                              'nwp_y_coords',
+                                                                                                                                              'sat_data',
+                                                                                                                                              'sat_x_coords',
+                                                                                                                                              'sat_y_coords',
+                                                                                                                                              'pv_yield',
+                                                                                                                                              'pv_system_id',
+                                                                                                                                              'pv_system_row_number',
+                                                                                                                                              'pv_system_x_coords',
+                                                                                                                                              'pv_system_y_coords',
+                                                                                                                                              'x_meters_center',
+                                                                                                                                              'y_meters_center'),
+            history_minutes: Optional[int] = None,
+            forecast_minutes: Optional[int] = None,
+            current_sat_timestep_index: Optional[int] = None):
         """
         Args:
           n_batches: Number of batches available on disk.
@@ -62,11 +77,19 @@ class NetCDFDataset(torch.utils.data.Dataset):
             Google Cloud storage.
           tmp_path: The full path to the local temporary directory
             (on a local filesystem).
+        required_keys: Tuple or list of keys required in the example for it to be considered usable
+        history_minutes: How many past minutes of data to use, if subsetting the batch
+        forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
+        current_sat_timestep_index: Index of the current timestep of the satellite data, used to get the correct amount of future and past data
         """
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
+        self.required_keys = list(required_keys)
+        self.history_minutes = history_minutes
+        self.forecast_minutes = forecast_minutes
+        self.current_sat_timestep_index = current_sat_timestep_index
 
         # setup cloud connections as None
         self.gcs = None
@@ -116,6 +139,14 @@ class NetCDFDataset(torch.utils.data.Dataset):
 
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
         os.remove(local_netcdf_filename)
+
+        if self.current_sat_timestep_index is not None:
+            # We are subsetting the data
+            current_time = netcdf_batch.sat_time_coords[self.current_sat_timestep_index]
+            # Get timedelta + 30 seconds to ensure wanted ones are in the forecast
+            start_time = current_time - datetime.timedelta(minutes=self.history_minutes, seconds=-30)
+            end_time = current_time + datetime.timedelta(minutes=self.forecast_minutes, seconds=30)
+            netcdf_batch = netcdf_batch.sel(sat_time_coords=slice(start_time, end_time))
 
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,

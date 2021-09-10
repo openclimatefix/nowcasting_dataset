@@ -13,7 +13,7 @@ import os
 import numpy as np
 import xarray as xr
 from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset import example
+from nowcasting_dataset.dataset import example
 import torch
 
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
@@ -24,8 +24,8 @@ from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_N
 
 """
 This file contains the following classes
-NetCDFDatase- torch.utils.data.Dataset: Use for loading pre-made batcches
-NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making bacthes
+NetCDFDatase- torch.utils.data.Dataset: Use for loading pre-made batches
+NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
 ContiguousNowcastingDataset - NowcastingDataset 
 """
 

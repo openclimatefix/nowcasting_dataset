@@ -14,7 +14,7 @@ import pandas as pd
 from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
 from nowcasting_dataset.square import get_bounding_box_mask
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 

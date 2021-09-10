@@ -8,7 +8,7 @@ from pathlib import Path
 from nowcasting_dataset.consts import GSP_SYSTEM_ID, GSP_YIELD, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS, \
     DATETIME_FEATURE_NAMES
 
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)

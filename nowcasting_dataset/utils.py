@@ -5,7 +5,7 @@ import fsspec.asyn
 from typing import List
 from pathlib import Path
 import hashlib
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 
 
 def set_fsspec_for_multiprocess() -> None:

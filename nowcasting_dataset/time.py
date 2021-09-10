@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from typing import Iterable, Tuple, List
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 import warnings
 import pvlib
 import logging

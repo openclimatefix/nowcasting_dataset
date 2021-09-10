@@ -1,5 +1,5 @@
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.example import Example, to_numpy
+from nowcasting_dataset.dataset.example import Example, to_numpy
 from nowcasting_dataset import utils
 from typing import Iterable, Optional, List
 import xarray as xr

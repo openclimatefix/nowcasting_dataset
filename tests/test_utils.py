@@ -1,5 +1,5 @@
 from nowcasting_dataset import utils
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 import pandas as pd
 import pytest
 import numpy as np

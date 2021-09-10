@@ -69,17 +69,24 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def get_netcdf_filename(batch_idx: int) -> Path:
+def get_netcdf_filename(batch_idx: int, add_hash:bool = False) -> Path:
     """Generate full filename, excluding path.
 
     Filename includes the first 6 digits of the MD5 hash of the filename,
     as recommended by Google Cloud in order to distribute data across
     multiple back-end servers.
+
+    Add option to turn on and off hashing
+
     """
+    filename = f'{batch_idx}.nc'
     # Remove 'hash' at the moment. In the future could has the configuration file, and use this to make sure we are
     # saving and loading the same thing
-    # hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
-    return f'{batch_idx}.nc'
+    if add_hash:
+        hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
+        filename = f'{hash_of_filename[0:6]}_{filename}'
+
+    return filename
 
 
 def pad_nans(array, pad_width) -> np.ndarray:

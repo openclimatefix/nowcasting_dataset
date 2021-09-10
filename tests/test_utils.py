@@ -31,3 +31,4 @@ def test_sin_and_cos():
 
 def test_get_netcdf_filename():
     assert utils.get_netcdf_filename(10) == '10.nc'
+    assert utils.get_netcdf_filename(10, add_hash=True) == '77eb6f_10.nc'

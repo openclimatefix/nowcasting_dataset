@@ -2,6 +2,7 @@ import pytest
 from nowcasting_dataset import time as nd_time
 import pandas as pd
 import numpy as np
+from datetime import timedelta
 
 
 def test_select_daylight_datetimes():
@@ -84,3 +85,16 @@ def test_datetime_features_in_example():
 
     assert 'day_of_year_sin' in example
     assert 'day_of_year_cos' in example
+
+
+@pytest.mark.parametrize("history_length", [2, 3, 12])
+@pytest.mark.parametrize("forecast_length", [2, 3, 12])
+def test_get_t0_datetimes(history_length, forecast_length):
+    index = pd.date_range('2020-01-01', '2020-01-06 23:00', freq='30T')
+    total_seq_len = history_length + forecast_length + 1
+
+    t0_datetimes = nd_time.get_t0_datetimes(datetimes=index, total_seq_len=total_seq_len, history_len=history_length)
+
+    assert len(t0_datetimes) == len(index) - history_length - forecast_length
+    assert t0_datetimes[0] == index[0] + timedelta(minutes=30 * history_length)
+    assert t0_datetimes[-1] == index[-1] - timedelta(minutes=30 * forecast_length)

@@ -238,7 +238,6 @@ class NowcastingDataModule(pl.LightningDataModule):
         self._check_has_prepared_data()
         all_datetimes = self._get_datetimes()
 
-
         t0_datetimes = nd_time.get_t0_datetimes(
             datetimes=all_datetimes, total_seq_len=self._total_seq_len_30_minutes, history_len=self.history_len_30_minutes
         )

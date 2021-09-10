@@ -323,19 +323,19 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 individual_datasets.append(ds)
 
             # PV
-            pv_yield = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
-            pv_yield = pv_yield.to_dataset(name="pv_yield")
+            one_dateset = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
+            one_dateset = one_dateset.to_dataset(name="pv_yield")
             n_pv_systems = len(example["pv_system_id"])
 
             # GSP
             n_gsp_systems = len(example[GSP_SYSTEM_ID])
-            pv_yield['gsp_yield'] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp_system"])
+            one_dateset['gsp_yield'] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp_system"])
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D
             for name in ["x_meters_center", "y_meters_center"]:
                 try:
-                    pv_yield[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
+                    one_dateset[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
                 except Exception as e:
                     _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim}')
                     if name not in example.keys():
@@ -345,7 +345,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
             # 1D
             for name in ["pv_system_id", "pv_system_row_number", "pv_system_x_coords", "pv_system_y_coords"]:
-                pv_yield[name] = xr.DataArray(
+                one_dateset[name] = xr.DataArray(
                     example[name][None, :],
                     coords={**example_dim, **{"pv_system": np.arange(n_pv_systems, dtype=np.int32)}},
                     dims=["example", "pv_system"],
@@ -353,13 +353,18 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
             # GSP
             for name in [GSP_SYSTEM_ID, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS]:
-                pv_yield[name] = xr.DataArray(
-                    example[name][None, :],
-                    coords={**example_dim, **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)}},
-                    dims=["example", "gsp_system"],
-                )
+                try:
+                    one_dateset[name] = xr.DataArray(
+                        example[name][None, :],
+                        coords={**example_dim, **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)}},
+                        dims=["example", "gsp_system"],
+                    )
+                except Exception as e:
+                    _LOG.debug(f'Could not add {name} to dataset. {one_dateset[name].shape}')
+                    _LOG.error(e)
+                    raise e
 
-            individual_datasets.append(pv_yield)
+            individual_datasets.append(one_dateset)
 
             # Merge
             merged_ds = xr.merge(individual_datasets)

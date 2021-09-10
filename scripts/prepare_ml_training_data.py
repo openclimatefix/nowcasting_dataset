@@ -37,7 +37,7 @@ import logging
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
 _LOG = logging.getLogger("nowcasting_dataset")
-_LOG.setLevel(logging.DEBUG)
+_LOG.setLevel(logging.INFO)
 
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 

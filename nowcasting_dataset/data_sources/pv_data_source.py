@@ -225,7 +225,8 @@ class PVDataSource(ImageDataSource):
             x_meters_center=x_meters_center,
             y_meters_center=y_meters_center,
             pv_system_x_coords=pv_system_x_coords,
-            pv_system_y_coords=pv_system_y_coords)
+            pv_system_y_coords=pv_system_y_coords,
+            pv_datetime_index=selected_pv_power.index)
 
         if self.load_azimuth_and_elevation:
             example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle

@@ -1,5 +1,6 @@
 import pytest
 from nowcasting_dataset import time as nd_time
+from nowcasting_dataset.time import THIRTY_MINUTES, FIVE_MINUTES
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -76,11 +77,27 @@ def test_get_t0_datetimes(history_length, forecast_length):
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="30T")
     total_seq_len = history_length + forecast_length + 1
 
-    t0_datetimes = nd_time.get_t0_datetimes(datetimes=index, total_seq_len=total_seq_len, history_len=history_length)
+    t0_datetimes = nd_time.get_t0_datetimes(datetimes=index, total_seq_len=total_seq_len, history_len=history_length,
+                                            max_gap=THIRTY_MINUTES, minute_delta=30)
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length
     assert t0_datetimes[0] == index[0] + timedelta(minutes=30 * history_length)
     assert t0_datetimes[-1] == index[-1] - timedelta(minutes=30 * forecast_length)
+
+
+def test_get_t0_datetimes_night():
+    history_length = 6
+    forecast_length = 12
+    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq="5T")
+    total_seq_len = history_length + forecast_length + 1
+
+    t0_datetimes = nd_time.get_t0_datetimes(datetimes=index, total_seq_len=total_seq_len,
+                                            history_len=history_length,
+                                            max_gap=FIVE_MINUTES)
+
+    assert len(t0_datetimes) == len(index) - history_length - forecast_length
+    assert t0_datetimes[0] == index[0] + timedelta(minutes=5 * history_length)
+    assert t0_datetimes[-1] == index[-1] - timedelta(minutes=5 * forecast_length)
 
 
 def test_fill_30_minutes_timestamps_to_5_minutes():
@@ -94,3 +111,4 @@ def test_fill_30_minutes_timestamps_to_5_minutes():
     assert len(index_5) == 24 * 12 + 1 - (3 * 12 - 1)
     # 24*12 is total number of 5s in a day, +1 for the next day.
     # 3*12 - 1 is the amount of 5 mins between 4.30 and 7.30 (not inclusive)
+

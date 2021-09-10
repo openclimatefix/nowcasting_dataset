@@ -111,7 +111,20 @@ def get_t0_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
         history_len: int,
-        max_gap: pd.Timedelta = THIRTY_MINUTES) -> pd.DatetimeIndex:
+        minute_delta: int = 5,
+        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+    """
+    Get datetimes for ml learning batches. T0 references to the time now.
+    Args:
+        datetimes: list of datetimes when data is available
+        total_seq_len: total sequence length of data for ml model
+        history_len: the number of historic timestemps
+        minute_delta: the amount of minutes in one time step
+        max_gap: The maximum allowed gap in the datetimes for it to be valid
+
+    Returns: Datetimes that ml learning data can be built around.
+
+    """
 
     logger.debug('Getting t0 datetimes')
 
@@ -119,7 +132,7 @@ def get_t0_datetimes(
         datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap)
 
     logger.debug('Adding history during to t0 datetimes')
-    history_dur = timesteps_to_duration(history_len, minute_delta=30)
+    history_dur = timesteps_to_duration(history_len, minute_delta=minute_delta)
     t0_datetimes = start_datetimes + history_dur
 
     return t0_datetimes

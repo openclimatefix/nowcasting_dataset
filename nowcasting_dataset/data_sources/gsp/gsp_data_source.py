@@ -268,6 +268,7 @@ class GSPDataSource(ImageDataSource):
 
         gsp_system_ids = self.metadata[mask].gsp_id
         gsp_system_ids = gsp_system_ids_with_data_for_timeslice.intersection(gsp_system_ids)
+
         assert len(gsp_system_ids) > 0
         return gsp_system_ids
 

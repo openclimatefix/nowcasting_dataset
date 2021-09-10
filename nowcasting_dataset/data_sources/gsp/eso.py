@@ -28,7 +28,10 @@ def get_gsp_metadata_from_eso() -> pd.DataFrame:
 
     # make dataframe
     results = d["result"]["records"]
-    return pd.DataFrame(results)
+    metadata = pd.DataFrame(results)
+
+    # drop duplicates
+    return metadata.drop_duplicates(subset=['gsp_id'])
 
 
 def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:

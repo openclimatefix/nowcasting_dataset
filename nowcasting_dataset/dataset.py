@@ -360,7 +360,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                         dims=["example", "gsp_system"],
                     )
                 except Exception as e:
-                    _LOG.debug(f'Could not add {name} to dataset. {one_dateset[name].shape}')
+                    _LOG.debug(f'Could not add {name} to dataset. {example[name].shape}')
                     _LOG.error(e)
                     raise e
 

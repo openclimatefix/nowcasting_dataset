@@ -87,13 +87,14 @@ def test_gsp_pv_data_source_get_batch():
     assert len(batch[2]['gsp_system_x_coords']) > 0
 
 
-
 def test_get_gsp_metadata_from_eso():
     """
     Test to get the gsp metadata from eso. This should take ~1 second.
     @return:
     """
     metadata = get_gsp_metadata_from_eso()
+
+    assert metadata['gsp_id'].is_unique == 1
 
     assert isinstance(metadata, pd.DataFrame)
     assert len(metadata) > 100

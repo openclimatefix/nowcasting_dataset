@@ -279,7 +279,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             pv_data_source = deepcopy(self.pv_data_source)
             pv_data_source.random_pv_system_for_given_location = False
             data_sources = [pv_data_source, self.sat_data_source]
-            self.contiguous_dataset = dataset.ContiguousNowcastingDataset(
+            self.contiguous_dataset = datasets.ContiguousNowcastingDataset(
                 t0_datetimes=self.val_t0_datetimes,
                 data_sources=data_sources,
                 n_batches_per_epoch_per_worker=(self._n_batches_per_epoch_per_worker(32)),
@@ -298,7 +298,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         return dict(
             pin_memory=self.pin_memory,
             num_workers=self.num_workers,
-            worker_init_fn=dataset.worker_init_fn,
+            worker_init_fn=datasets.worker_init_fn,
             prefetch_factor=self.prefetch_factor,
             # Disable automatic batching because NowcastingDataset.__iter__
             # returns complete batches

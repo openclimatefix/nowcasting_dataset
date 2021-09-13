@@ -79,8 +79,14 @@ def get_data_module():
     num_workers = 4
 
     # get the batch id already made
-    maximum_batch_id_train = get_maximum_batch_id_from_gcs(DST_TRAIN_PATH)
-    maximum_batch_id_validation = get_maximum_batch_id_from_gcs(DST_VALIDATION_PATH)
+    maximum_batch_id_train = get_maximum_batch_id_from_gcs(f"gs://{DST_TRAIN_PATH}")
+    maximum_batch_id_validation = get_maximum_batch_id_from_gcs(f"gs://{DST_TRAIN_PATH}")
+
+    if maximum_batch_id_train is None:
+        maximum_batch_id_train = 0
+
+    if maximum_batch_id_validation is None:
+        maximum_batch_id_validation = 0
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,

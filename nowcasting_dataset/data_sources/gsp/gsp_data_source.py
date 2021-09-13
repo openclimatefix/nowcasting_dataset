@@ -66,7 +66,8 @@ class GSPDataSource(ImageDataSource):
         # load gsp data from file / gcp
         self.gsp_power = load_solar_gsp_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
-        # drop any gsp below 20 MW (or set threshold)
+        # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP systems where predicting the
+        # solar output will be harder.
         self.gsp_power, self.metadata = drop_gsp_system_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold
         )

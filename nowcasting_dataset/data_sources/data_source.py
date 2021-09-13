@@ -34,7 +34,7 @@ class DataSource:
 
     def __post_init__(self):
 
-        if not hasattr(self, 'minute_delta'):
+        if not hasattr(self, 'sample_period'):
             logging.debug('Setting sample_period attribute to 5 minutes. This means the data is spaced 5 minutes apart')
             self.sample_period = 5
 

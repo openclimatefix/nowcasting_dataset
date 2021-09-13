@@ -146,9 +146,6 @@ def get_maximum_batch_id_from_gcs(remote_path: str):
     # just take filename
     filenames = [filename.split('/')[-1] for filename in filenames]
 
-    # this is to remove extra file name such as {xxxxx}_{batch_idx}.nc
-    filenames = [filename.split('_')[-1] for filename in filenames if '_' in filename]
-
     # remove suffix
     filenames = [filename.split('.')[0] for filename in filenames]
 

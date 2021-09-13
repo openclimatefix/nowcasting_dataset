@@ -26,6 +26,7 @@ from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.batch import write_batch_locally
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.utils import get_maximum_batch_id_from_gcs
 from pathlib import Path
 import torch
 import os
@@ -75,6 +76,12 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 
 def get_data_module():
+    num_workers = 4
+
+    # get the batch id already made
+    maximum_batch_id_train = get_maximum_batch_id_from_gcs(DST_TRAIN_PATH)
+    maximum_batch_id_validation = get_maximum_batch_id_from_gcs(DST_VALIDATION_PATH)
+
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
         history_minutes=config.process.history_minutes,  #: Number of minutes of history, not including t0.
@@ -88,7 +95,7 @@ def get_data_module():
         nwp_base_path=f"gs://{NWP_BASE_PATH}",
         gsp_filename=f"gs://{GSP_FILENAME}",
         pin_memory=True,  #: Passed to DataLoader.
-        num_workers=6,  #: Passed to DataLoader.
+        num_workers=num_workers,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
         n_samples_per_timestep=8,  #: Passed to NowcastingDataset
         n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!
@@ -96,8 +103,8 @@ def get_data_module():
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
         normalise_sat=False,
-        skip_n_train_batches=0,
-        skip_n_validation_batches=0,
+        skip_n_train_batches=maximum_batch_id_train // num_workers,
+        skip_n_validation_batches=maximum_batch_id_validation // num_workers,
     )
     _LOG.info("prepare_data()")
     data_module.prepare_data()

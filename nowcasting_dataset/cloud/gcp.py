@@ -53,3 +53,17 @@ def get_all_filenames_in_path(remote_path) -> List[str]:
     gcs = gcsfs.GCSFileSystem()
 
     return gcs.ls(remote_path)
+
+
+def rename_file(remote_file: str, new_filename: str):
+    """
+    Rename file
+
+    Args:
+        remote_file: The file name in gcs
+        new_filename: What the file should be renamed too
+
+    """
+    gcs = gcsfs.GCSFileSystem()
+
+    gcs.mv(remote_file, new_filename)

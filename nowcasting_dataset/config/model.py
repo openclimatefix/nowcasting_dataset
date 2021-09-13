@@ -35,11 +35,11 @@ class OutputData(BaseModel):
 
 class Process(BaseModel):
     batch_size: int = Field(32, description="the batch size of the data")
-    forecast_length: int = Field(12, description="how many time steps to forecast in the future")
-    history_length: int = Field(6, description="how many historic times teps are used")
-    image_size_pixels: int = Field(64, description="the size of the satelite images")
+    forecast_minutes: int = Field(60, description="how many minutes to forecast in the future")
+    history_minutes: int = Field(30, description="how many historic minutes are used")
+    image_size_pixels: int = Field(64, description="the size of the satellite images")
 
-    sat_channels: tuple = Field(SAT_VARIABLE_NAMES, description="the satelite channels that are used")
+    sat_channels: tuple = Field(SAT_VARIABLE_NAMES, description="the satellite channels that are used")
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
 
     precision: int = Field(16, description="what precision to use")

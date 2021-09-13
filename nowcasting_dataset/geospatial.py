@@ -16,6 +16,7 @@ OSGB = 27700
 # WGS84 is short for "World Geodetic System 1984", used in GPS. Uses
 # latitude and longitude.
 WGS84 = 4326
+WGS84_CRS = f"EPSG:{WGS84}"
 
 
 class Transformers:

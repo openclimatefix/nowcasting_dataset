@@ -77,8 +77,8 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 def get_data_module():
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
-        history_minutes=config.process.history_length*5,  #: Number of timesteps of history, not including t0.
-        forecast_minutes=config.process.forecast_length*5,  #: Number of timesteps of forecast.
+        history_minutes=config.process.history_minutes,  #: Number of minutes of history, not including t0.
+        forecast_minutes=config.process.forecast_minutes,  #: Number of minutes of forecast.
         image_size_pixels=config.process.image_size_pixels,
         nwp_channels=NWP_VARIABLE_NAMES,
         sat_channels=SAT_VARIABLE_NAMES,

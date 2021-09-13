@@ -1,3 +1,15 @@
+"""
+This file has a few functions that are used to get GSP (Grid Supply Point) information from National Grid ESO.
+ESO - Electricity System Operator
+
+get_gsp_metadata_from_eso: gets the gsp metadata
+get_gsp_shape_from_eso: gets the shape of the gsp regions
+get_list_of_gsp_ids: gets a list of gsp_ids, by using 'get_gsp_metadata_from_eso'
+
+Peter Dudfield
+2021-09-13
+"""
+
 import json
 import urllib
 import logging
@@ -7,9 +19,9 @@ from urllib.request import urlopen
 import geopandas as gpd
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+from nowcasting_dataset.geospatial import WGS84_CRS
 
-WGS84_CRS = "EPSG:4326"
+logger = logging.getLogger(__name__)
 
 
 def get_gsp_metadata_from_eso() -> pd.DataFrame:
@@ -18,7 +30,8 @@ def get_gsp_metadata_from_eso() -> pd.DataFrame:
     @return:
     """
 
-    # call ESO website
+    # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
+    # will stay operational
     url = (
         "https://data.nationalgrideso.com/api/3/action/datastore_search?"
         "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
@@ -41,6 +54,8 @@ def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:
 
     logger.debug('Loading GSP shape file')
 
+    # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
+    # will stay operational
     url = (
         "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/resource/"
         "a3ed5711-407a-42a9-a63a-011615eea7e0/download/gsp_regions_20181031.geojson"
@@ -53,9 +68,14 @@ def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:
 def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
     """
     Get list of gsp ids from ESO metadata
-    @param maximum_number_of_gsp: clib list by this amount.
-    @return: list of gsp ids
+
+    Args:
+        maximum_number_of_gsp: clip list by this amount.
+
+    Returns:  list of gsp ids
+
     """
+
     # get a lit of gsp ids
     metadata = get_gsp_metadata_from_eso()
 

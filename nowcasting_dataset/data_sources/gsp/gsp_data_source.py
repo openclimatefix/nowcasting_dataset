@@ -37,7 +37,7 @@ class GSPDataSource(ImageDataSource):
     start_dt: Optional[datetime] = None
     end_dt: Optional[datetime] = None
     threshold: int = 20
-    minute_delta: int = 30
+    sample_period: int = 30
     get_centroid: bool = True
     n_gsp_systems_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
 
@@ -327,11 +327,16 @@ def load_solar_gsp_data(
 ) -> pd.DataFrame:
     """
     Load solar pv gsp data from gcs (although there is an option to load from local - for testing)
-    @param filename: filename of file to be loaded, can put 'gs://' files in here too
-    @param start_dt: the start datetime, which to trim the data to
-    @param end_dt: the end datetime, which to trim the data to
-    @return: dataframe of pv data
+
+    Args:
+        filename:  filename of file to be loaded, can put 'gs://' files in here too
+        start_dt: the start datetime, which to trim the data to
+        end_dt: the end datetime, which to trim the data to
+
+    Returns:dataframe of pv data
+
     """
+
     logger.debug(f"Loading Solar GSP Data from GCS {filename} from {start_dt} to {end_dt}")
     # Open data - it maye be quicker to open byte file first, but decided just to keep it like this at the moment
     gsp_power = xr.open_zarr(filename)

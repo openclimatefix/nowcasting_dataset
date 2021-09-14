@@ -173,7 +173,7 @@ class GSPDataSource(ImageDataSource):
             all_gsp_ids = all_gsp_ids.drop(central_gsp_id)
             all_gsp_ids = all_gsp_ids.insert(loc=0, item=central_gsp_id)
         else:
-            logger.warning('Not getting GSP data the centroid')
+            logger.warning('Not getting centroid GSP')
 
         # only select at most {n_gsp_per_example}
         all_gsp_ids = all_gsp_ids[: self.n_gsp_per_example]
@@ -355,7 +355,7 @@ def load_solar_gsp_data(
 
     logger.debug(f"Loading Solar GSP Data from GCS {filename} from {start_dt} to {end_dt}")
     # Open data - it may be quicker to open byte file first, but decided just to keep it like this at the moment
-    gsp_power = xr.open_zarr(filename)
+    gsp_power = xr.open_dataset(filename, engine="zarr")
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
     gsp_power_df = gsp_power.to_dataframe()
 

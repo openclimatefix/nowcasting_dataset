@@ -1,6 +1,7 @@
+import datetime
 import pandas as pd
 from numbers import Number
-from typing import List, Tuple, Iterable, Callable, Union
+from typing import List, Tuple, Iterable, Callable, Union, Optional
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 from concurrent import futures
@@ -60,7 +61,10 @@ class NetCDFDataset(torch.utils.data.Dataset):
                                                            'pv_system_x_coords',
                                                            'pv_system_y_coords',
                                                            'x_meters_center',
-                                                           'y_meters_center')):
+                                                           'y_meters_center'),
+            history_minutes: Optional[int] = None,
+            forecast_minutes: Optional[int] = None,
+            current_sat_timestep_index: Optional[int] = None):
         """
         Args:
           n_batches: Number of batches available on disk.
@@ -69,12 +73,21 @@ class NetCDFDataset(torch.utils.data.Dataset):
           tmp_path: The full path to the local temporary directory
             (on a local filesystem).
           required_keys: Tuple or list of keys required in the example for it to be considered usable
+          history_minutes: Minutes of history to give to the model, if None, defaults to loading whole batch
+          forecast_minutes: Minutes of future wanted to predict against, if None, defaults to loading whole batch
+                            Each file must have at least history_minutes+5min+forecast_minutes of observations, if
+                            they are specified
+          current_sat_timestep_index: Index into the batches which is the current timestep in the satellite data. This is
+                            used as the 'now' time when subsetting based off the history_minutes and forecast_minutes
         """
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
         self.required_keys = list(required_keys)
+        self.history_minutes = history_minutes
+        self.forecast_minutes = forecast_minutes
+        self.current_sat_timestep_index = current_sat_timestep_index
 
         # setup cloud connections as None
         self.gcs = None
@@ -125,6 +138,15 @@ class NetCDFDataset(torch.utils.data.Dataset):
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
         os.remove(local_netcdf_filename)
 
+        # Optionally subset the data here
+        if self.current_sat_timestep_index is not None:
+            current_time = netcdf_batch.sat_time_coords[self.current_sat_timestep_index] # Datetime
+            # Get start+end time with half-minute extensions to ensure getting the whole period of interest
+            start_time = current_time - datetime.timedelta(minutes=int(f"-{self.history_minutes}"), seconds=-30)
+            end_time = current_time + datetime.timedelta(minutes=int(f"{self.forecast_minutes}"), seconds=30)
+            # Subset across time for all keys in netcdf_batch
+            netcdf_batch = netcdf_batch.sel(sat_time_coords=slice(start_time, end_time))
+
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,
             nwp_target_time=netcdf_batch.nwp_time_coords)
@@ -133,7 +155,9 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 batch[key] = netcdf_batch[key]
             except KeyError:
                 pass
-        # TODO Get the center crop, if wanted, here
+        # TODO subset data here? Have datetimecoords
+
+
         sat_data = batch['sat_data']
         if sat_data.dtype == np.int16:
             sat_data = sat_data.astype(np.float32)

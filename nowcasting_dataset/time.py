@@ -2,12 +2,17 @@ import pandas as pd
 import numpy as np
 from typing import Iterable, Tuple, List
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 import warnings
 import pvlib
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 FIVE_MINUTES = pd.Timedelta('5 minutes')
+THIRTY_MINUTES = pd.Timedelta('30 minutes')
 
 
 def select_daylight_datetimes(
@@ -57,7 +62,7 @@ def intersection_of_datetimeindexes(
 def get_start_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
-        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+        max_gap: pd.Timedelta = THIRTY_MINUTES) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
@@ -97,6 +102,8 @@ def get_start_datetimes(
             start_dt_index.append(datetimes[start_i:end_i])
         start_i = next_start_i
 
+    assert len(start_dt_index) > 0
+
     return pd.DatetimeIndex(np.concatenate(start_dt_index))
 
 
@@ -104,17 +111,36 @@ def get_t0_datetimes(
         datetimes: pd.DatetimeIndex,
         total_seq_len: int,
         history_len: int,
+        minute_delta: int = 5,
         max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+    """
+    Get datetimes for ML learning batches. T0 refers to the time 'now'.
+    Args:
+        datetimes: list of datetimes when data is available
+        total_seq_len: total sequence length of data for ml model
+        history_len: the number of historic timestemps
+        minute_delta: the amount of minutes in one time step
+        max_gap: The maximum allowed gap in the datetimes for it to be valid
+
+    Returns: Datetimes that ml learning data can be built around.
+
+    """
+
+    logger.debug('Getting t0 datetimes')
+
     start_datetimes = get_start_datetimes(
         datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap)
-    history_dur = timesteps_to_duration(history_len)
+
+    logger.debug('Adding history during to t0 datetimes')
+    history_dur = timesteps_to_duration(history_len, minute_delta=minute_delta)
     t0_datetimes = start_datetimes + history_dur
+
     return t0_datetimes
 
 
-def timesteps_to_duration(n_timesteps: int) -> pd.Timedelta:
+def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
     assert n_timesteps >= 0
-    return pd.Timedelta(n_timesteps * 5, unit='minutes')
+    return pd.Timedelta(n_timesteps * minute_delta, unit='minutes')
 
 
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
@@ -133,3 +159,49 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
     for col_name, series in dt_features.iteritems():
         example[col_name] = series
     return example
+
+
+def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
+    """
+    Fill a 30 minute index with 5 minute timestamps too. Note any gaps in 30 mins are not filled
+    """
+
+    # resample index to 5 mins
+    index_5 = pd.Series(0, index=index).resample('5T')
+
+    # calculate forward fill and backward fill
+    index_5_ffill = index_5.ffill(limit=5)
+    index_5_bfill = index_5.bfill(limit=5)
+
+    # Time forward fill and backward together.
+    # This means there will be NaNs if the original index is not in surrounding the values
+    # for example:
+    # index = [00:00:00, 01:00:00, 01:30:00, 02:00:00]
+    #
+    # index_5   ffill   bfill   ffill*bfill
+    # 00:00:00  0       0       0
+    # 00:05:00  0       NaN     NaN
+    # 00:10:00  0       NaN     NaN
+    # 00:15:00  0       NaN     NaN
+    # 00:20:00  0       NaN     NaN
+    # 00:25:00  0       NaN     NaN
+    # 00:30:00  NaN     NaN     NaN
+    # 00:35:00  NaN     0       NaN
+    # 00:40:00  NaN     0       NaN
+    # 00:45:00  NaN     0       NaN
+    # 00:50:00  NaN     0       NaN
+    # 00:55:00  NaN     0       NaN
+    # 01:00:00  0       0       0
+    # 01:05:00  0       0       0
+    # 01:10:00  0       0       0
+    # 01:15:00  0       0       0
+    # 01:20:00  0       0       0
+    # 01:25:00  0       0       0
+    # 01:30:00  0       0       0
+    # .....
+    # 02:00:00  0       0       0
+    index_with_gaps = index_5_ffill * index_5_bfill
+
+    # drop nans and take index
+    return index_with_gaps.dropna().index
+

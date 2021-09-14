@@ -1,5 +1,5 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.example import Example
+from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset import time as nd_time
 from dataclasses import dataclass
 import pandas as pd

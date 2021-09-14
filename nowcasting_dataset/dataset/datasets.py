@@ -1,6 +1,8 @@
 import pandas as pd
 from numbers import Number
 from typing import List, Tuple, Iterable, Callable
+
+import nowcasting_dataset.consts
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 from concurrent import futures
@@ -11,14 +13,22 @@ import os
 import numpy as np
 import xarray as xr
 from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset import example
+from nowcasting_dataset.dataset import example
 import torch
 
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
+from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
+
+"""
+This file contains the following classes
+NetCDFDataset- torch.utils.data.Dataset: Use for loading pre-made batches
+NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
+ContiguousNowcastingDataset - NowcastingDataset 
+"""
 
 SAT_MEAN = xr.DataArray(
     data=[
@@ -35,7 +45,7 @@ SAT_STD = xr.DataArray(
     dims=['sat_variable'],
     coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
 
-_LOG = logging.getLogger('nowcasting_dataset')
+_LOG = logging.getLogger(__name__)
 
 
 class NetCDFDataset(torch.utils.data.Dataset):
@@ -115,8 +125,9 @@ class NetCDFDataset(torch.utils.data.Dataset):
             'sat_data', 'sat_x_coords', 'sat_y_coords',
             'pv_yield', 'pv_system_id', 'pv_system_row_number',
             'pv_system_x_coords', 'pv_system_y_coords',
-            'x_meters_center', 'y_meters_center'
-        ] + list(example.DATETIME_FEATURE_NAMES):
+            'x_meters_center', 'y_meters_center',
+            GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
+        ] + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:
@@ -183,6 +194,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         # Initialise each data_source.
         for data_source in self.data_sources:
+            _LOG.debug(f'Opening {type(data_source).__name__}')
             data_source.open()
 
         self._per_worker_init_has_run = True
@@ -283,3 +295,5 @@ def worker_init_fn(worker_id):
         # The NowcastingDataset copy in this worker process.
         dataset_obj = worker_info.dataset
         dataset_obj.per_worker_init(worker_info.id)
+
+

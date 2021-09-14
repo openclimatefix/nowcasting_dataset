@@ -1,9 +1,15 @@
+import logging
 import numpy as np
 import pandas as pd
 from nowcasting_dataset.consts import Array
 import fsspec.asyn
+from typing import List
 from pathlib import Path
 import hashlib
+from nowcasting_dataset.dataset.example import Example
+from nowcasting_dataset.cloud.gcp import get_all_filenames_in_path
+
+logger = logging.getLogger(__name__)
 
 
 def set_fsspec_for_multiprocess() -> None:
@@ -20,7 +26,7 @@ def is_monotonically_increasing(a: Array) -> bool:
     assert a is not None
     assert len(a) > 0
     if isinstance(a, pd.DatetimeIndex):
-        a = a.astype(int)
+        a = a.view(int)
     a = np.asarray(a)
     return np.all(np.diff(a) > 0)
 
@@ -92,3 +98,68 @@ def get_netcdf_filename(batch_idx: int, add_hash:bool = False) -> Path:
 def pad_nans(array, pad_width) -> np.ndarray:
     array = array.astype(np.float32)
     return np.pad(array, pad_width, constant_values=np.NaN)
+
+
+def pad_data(data: Example, pad_size: int, one_dimensional_arrays: List[str], two_dimensional_arrays: List[str]) -> Example:
+    """
+    Pad (if necessary) so returned arrays are always of size
+
+    data has two types of arrays in it, one dimensional arrays and two dimensional arrays
+    the one dimensional arrays are padded in that dimension
+    the two dimensional arrays are padded in the second dimension
+
+    Args:
+        data: typed dictionary of data objects
+        pad_size: the maount that should be padded
+        one_dimensional_arrays: list of data items that should be padded by one dimension
+        two_dimensional_arrays: list of data tiems that should be padded in the third dimension (and more)
+
+    Returns:
+
+    """
+    # Pad (if necessary) so returned arrays are always of size
+    pad_shape = (0, pad_size)  # (before, after)
+
+    for name in one_dimensional_arrays:
+        data[name] = pad_nans(data[name], pad_width=pad_shape)
+
+    for variable in two_dimensional_arrays:
+        data[variable] = pad_nans(data[variable], pad_width=((0, 0), pad_shape))  # (axis0, axis1)
+
+    return data
+
+
+def get_maximum_batch_id_from_gcs(remote_path: str):
+    """
+    Get the last batch id from gcs.
+    Args:
+        remote_path: the remote path folder to look in. Warning currently only works for GCS
+
+    Returns: the maximum batch id of data in the remote folder
+
+    """
+
+    logger.debug(f'Looking for maximum batch id in {remote_path}')
+
+    filenames = get_all_filenames_in_path(remote_path=remote_path)
+
+    # just take filename
+    filenames = [filename.split('/')[-1] for filename in filenames]
+
+    # remove suffix
+    filenames = [filename.split('.')[0] for filename in filenames]
+
+    # change to integer
+    batch_indexes = [int(filename) for filename in filenames if len(filename) > 0]
+
+    # if there is no files, return None
+    if len(batch_indexes) == 0:
+        logger.debug(f'Did not find any files in {remote_path}')
+        return None
+
+    # get the maximum batch id
+    maximum_batch_id = max(batch_indexes)
+    logger.debug(f'Found maximum of batch it of {maximum_batch_id} in {remote_path}')
+
+    return maximum_batch_id
+

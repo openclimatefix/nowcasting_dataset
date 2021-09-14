@@ -4,7 +4,7 @@ from typing import List
 
 import gcsfs
 
-from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
+from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_path
 
 _LOG = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def gcp_upload_and_delete_local_files(dst_path: str, local_path: Path):
     _LOG.info("Uploading to GCS!")
     gcs = gcsfs.GCSFileSystem()
     gcs.put(str(local_path), dst_path, recursive=True)
-    delete_all_files_in_temp_path(local_path)
+    delete_all_files_and_folder_in_temp_path(local_path)
 
 
 def gcp_download_to_local(remote_filename: str, local_filename: str, gcs: gcsfs.GCSFileSystem = None):
@@ -53,3 +53,17 @@ def get_all_filenames_in_path(remote_path) -> List[str]:
     gcs = gcsfs.GCSFileSystem()
 
     return gcs.ls(remote_path)
+
+
+def rename_file(remote_file: str, new_filename: str):
+    """
+    Rename file
+
+    Args:
+        remote_file: The file name in gcs
+        new_filename: What the file should be renamed too
+
+    """
+    gcs = gcsfs.GCSFileSystem()
+
+    gcs.mv(remote_file, new_filename)

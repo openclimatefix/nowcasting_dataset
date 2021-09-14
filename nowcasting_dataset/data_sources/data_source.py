@@ -1,13 +1,16 @@
 from numbers import Number
 import pandas as pd
 import numpy as np
-from nowcasting_dataset.example import Example, to_numpy
+from nowcasting_dataset.dataset.example import Example, to_numpy
 from nowcasting_dataset import square
 import nowcasting_dataset.time as nd_time
 from dataclasses import dataclass, InitVar
 from typing import List, Tuple, Iterable
 import xarray as xr
 import itertools
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -15,26 +18,41 @@ class DataSource:
     """Abstract base class.
 
     Attributes:
-      history_len: Number of timesteps of history to include in each example.
+      history_minutes: Number of minutes of history to include in each example.
         Does NOT include t0.  That is, if history_len = 0 then the example
         will start at t0.
-      forecast_len: Number of timesteps of forecast to include in each example.
+      forecast_minutes: Number of minutes of forecast to include in each example.
         Does NOT include t0.  If forecast_len = 0 then the example will end
         at t0.  If both history_len and forecast_len are 0, then the example
         will consist of a single timestep at t0.
       convert_to_numpy: Whether or not to convert each example to numpy.
+      sample_period_minutes: The time delta between each data point
     """
-    history_len: int
-    forecast_len: int
+
+    history_minutes: int
+    forecast_minutes: int
     convert_to_numpy: bool
 
     def __post_init__(self):
+
+        self.sample_period_minutes = self._get_sample_period_minutes()
+
+        self.history_len = self.history_minutes // self.sample_period_minutes
+        self.forecast_len = self.forecast_minutes // self.sample_period_minutes
+
         assert self.history_len >= 0
         assert self.forecast_len >= 0
+        assert self.history_minutes % self.sample_period_minutes == 0, \
+            f'sample period ({self.sample_period_minutes}) minutes ' \
+            f'does not fit into historic minutes ({self.forecast_minutes})'
+        assert self.forecast_minutes % self.sample_period_minutes == 0, \
+            f'sample period ({self.sample_period_minutes}) minutes ' \
+            f'does not fit into forecast minutes ({self.forecast_minutes})'
+
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
-        self._history_dur = nd_time.timesteps_to_duration(self.history_len)
-        self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len)
+        self._history_dur = nd_time.timesteps_to_duration(self.history_len, self.sample_period_minutes)
+        self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len, self.sample_period_minutes)
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt - self._history_dur
@@ -43,6 +61,15 @@ class DataSource:
         return t0_dt + self._forecast_dur
 
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
+    def _get_sample_period_minutes(self):
+        """
+        This is the default sample period in minutes. This functions may be overwritten if
+        the sample period of the data source is not 5 minutes
+        """
+        logging.debug('Getting sample_period_minutes default of 5 minutes. '
+                      'This means the data is spaced 5 minutes apart')
+        return 5
+
     def open(self):
         """Open the data source, if necessary.
 
@@ -185,8 +212,9 @@ class ZarrDataSource(ImageDataSource):
                 f'x_meters_center={x_meters_center}\n'
                 f'y_meters_center={y_meters_center}\n'
                 f't0_dt={t0_dt}\n'
+                f'times are {selected_data.time}\n'
                 f'expected shape={self._shape_of_example}\n'
-                f'actual shape   {selected_data.shape}')
+                f'actual shape {selected_data.shape}')
 
         return self._put_data_into_example(selected_data)
 

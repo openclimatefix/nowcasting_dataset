@@ -1,12 +1,14 @@
-from typing import NamedTuple
+from typing import NamedTuple, Union
 from numbers import Number
+
+from nowcasting_dataset.consts import Array
 
 
 class BoundingBox(NamedTuple):
-    top: Number
-    bottom: Number
-    left: Number
-    right: Number
+    top: Union[Number, float]
+    bottom: Union[Number, float]
+    left: Union[Number, float]
+    right: Union[Number, float]
 
 
 class Square:
@@ -27,3 +29,21 @@ class Square:
             bottom=y_meters_center - self._half_size_meters,
             left=x_meters_center - self._half_size_meters,
             right=x_meters_center + self._half_size_meters)
+
+
+def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array)-> Array:
+    """
+    Get boundary box mask from x and y locations. I.e are the x,y coords in the boundaring box
+    Args:
+        bounding_box: Bounding box
+        x: x coordinates
+        y: y coordinates
+
+    Returns: list of booleans if the x and y coordinates are in the bounding box
+
+    """
+    mask = (
+            (x >= bounding_box.left) & (x <= bounding_box.right) & (y >= bounding_box.bottom) & (
+                y <= bounding_box.top)
+    )
+    return mask

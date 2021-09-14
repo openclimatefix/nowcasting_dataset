@@ -12,8 +12,8 @@ output_data:
   filepath: prepared_ML_training_data/v4/
 process:
   batch_size: 32
-  forecast_length: 12
-  history_length: 6
+  forecast_minutes: 60
+  history_minutes: 30
   image_size_pixels: 64
   nwp_channels:
   - t

@@ -12,8 +12,8 @@ def test_nwp_data_source_init():
 
     _ = NWPDataSource(
         filename=NWP_FILENAME,
-        history_len=6,
-        forecast_len=12,
+        history_minutes=30,
+        forecast_minutes=60,
         convert_to_numpy=True,
         n_timesteps_per_batch=8,
     )
@@ -28,8 +28,8 @@ def test_nwp_data_source_open():
 
     nwp = NWPDataSource(
         filename=NWP_FILENAME,
-        history_len=6,
-        forecast_len=12,
+        history_minutes=30,
+        forecast_minutes=60,
         convert_to_numpy=True,
         n_timesteps_per_batch=8,
     )
@@ -46,8 +46,8 @@ def test_nwp_data_source_batch():
 
     nwp = NWPDataSource(
         filename=NWP_FILENAME,
-        history_len=6,
-        forecast_len=12,
+        history_minutes=30,
+        forecast_minutes=60,
         convert_to_numpy=True,
         n_timesteps_per_batch=8,
     )

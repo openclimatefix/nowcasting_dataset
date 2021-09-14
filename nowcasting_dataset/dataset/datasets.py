@@ -66,7 +66,8 @@ class NetCDFDataset(torch.utils.data.Dataset):
                                                                                                                                               'pv_system_x_coords',
                                                                                                                                               'pv_system_y_coords',
                                                                                                                                               'x_meters_center',
-                                                                                                                                              'y_meters_center'),
+                                                                                                                                              'y_meters_center',
+                                                                                                                                              GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX),
             history_minutes: Optional[int] = None,
             forecast_minutes: Optional[int] = None,
             current_sat_timestep_index: Optional[int] = None):
@@ -151,14 +152,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,
             nwp_target_time=netcdf_batch.nwp_time_coords)
-        for key in [
-            'nwp', 'nwp_x_coords', 'nwp_y_coords',
-            'sat_data', 'sat_x_coords', 'sat_y_coords',
-            'pv_yield', 'pv_system_id', 'pv_system_row_number',
-            'pv_system_x_coords', 'pv_system_y_coords',
-            'x_meters_center', 'y_meters_center',
-            GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
-        ] + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
+        for key in self.required_keys + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:

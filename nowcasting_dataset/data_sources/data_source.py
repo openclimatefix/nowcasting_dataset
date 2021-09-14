@@ -28,16 +28,14 @@ class DataSource:
       convert_to_numpy: Whether or not to convert each example to numpy.
       sample_period_minutes: The time delta between each data point
     """
+
     history_minutes: int
     forecast_minutes: int
     convert_to_numpy: bool
 
     def __post_init__(self):
 
-        if not hasattr(self, 'sample_period_minutes'):
-            logging.debug('Setting sample_period_minutes attribute to 5 minutes. '
-                          'This means the data is spaced 5 minutes apart')
-            self.sample_period_minutes = 5
+        self.sample_period_minutes = self._get_sample_period_minutes()
 
         self.history_len = self.history_minutes // self.sample_period_minutes
         self.forecast_len = self.forecast_minutes // self.sample_period_minutes
@@ -63,6 +61,15 @@ class DataSource:
         return t0_dt + self._forecast_dur
 
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
+    def _get_sample_period_minutes(self):
+        """
+        This is the default sample period in minutes. This functions may be overwritten if
+        the sample period of the data source is not 5 minutes
+        """
+        logging.debug('Getting sample_period_minutes default of 5 minutes. '
+                      'This means the data is spaced 5 minutes apart')
+        return 5
+
     def open(self):
         """Open the data source, if necessary.
 

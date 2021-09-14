@@ -58,6 +58,10 @@ class GSPDataSource(ImageDataSource):
         self.rng = np.random.default_rng(seed=seed)
         self.load()
 
+    def _get_sample_period_minutes(self):
+        """ Override the default sample minutes"""
+        return self.sample_period_minutes
+
     def load(self):
         """
         Load the meta data and load the GSP power data

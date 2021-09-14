@@ -10,6 +10,7 @@ from datetime import datetime
 import pytz
 import yaml
 import os
+import numcodecs
 
 from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
 from pathlib import Path
@@ -45,8 +46,13 @@ data_xarray = data_df.to_xarray()
 with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:
     yaml.dump(config, f, allow_unicode=True)
 
+# Make encoding
+encoding = {
+    var: {'compressor': numcodecs.Blosc(cname="zstd", clevel=5)} for var in data_xarray.data_vars
+}
+
 # save data to file
-data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w")
+data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w",encoding=encoding)
 
 # upload to gcp
 gcp_upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)

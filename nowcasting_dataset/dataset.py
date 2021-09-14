@@ -121,7 +121,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             aws_download_to_local(remote_filename=remote_netcdf_filename,
                                   local_filename=local_netcdf_filename,
                                   s3_resource=self.s3_resource)
-
+        # TODO Subset data here? So only load part of the file?
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
         os.remove(local_netcdf_filename)
 
@@ -133,7 +133,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 batch[key] = netcdf_batch[key]
             except KeyError:
                 pass
-
+        # TODO Get the center crop, if wanted, here
         sat_data = batch['sat_data']
         if sat_data.dtype == np.int16:
             sat_data = sat_data.astype(np.float32)

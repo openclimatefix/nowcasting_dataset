@@ -4,7 +4,10 @@ import geopandas as gpd
 import pandas as pd
 import pytz
 
-from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso, get_gsp_shape_from_eso
+from nowcasting_dataset.data_sources.gsp.eso import (
+    get_gsp_metadata_from_eso,
+    get_gsp_shape_from_eso,
+)
 from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
 
 
@@ -15,7 +18,7 @@ def test_get_gsp_metadata_from_eso():
     """
     metadata = get_gsp_metadata_from_eso()
 
-    assert metadata['gsp_id'].is_unique == 1
+    assert metadata["gsp_id"].is_unique == 1
 
     assert isinstance(metadata, pd.DataFrame)
     assert len(metadata) > 100
@@ -32,7 +35,7 @@ def test_get_pv_gsp_shape():
 
     gsp_shapes = get_gsp_shape_from_eso()
 
-    assert gsp_shapes['RegionID'].is_unique
+    assert gsp_shapes["RegionID"].is_unique
 
     assert isinstance(gsp_shapes, gpd.GeoDataFrame)
     assert "RegionID" in gsp_shapes.columns
@@ -48,7 +51,7 @@ def test_get_pv_gsp_shape_duplicates():
 
     gsp_shapes = get_gsp_shape_from_eso(join_duplicates=False)
 
-    assert gsp_shapes['RegionID'].is_unique is False
+    assert gsp_shapes["RegionID"].is_unique is False
 
     assert isinstance(gsp_shapes, gpd.GeoDataFrame)
     assert "RegionID" in gsp_shapes.columns
@@ -64,13 +67,12 @@ def test_get_pv_gsp_shape_from_eso():
 
     gsp_shapes = get_gsp_shape_from_eso(load_local_file=False)
 
-    assert gsp_shapes['RegionID'].is_unique
+    assert gsp_shapes["RegionID"].is_unique
 
     assert isinstance(gsp_shapes, gpd.GeoDataFrame)
     assert "RegionID" in gsp_shapes.columns
     assert "RegionName" in gsp_shapes.columns
     assert "geometry" in gsp_shapes.columns
-
 
 
 def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day():
@@ -120,7 +122,3 @@ def test_load_gsp_raw_data_from_pvlive_many_gsp():
     assert len(gsp_pv_df) == (48 + 1) * 10
     assert "datetime_gmt" in gsp_pv_df.columns
     assert "generation_mw" in gsp_pv_df.columns
-
-
-
-

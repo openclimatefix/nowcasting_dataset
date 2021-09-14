@@ -18,8 +18,14 @@ from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 
-from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, \
-    DEFAULT_N_GSP_PER_EXAMPLE, OBJECT_AT_CENTER
+from nowcasting_dataset.consts import (
+    GSP_ID,
+    GSP_YIELD,
+    GSP_X_COORDS,
+    GSP_Y_COORDS,
+    DEFAULT_N_GSP_PER_EXAMPLE,
+    OBJECT_AT_CENTER,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +65,7 @@ class GSPDataSource(ImageDataSource):
         self.load()
 
     def _get_sample_period_minutes(self):
-        """ Override the default sample minutes"""
+        """Override the default sample minutes"""
         return self.sample_period_minutes
 
     def load(self):
@@ -76,7 +82,9 @@ class GSPDataSource(ImageDataSource):
         )
 
         # load gsp data from file / gcp
-        self.gsp_power = load_solar_gsp_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
+        self.gsp_power = load_solar_gsp_data(
+            self.filename, start_dt=self.start_dt, end_dt=self.end_dt
+        )
 
         # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP where predicting the
         # solar output will be harder.
@@ -87,7 +95,7 @@ class GSPDataSource(ImageDataSource):
         # scale from 0 to 1
         self.gsp_power = scale_to_0_to_1(self.gsp_power)
 
-        logger.debug(f'There are {len(self.gsp_power.columns)} GSP')
+        logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 
     def datetime_index(self):
         """
@@ -95,7 +103,9 @@ class GSPDataSource(ImageDataSource):
         """
         return self.gsp_power.index
 
-    def get_locations_for_batch(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+    def get_locations_for_batch(
+        self, t0_datetimes: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """
         Get x and y locations for a batch. Assume that all data is available for all GSP.
         Random GSP are taken, and the locations of them are returned. This is useful as other datasources need to know
@@ -139,7 +149,9 @@ class GSPDataSource(ImageDataSource):
 
         return x_locations, y_locations
 
-    def get_example(self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number) -> Example:
+    def get_example(
+        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+    ) -> Example:
         """
         Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
 
@@ -173,7 +185,7 @@ class GSPDataSource(ImageDataSource):
             all_gsp_ids = all_gsp_ids.drop(central_gsp_id)
             all_gsp_ids = all_gsp_ids.insert(loc=0, item=central_gsp_id)
         else:
-            logger.warning('Not getting center GSP')
+            logger.warning("Not getting center GSP")
 
         # only select at most {n_gsp_per_example}
         all_gsp_ids = all_gsp_ids[: self.n_gsp_per_example]
@@ -196,19 +208,24 @@ class GSPDataSource(ImageDataSource):
         )
 
         if self.get_center:
-            example[OBJECT_AT_CENTER] = 'gsp'
+            example[OBJECT_AT_CENTER] = "gsp"
 
         # Pad (if necessary) so returned arrays are always of size n_gsp_per_example.
         pad_size = self.n_gsp_per_example - len(all_gsp_ids)
-        example = pad_data(data=example,
-                           one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
-                           two_dimensional_arrays=[GSP_YIELD],
-                           pad_size=pad_size)
+        example = pad_data(
+            data=example,
+            one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
+            two_dimensional_arrays=[GSP_YIELD],
+            pad_size=pad_size,
+        )
 
         return example
 
     def _get_central_gsp_id(
-        self, x_meters_center: Number, y_meters_center: Number, gsp_ids_with_data_for_timeslice: pd.Int64Index
+        self,
+        x_meters_center: Number,
+        y_meters_center: Number,
+        gsp_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> int:
         """
         Get the GSP id of the central GSP from coordinates
@@ -228,8 +245,8 @@ class GSPDataSource(ImageDataSource):
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.
         meta_data_index = self.metadata.index[
-            np.isclose(self.metadata.location_x, x_meters_center, rtol=1E-05, atol=1E-05)
-            & np.isclose(self.metadata.location_y, y_meters_center, rtol=1E-05, atol=1E-05)
+            np.isclose(self.metadata.location_x, x_meters_center, rtol=1e-05, atol=1e-05)
+            & np.isclose(self.metadata.location_y, y_meters_center, rtol=1e-05, atol=1e-05)
         ]
         gsp_ids = self.metadata.loc[meta_data_index].gsp_id.values
 
@@ -254,7 +271,10 @@ class GSPDataSource(ImageDataSource):
         return int(gsp_ids[0])
 
     def _get_gsp_ids_in_roi(
-        self, x_meters_center: Number, y_meters_center: Number, gsp_ids_with_data_for_timeslice: pd.Int64Index
+        self,
+        x_meters_center: Number,
+        y_meters_center: Number,
+        gsp_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
         """
         Find the GSP IDs for all the GSP within the geospatial region of interest, defined by self.square.
@@ -297,7 +317,7 @@ class GSPDataSource(ImageDataSource):
         Returns: pandas data frame of GSP power data
         """
 
-        logger.debug(f'Getting power slice for {t0_dt}')
+        logger.debug(f"Getting power slice for {t0_dt}")
 
         # get start and end datetime, takening into account history and forecast length.
         start_dt = self._get_start_dt(t0_dt)
@@ -309,7 +329,7 @@ class GSPDataSource(ImageDataSource):
         # remove any nans
         power = power.dropna(axis="columns", how="any")
 
-        logger.debug(f'Found {len(power.columns)} GSP')
+        logger.debug(f"Found {len(power.columns)} GSP")
 
         return power
 
@@ -339,7 +359,9 @@ def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, thre
 
 
 def load_solar_gsp_data(
-    filename: Union[str, Path], start_dt: Optional[datetime] = None, end_dt: Optional[datetime] = None
+    filename: Union[str, Path],
+    start_dt: Optional[datetime] = None,
+    end_dt: Optional[datetime] = None,
 ) -> pd.DataFrame:
     """
     Load solar PV GSP data

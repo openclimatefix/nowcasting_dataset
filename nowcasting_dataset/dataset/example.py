@@ -1,6 +1,7 @@
 from typing import TypedDict
 import pandas as pd
 from nowcasting_dataset.consts import *
+import numpy as np
 from numbers import Number
 
 

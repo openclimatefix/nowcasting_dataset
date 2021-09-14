@@ -14,7 +14,7 @@ Peter Dudfield
 import json
 import urllib
 import logging
-from typing import List
+from typing import List, Optional
 from urllib.request import urlopen
 
 import geopandas as gpd
@@ -66,7 +66,7 @@ def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:
         return gpd.read_file(response).to_crs(WGS84_CRS)
 
 
-def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
+def get_list_of_gsp_ids(maximum_number_of_gsp: Optional[int] = None) -> List[int]:
     """
     Get list of gsp ids from ESO metadata
 

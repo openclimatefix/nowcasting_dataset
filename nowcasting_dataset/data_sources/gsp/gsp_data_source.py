@@ -60,7 +60,7 @@ class GSPDataSource(ImageDataSource):
 
     def load(self):
         """
-        Load the meta data and load the gsp power data
+        Load the meta data and load the GSP power data
         """
 
         # load metadata
@@ -129,7 +129,7 @@ class GSPDataSource(ImageDataSource):
             y_locations.append(metadata_for_gsp.location_y)
 
             logger.debug(
-                f"Found locations for gsp id {random_gsp_id} of {metadata_for_gsp.location_x} and "
+                f"Found locations for GSP id {random_gsp_id} of {metadata_for_gsp.location_x} and "
                 f"{metadata_for_gsp.location_y}"
             )
 
@@ -139,12 +139,12 @@ class GSPDataSource(ImageDataSource):
         """
         Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
 
-        Get data at the location of x,y and get surrounding gsp power data also.
+        Get data at the location of x,y and get surrounding GSP power data also.
 
         Args:
             t0_dt: datetime of "now". History and forecast are also returned
-            x_meters_center: x location of centroid gsp.
-            y_meters_center: y location of centroid gsp.
+            x_meters_center: x location of centroid GSP.
+            y_meters_center: y location of centroid GSP.
 
         Returns: Dictionary with GSP data in it
 
@@ -213,10 +213,10 @@ class GSPDataSource(ImageDataSource):
             y_meters_center: the location of the gsp (y)
             gsp_ids_with_data_for_timeslice: List of gsp ids that are available for a certain timeslice
 
-        Returns: gsp id
+        Returns: GSP id
         """
 
-        logger.debug("Getting Central gsp")
+        logger.debug("Getting Central GSP")
 
         # If x_meters_center and y_meters_center have been chosen
         # by {}.get_locations_for_batch() then we just have
@@ -243,7 +243,7 @@ class GSPDataSource(ImageDataSource):
 
         if len(gsp_ids) == 0:
             raise NotImplementedError(
-                f"Could not find gsp id for {x_meters_center}, {y_meters_center} "
+                f"Could not find GSP id for {x_meters_center}, {y_meters_center} "
                 f"({gsp_ids}) and {gsp_ids_with_data_for_timeslice}"
             )
 
@@ -259,7 +259,7 @@ class GSPDataSource(ImageDataSource):
             y_meters_center: centroid of area of interest (y coords)
             gsp_ids_with_data_for_timeslice: ids that are avialble for a specific time slice
 
-        Returns: list of gsp ids that are in area of interest
+        Returns: list of GSP ids that are in area of interest
 
         """
 
@@ -285,12 +285,12 @@ class GSPDataSource(ImageDataSource):
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> [pd.DataFrame]:
         """
-        Get time slice of gsp power data for give time.
+        Get time slice of GSP power data for give time.
         Note the time is extended backwards by history lenght and forward by prediction time
         Args:
             t0_dt: timestamp of interest
 
-        Returns: pandas data frame of gsp power data
+        Returns: pandas data frame of GSP power data
         """
 
         logger.debug(f'Getting power slice for {t0_dt}')
@@ -312,11 +312,11 @@ class GSPDataSource(ImageDataSource):
 
 def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
     """
-    Drop gsp where the max power is below a certain threshold
+    Drop GSP where the max power is below a certain threshold
     Args:
-        gsp_power: gsp power data
-        meta_data: the gsp meta data
-        threshold_mw: the threshold where we only taken gsp with a maximum power, above this value.
+        gsp_power: GSP power data
+        meta_data: the GSP meta data
+        threshold_mw: the threshold where we only taken GSP with a maximum power, above this value.
 
     Returns: power data and metadata
     """
@@ -338,7 +338,7 @@ def load_solar_gsp_data(
     filename: Union[str, Path], start_dt: Optional[datetime] = None, end_dt: Optional[datetime] = None
 ) -> pd.DataFrame:
     """
-    Load solar pv gsp data
+    Load solar PV GSP data
 
     Args:
         filename:  filename of file to be loaded, can put 'gs://' files in here too

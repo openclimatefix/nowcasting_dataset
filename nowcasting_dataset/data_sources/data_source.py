@@ -26,7 +26,7 @@ class DataSource:
         at t0.  If both history_len and forecast_len are 0, then the example
         will consist of a single timestep at t0.
       convert_to_numpy: Whether or not to convert each example to numpy.
-      sample_period: The time delta between each data point
+      sample_period_minutes: The time delta between each data point
     """
     history_minutes: int
     forecast_minutes: int
@@ -34,20 +34,27 @@ class DataSource:
 
     def __post_init__(self):
 
-        if not hasattr(self, 'sample_period'):
-            logging.debug('Setting sample_period attribute to 5 minutes. This means the data is spaced 5 minutes apart')
-            self.sample_period = 5
+        if not hasattr(self, 'sample_period_minutes'):
+            logging.debug('Setting sample_period_minutes attribute to 5 minutes. '
+                          'This means the data is spaced 5 minutes apart')
+            self.sample_period_minutes = 5
 
-        self.history_len = self.history_minutes // self.sample_period
-        self.forecast_len = self.forecast_minutes // self.sample_period
+        self.history_len = self.history_minutes // self.sample_period_minutes
+        self.forecast_len = self.forecast_minutes // self.sample_period_minutes
 
         assert self.history_len >= 0
         assert self.forecast_len >= 0
+        assert self.history_minutes % self.sample_period_minutes == 0, \
+            f'sample period ({self.sample_period_minutes}) minutes ' \
+            f'does not fit into historic minutes ({self.forecast_minutes})'
+        assert self.forecast_minutes % self.sample_period_minutes == 0, \
+            f'sample period ({self.sample_period_minutes}) minutes ' \
+            f'does not fit into forecast minutes ({self.forecast_minutes})'
 
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
-        self._history_dur = nd_time.timesteps_to_duration(self.history_len, self.sample_period)
-        self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len, self.sample_period)
+        self._history_dur = nd_time.timesteps_to_duration(self.history_len, self.sample_period_minutes)
+        self._forecast_dur = nd_time.timesteps_to_duration(self.forecast_len, self.sample_period_minutes)
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt - self._history_dur

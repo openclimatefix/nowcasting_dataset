@@ -54,9 +54,9 @@ def test_gsp_pv_data_source_get_example():
     x_locations, y_locations = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:10])
     l = gsp.get_example(t0_dt=gsp.gsp_power.index[0], x_meters_center=x_locations[0], y_meters_center=y_locations[0])
 
-    assert len(l['gsp_system_id']) == len(l['gsp_yield'][0])
-    assert len(l['gsp_system_x_coords']) == len(l['gsp_system_y_coords'])
-    assert len(l['gsp_system_x_coords']) > 0
+    assert len(l['gsp_id']) == len(l['gsp_yield'][0])
+    assert len(l['gsp_x_coords']) == len(l['gsp_y_coords'])
+    assert len(l['gsp_x_coords']) > 0
 
 
 def test_gsp_pv_data_source_get_batch():
@@ -67,7 +67,7 @@ def test_gsp_pv_data_source_get_batch():
                           end_dt=datetime(2019, 1, 2),
                           history_minutes=30,
                           forecast_minutes=60,
-                          sample_period=30,
+                          sample_period_minutes=30,
                           convert_to_numpy=True,
                           image_size_pixels=64,
                           meters_per_pixel=2000)
@@ -82,9 +82,9 @@ def test_gsp_pv_data_source_get_batch():
 
     assert len(batch) == batch_size
     assert len(batch[0]['gsp_yield']) == 4
-    assert len(batch[0]['gsp_system_id']) == len(batch[0]['gsp_system_x_coords'])
-    assert len(batch[1]['gsp_system_x_coords']) == len(batch[1]['gsp_system_y_coords'])
-    assert len(batch[2]['gsp_system_x_coords']) > 0
+    assert len(batch[0]['gsp_id']) == len(batch[0]['gsp_x_coords'])
+    assert len(batch[1]['gsp_x_coords']) == len(batch[1]['gsp_y_coords'])
+    assert len(batch[2]['gsp_x_coords']) > 0
 
 
 def test_get_gsp_metadata_from_eso():

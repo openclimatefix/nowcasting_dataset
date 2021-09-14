@@ -70,10 +70,10 @@ class Example(TypedDict):
     # : Includes central GSP, which will always be the first entry.
     gsp_yield: Array  #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
     # GSP identification.
-    gsp_system_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
     #: GSP geographical location (in OSGB coords).
-    gsp_system_x_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
-    gsp_system_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_x_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
     gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
     # if the centroid type is a GSP, or a PV system
@@ -126,11 +126,11 @@ def validate_example(
         n_gsp_per_example: the number gsp systems with nan padding
     """
 
-    assert len(data[GSP_SYSTEM_ID]) == n_gsp_per_example
-    n_gsp_system_id = len(data[GSP_SYSTEM_ID])
+    assert len(data[GSP_ID]) == n_gsp_per_example
+    n_gsp_system_id = len(data[GSP_ID])
     assert data[GSP_YIELD].shape == (seq_len_30_minutes, n_gsp_system_id)
-    assert len(data[GSP_SYSTEM_X_COORDS]) == n_gsp_system_id
-    assert len(data[GSP_SYSTEM_Y_COORDS]) == n_gsp_system_id
+    assert len(data[GSP_X_COORDS]) == n_gsp_system_id
+    assert len(data[GSP_Y_COORDS]) == n_gsp_system_id
     assert len(data[GSP_DATETIME_INDEX]) == seq_len_30_minutes
 
     assert data["centroid_type"] == "gsp"

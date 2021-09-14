@@ -1,6 +1,7 @@
 """
 This file has a few functions that are used to get GSP (Grid Supply Point) information from National Grid ESO.
-ESO - Electricity System Operator
+ESO - Electricity System Operator. General information can be found here
+- https://data.nationalgrideso.com/system/gis-boundaries-for-gb-grid-supply-points
 
 get_gsp_metadata_from_eso: gets the gsp metadata
 get_gsp_shape_from_eso: gets the shape of the gsp regions
@@ -70,7 +71,8 @@ def get_list_of_gsp_ids(maximum_number_of_gsp: int) -> List[int]:
     Get list of gsp ids from ESO metadata
 
     Args:
-        maximum_number_of_gsp: clip list by this amount.
+        maximum_number_of_gsp: Truncate list of GSPs to be no larger than this number of GSPs.
+            Set to None to disable truncation.
 
     Returns:  list of gsp ids
 

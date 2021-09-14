@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 from pathlib import Path
 
-from nowcasting_dataset.consts import GSP_SYSTEM_ID, GSP_YIELD, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS, \
+from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, \
     DATETIME_FEATURE_NAMES
 
 from nowcasting_dataset.dataset.example import Example
@@ -95,7 +95,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             n_pv_systems = len(example["pv_system_id"])
 
             # GSP
-            n_gsp_systems = len(example[GSP_SYSTEM_ID])
+            n_gsp_systems = len(example[GSP_ID])
             one_dateset['gsp_yield'] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp_system"])
 
             # This will expand all dataarrays to have an 'example' dim.
@@ -119,7 +119,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 )
 
             # GSP
-            for name in [GSP_SYSTEM_ID, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS]:
+            for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
                 try:
                     one_dateset[name] = xr.DataArray(
                         example[name][None, :],

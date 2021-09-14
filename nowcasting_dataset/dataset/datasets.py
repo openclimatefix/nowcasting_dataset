@@ -19,13 +19,13 @@ import torch
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
-from nowcasting_dataset.consts import GSP_SYSTEM_ID, GSP_YIELD, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS, GSP_DATETIME_INDEX
+from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
 
 """
 This file contains the following classes
-NetCDFDatase- torch.utils.data.Dataset: Use for loading pre-made batches
+NetCDFDataset- torch.utils.data.Dataset: Use for loading pre-made batches
 NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
 ContiguousNowcastingDataset - NowcastingDataset 
 """
@@ -126,7 +126,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             'pv_yield', 'pv_system_id', 'pv_system_row_number',
             'pv_system_x_coords', 'pv_system_y_coords',
             'x_meters_center', 'y_meters_center',
-            GSP_SYSTEM_ID, GSP_YIELD, GSP_SYSTEM_X_COORDS, GSP_SYSTEM_Y_COORDS, GSP_DATETIME_INDEX
+            GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
         ] + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
             try:
                 batch[key] = netcdf_batch[key]

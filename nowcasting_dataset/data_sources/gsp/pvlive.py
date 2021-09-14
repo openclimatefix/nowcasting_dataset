@@ -7,16 +7,19 @@ from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
 
 logger = logging.getLogger(__name__)
 
-DAY_DELTA_CHUNK = 30
+CHUNK_DURATION = timedelta(days=30)
 
 
 def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_gsp: int = None) -> pd.DataFrame:
     """
-    Load raw pv gsp data from pvline. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
-    @param start: the start date for gsp data to load
-    @param end: the end date for gsp data to load
-    @param number_of_gsp: The number of gsp to load. Note that on 2021-09-01 there were 338 to load.
-    @return: Data frame of time series of gsp data. Shows PV data for each GSP from {start} to {end}
+    Load raw pv gsp data from pvlive. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
+    Args:
+        start: the start date for gsp data to load
+        end: the end date for gsp data to load
+        number_of_gsp: The number of gsp to load. Note that on 2021-09-01 there were 338 to load.
+
+    Returns: Data frame of time series of gsp data. Shows PV data for each GSP from {start} to {end}
+
     """
 
     # get a lit of gsp ids
@@ -25,9 +28,9 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
     # setup pv Live class, although here we are getting historic data
     pvl = PVLive()
 
-    # set the first chunk of data, note that 30 day chunks are used accept if the end time is small than that
+    # set the first chunk of data, note that 30 day chunks are used except if the end time is smaller than that
     first_start_chunk = start
-    first_end_chunk = min([first_start_chunk + timedelta(days=DAY_DELTA_CHUNK), end])
+    first_end_chunk = min([first_start_chunk + CHUNK_DURATION, end])
 
     gsp_data_df = []
     logger.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
@@ -52,8 +55,8 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
             )
 
             # add 30 days to the chunk, to get the next chunk
-            start_chunk = start_chunk + timedelta(days=DAY_DELTA_CHUNK)
-            end_chunk = end_chunk + timedelta(days=DAY_DELTA_CHUNK)
+            start_chunk = start_chunk + CHUNK_DURATION
+            end_chunk = end_chunk + CHUNK_DURATION
 
             if end_chunk > end:
                 end_chunk = end

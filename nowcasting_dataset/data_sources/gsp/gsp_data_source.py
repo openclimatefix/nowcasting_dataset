@@ -78,7 +78,8 @@ class GSPDataSource(ImageDataSource):
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
-            self.metadata["centroid_x"], self.metadata["centroid_y"]
+            lat=self.metadata["centroid_y"],
+            lon=self.metadata["centroid_x"]
         )
 
         # load gsp data from file / gcp

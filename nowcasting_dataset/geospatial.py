@@ -79,7 +79,9 @@ def lat_lon_to_osgb(lat: Number, lon: Number) -> Tuple[Number, Number]:
     return transformers.lat_lon_to_osgb.transform(lat, lon)
 
 
-def calculate_azimuth_and_elevation_angle(latitude: float, longitude: float, datestamps: [datetime]) -> pd.DataFrame:
+def calculate_azimuth_and_elevation_angle(
+    latitude: float, longitude: float, datestamps: [datetime]
+) -> pd.DataFrame:
     """
     Calculation the azimuth angle, and the elevation angle for several datetamps, but for one specific osgb location
 

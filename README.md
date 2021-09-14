@@ -7,7 +7,7 @@ optimised for Google Cloud, which aligns three separate datasets:
 * Solar PV power timeseries data (from PVOutput.org, downloaded using
   our [pvoutput Python
   code](https://github.com/openclimatefix/pvoutput).)
-  
+
 At the start of writing this code, the intention was to load and align
 data from these three datasets on-the-fly during ML training.  And it
 can still be used that way!  But it just isn't quite fast enough to

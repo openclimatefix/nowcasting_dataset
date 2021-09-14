@@ -20,18 +20,17 @@ class Square:
         self._half_size_meters = size_meters / 2
 
     def bounding_box_centered_on(
-            self,
-            x_meters_center: Number,
-            y_meters_center: Number
+        self, x_meters_center: Number, y_meters_center: Number
     ) -> BoundingBox:
         return BoundingBox(
             top=y_meters_center + self._half_size_meters,
             bottom=y_meters_center - self._half_size_meters,
             left=x_meters_center - self._half_size_meters,
-            right=x_meters_center + self._half_size_meters)
+            right=x_meters_center + self._half_size_meters,
+        )
 
 
-def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array)-> Array:
+def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array) -> Array:
     """
     Get boundary box mask from x and y locations. I.e are the x,y coords in the boundaring box
     Args:
@@ -43,7 +42,9 @@ def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array)-> Array
 
     """
     mask = (
-            (x >= bounding_box.left) & (x <= bounding_box.right) & (y >= bounding_box.bottom) & (
-                y <= bounding_box.top)
+        (x >= bounding_box.left)
+        & (x <= bounding_box.right)
+        & (y >= bounding_box.bottom)
+        & (y <= bounding_box.top)
     )
     return mask

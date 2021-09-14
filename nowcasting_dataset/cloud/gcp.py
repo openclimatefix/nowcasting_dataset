@@ -29,7 +29,9 @@ def gcp_upload_and_delete_local_files(dst_path: str, local_path: Path):
     delete_all_files_and_folder_in_temp_path(local_path)
 
 
-def gcp_download_to_local(remote_filename: str, local_filename: str, gcs: gcsfs.GCSFileSystem = None):
+def gcp_download_to_local(
+    remote_filename: str, local_filename: str, gcs: gcsfs.GCSFileSystem = None
+):
     """
     Download file from gcs
     @param remote_filename: the gcs file name, should start with gs://
@@ -37,7 +39,7 @@ def gcp_download_to_local(remote_filename: str, local_filename: str, gcs: gcsfs.
     @param gcs: gcsfs.GCSFileSystem connection, means a new one doesnt have to be made everytime.
     """
 
-    _LOG.debug(f'Downloading from GCP {remote_filename} to {local_filename}')
+    _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
 
     if gcs is None:
         gcs = gcsfs.GCSFileSystem()

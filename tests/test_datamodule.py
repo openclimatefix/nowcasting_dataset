@@ -15,10 +15,9 @@ from nowcasting_dataset.dataset.example import validate_example
 from nowcasting_dataset.dataset.batch import batch_to_dataset
 from nowcasting_dataset.dataset.example import Example
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
+logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.DEBUG)
-
 
 
 @pytest.fixture
@@ -31,24 +30,23 @@ def test_prepare_data(nowcasting_datamodule: datamodule.NowcastingDataModule):
 
 
 def test_get_daylight_datetime_index(
-        nowcasting_datamodule: datamodule.NowcastingDataModule,
-        use_cloud_data: bool):
+    nowcasting_datamodule: datamodule.NowcastingDataModule, use_cloud_data: bool
+):
     # Check it throws RuntimeError if we try running
     # _get_daylight_datetime_index() before running prepare_data():
     with pytest.raises(RuntimeError):
         nowcasting_datamodule._get_datetimes()
     nowcasting_datamodule.prepare_data()
-    datetimes = nowcasting_datamodule._get_datetimes(interpolate_for_30_minute_data=False,
-                                                     adjust_for_sequence_length=False)
+    datetimes = nowcasting_datamodule._get_datetimes(
+        interpolate_for_30_minute_data=False, adjust_for_sequence_length=False
+    )
     assert isinstance(datetimes, pd.DatetimeIndex)
     if not use_cloud_data:
-        correct_datetimes = pd.date_range(
-            '2019-01-01 12:05', '2019-01-01 16:20', freq='5 min')
+        correct_datetimes = pd.date_range("2019-01-01 12:05", "2019-01-01 16:20", freq="5 min")
         np.testing.assert_array_equal(datetimes, correct_datetimes)
 
 
-def test_setup(
-        nowcasting_datamodule: datamodule.NowcastingDataModule):
+def test_setup(nowcasting_datamodule: datamodule.NowcastingDataModule):
     # Check it throws RuntimeError if we try running
     # setup() before running prepare_data():
     with pytest.raises(RuntimeError):
@@ -59,10 +57,10 @@ def test_setup(
 
 def test_data_module():
 
-    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), '../')
+    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
 
     # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, 'tests', 'config', 'test.yaml')
+    filename = os.path.join(local_path, "tests", "config", "test.yaml")
     config = load_yaml_configuration(filename)
 
     data_module = NowcastingDataModule(
@@ -106,24 +104,28 @@ def test_data_module():
         assert key in batch[0].keys()
 
     seq_len_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
-    seq_len_5_minutes = 19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
+    seq_len_5_minutes = (
+        19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
+    )
 
     for x in batch:
-        validate_example(data=x,
-                         n_nwp_channels=len(config.process.nwp_channels),
-                         nwp_image_size=0,# TODO why is this zero
-                         n_sat_channels=len(config.process.sat_channels),
-                         sat_image_size=config.process.image_size_pixels,
-                         seq_len_30_minutes=seq_len_30_minutes,
-                         seq_len_5_minutes=seq_len_5_minutes)
+        validate_example(
+            data=x,
+            n_nwp_channels=len(config.process.nwp_channels),
+            nwp_image_size=0,  # TODO why is this zero
+            n_sat_channels=len(config.process.sat_channels),
+            sat_image_size=config.process.image_size_pixels,
+            seq_len_30_minutes=seq_len_30_minutes,
+            seq_len_5_minutes=seq_len_5_minutes,
+        )
 
 
 def test_batch_to_batch_to_dataset():
 
-    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), '../')
+    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
 
     # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, 'tests', 'config', 'test.yaml')
+    filename = os.path.join(local_path, "tests", "config", "test.yaml")
     config = load_yaml_configuration(filename)
 
     data_module = NowcastingDataModule(

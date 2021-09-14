@@ -42,7 +42,7 @@ def load_configuration_from_gcs(
 
     bucket_and_dir = os.path.join(f"gs://{bucket}", gcp_dir)
     filename = os.path.join(bucket_and_dir, filename)
-    logger.debug(f'Will be opening {filename}')
+    logger.debug(f"Will be opening {filename}")
 
     # set up gcs
     gcs = gcsfs.GCSFileSystem(access="read_only")

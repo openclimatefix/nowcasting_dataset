@@ -7,15 +7,14 @@ import pytest
 @pytest.fixture
 def dataset(sat_data_source):
     all_datetimes = sat_data_source.datetime_index()
-    t0_datetimes = nd_time.get_t0_datetimes(
-        datetimes=all_datetimes, total_seq_len=2,
-        history_len=0)
+    t0_datetimes = nd_time.get_t0_datetimes(datetimes=all_datetimes, total_seq_len=2, history_len=0)
     return NowcastingDataset(
         batch_size=8,
         n_batches_per_epoch_per_worker=64,
         n_samples_per_timestep=2,
         data_sources=[sat_data_source],
-        t0_datetimes=t0_datetimes)
+        t0_datetimes=t0_datetimes,
+    )
 
 
 def test_post_init(dataset: NowcastingDataset):
@@ -34,6 +33,11 @@ def test_get_batch(dataset: NowcastingDataset):
     dataset.per_worker_init(worker_id=1)
     example = dataset._get_batch()
     assert isinstance(example, dict)
-    assert 'sat_data' in example
-    assert example['sat_data'].shape == (
-        8, 2, pytest.IMAGE_SIZE_PIXELS, pytest.IMAGE_SIZE_PIXELS, 1)
+    assert "sat_data" in example
+    assert example["sat_data"].shape == (
+        8,
+        2,
+        pytest.IMAGE_SIZE_PIXELS,
+        pytest.IMAGE_SIZE_PIXELS,
+        1,
+    )

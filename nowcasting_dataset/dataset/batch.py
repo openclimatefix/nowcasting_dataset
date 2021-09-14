@@ -5,15 +5,20 @@ import numpy as np
 import xarray as xr
 from pathlib import Path
 
-from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, \
-    DATETIME_FEATURE_NAMES
+from nowcasting_dataset.consts import (
+    GSP_ID,
+    GSP_YIELD,
+    GSP_X_COORDS,
+    GSP_Y_COORDS,
+    DATETIME_FEATURE_NAMES,
+)
 
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
+LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
 
 def write_batch_locally(batch: List[Example], batch_i: int):
@@ -96,25 +101,39 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
             # GSP
             n_gsp_systems = len(example[GSP_ID])
-            one_dateset['gsp_yield'] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp_system"])
+            one_dateset["gsp_yield"] = xr.DataArray(
+                example[GSP_YIELD], dims=["time_30", "gsp_system"]
+            )
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D
             for name in ["x_meters_center", "y_meters_center"]:
                 try:
-                    one_dateset[name] = xr.DataArray([example[name]], coords=example_dim, dims=["example"])
+                    one_dateset[name] = xr.DataArray(
+                        [example[name]], coords=example_dim, dims=["example"]
+                    )
                 except Exception as e:
-                    _LOG.error(f'Could not make pv_yield data for {name} with example_dim={example_dim}')
+                    _LOG.error(
+                        f"Could not make pv_yield data for {name} with example_dim={example_dim}"
+                    )
                     if name not in example.keys():
-                        _LOG.error(f'{name} not in data keys: {example.keys()}')
+                        _LOG.error(f"{name} not in data keys: {example.keys()}")
                     _LOG.error(e)
                     raise Exception
 
             # 1D
-            for name in ["pv_system_id", "pv_system_row_number", "pv_system_x_coords", "pv_system_y_coords"]:
+            for name in [
+                "pv_system_id",
+                "pv_system_row_number",
+                "pv_system_x_coords",
+                "pv_system_y_coords",
+            ]:
                 one_dateset[name] = xr.DataArray(
                     example[name][None, :],
-                    coords={**example_dim, **{"pv_system": np.arange(n_pv_systems, dtype=np.int32)}},
+                    coords={
+                        **example_dim,
+                        **{"pv_system": np.arange(n_pv_systems, dtype=np.int32)},
+                    },
                     dims=["example", "pv_system"],
                 )
 
@@ -123,11 +142,14 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 try:
                     one_dateset[name] = xr.DataArray(
                         example[name][None, :],
-                        coords={**example_dim, **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)}},
+                        coords={
+                            **example_dim,
+                            **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)},
+                        },
                         dims=["example", "gsp_system"],
                     )
                 except Exception as e:
-                    _LOG.debug(f'Could not add {name} to dataset. {example[name].shape}')
+                    _LOG.debug(f"Could not add {name} to dataset. {example[name].shape}")
                     _LOG.error(e)
                     raise e
 
@@ -145,7 +167,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
     return xr.concat(datasets, dim="example")
 
 
-def coord_to_range(da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32) -> xr.DataArray:
+def coord_to_range(
+    da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
+) -> xr.DataArray:
     # TODO: Actually, I think this is over-complicated?  I think we can
     # just strip off the 'coord' from the dimension.
     coord = da[dim]

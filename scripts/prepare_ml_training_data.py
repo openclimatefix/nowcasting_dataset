@@ -36,14 +36,14 @@ from neptune.new.integrations.python_logger import NeptuneHandler
 
 import logging
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s')
+logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
 _LOG.setLevel(logging.INFO)
 
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
 # load configuration, this can be changed to a different filename as needed
-filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), 'config', 'gcp.yaml')
+filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
 config = load_yaml_configuration(filename)
 
 # set the gcs bucket name
@@ -63,9 +63,9 @@ NWP_BASE_PATH = BUCKET / config.input_data.npw_base_path
 GSP_FILENAME = BUCKET / config.input_data.gsp_filename
 
 DST_NETCDF4_PATH = config.output_data.filepath
-DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, 'train')
-DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, 'validation')
-LOCAL_TEMP_PATH = Path('~/temp/').expanduser()
+DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, "train")
+DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, "validation")
+LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
 UPLOAD_EVERY_N_BATCHES = 16
 CLOUD = "gcp"  # either gcp or aws
@@ -119,7 +119,9 @@ def get_data_module():
     return data_module
 
 
-def iterate_over_dataloader_and_write_to_disk(dataloader: torch.utils.data.DataLoader, dst_path: str):
+def iterate_over_dataloader_and_write_to_disk(
+    dataloader: torch.utils.data.DataLoader, dst_path: str
+):
     _LOG.info("Getting first batch")
     for batch_i, batch in enumerate(dataloader):
         _LOG.info(f"Got batch {batch_i}")
@@ -131,17 +133,19 @@ def iterate_over_dataloader_and_write_to_disk(dataloader: torch.utils.data.DataL
 
 
 def check_directories():
-    if CLOUD == 'gcp':
+    if CLOUD == "gcp":
         for path in [DST_TRAIN_PATH, DST_VALIDATION_PATH]:
             check_path_exists(path)
 
 
 def main():
 
-    run = neptune.init(project='OpenClimateFix/nowcasting-data',
-                       capture_stdout=True,
-                       capture_stderr=True,
-                       capture_hardware_metrics=False)
+    run = neptune.init(
+        project="OpenClimateFix/nowcasting-data",
+        capture_stdout=True,
+        capture_stderr=True,
+        capture_hardware_metrics=False,
+    )
     _LOG.addHandler(NeptuneHandler(run=run))
 
     check_directories()
@@ -159,7 +163,5 @@ def main():
     save_configuration_to_cloud(configuration=config, cloud=CLOUD)
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

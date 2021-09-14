@@ -1,5 +1,5 @@
 from nowcasting_dataset.consts import PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER, PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS, \
-    PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE, CENTER_TYPE
+    PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE, OBJECT_AT_CENTER
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset import geospatial, utils
@@ -233,7 +233,7 @@ class PVDataSource(ImageDataSource):
             example[PV_ELEVATION_ANGLE] = selected_pv_elevation_angle
 
         if self.get_center:
-            example[CENTER_TYPE] = 'pv'
+            example[OBJECT_AT_CENTER] = 'pv'
 
         # Pad (if necessary) so returned arrays are always of size n_pv_systems_per_example.
         pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)

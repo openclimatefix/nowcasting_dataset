@@ -19,7 +19,7 @@ from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 
 from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, \
-    DEFAULT_N_GSP_PER_EXAMPLE, CENTER_TYPE
+    DEFAULT_N_GSP_PER_EXAMPLE, OBJECT_AT_CENTER
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +196,7 @@ class GSPDataSource(ImageDataSource):
         )
 
         if self.get_center:
-            example[CENTER_TYPE] = 'gsp'
+            example[OBJECT_AT_CENTER] = 'gsp'
 
         # Pad (if necessary) so returned arrays are always of size n_gsp_per_example.
         pad_size = self.n_gsp_per_example - len(all_gsp_ids)

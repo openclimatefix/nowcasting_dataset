@@ -77,7 +77,7 @@ class Example(TypedDict):
     gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
     # if the centroid type is a GSP, or a PV system
-    center_type: str  #: shape = [batch_size, ]
+    object_at_center: str  #: shape = [batch_size, ]
 
 
 def to_numpy(example: Example) -> Example:
@@ -133,7 +133,7 @@ def validate_example(
     assert len(data[GSP_Y_COORDS]) == n_gsp_system_id
     assert len(data[GSP_DATETIME_INDEX]) == seq_len_30_minutes
 
-    assert data[CENTER_TYPE] == "gsp"
+    assert data[OBJECT_AT_CENTER] == "gsp"
     assert type(data["x_meters_center"]) == np.float64
     assert type(data["y_meters_center"]) == np.float64
 

@@ -36,5 +36,5 @@ GSP_X_COORDS = "gsp_x_coords"
 GSP_Y_COORDS = "gsp_y_coords"
 GSP_DATETIME_INDEX = "gsp_datetime_index"
 DEFAULT_N_GSP_PER_EXAMPLE = 32
-CENTROID_TYPE = "centroid_type"
+CENTER_TYPE = "center_type"
 DATETIME_FEATURE_NAMES = ("hour_of_day_sin", "hour_of_day_cos", "day_of_year_sin", "day_of_year_cos")

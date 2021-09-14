@@ -1,5 +1,5 @@
 from nowcasting_dataset.consts import PV_SYSTEM_ID, PV_SYSTEM_ROW_NUMBER, PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS, \
-    PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
+    PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_YIELD, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE, CENTER_TYPE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset import geospatial, utils
@@ -36,7 +36,7 @@ class PVDataSource(ImageDataSource):
     n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
     load_azimuth_and_elevation: bool = False
     load_from_gcs: bool = True  # option to load data from gcs, or local file
-    get_centroid: bool = True
+    get_center: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
@@ -196,7 +196,7 @@ class PVDataSource(ImageDataSource):
         selected_pv_power, selected_pv_azimuth_angle, selected_pv_elevation_angle = self._get_time_slice(t0_dt)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
             x_meters_center, y_meters_center, selected_pv_power.columns)
-        if self.get_centroid:
+        if self.get_center:
             central_pv_system_id = self._get_central_pv_system_id(
                 x_meters_center, y_meters_center, selected_pv_power.columns)
 
@@ -232,8 +232,8 @@ class PVDataSource(ImageDataSource):
             example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle
             example[PV_ELEVATION_ANGLE] = selected_pv_elevation_angle
 
-        if self.get_centroid:
-            example['centroid_type'] = 'pv'
+        if self.get_center:
+            example[CENTER_TYPE] = 'pv'
 
         # Pad (if necessary) so returned arrays are always of size n_pv_systems_per_example.
         pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)

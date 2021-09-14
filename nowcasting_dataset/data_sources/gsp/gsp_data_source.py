@@ -19,7 +19,7 @@ from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 
 from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, \
-    DEFAULT_N_GSP_PER_EXAMPLE, CENTROID_TYPE
+    DEFAULT_N_GSP_PER_EXAMPLE, CENTER_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +44,8 @@ class GSPDataSource(ImageDataSource):
     # the frequency of the data
     sample_period_minutes: int = 30
     # get the data for the gsp at the center too.
-    # This can be turned off if the centre of the bounding box is of a pv system
-    get_centroid: bool = True
+    # This can be turned off if the center of the bounding box is of a pv system
+    get_center: bool = True
     # the maximum number of gsp's to be loaded for data sample
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
 
@@ -147,8 +147,8 @@ class GSPDataSource(ImageDataSource):
 
         Args:
             t0_dt: datetime of "now". History and forecast are also returned
-            x_meters_center: x location of centroid GSP.
-            y_meters_center: y location of centroid GSP.
+            x_meters_center: x location of center GSP.
+            y_meters_center: y location of center GSP.
 
         Returns: Dictionary with GSP data in it
 
@@ -162,7 +162,7 @@ class GSPDataSource(ImageDataSource):
         all_gsp_ids = self._get_gsp_ids_in_roi(
             x_meters_center, y_meters_center, selected_gsp_power.columns
         )
-        if self.get_centroid:
+        if self.get_center:
             central_gsp_id = self._get_central_gsp_id(
                 x_meters_center, y_meters_center, selected_gsp_power.columns
             )
@@ -173,7 +173,7 @@ class GSPDataSource(ImageDataSource):
             all_gsp_ids = all_gsp_ids.drop(central_gsp_id)
             all_gsp_ids = all_gsp_ids.insert(loc=0, item=central_gsp_id)
         else:
-            logger.warning('Not getting centroid GSP')
+            logger.warning('Not getting center GSP')
 
         # only select at most {n_gsp_per_example}
         all_gsp_ids = all_gsp_ids[: self.n_gsp_per_example]
@@ -195,8 +195,8 @@ class GSPDataSource(ImageDataSource):
             gsp_datetime_index=selected_gsp_power.index,
         )
 
-        if self.get_centroid:
-            example[CENTROID_TYPE] = 'gsp'
+        if self.get_center:
+            example[CENTER_TYPE] = 'gsp'
 
         # Pad (if necessary) so returned arrays are always of size n_gsp_per_example.
         pad_size = self.n_gsp_per_example - len(all_gsp_ids)
@@ -259,8 +259,8 @@ class GSPDataSource(ImageDataSource):
         """
         Find the GSP IDs for all the GSP within the geospatial region of interest, defined by self.square.
         Args:
-            x_meters_center: centroid of area of interest (x coords)
-            y_meters_center: centroid of area of interest (y coords)
+            x_meters_center: center of area of interest (x coords)
+            y_meters_center: center of area of interest (y coords)
             gsp_ids_with_data_for_timeslice: ids that are avialble for a specific time slice
 
         Returns: list of GSP ids that are in area of interest

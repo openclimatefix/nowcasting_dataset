@@ -105,7 +105,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 convert_to_numpy=self.convert_to_numpy,
                 image_size_pixels=self.image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
-                get_centroid=False,
+                get_center=False,
                 load_azimuth_and_elevation=self.pv_load_azimuth_and_elevation,
             )
 
@@ -121,7 +121,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 convert_to_numpy=self.convert_to_numpy,
                 image_size_pixels=self.image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
-                get_centroid=True
+                get_center=True
             )
 
             # put gsp data source at the start, so data is centered around GSP. This is the current approach,

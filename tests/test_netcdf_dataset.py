@@ -79,7 +79,7 @@ def test_get_dataloaders_aws():
         assert "sat_data" in data.keys()
 
 
-@pytest.mark.skip("CD does not have access to AWS")
+@pytest.mark.skip("CD does not have access to GCP")
 def test_required_keys_gcp():
 
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
@@ -124,7 +124,7 @@ def test_required_keys_gcp():
     assert "pv_yield" not in data.keys()
 
 
-@pytest.mark.skip("CD does not have access to AWS")
+@pytest.mark.skip("CD does not have access to GCP")
 def test_subsetting_gcp():
 
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
@@ -140,7 +140,7 @@ def test_subsetting_gcp():
         cloud="gcp",
         history_minutes=10,
         forecast_minutes=10,
-        current_sat_timestep_index=7,
+        current_timestep_index=7,
     )
 
     dataloader_config = dict(

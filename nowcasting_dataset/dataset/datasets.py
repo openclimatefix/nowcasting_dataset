@@ -241,6 +241,10 @@ class NetCDFDataset(torch.utils.data.Dataset):
                     f"NWP Datetime Shape: {batch['nwp_target_time'].shape} NWP Data Shape: {batch['nwp'].shape}"
                 )
 
+            # Do the for time constants, as either NWP or Sat data should exist and have masks
+            for k in list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
+                batch[k] = batch[k][:, sat_mask if "sat_data" in self.required_keys else nwp_mask]
+
             # Now GSP, if used
             if GSP_YIELD in self.required_keys and GSP_DATETIME_INDEX in batch:
                 gsp_mask = np.logical_and(

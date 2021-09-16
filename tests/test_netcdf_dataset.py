@@ -77,3 +77,91 @@ def test_get_dataloaders_aws():
         data = next(t)
 
         assert "sat_data" in data.keys()
+
+
+@pytest.mark.skip("CD does not have access to AWS")
+def test_required_keys_gcp():
+
+    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
+    TEMP_PATH = "../nowcasting_dataset"
+    if os.path.isdir(os.path.join(TEMP_PATH, "train")):
+        os.removedirs(os.path.join(TEMP_PATH, "train"))
+    os.mkdir(os.path.join(TEMP_PATH, "train"))
+
+    train_dataset = NetCDFDataset(
+        24_900,
+        os.path.join(DATA_PATH, "train"),
+        os.path.join(TEMP_PATH, "train"),
+        cloud="gcp",
+        required_keys=[
+            "nwp",
+            "nwp_x_coords",
+            "nwp_y_coords",
+            "sat_data",
+            "sat_x_coords",
+            "sat_y_coords",
+        ],
+    )
+
+    dataloader_config = dict(
+        pin_memory=True,
+        num_workers=2,
+        prefetch_factor=8,
+        worker_init_fn=worker_init_fn,
+        persistent_workers=True,
+        # Disable automatic batching because dataset
+        # returns complete batches.
+        batch_size=None,
+    )
+
+    _ = torch.utils.data.DataLoader(train_dataset, **dataloader_config)
+
+    train_dataset.per_worker_init(1)
+    t = iter(train_dataset)
+    data = next(t)
+
+    assert "sat_data" in data.keys()
+    assert "pv_yield" not in data.keys()
+
+
+@pytest.mark.skip("CD does not have access to AWS")
+def test_subsetting_gcp():
+
+    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
+    TEMP_PATH = "../nowcasting_dataset"
+    if os.path.isdir(os.path.join(TEMP_PATH, "train")):
+        os.removedirs(os.path.join(TEMP_PATH, "train"))
+    os.mkdir(os.path.join(TEMP_PATH, "train"))
+
+    train_dataset = NetCDFDataset(
+        24_900,
+        os.path.join(DATA_PATH, "train"),
+        os.path.join(TEMP_PATH, "train"),
+        cloud="gcp",
+        history_minutes=10,
+        forecast_minutes=10,
+        current_sat_timestep_index=7,
+    )
+
+    dataloader_config = dict(
+        pin_memory=True,
+        num_workers=2,
+        prefetch_factor=8,
+        worker_init_fn=worker_init_fn,
+        persistent_workers=True,
+        # Disable automatic batching because dataset
+        # returns complete batches.
+        batch_size=None,
+    )
+
+    _ = torch.utils.data.DataLoader(train_dataset, **dataloader_config)
+
+    train_dataset.per_worker_init(1)
+    t = iter(train_dataset)
+    data = next(t)
+
+    sat_data = data["sat_data"]
+
+    # Sat is in 5min increments, so should have 2 history + current + 2 future
+    assert sat_data.shape[1] == 5
+    assert data["nwp"].shape[2] == 5

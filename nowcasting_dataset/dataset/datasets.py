@@ -186,16 +186,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
         os.remove(local_netcdf_filename)
 
-        if self.current_sat_timestep_index is not None:
-            # We are subsetting the data
-            current_time = netcdf_batch.sat_time_coords[self.current_sat_timestep_index]
-            # Get timedelta + 30 seconds to ensure wanted ones are in the forecast
-            start_time = current_time - datetime.timedelta(
-                minutes=self.history_minutes, seconds=-30
-            )
-            end_time = current_time + datetime.timedelta(minutes=self.forecast_minutes, seconds=30)
-            netcdf_batch = netcdf_batch.sel(sat_time_coords=slice(start_time, end_time))
-
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,
             nwp_target_time=netcdf_batch.nwp_time_coords,
@@ -214,6 +204,75 @@ class NetCDFDataset(torch.utils.data.Dataset):
             batch["sat_data"] = sat_data
 
         batch = example.to_numpy(batch)
+
+        if self.current_sat_timestep_index is not None:
+            # We are subsetting the data
+            date_time_index_to_use = (
+                "sat_datetime_index" if "sat_data" in self.required_keys else "nwp_target_time"
+            )
+            current_time = batch[date_time_index_to_use][0, self.current_sat_timestep_index]
+            # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
+            # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
+            start_time = current_time - (self.history_minutes * 60) - 30  # seconds
+            end_time = current_time + (self.forecast_minutes * 60) + 30  # seconds
+            if "sat_data" in self.required_keys and "sat_datetime_index" in batch:
+                sat_mask = np.logical_and(
+                    start_time <= batch["sat_datetime_index"][0],
+                    batch["sat_datetime_index"][0] <= end_time,
+                )
+                _LOG.debug(f"Sat Mask: {sat_mask}")
+                batch["sat_datetime_index"] = batch["sat_datetime_index"][:, sat_mask]
+                batch["sat_data"] = batch["sat_data"][
+                    :, sat_mask, :, :, :
+                ]  # Sat is in [B, L, W, H, C]
+                _LOG.debug(
+                    f"Sat Datetime Shape: {batch['sat_datetime_index'].shape} Sat Data Shape: {batch['sat_data'].shape}"
+                )
+
+            # Now for NWP, if used
+            if "nwp" in self.required_keys and "nwp_target_time" in batch:
+                nwp_mask = np.logical_and(
+                    start_time <= batch["nwp_target_time"][0],
+                    batch["nwp_target_time"][0] <= end_time,
+                )
+                batch["nwp_target_time"] = batch["nwp_target_time"][:, nwp_mask]
+                batch["nwp"] = batch["nwp"][:, :, nwp_mask, :, :]  # NWP is in [B, C, L, W, H]
+                _LOG.debug(
+                    f"NWP Datetime Shape: {batch['nwp_target_time'].shape} NWP Data Shape: {batch['nwp'].shape}"
+                )
+
+            # Now GSP, if used
+            if GSP_YIELD in self.required_keys and GSP_DATETIME_INDEX in batch:
+                gsp_mask = np.logical_and(
+                    start_time <= batch[GSP_DATETIME_INDEX][0],
+                    batch[GSP_DATETIME_INDEX][0] <= end_time,
+                )
+                batch[GSP_DATETIME_INDEX] = batch[GSP_DATETIME_INDEX][:, gsp_mask]
+                batch[GSP_YIELD] = batch[GSP_YIELD][:, gsp_mask]  # GSP is in [B, L, N]
+                _LOG.debug(
+                    f"GSP Datetime Shape: {batch[GSP_DATETIME_INDEX].shape} GSP Data Shape: {batch[GSP_YIELD].shape}"
+                )
+
+            # Now PV systems, if used
+            if "pv_yield" in self.required_keys and "pv_datetime_index" in batch:
+                pv_mask = np.logical_and(
+                    start_time <= batch["pv_datetime_index"][0],
+                    batch["pv_datetime_index"][0] <= end_time,
+                )
+                batch["pv_datetime_index"] = batch["pv_datetime_index"][:, pv_mask]
+                batch["pv_yield"] = batch["pv_yield"][:, pv_mask]  # PV is in [B, L, N]
+                batch["pv_azimuth_angle"] = batch["pv_azimuth_angle"][
+                    :, pv_mask
+                ]  # PV is in [B, L, N]
+                batch["pv_elevation_angle"] = batch["pv_elevation_angle"][
+                    :, pv_mask
+                ]  # PV is in [B, L, N]
+                _LOG.debug(
+                    f"PV Datetime Shape: {batch['pv_datetime_index'].shape} PV Data Shape: {batch['pv_yield'].shape}"
+                    f" PV Azimuth Shape: {batch['pv_azimuth_angle'].shape} PV Elevation Shape: {batch['pv_elevation_angle'].shape}"
+                )
+
+            # TODO Add others for subsetting
 
         return batch
 

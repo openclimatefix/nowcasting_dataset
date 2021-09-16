@@ -296,8 +296,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
                     f" PV Azimuth Shape: {batch[PV_AZIMUTH_ANGLE].shape} PV Elevation Shape: {batch[PV_ELEVATION_ANGLE].shape}"
                 )
 
-            # TODO Add others for subsetting
-
         return batch
 
 

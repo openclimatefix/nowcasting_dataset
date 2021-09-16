@@ -416,6 +416,8 @@ def subselect_data(
     current_time = batch[date_time_index_to_use][0, current_timestep_index]
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
+    # The extra 30 seconds is added to ensure that there to ensure that the first and last timestep are always contained
+    # within the [start_time, end_time] range
     start_time = current_time - (history_minutes * 60) - 30  # seconds
     end_time = current_time + (forecast_minutes * 60) + 30  # seconds
     if SATELLITE_DATA in required_keys and SATELLITE_DATETIME_INDEX in batch:

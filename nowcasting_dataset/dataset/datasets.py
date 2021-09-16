@@ -396,6 +396,19 @@ def subselect_data(
     history_minutes: int,
     forecast_minutes: int,
 ) -> example.Example:
+    """
+    Subselects the data temporally. This function selects all data within the range [history_minutes, forecast_minutes]
+
+    Args:
+        batch: Example dictionary containing at least the required_keys
+        required_keys: The required keys present in the dictionary to use
+        current_timestep_index: The index into either SATELLITE_DATETIME_INDEX or NWP_TARGET_TIME giving the current timestep
+        history_minutes: How many minutes of history to use
+        forecast_minutes: How many minutes of future data to use for forecasting
+
+    Returns:
+        Example with only data between [history_minutes, forecast_minutes] remaining
+    """
     # We are subsetting the data
     date_time_index_to_use = (
         SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME

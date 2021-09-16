@@ -11,7 +11,9 @@ DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/"
 TEMP_PATH = ""
 
 # set up data generator
-train_dataset = NetCDFDataset(24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"))
+train_dataset = NetCDFDataset(
+    24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train")
+)
 
 train_dataset.per_worker_init(1)
 train_dataset_iterator = iter(train_dataset)
@@ -47,7 +49,9 @@ bottom_left = staticmaps.create_latlng(bottom_left[0], bottom_left[1])
 top_right = staticmaps.create_latlng(top_right[0], top_right[1])
 
 context = staticmaps.Context()
-map = context.make_clean_map_from_bounding_box(width=640, height=640, bottom_left=bottom_left, top_right=top_right)
+map = context.make_clean_map_from_bounding_box(
+    width=640, height=640, bottom_left=bottom_left, top_right=top_right
+)
 map.save("map.png")
 map = np.array(map)
 # height, weight, 4
@@ -94,7 +98,9 @@ fig = go.Figure(
     frames=frames,
     data=trace_map,
     layout=go.Layout(
-        updatemenus=[dict(type="buttons", buttons=[dict(label="Play", method="animate", args=[None])])],
+        updatemenus=[
+            dict(type="buttons", buttons=[dict(label="Play", method="animate", args=[None])])
+        ],
     ),
 )
 fig.show(renderer="browser")

@@ -11,14 +11,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-FIVE_MINUTES = pd.Timedelta('5 minutes')
-THIRTY_MINUTES = pd.Timedelta('30 minutes')
+FIVE_MINUTES = pd.Timedelta("5 minutes")
+THIRTY_MINUTES = pd.Timedelta("30 minutes")
 
 
 def select_daylight_datetimes(
-        datetimes: pd.DatetimeIndex,
-        locations: Iterable[Tuple[float, float]],
-        ghi_threshold: float = 10) -> pd.DatetimeIndex:
+    datetimes: pd.DatetimeIndex, locations: Iterable[Tuple[float, float]], ghi_threshold: float = 10
+) -> pd.DatetimeIndex:
     """Returns datetimes for which the global horizontal irradiance
     (GHI) is above ghi_threshold across all locations.
 
@@ -41,17 +40,16 @@ def select_daylight_datetimes(
             # See https://github.com/PyTables/PyTables/issues/898
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             clearsky = location.get_clearsky(datetimes)
-        ghi = clearsky['ghi']
+        ghi = clearsky["ghi"]
         ghi_for_all_locations.append(ghi)
 
-    ghi_for_all_locations = pd.concat(ghi_for_all_locations, axis='columns')
-    max_ghi = ghi_for_all_locations.max(axis='columns')
+    ghi_for_all_locations = pd.concat(ghi_for_all_locations, axis="columns")
+    max_ghi = ghi_for_all_locations.max(axis="columns")
     mask = max_ghi > ghi_threshold
     return datetimes[mask]
 
 
-def intersection_of_datetimeindexes(
-        indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
+def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
     assert len(indexes) > 0
     intersection = indexes[0]
     for index in indexes[1:]:
@@ -60,9 +58,8 @@ def intersection_of_datetimeindexes(
 
 
 def get_start_datetimes(
-        datetimes: pd.DatetimeIndex,
-        total_seq_len: int,
-        max_gap: pd.Timedelta = THIRTY_MINUTES) -> pd.DatetimeIndex:
+    datetimes: pd.DatetimeIndex, total_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
@@ -108,11 +105,12 @@ def get_start_datetimes(
 
 
 def get_t0_datetimes(
-        datetimes: pd.DatetimeIndex,
-        total_seq_len: int,
-        history_len: int,
-        minute_delta: int = 5,
-        max_gap: pd.Timedelta = FIVE_MINUTES) -> pd.DatetimeIndex:
+    datetimes: pd.DatetimeIndex,
+    total_seq_len: int,
+    history_len: int,
+    minute_delta: int = 5,
+    max_gap: pd.Timedelta = FIVE_MINUTES,
+) -> pd.DatetimeIndex:
     """
     Get datetimes for ML learning batches. T0 refers to the time 'now'.
     Args:
@@ -126,12 +124,13 @@ def get_t0_datetimes(
 
     """
 
-    logger.debug('Getting t0 datetimes')
+    logger.debug("Getting t0 datetimes")
 
     start_datetimes = get_start_datetimes(
-        datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap)
+        datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap
+    )
 
-    logger.debug('Adding history during to t0 datetimes')
+    logger.debug("Adding history during to t0 datetimes")
     history_dur = timesteps_to_duration(history_len, minute_delta=minute_delta)
     t0_datetimes = start_datetimes + history_dur
 
@@ -140,20 +139,20 @@ def get_t0_datetimes(
 
 def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
     assert n_timesteps >= 0
-    return pd.Timedelta(n_timesteps * minute_delta, unit='minutes')
+    return pd.Timedelta(n_timesteps * minute_delta, unit="minutes")
 
 
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     features = {}
-    features['hour_of_day'] = index.hour + (index.minute / 60)
-    features['day_of_year'] = index.day_of_year
+    features["hour_of_day"] = index.hour + (index.minute / 60)
+    features["day_of_year"] = index.day_of_year
     return pd.DataFrame(features, index=index).astype(np.float32)
 
 
 def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
     dt_features = datetime_features(index)
-    dt_features['hour_of_day'] /= 24
-    dt_features['day_of_year'] /= 365
+    dt_features["hour_of_day"] /= 24
+    dt_features["day_of_year"] /= 365
     dt_features = utils.sin_and_cos(dt_features)
     example = Example()
     for col_name, series in dt_features.iteritems():
@@ -167,7 +166,7 @@ def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.Datet
     """
 
     # resample index to 5 mins
-    index_5 = pd.Series(0, index=index).resample('5T')
+    index_5 = pd.Series(0, index=index).resample("5T")
 
     # calculate forward fill and backward fill
     index_5_ffill = index_5.ffill(limit=5)
@@ -204,4 +203,3 @@ def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.Datet
 
     # drop nans and take index
     return index_with_gaps.dropna().index
-

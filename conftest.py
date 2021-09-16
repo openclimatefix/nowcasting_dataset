@@ -10,8 +10,11 @@ pytest.IMAGE_SIZE_PIXELS = 128
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--use_cloud_data", action="store_true", default=False,
-        help="Use large datasets on GCP instead of local test datasets.")
+        "--use_cloud_data",
+        action="store_true",
+        default=False,
+        help="Use large datasets on GCP instead of local test datasets.",
+    )
 
 
 @pytest.fixture
@@ -24,9 +27,7 @@ def sat_filename(use_cloud_data: bool) -> Path:
     if use_cloud_data:
         return consts.SAT_FILENAME
     else:
-        filename = (
-            Path(__file__).parent.absolute() /
-             'tests' / 'data' / 'sat_data.zarr')
+        filename = Path(__file__).parent.absolute() / "tests" / "data" / "sat_data.zarr"
         assert filename.exists()
         return filename
 
@@ -38,6 +39,7 @@ def sat_data_source(sat_filename: Path):
         filename=sat_filename,
         history_minutes=0,
         forecast_minutes=5,
-        channels=('HRV', ),
+        channels=("HRV",),
         n_timesteps_per_batch=2,
-        convert_to_numpy=True)
+        convert_to_numpy=True,
+    )

@@ -40,4 +40,6 @@ def gcp_to_aws(gcp_filename: str, gcs: gcsfs.GCSFileSystem, aws_filename: str, a
         gcp_download_to_local(remote_filename=gcp_filename, gcs=gcs, local_filename=local_filename)
 
         # upload to aws
-        upload_one_file(remote_filename=aws_filename, bucket=aws_bucket, local_filename=local_filename)
+        upload_one_file(
+            remote_filename=aws_filename, bucket=aws_bucket, local_filename=local_filename
+        )

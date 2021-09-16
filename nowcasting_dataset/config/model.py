@@ -7,18 +7,23 @@ from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_N
 class General(BaseModel):
 
     name: str = Field("example", description="The name of this configuration file.")
-    description: str = Field("example configuration", description="Description of this confgiruation file")
+    description: str = Field(
+        "example configuration", description="Description of this confgiruation file"
+    )
 
 
 class InputData(BaseModel):
-    bucket: str = Field("solar-pv-nowcasting-data", description="The gcp bucket used to load the data.")
+    bucket: str = Field(
+        "solar-pv-nowcasting-data", description="The gcp bucket used to load the data."
+    )
 
     solar_pv_path: str = Field("PV/PVOutput.org", description="TODO")
     solar_pv_data_filename: str = Field("UK_PV_timeseries_batch.nc", description="TODO")
     solar_pv_metadata_filename: str = Field("UK_PV_metadata.csv", description="TODO")
 
     satelite_filename: str = Field(
-        "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr", description="TODO"
+        "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        description="TODO",
     )
 
     npw_base_path: str = Field(
@@ -39,7 +44,9 @@ class Process(BaseModel):
     history_minutes: int = Field(30, description="how many historic minutes are used")
     image_size_pixels: int = Field(64, description="the size of the satellite images")
 
-    sat_channels: tuple = Field(SAT_VARIABLE_NAMES, description="the satellite channels that are used")
+    sat_channels: tuple = Field(
+        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
+    )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
 
     precision: int = Field(16, description="what precision to use")

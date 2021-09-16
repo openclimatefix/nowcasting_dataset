@@ -1,5 +1,9 @@
 from nowcasting_dataset.config.load import load_yaml_configuration, load_configuration_from_gcs
-from nowcasting_dataset.config.save import save_yaml_configuration, save_configuration_to_gcs, save_configuration_to_aws
+from nowcasting_dataset.config.save import (
+    save_yaml_configuration,
+    save_configuration_to_gcs,
+    save_configuration_to_aws,
+)
 from nowcasting_dataset.config.model import Configuration
 import nowcasting_dataset
 import os

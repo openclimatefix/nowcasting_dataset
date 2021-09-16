@@ -14,7 +14,9 @@ def test_get_dataloaders_gcp():
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
     TEMP_PATH = "../nowcasting_dataset"
 
-    train_dataset = NetCDFDataset(24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"))
+    train_dataset = NetCDFDataset(
+        24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train")
+    )
 
     dataloader_config = dict(
         pin_memory=True,
@@ -35,7 +37,7 @@ def test_get_dataloaders_gcp():
 
     # image
     z = data["sat_data"][0][0][:, :, 0]
-    _ = data['gsp_yield'][0][:,0]
+    _ = data["gsp_yield"][0][:, 0]
 
     _ = pd.to_datetime(data["sat_datetime_index"][0, 0], unit="s")
 

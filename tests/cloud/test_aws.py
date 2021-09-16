@@ -36,7 +36,9 @@ def test_aws_upload_and_delete_local_files():
             pass
 
         # run function
-        aws_upload_and_delete_local_files(aws_path=aws_path, local_path=local_path, bucket=bucket_name)
+        aws_upload_and_delete_local_files(
+            aws_path=aws_path, local_path=local_path, bucket=bucket_name
+        )
 
         # check the object are there
         s3 = boto3.resource("s3")
@@ -97,12 +99,16 @@ def test_download_file():
             pass
 
         # run function
-        aws_upload_and_delete_local_files(aws_path=aws_path, local_path=local_path, bucket=bucket_name)
+        aws_upload_and_delete_local_files(
+            aws_path=aws_path, local_path=local_path, bucket=bucket_name
+        )
 
         # download object
         download_filename = os.path.join(local_path, "test_download_file1.txt")
         aws_download_to_local(
-            remote_filename=os.path.join(aws_path, file1), local_filename=download_filename, bucket=bucket_name
+            remote_filename=os.path.join(aws_path, file1),
+            local_filename=download_filename,
+            bucket=bucket_name,
         )
 
         # check the object are there
@@ -132,7 +138,9 @@ def test_get_all_filenames_in_path_aws():
             pass
 
         # run function
-        aws_upload_and_delete_local_files(aws_path=aws_path, local_path=local_path, bucket=bucket_name)
+        aws_upload_and_delete_local_files(
+            aws_path=aws_path, local_path=local_path, bucket=bucket_name
+        )
 
         # get file names of objects
         filenames = get_all_filenames_in_path_aws(bucket=bucket_name, remote_path=aws_path)

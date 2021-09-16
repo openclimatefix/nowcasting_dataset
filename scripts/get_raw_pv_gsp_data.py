@@ -36,7 +36,7 @@ delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
 
 # pivot to index as datetime_gmt, and columns as gsp_id
-data_df = data_df.pivot(index='datetime_gmt', columns='gsp_id', values='generation_mw')
+data_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
 data_df.columns = [str(col) for col in data_df.columns]
 
 # change to xarray
@@ -48,11 +48,11 @@ with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:
 
 # Make encoding
 encoding = {
-    var: {'compressor': numcodecs.Blosc(cname="zstd", clevel=5)} for var in data_xarray.data_vars
+    var: {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)} for var in data_xarray.data_vars
 }
 
 # save data to file
-data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w",encoding=encoding)
+data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w", encoding=encoding)
 
 # upload to gcp
 gcp_upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)

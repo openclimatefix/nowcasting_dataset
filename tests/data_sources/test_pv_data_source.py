@@ -1,7 +1,11 @@
 import pandas as pd
 import numpy as np
 
-from nowcasting_dataset.data_sources.pv_data_source import PVDataSource, drop_pv_systems_which_produce_overnight, calculate_azimuth_and_elevation_all_pv_systems
+from nowcasting_dataset.data_sources.pv_data_source import (
+    PVDataSource,
+    drop_pv_systems_which_produce_overnight,
+    calculate_azimuth_and_elevation_all_pv_systems,
+)
 from datetime import datetime
 import nowcasting_dataset
 import os
@@ -34,10 +38,14 @@ def test_get_example_and_batch():
 
     x_locations, y_locations = pv_data_source.get_locations_for_batch(pv_data_source.pv_power.index)
 
-    example = pv_data_source.get_example(pv_data_source.pv_power.index[0], x_locations[0], y_locations[0])
+    example = pv_data_source.get_example(
+        pv_data_source.pv_power.index[0], x_locations[0], y_locations[0]
+    )
     assert "pv_yield" in example.keys()
 
-    batch = pv_data_source.get_batch(pv_data_source.pv_power.index[0:5], x_locations[0:10], y_locations[0:10])
+    batch = pv_data_source.get_batch(
+        pv_data_source.pv_power.index[0:5], x_locations[0:10], y_locations[0:10]
+    )
     assert len(batch) == 5
 
 
@@ -65,29 +73,35 @@ def test_get_example_and_batch_azimuth():
 
     x_locations, y_locations = pv_data_source.get_locations_for_batch(pv_data_source.pv_power.index)
 
-    example = pv_data_source.get_example(pv_data_source.pv_power.index[0], x_locations[0], y_locations[0])
+    example = pv_data_source.get_example(
+        pv_data_source.pv_power.index[0], x_locations[0], y_locations[0]
+    )
     assert "pv_yield" in example.keys()
 
-    batch = pv_data_source.get_batch(pv_data_source.pv_power.index[0:5], x_locations[0:10], y_locations[0:10])
+    batch = pv_data_source.get_batch(
+        pv_data_source.pv_power.index[0:5], x_locations[0:10], y_locations[0:10]
+    )
     assert len(batch) == 5
 
 
 def test_drop_pv_systems_which_produce_overnight():
-    pv_power = pd.DataFrame(index=pd.date_range('2010-01-01', '2010-01-02', freq='5 min'))
+    pv_power = pd.DataFrame(index=pd.date_range("2010-01-01", "2010-01-02", freq="5 min"))
 
     _ = drop_pv_systems_which_produce_overnight(pv_power=pv_power)
 
 
 def test_calculate_azimuth_and_elevation_all_pv_systems():
-    datestamps = pd.date_range('2010-01-01', '2010-01-02', freq='5 min')
+    datestamps = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
     N = 2548
     pv_metadata = pd.DataFrame(index=range(0, N))
 
-    pv_metadata['latitude'] = np.random.random(N)
-    pv_metadata['longitude'] = np.random.random(N)
-    pv_metadata['name'] = np.random.random(N)
+    pv_metadata["latitude"] = np.random.random(N)
+    pv_metadata["longitude"] = np.random.random(N)
+    pv_metadata["name"] = np.random.random(N)
 
-    azimuth, elevation = calculate_azimuth_and_elevation_all_pv_systems(datestamps=datestamps, pv_metadata=pv_metadata)
+    azimuth, elevation = calculate_azimuth_and_elevation_all_pv_systems(
+        datestamps=datestamps, pv_metadata=pv_metadata
+    )
 
     assert len(azimuth) == len(datestamps)
     assert len(azimuth.columns) == N

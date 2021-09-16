@@ -45,7 +45,7 @@ def get_gsp_metadata_from_eso() -> pd.DataFrame:
     metadata = pd.DataFrame(results)
 
     # drop duplicates
-    return metadata.drop_duplicates(subset=['gsp_id'])
+    return metadata.drop_duplicates(subset=["gsp_id"])
 
 
 def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:
@@ -53,7 +53,7 @@ def get_gsp_shape_from_eso() -> gpd.GeoDataFrame:
     Get the the gsp shape file
     """
 
-    logger.debug('Loading GSP shape file')
+    logger.debug("Loading GSP shape file")
 
     # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
     # will stay operational
@@ -82,19 +82,19 @@ def get_list_of_gsp_ids(maximum_number_of_gsp: Optional[int] = None) -> List[int
     metadata = get_gsp_metadata_from_eso()
 
     # get rid of nans, and duplicates
-    metadata = metadata[~metadata['gsp_id'].isna()]
-    metadata.drop_duplicates(subset=['gsp_id'], inplace=True)
+    metadata = metadata[~metadata["gsp_id"].isna()]
+    metadata.drop_duplicates(subset=["gsp_id"], inplace=True)
 
     # make into list
-    gsp_ids = metadata['gsp_id'].to_list()
+    gsp_ids = metadata["gsp_id"].to_list()
     gsp_ids = [int(gsp_id) for gsp_id in gsp_ids]
 
     # adjust number of gsp_ids
     if maximum_number_of_gsp is None:
         maximum_number_of_gsp = len(metadata)
     if maximum_number_of_gsp > len(metadata):
-        logging.warning(f'Only {len(metadata)} gsp available to load')
+        logging.warning(f"Only {len(metadata)} gsp available to load")
     if maximum_number_of_gsp < len(metadata):
-        gsp_ids = gsp_ids[0: maximum_number_of_gsp]
+        gsp_ids = gsp_ids[0:maximum_number_of_gsp]
 
     return gsp_ids

@@ -9,7 +9,9 @@ from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_p
 _LOG = logging.getLogger(__name__)
 
 
-def aws_upload_and_delete_local_files(aws_path: str, local_path: Path, bucket: str = "solar-pv-nowcasting-data"):
+def aws_upload_and_delete_local_files(
+    aws_path: str, local_path: Path, bucket: str = "solar-pv-nowcasting-data"
+):
     """
     1. Upload the files in a local path, to a path in aws
     2. Delete files in that local path
@@ -72,9 +74,7 @@ def aws_download_to_local(
 
 
 def upload_one_file(
-    remote_filename: str,
-    local_filename: str,
-    bucket: str = "solar-pv-nowcasting-data",
+    remote_filename: str, local_filename: str, bucket: str = "solar-pv-nowcasting-data",
 ):
     """
     Upload one file to s3
@@ -91,7 +91,9 @@ def upload_one_file(
         s3.upload_fileobj(data, bucket, remote_filename)
 
 
-def get_all_filenames_in_path_aws(remote_path, bucket: str = "solar-pv-nowcasting-data") -> List[str]:
+def get_all_filenames_in_path_aws(
+    remote_path, bucket: str = "solar-pv-nowcasting-data"
+) -> List[str]:
     """
     Get all the files names from one folder in gcp
     @param remote_path: the path that we should look in

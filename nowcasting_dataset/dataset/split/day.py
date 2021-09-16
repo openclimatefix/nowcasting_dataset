@@ -21,7 +21,7 @@ def split_day(
         datetimes: list of datetimes
         train_test_validation_split: how the split is made
 
-    Returns: train, validation and test dateimes
+    Returns: train, validation and test datetimes
 
     """
 
@@ -70,7 +70,7 @@ def split_day_random(
         datetimes: list of datetimes
         train_test_validation_split: how the split is made
 
-    Returns:
+    Returns: train, validation and test datetimes
 
     """
 

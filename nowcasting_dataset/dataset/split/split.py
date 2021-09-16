@@ -6,6 +6,11 @@ from typing import List, Tuple, Union
 import logging
 
 from nowcasting_dataset.dataset.split.day import split_day, split_day_random
+from nowcasting_dataset.dataset.split.year import (
+    split_year,
+    TrainValidationTestYear,
+    default_train_test_validation_year,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +19,7 @@ def split(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     method: str,
     train_test_validation_split: Tuple[int] = (3, 1, 1),
+    train_test_validation_year: TrainValidationTestYear = default_train_test_validation_year,
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
     Split the date using various different methods
@@ -21,7 +27,8 @@ def split(
     Args:
         datetimes: The datetimes to be split
         method: the method to be used
-        train_test_validation_split:
+        train_test_validation_split: ratios of how the split is made
+        train_test_validation_year: pydantic class of which years below to which dataset
 
     Returns: train, validation and test dataset
 
@@ -40,6 +47,10 @@ def split(
     elif method == "day_random":
         train_datetimes, validation_datetimes, test_datetimes = split_day_random(
             datetimes=datetimes, train_test_validation_split=train_test_validation_split
+        )
+    elif method == "year":
+        train_datetimes, validation_datetimes, test_datetimes = split_year(
+            datetimes=datetimes, train_test_validation_year=train_test_validation_year
         )
     else:
         raise

@@ -110,7 +110,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         ),
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
-        current_sat_timestep_index: Optional[int] = None,
+        current_timestep_index: Optional[int] = None,
     ):
         """
         Args:
@@ -122,7 +122,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         required_keys: Tuple or list of keys required in the example for it to be considered usable
         history_minutes: How many past minutes of data to use, if subsetting the batch
         forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
-        current_sat_timestep_index: Index of the current timestep of the satellite data, used to get the correct amount of future and past data
+        current_timestep_index: Index of the current timestep data, used to get the correct amount of future and past data
         """
         self.n_batches = n_batches
         self.src_path = src_path
@@ -131,7 +131,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.required_keys = list(required_keys)
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
-        self.current_sat_timestep_index = current_sat_timestep_index
+        self.current_timestep_index = current_timestep_index
 
         # setup cloud connections as None
         self.gcs = None
@@ -205,12 +205,12 @@ class NetCDFDataset(torch.utils.data.Dataset):
 
         batch = example.to_numpy(batch)
 
-        if self.current_sat_timestep_index is not None:
+        if self.current_timestep_index is not None:
             # We are subsetting the data
             date_time_index_to_use = (
                 "sat_datetime_index" if "sat_data" in self.required_keys else "nwp_target_time"
             )
-            current_time = batch[date_time_index_to_use][0, self.current_sat_timestep_index]
+            current_time = batch[date_time_index_to_use][0, self.current_timestep_index]
             # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
             # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
             start_time = current_time - (self.history_minutes * 60) - 30  # seconds

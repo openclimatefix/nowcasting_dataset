@@ -126,6 +126,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             GSP_X_COORDS,
             GSP_Y_COORDS,
             GSP_DATETIME_INDEX,
+            list(DATETIME_FEATURE_NAMES),
         ),
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
@@ -209,7 +210,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             sat_datetime_index=netcdf_batch.sat_time_coords,
             nwp_target_time=netcdf_batch.nwp_time_coords,
         )
-        for key in self.required_keys + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
+        for key in self.required_keys:
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:

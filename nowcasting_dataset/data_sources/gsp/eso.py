@@ -108,7 +108,7 @@ def get_gsp_shape_from_eso(
     # sort
     shape_gpd = shape_gpd.sort_values(by=["RegionID"])
 
-    # join duplicates, currently GSP shapes are in split into two
+    # join duplicates, currently some GSP shapes are in split into two
     if join_duplicates:
         logger.debug("Removing duplicates by joining geometry together")
 

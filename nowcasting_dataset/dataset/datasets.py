@@ -420,7 +420,7 @@ def subselect_data(
     # within the [start_time, end_time] range
     start_time = current_time - (history_minutes * 60) - 30  # seconds
     end_time = current_time + (forecast_minutes * 60) + 30  # seconds
-    if SATELLITE_DATA in required_keys and SATELLITE_DATETIME_INDEX in batch:
+    if SATELLITE_DATA in required_keys:
         satellite_mask = np.logical_and(
             start_time <= batch[SATELLITE_DATETIME_INDEX][0],
             batch[SATELLITE_DATETIME_INDEX][0] <= end_time,
@@ -435,7 +435,7 @@ def subselect_data(
         )
 
     # Now for NWP, if used
-    if NWP_DATA in required_keys and NWP_TARGET_TIME in batch:
+    if NWP_DATA in required_keys:
         nwp_mask = np.logical_and(
             start_time <= batch[NWP_TARGET_TIME][0],
             batch[NWP_TARGET_TIME][0] <= end_time,

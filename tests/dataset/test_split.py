@@ -48,3 +48,9 @@ def test_split_day_random():
     assert len(train_validation_overlap) == 0
     assert len(train_test_overlap) == 0
     assert len(validation_test_overlap) == 0
+
+    # check all first 288 datetimes are in the same day
+    day = train[0].dayofyear
+    for t in train[0 : 12 * 24]:
+        assert t.dayofyear == day
+    assert train[12 * 24 + 1] != day

@@ -26,6 +26,12 @@ def test_split_day():
     for d in test:
         assert d.dayofyear % 5 in [4]
 
+    # check all first 288 datetimes are in the same day
+    day = train[0].dayofyear
+    for t in train[0 : 12 * 24]:
+        assert t.dayofyear == day
+    assert train[12 * 24 + 1] != day
+
 
 def test_split_day_random():
 

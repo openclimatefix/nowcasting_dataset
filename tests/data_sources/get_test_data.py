@@ -13,7 +13,7 @@ from nowcasting_dataset.data_sources.satellite_data_source import SatelliteDataS
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
-local_path = os.path.dirname(nowcasting_dataset.__file__) + '/..'
+local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 PV_PATH = BUCKET / "PV/PVOutput.org"
 PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
 
@@ -45,7 +45,9 @@ with io.BytesIO(file_bytes) as file:
 
 # process data
 system_ids_xarray = [int(i) for i in pv_power.data_vars]
-system_ids = [str(system_id) for system_id in pv_metadata.index.to_list() if system_id in system_ids_xarray]
+system_ids = [
+    str(system_id) for system_id in pv_metadata.index.to_list() if system_id in system_ids_xarray
+]
 
 # only take the system ids we need
 pv_power_df = pv_power_df[system_ids]
@@ -61,8 +63,10 @@ pv_power_new.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc")
 ###########################
 
 # Numerical weather predictions
-NWP_BASE_PATH = "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/" \
-                "UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr"
+NWP_BASE_PATH = (
+    "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/"
+    "UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr"
+)
 
 nwp_data_raw = open_nwp(filename=NWP_BASE_PATH, consolidated=True)
 nwp_data = nwp_data_raw.sel(variable=list(NWP_VARIABLE_NAMES))
@@ -74,14 +78,16 @@ nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 
 # ### GSP data
 
-gsp = GSPDataSource(filename="gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr",
-                          start_dt=start_dt,
-                          end_dt=end_dt,
-                          history_minutes=30,
-                          forecast_minutes=60,
-                          convert_to_numpy=True,
-                          image_size_pixels=64,
-                          meters_per_pixel=2000)
+gsp = GSPDataSource(
+    filename="gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr",
+    start_dt=start_dt,
+    end_dt=end_dt,
+    history_minutes=30,
+    forecast_minutes=60,
+    convert_to_numpy=True,
+    image_size_pixels=64,
+    meters_per_pixel=2000,
+)
 
 
 gsp.gsp_power.columns = [str(col) for col in gsp.gsp_power.columns]

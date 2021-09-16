@@ -110,8 +110,6 @@ def validate_example(
     n_nwp_channels: int = 1,
     n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE,
-
-
 ):
     """
     Validate the size and shape of the data
@@ -152,7 +150,12 @@ def validate_example(
     if PV_AZIMUTH_ANGLE in data.keys():
         assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
 
-    assert data["sat_data"].shape == (seq_len_5_minutes, sat_image_size, sat_image_size, n_sat_channels)
+    assert data["sat_data"].shape == (
+        seq_len_5_minutes,
+        sat_image_size,
+        sat_image_size,
+        n_sat_channels,
+    )
     assert len(data["sat_x_coords"]) == sat_image_size
     assert len(data["sat_y_coords"]) == sat_image_size
     assert len(data["sat_datetime_index"]) == seq_len_5_minutes

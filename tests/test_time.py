@@ -33,7 +33,9 @@ def test_intersection_of_datetimeindexes():
     index3 = pd.date_range("2010-01-01 06:00", "2010-01-02 06:00", freq="H")
     index4 = pd.date_range("2010-01-01 12:00", "2010-01-02 12:00", freq="H")
     intersection = nd_time.intersection_of_datetimeindexes([index, index3, index4])
-    np.testing.assert_array_equal(intersection, pd.date_range("2010-01-01 12:00", "2010-01-02", freq="H"))
+    np.testing.assert_array_equal(
+        intersection, pd.date_range("2010-01-01 12:00", "2010-01-02", freq="H")
+    )
 
 
 @pytest.mark.parametrize("total_seq_len", [2, 3, 12])
@@ -65,7 +67,9 @@ def test_datetime_features_in_example():
     assert len(example["hour_of_day_sin"]) == len(index)
     for col_name in ["hour_of_day_sin", "hour_of_day_cos"]:
         assert col_name in example
-        np.testing.assert_array_almost_equal(example[col_name], np.tile(example[col_name][:24], reps=6))
+        np.testing.assert_array_almost_equal(
+            example[col_name], np.tile(example[col_name][:24], reps=6)
+        )
 
     assert "day_of_year_sin" in example
     assert "day_of_year_cos" in example
@@ -77,8 +81,13 @@ def test_get_t0_datetimes(history_length, forecast_length):
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="30T")
     total_seq_len = history_length + forecast_length + 1
 
-    t0_datetimes = nd_time.get_t0_datetimes(datetimes=index, total_seq_len=total_seq_len, history_len=history_length,
-                                            max_gap=THIRTY_MINUTES, minute_delta=30)
+    t0_datetimes = nd_time.get_t0_datetimes(
+        datetimes=index,
+        total_seq_len=total_seq_len,
+        history_len=history_length,
+        max_gap=THIRTY_MINUTES,
+        minute_delta=30,
+    )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length
     assert t0_datetimes[0] == index[0] + timedelta(minutes=30 * history_length)
@@ -91,9 +100,12 @@ def test_get_t0_datetimes_night():
     index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq="5T")
     total_seq_len = history_length + forecast_length + 1
 
-    t0_datetimes = nd_time.get_t0_datetimes(datetimes=index, total_seq_len=total_seq_len,
-                                            history_len=history_length,
-                                            max_gap=FIVE_MINUTES)
+    t0_datetimes = nd_time.get_t0_datetimes(
+        datetimes=index,
+        total_seq_len=total_seq_len,
+        history_len=history_length,
+        max_gap=FIVE_MINUTES,
+    )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length
     assert t0_datetimes[0] == index[0] + timedelta(minutes=5 * history_length)
@@ -111,4 +123,3 @@ def test_fill_30_minutes_timestamps_to_5_minutes():
     assert len(index_5) == 24 * 12 + 1 - (3 * 12 - 1)
     # 24*12 is total number of 5s in a day, +1 for the next day.
     # 3*12 - 1 is the amount of 5 mins between 4.30 and 7.30 (not inclusive)
-

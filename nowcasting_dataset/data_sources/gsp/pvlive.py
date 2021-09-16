@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 CHUNK_DURATION = timedelta(days=30)
 
 
-def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_gsp: int = None) -> pd.DataFrame:
+def load_pv_gsp_raw_data_from_pvlive(
+    start: datetime, end: datetime, number_of_gsp: int = None
+) -> pd.DataFrame:
     """
     Load raw pv gsp data from pvlive. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
     Args:
@@ -33,7 +35,7 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
     first_end_chunk = min([first_start_chunk + CHUNK_DURATION, end])
 
     gsp_data_df = []
-    logger.debug(f'Will be getting data for {len(gsp_ids)} gsp ids')
+    logger.debug(f"Will be getting data for {len(gsp_ids)} gsp ids")
     # loop over gsp ids
     for gsp_id in gsp_ids:
 
@@ -50,7 +52,12 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
 
             one_gsp_data_df.append(
                 pvl.between(
-                    start=start_chunk, end=end_chunk, entity_type="gsp", entity_id=gsp_id, extra_fields="", dataframe=True
+                    start=start_chunk,
+                    end=end_chunk,
+                    entity_type="gsp",
+                    entity_id=gsp_id,
+                    extra_fields="",
+                    dataframe=True,
                 )
             )
 
@@ -77,6 +84,6 @@ def load_pv_gsp_raw_data_from_pvlive(start: datetime, end: datetime, number_of_g
     gsp_data_df.drop_duplicates(inplace=True)
 
     # format data, remove timezone,
-    gsp_data_df['datetime_gmt'] = gsp_data_df['datetime_gmt'].dt.tz_localize(None)
+    gsp_data_df["datetime_gmt"] = gsp_data_df["datetime_gmt"].dt.tz_localize(None)
 
     return gsp_data_df

@@ -29,35 +29,37 @@ def save_configuration_to_gcs(configuration: Configuration):
     Save configuration to gcs
     """
 
-    logger.info('Uploading configuration to gcs')
-    gcp_filepath = os.path.join(configuration.output_data.filepath, 'configuration.yaml')
+    logger.info("Uploading configuration to gcs")
+    gcp_filepath = os.path.join(configuration.output_data.filepath, "configuration.yaml")
 
     with tempfile.NamedTemporaryFile(suffix=".yaml") as fp:
         # save configuration to temp file
         save_yaml_configuration(configuration=configuration, filename=fp.name)
 
         # save file to gcs
-        logger.debug(f'Will be saving file to {gcp_filepath}')
+        logger.debug(f"Will be saving file to {gcp_filepath}")
         gcs = gcsfs.GCSFileSystem()
         gcs.put(fp.name, gcp_filepath)
 
 
-def save_configuration_to_aws(configuration: Configuration, bucket: str = "solar-pv-nowcasting-data"):
+def save_configuration_to_aws(
+    configuration: Configuration, bucket: str = "solar-pv-nowcasting-data"
+):
     """
     Save configuration to aws
     @param configuration: configuration pydantic class
     @param bucket: the bucket which to save the configuration saved in
     """
 
-    logger.info('Uploading configuration to AWS')
-    aws_filepath = os.path.join(configuration.output_data.filepath, 'configuration.yaml')
+    logger.info("Uploading configuration to AWS")
+    aws_filepath = os.path.join(configuration.output_data.filepath, "configuration.yaml")
 
     with tempfile.NamedTemporaryFile(suffix=".yaml") as fp:
         # save configuration to temp file
         save_yaml_configuration(configuration=configuration, filename=fp.name)
 
         # save file to gcs
-        logger.debug(f'Will be saving file to {aws_filepath}')
+        logger.debug(f"Will be saving file to {aws_filepath}")
 
         upload_one_file(remote_filename=aws_filepath, local_filename=fp.name, bucket=bucket)
 
@@ -69,9 +71,9 @@ def save_configuration_to_cloud(configuration: Configuration, cloud: str):
     @param cloud: either 'aws' or 'gcp'
     """
 
-    assert cloud in ['aws', 'gcp']
+    assert cloud in ["aws", "gcp"]
 
-    if cloud == 'gcp':
+    if cloud == "gcp":
         save_configuration_to_gcs(configuration=configuration)
-    elif cloud == 'aws':
+    elif cloud == "aws":
         save_configuration_to_aws(configuration=configuration)

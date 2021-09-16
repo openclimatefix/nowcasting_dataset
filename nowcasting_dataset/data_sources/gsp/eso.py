@@ -52,6 +52,7 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
     metadata = pd.DataFrame(results)
 
     # drop duplicates
+<<<<<<< HEAD
     metadata = metadata.drop_duplicates(subset=["gsp_id"])
 
     if calculate_centroid:
@@ -62,6 +63,9 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
         metadata = gpd.GeoDataFrame(
             metadata.merge(shape_data, right_on="RegionID", left_on="region_id", how="left")
         )
+=======
+    return metadata.drop_duplicates(subset=["gsp_id"])
+>>>>>>> d45e82b358a66b3d4cc2c1aca5739745b5216399
 
         # make centroid
         metadata["centroid_x"] = metadata["geometry"].centroid.x

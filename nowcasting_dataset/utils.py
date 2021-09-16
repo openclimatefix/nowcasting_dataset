@@ -60,22 +60,23 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
       and a <col_name>_cos."""
     columns = []
     for col_name in df.columns:
-        columns.append(f'{col_name}_sin')
-        columns.append(f'{col_name}_cos')
+        columns.append(f"{col_name}_sin")
+        columns.append(f"{col_name}_cos")
     output_df = pd.DataFrame(index=df.index, columns=columns, dtype=np.float32)
     for col_name in df.columns:
         series = df[col_name]
         if series.min() < 0.0 or series.max() > 1.0:
             raise ValueError(
-                f'{col_name} has values outside the range [0, 1]!'
-                f' min={series.min()}; max={series.max()}')
+                f"{col_name} has values outside the range [0, 1]!"
+                f" min={series.min()}; max={series.max()}"
+            )
         radians = series * 2 * np.pi
-        output_df[f'{col_name}_sin'] = np.sin(radians)
-        output_df[f'{col_name}_cos'] = np.cos(radians)
+        output_df[f"{col_name}_sin"] = np.sin(radians)
+        output_df[f"{col_name}_cos"] = np.cos(radians)
     return output_df
 
 
-def get_netcdf_filename(batch_idx: int, add_hash:bool = False) -> Path:
+def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
     """Generate full filename, excluding path.
 
     Filename includes the first 6 digits of the MD5 hash of the filename,
@@ -85,12 +86,12 @@ def get_netcdf_filename(batch_idx: int, add_hash:bool = False) -> Path:
     Add option to turn on and off hashing
 
     """
-    filename = f'{batch_idx}.nc'
+    filename = f"{batch_idx}.nc"
     # Remove 'hash' at the moment. In the future could has the configuration file, and use this to make sure we are
     # saving and loading the same thing
     if add_hash:
         hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
-        filename = f'{hash_of_filename[0:6]}_{filename}'
+        filename = f"{hash_of_filename[0:6]}_{filename}"
 
     return filename
 
@@ -100,7 +101,12 @@ def pad_nans(array, pad_width) -> np.ndarray:
     return np.pad(array, pad_width, constant_values=np.NaN)
 
 
-def pad_data(data: Example, pad_size: int, one_dimensional_arrays: List[str], two_dimensional_arrays: List[str]) -> Example:
+def pad_data(
+    data: Example,
+    pad_size: int,
+    one_dimensional_arrays: List[str],
+    two_dimensional_arrays: List[str],
+) -> Example:
     """
     Pad (if necessary) so returned arrays are always of size
 
@@ -139,27 +145,26 @@ def get_maximum_batch_id_from_gcs(remote_path: str):
 
     """
 
-    logger.debug(f'Looking for maximum batch id in {remote_path}')
+    logger.debug(f"Looking for maximum batch id in {remote_path}")
 
     filenames = get_all_filenames_in_path(remote_path=remote_path)
 
     # just take filename
-    filenames = [filename.split('/')[-1] for filename in filenames]
+    filenames = [filename.split("/")[-1] for filename in filenames]
 
     # remove suffix
-    filenames = [filename.split('.')[0] for filename in filenames]
+    filenames = [filename.split(".")[0] for filename in filenames]
 
     # change to integer
     batch_indexes = [int(filename) for filename in filenames if len(filename) > 0]
 
     # if there is no files, return None
     if len(batch_indexes) == 0:
-        logger.debug(f'Did not find any files in {remote_path}')
+        logger.debug(f"Did not find any files in {remote_path}")
         return None
 
     # get the maximum batch id
     maximum_batch_id = max(batch_indexes)
-    logger.debug(f'Found maximum of batch it of {maximum_batch_id} in {remote_path}')
+    logger.debug(f"Found maximum of batch it of {maximum_batch_id} in {remote_path}")
 
     return maximum_batch_id
-

@@ -19,7 +19,13 @@ import torch
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
-from nowcasting_dataset.consts import GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
+from nowcasting_dataset.consts import (
+    GSP_ID,
+    GSP_YIELD,
+    GSP_X_COORDS,
+    GSP_Y_COORDS,
+    GSP_DATETIME_INDEX,
+)
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
 
@@ -32,18 +38,41 @@ ContiguousNowcastingDataset - NowcastingDataset
 
 SAT_MEAN = xr.DataArray(
     data=[
-        93.23458, 131.71373, 843.7779, 736.6148, 771.1189, 589.66034,
-        862.29816, 927.69586,  90.70885, 107.58985, 618.4583, 532.47394],
-    dims=['sat_variable'],
-    coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
+        93.23458,
+        131.71373,
+        843.7779,
+        736.6148,
+        771.1189,
+        589.66034,
+        862.29816,
+        927.69586,
+        90.70885,
+        107.58985,
+        618.4583,
+        532.47394,
+    ],
+    dims=["sat_variable"],
+    coords={"sat_variable": list(SAT_VARIABLE_NAMES)},
+).astype(np.float32)
 
 SAT_STD = xr.DataArray(
     data=[
-        115.34247, 139.92636,  36.99538,  57.366386,  30.346825,
-        149.68007,  51.70631,  35.872967, 115.77212, 120.997154,
-        98.57828,  99.76469],
-    dims=['sat_variable'],
-    coords={'sat_variable': list(SAT_VARIABLE_NAMES)}).astype(np.float32)
+        115.34247,
+        139.92636,
+        36.99538,
+        57.366386,
+        30.346825,
+        149.68007,
+        51.70631,
+        35.872967,
+        115.77212,
+        120.997154,
+        98.57828,
+        99.76469,
+    ],
+    dims=["sat_variable"],
+    coords={"sat_variable": list(SAT_VARIABLE_NAMES)},
+).astype(np.float32)
 
 _LOG = logging.getLogger(__name__)
 
@@ -53,8 +82,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
     Moved from predict_pv_yield
     """
 
-    def __init__(
-            self, n_batches: int, src_path: str, tmp_path: str, cloud: str = 'gcp'):
+    def __init__(self, n_batches: int, src_path: str, tmp_path: str, cloud: str = "gcp"):
         """
         Args:
           n_batches: Number of batches available on disk.
@@ -72,16 +100,16 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.gcs = None
         self.s3_resource = None
 
-        assert cloud in ['gcp', 'aws']
+        assert cloud in ["gcp", "aws"]
 
         if not os.path.isdir(self.tmp_path):
             os.mkdir(self.tmp_path)
 
     def per_worker_init(self, worker_id: int):
-        if self.cloud == 'gcp':
+        if self.cloud == "gcp":
             self.gcs = gcsfs.GCSFileSystem()
         else:
-            self.s3_resource = boto3.resource('s3')
+            self.s3_resource = boto3.resource("s3")
 
     def __len__(self):
         return self.n_batches
@@ -99,46 +127,63 @@ class NetCDFDataset(torch.utils.data.Dataset):
         """
         if not 0 <= batch_idx < self.n_batches:
             raise IndexError(
-                'batch_idx must be in the range'
-                f' [0, {self.n_batches}), not {batch_idx}!')
+                "batch_idx must be in the range" f" [0, {self.n_batches}), not {batch_idx}!"
+            )
         netcdf_filename = nd_utils.get_netcdf_filename(batch_idx)
         remote_netcdf_filename = os.path.join(self.src_path, netcdf_filename)
         local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
 
-        if self.cloud == 'gcp':
-            gcp_download_to_local(remote_filename=remote_netcdf_filename,
-                                  local_filename=local_netcdf_filename,
-                                  gcs=self.gcs)
+        if self.cloud == "gcp":
+            gcp_download_to_local(
+                remote_filename=remote_netcdf_filename,
+                local_filename=local_netcdf_filename,
+                gcs=self.gcs,
+            )
         else:
-            aws_download_to_local(remote_filename=remote_netcdf_filename,
-                                  local_filename=local_netcdf_filename,
-                                  s3_resource=self.s3_resource)
+            aws_download_to_local(
+                remote_filename=remote_netcdf_filename,
+                local_filename=local_netcdf_filename,
+                s3_resource=self.s3_resource,
+            )
 
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
         os.remove(local_netcdf_filename)
 
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,
-            nwp_target_time=netcdf_batch.nwp_time_coords)
+            nwp_target_time=netcdf_batch.nwp_time_coords,
+        )
         for key in [
-            'nwp', 'nwp_x_coords', 'nwp_y_coords',
-            'sat_data', 'sat_x_coords', 'sat_y_coords',
-            'pv_yield', 'pv_system_id', 'pv_system_row_number',
-            'pv_system_x_coords', 'pv_system_y_coords',
-            'x_meters_center', 'y_meters_center',
-            GSP_ID, GSP_YIELD, GSP_X_COORDS, GSP_Y_COORDS, GSP_DATETIME_INDEX
+            "nwp",
+            "nwp_x_coords",
+            "nwp_y_coords",
+            "sat_data",
+            "sat_x_coords",
+            "sat_y_coords",
+            "pv_yield",
+            "pv_system_id",
+            "pv_system_row_number",
+            "pv_system_x_coords",
+            "pv_system_y_coords",
+            "x_meters_center",
+            "y_meters_center",
+            GSP_ID,
+            GSP_YIELD,
+            GSP_X_COORDS,
+            GSP_Y_COORDS,
+            GSP_DATETIME_INDEX,
         ] + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:
                 pass
 
-        sat_data = batch['sat_data']
+        sat_data = batch["sat_data"]
         if sat_data.dtype == np.int16:
             sat_data = sat_data.astype(np.float32)
             sat_data = sat_data - SAT_MEAN
             sat_data /= SAT_STD
-            batch['sat_data'] = sat_data
+            batch["sat_data"] = sat_data
 
         batch = example.to_numpy(batch)
 
@@ -167,21 +212,20 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     def __post_init__(self):
         super().__init__()
         self._per_worker_init_has_run = False
-        self._n_timesteps_per_batch = (
-            self.batch_size // self.n_samples_per_timestep)
+        self._n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
 
         # Sanity checks.
         if self.batch_size % self.n_samples_per_timestep != 0:
-            raise ValueError(
-                'n_crops_per_timestep must exactly divide batch_size!')
+            raise ValueError("n_crops_per_timestep must exactly divide batch_size!")
         if len(self.t0_datetimes) < self._n_timesteps_per_batch:
             raise ValueError(
-                f'start_dt_index only has {len(self.start_dt_index)}'
-                ' timestamps.'
-                f'  Must have at least {self._n_timesteps_per_batch}!')
+                f"start_dt_index only has {len(self.start_dt_index)}"
+                " timestamps."
+                f"  Must have at least {self._n_timesteps_per_batch}!"
+            )
 
         if self.skip_batch_index > 0:
-            _LOG.warning(f'Will be skipping {self.skip_batch_index}, is this correct?')
+            _LOG.warning(f"Will be skipping {self.skip_batch_index}, is this correct?")
 
     def per_worker_init(self, worker_id: int) -> None:
         """Called by worker_init_fn on each copy of NowcastingDataset after
@@ -194,7 +238,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         # Initialise each data_source.
         for data_source in self.data_sources:
-            _LOG.debug(f'Opening {type(data_source).__name__}')
+            _LOG.debug(f"Opening {type(data_source).__name__}")
             data_source.open()
 
         self._per_worker_init_has_run = True
@@ -202,17 +246,17 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     def __iter__(self):
         """Yields a complete batch at a time."""
         if not self._per_worker_init_has_run:
-            raise RuntimeError('per_worker_init() must be run!')
+            raise RuntimeError("per_worker_init() must be run!")
         for _ in range(self.n_batches_per_epoch_per_worker):
             yield self._get_batch()
 
     def _get_batch(self) -> torch.Tensor:
 
-        _LOG.debug(f'Getting batch {self.batch_index}')
+        _LOG.debug(f"Getting batch {self.batch_index}")
 
         self.batch_index += 1
         if self.batch_index < self.skip_batch_index:
-            _LOG.debug(f'Skipping batch {self.batch_index}')
+            _LOG.debug(f"Skipping batch {self.batch_index}")
             return []
 
         t0_datetimes = self._get_t0_datetimes_for_batch()
@@ -228,7 +272,8 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
                     data_source.get_batch,
                     t0_datetimes=t0_datetimes,
                     x_locations=x_locations,
-                    y_locations=y_locations)
+                    y_locations=y_locations,
+                )
                 future_examples_per_source.append(future_examples)
 
             # Collect results from each thread.
@@ -245,14 +290,14 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
         # Pick random datetimes.
         t0_datetimes = self.rng.choice(
-            self.t0_datetimes, size=self._n_timesteps_per_batch, replace=False)
+            self.t0_datetimes, size=self._n_timesteps_per_batch, replace=False
+        )
         # Duplicate these random datetimes.
         t0_datetimes = np.tile(t0_datetimes, reps=self.n_samples_per_timestep)
         return pd.DatetimeIndex(t0_datetimes)
 
     def _get_locations_for_batch(
-            self,
-            t0_datetimes: pd.DatetimeIndex
+        self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
         return self.data_sources[0].get_locations_for_batch(t0_datetimes)
 
@@ -272,11 +317,9 @@ class ContiguousNowcastingDataset(NowcastingDataset):
         return pd.DatetimeIndex(t0_datetimes)
 
     def _get_locations_for_batch(
-            self,
-            t0_datetimes: pd.DatetimeIndex
+        self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[Iterable[Number], Iterable[Number]]:
-        x_locations, y_locations = super()._get_locations_for_batch(
-            t0_datetimes)
+        x_locations, y_locations = super()._get_locations_for_batch(t0_datetimes)
         x_locations = np.repeat(x_locations[0], repeats=self.batch_size)
         y_locations = np.repeat(y_locations[0], repeats=self.batch_size)
         return x_locations, y_locations
@@ -290,10 +333,8 @@ def worker_init_fn(worker_id):
     # get_worker_info() returns information specific to each worker process.
     worker_info = torch.utils.data.get_worker_info()
     if worker_info is None:
-        print('worker_info is None!')
+        print("worker_info is None!")
     else:
         # The NowcastingDataset copy in this worker process.
         dataset_obj = worker_info.dataset
         dataset_obj.per_worker_init(worker_info.id)
-
-

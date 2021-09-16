@@ -41,11 +41,7 @@ class TrainValidationTestYear(BaseModel):
 
 
 default_train_test_validation_year = TrainValidationTestYear(
-    **{
-        "train": [2015, 2016, 2017, 2018, 2019],
-        "validation": [2020],
-        "test": [2021],
-    }
+    train=[2015, 2016, 2017, 2018, 2019], validation=[2020], test=[2021]
 )
 
 

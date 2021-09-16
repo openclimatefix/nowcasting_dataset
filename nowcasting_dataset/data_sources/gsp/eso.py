@@ -87,6 +87,11 @@ def get_gsp_shape_from_eso(
 
     local_file = f"{os.path.dirname(os.path.realpath(__file__))}/gsp_shape"
 
+    if not os.path.isfile(local_file):
+        logger.debug("There is not local file so going to get it from ESO, and save it afterwards")
+        load_local_file = True
+        save_local_file = True
+
     if load_local_file:
         logger.debug("loading local file for GSP shape data")
         shape_gpd = gpd.read_file(local_file)

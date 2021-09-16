@@ -23,20 +23,24 @@ shapes_dict = json.loads(shapes_gdp.to_json())
 # plot it
 fig = go.Figure()
 fig.add_trace(
-    go.Choroplethmapbox(geojson=shapes_dict, locations=shapes_gdp.index, z=shapes_gdp.Amount, colorscale="Viridis")
+    go.Choroplethmapbox(
+        geojson=shapes_dict, locations=shapes_gdp.index, z=shapes_gdp.Amount, colorscale="Viridis"
+    )
 )
 
 fig.update_layout(mapbox_style="carto-positron", mapbox_zoom=4, mapbox_center={"lat": 55, "lon": 0})
 fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 fig.show(renderer="browser")
-fig.write_html('gsp.html')
+fig.write_html("gsp.html")
 
 
 # find out if point is in gsp
 from shapely.geometry import Point, Polygon
 
 _pnts = [Point(3, 3), Point(8, 8), Point(0, 51.38)]
-pnts = gpd.GeoDataFrame(geometry=_pnts, index=['A', 'B', 'C'])
+pnts = gpd.GeoDataFrame(geometry=_pnts, index=["A", "B", "C"])
 
 # useful way to see if a point is in a polygon
-pnts = pnts.assign(**{str(key): pnts.within(geom['geometry']) for key, geom in shapes_gdp.iterrows()})
+pnts = pnts.assign(
+    **{str(key): pnts.within(geom["geometry"]) for key, geom in shapes_gdp.iterrows()}
+)

@@ -16,7 +16,7 @@ colour = staticmaps.color.Color()
 context.add_object(staticmaps.Marker(frankfurt, color=staticmaps.GREEN, size=12))
 context.add_object(staticmaps.Marker(newyork, color=staticmaps.RED, size=12))
 
-print(context.determine_center_zoom(1000,1000))
+print(context.determine_center_zoom(1000, 1000))
 print(context._tile_provider.tile_size())
 
 

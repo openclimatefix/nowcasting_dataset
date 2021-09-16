@@ -22,7 +22,9 @@ DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/"
 TEMP_PATH = ""
 
 # set up data generator
-train_dataset = NetCDFDataset(24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"))
+train_dataset = NetCDFDataset(
+    24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train")
+)
 
 train_dataset.per_worker_init(1)
 train_dataset_iterator = iter(train_dataset)
@@ -65,7 +67,9 @@ context = staticmaps.Context()
 
 context.add_object(staticmaps.Marker(staticmaps.create_latlng(pv[0], pv[1]), size=5))
 
-map = context.make_clean_map_from_bounding_box(width=640, height=640, bottom_left=bottom_left, top_right=top_right)
+map = context.make_clean_map_from_bounding_box(
+    width=640, height=640, bottom_left=bottom_left, top_right=top_right
+)
 map.save("map.png")
 map = np.array(map)
 # height, weight, 4
@@ -152,7 +156,15 @@ buttons = [
 ]
 fig.update_layout(
     updatemenus=[
-        dict(type="buttons", showactive=False, y=0, x=1.05, xanchor="left", yanchor="bottom", buttons=buttons)
+        dict(
+            type="buttons",
+            showactive=False,
+            y=0,
+            x=1.05,
+            xanchor="left",
+            yanchor="bottom",
+            buttons=buttons,
+        )
     ],
     width=800,
     height=500,
@@ -172,11 +184,16 @@ for i in range(0, satellite_rgb_data.shape[0]):
     z = satellite_rgb_data[i] * alpha + map[:, :, 0:3] * (1 - alpha)
     frames.append(
         dict(
-            data=[go.Image(z=z)], traces=[0], layout=go.Layout(title=str(sat_datetimes[i])), name=str(sat_datetimes[i])
+            data=[go.Image(z=z)],
+            traces=[0],
+            layout=go.Layout(title=str(sat_datetimes[i])),
+            name=str(sat_datetimes[i]),
         )
     )
 
-fig = make_subplots(rows=1, cols=2, subplot_titles=("Satellite", "PV Yield"), horizontal_spacing=0.051)
+fig = make_subplots(
+    rows=1, cols=2, subplot_titles=("Satellite", "PV Yield"), horizontal_spacing=0.051
+)
 
 # fig["data"] = [trace_map, go.Scatter(x=sat_datetimes, y=pv_yield)]
 fig.add_trace(trace_map, row=1, col=1)
@@ -214,7 +231,15 @@ buttons = [
 ]
 fig.update_layout(
     updatemenus=[
-        dict(type="buttons", showactive=False, y=0, x=1.05, xanchor="left", yanchor="bottom", buttons=buttons)
+        dict(
+            type="buttons",
+            showactive=False,
+            y=0,
+            x=1.05,
+            xanchor="left",
+            yanchor="bottom",
+            buttons=buttons,
+        )
     ],
     width=800,
     height=500,
@@ -222,7 +247,12 @@ fig.update_layout(
         {
             "yanchor": "top",
             "xanchor": "left",
-            "currentvalue": {"font": {"size": 16}, "prefix": "Frame: ", "visible": True, "xanchor": "right"},
+            "currentvalue": {
+                "font": {"size": 16},
+                "prefix": "Frame: ",
+                "visible": True,
+                "xanchor": "right",
+            },
             "transition": {"duration": 500.0, "easing": "linear"},
             "pad": {"b": 10, "t": 50},
             "len": 0.9,

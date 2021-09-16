@@ -150,7 +150,7 @@ class ImageDataSource(DataSource):
     """
     Args:
       image_size_pixels: Size of the width and height of the image crop
-        returned by get_sample()."""
+        returned by get_sample(). """
 
     image_size_pixels: InitVar[int]
     meters_per_pixel: InitVar[int]

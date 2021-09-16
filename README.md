@@ -21,11 +21,13 @@ training.
 The script `scripts/prepare_ml_training_data.py` is used to
 pre-compute the training and validation data (the script makes used of the
 `nowcasting_dataset` library).
-`nowcasting_dataset.dataset.NetCDFDataset` is at PyTorch Dataset, to
+`nowcasting_dataset.dataset.datasets.NetCDFDataset` is a PyTorch Dataset, to
 be used to train ML models.
 
 This repo doesn't contain the ML models themselves.  The models are
-in: https://github.com/openclimatefix/predict_pv_yield/
+in: https://github.com/openclimatefix/predict_pv_yield/ and
+https://github.com/openclimatefix/satflow, and utils are in
+https://github.com/openclimatefix/nowcasting_utils
 
 # Installation
 
@@ -48,4 +50,4 @@ To test using the full dataset on Google Cloud, add the `--use_cloud_data` switc
 
 # Documentation
 
-Please see the [`Example` class](https://github.com/openclimatefix/nowcasting_dataset/blob/main/nowcasting_dataset/example.py) for documentation about the different data fields in each example / batch.
+Please see the [`Example` class](https://github.com/openclimatefix/nowcasting_dataset/blob/main/nowcasting_dataset/dataset/example.py) for documentation about the different data fields in each example / batch.

@@ -74,9 +74,7 @@ def aws_download_to_local(
 
 
 def upload_one_file(
-    remote_filename: str,
-    local_filename: str,
-    bucket: str = "solar-pv-nowcasting-data",
+    remote_filename: str, local_filename: str, bucket: str = "solar-pv-nowcasting-data",
 ):
     """
     Upload one file to s3

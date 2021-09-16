@@ -82,6 +82,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
     Moved from predict_pv_yield
     """
 
+
     def __init__(
         self,
         n_batches: int,

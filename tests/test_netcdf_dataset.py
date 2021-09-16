@@ -1,12 +1,60 @@
 import os
 import torch
-from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
+from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
+from nowcasting_dataset.consts import (
+    SATELLITE_X_COORDS,
+    SATELLITE_Y_COORDS,
+    SATELLITE_DATA,
+    NWP_DATA,
+    SATELLITE_DATETIME_INDEX,
+    NWP_TARGET_TIME,
+)
 import plotly.graph_objects as go
 import plotly
 import pandas as pd
 import pytest
 import tempfile
 from pathlib import Path
+import numpy as np
+
+
+def test_subselect_date():
+    batch_size = 32
+    seq_length = 20
+    x = {
+        SATELLITE_DATA: np.random.random((batch_size, seq_length, 128, 128, 12)),
+        "pv_yield": np.random.random((batch_size, seq_length, 128)),
+        "pv_system_id": np.random.random((batch_size, 128)),
+        NWP_DATA: np.random.random((batch_size, 10, seq_length, 2, 2)),
+        "hour_of_day_sin": np.random.random((batch_size, seq_length)),
+        "hour_of_day_cos": np.random.random((batch_size, seq_length)),
+        "day_of_year_sin": np.random.random((batch_size, seq_length)),
+        "day_of_year_cos": np.random.random((batch_size, seq_length)),
+    }
+
+    # add a nan
+    x["pv_yield"][0, 0, :] = float("nan")
+
+    # add fake x and y coords, and make sure they are sorted
+    x[SATELLITE_X_COORDS] = np.random.random((batch_size, seq_length))
+    x[SATELLITE_Y_COORDS] = np.random.random((batch_size, seq_length))
+
+    # add sorted (fake) time series, 5min*60 = 300second steps
+    timeseries = np.arange(start=0, stop=300 * batch_size * seq_length, step=300).reshape(
+        (batch_size, seq_length)
+    )
+    x[SATELLITE_DATETIME_INDEX] = timeseries
+    x[NWP_TARGET_TIME] = timeseries
+
+    batch = subselect_data(
+        x,
+        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+        current_timestep_index=7,
+        history_minutes=10,
+        forecast_minutes=10,
+    )
+    assert batch["sat_data"].shape[1] == 5
+    assert batch["nwp"].shape[2] == 5
 
 
 @pytest.mark.skip("CD does not have access to GCS")

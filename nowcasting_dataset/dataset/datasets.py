@@ -107,7 +107,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         src_path: str,
         tmp_path: str,
         cloud: str = "gcp",
-        required_keys: Union[Tuple[str, ...], List[str, ...]] = [
+        required_keys: Union[Tuple[str], List[str]] = [
             NWP_DATA,
             NWP_X_COORDS,
             NWP_Y_COORDS,

@@ -142,7 +142,10 @@ class NetCDFDataset(torch.utils.data.Dataset):
         required_keys: Tuple or list of keys required in the example for it to be considered usable
         history_minutes: How many past minutes of data to use, if subsetting the batch
         forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
-        current_timestep_index: Index of the current timestep data, used to get the correct amount of future and past data
+        current_timestep_index: Index into either sat_datetime_index or nwp_target_time indicating the current time,
+                                if None, then the entire batch is used, if not None, then subselecting is turned on, and
+                                only history_minutes + current time + forecast_minutes data is used.
+
         """
         self.n_batches = n_batches
         self.src_path = src_path

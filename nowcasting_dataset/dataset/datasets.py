@@ -26,9 +26,23 @@ from nowcasting_dataset.consts import (
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
     SATELLITE_X_COORDS,
-SATELLITE_Y_COORDS,
-SATELLITE_DATA,NWP_DATA,NWP_X_COORDS,NWP_Y_COORDS, PV_SYSTEM_X_COORDS, PV_SYSTEM_Y_COORDS, PV_YIELD, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE, PV_SYSTEM_ID,
-PV_SYSTEM_ROW_NUMBER, Y_METERS_CENTER, X_METERS_CENTER, SATELLITE_DATETIME_INDEX, NWP_TARGET_TIME, PV_DATETIME_INDEX
+    SATELLITE_Y_COORDS,
+    SATELLITE_DATA,
+    NWP_DATA,
+    NWP_X_COORDS,
+    NWP_Y_COORDS,
+    PV_SYSTEM_X_COORDS,
+    PV_SYSTEM_Y_COORDS,
+    PV_YIELD,
+    PV_AZIMUTH_ANGLE,
+    PV_ELEVATION_ANGLE,
+    PV_SYSTEM_ID,
+    PV_SYSTEM_ROW_NUMBER,
+    Y_METERS_CENTER,
+    X_METERS_CENTER,
+    SATELLITE_DATETIME_INDEX,
+    NWP_TARGET_TIME,
+    PV_DATETIME_INDEX,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
@@ -85,7 +99,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
     """Loads data saved by the `prepare_ml_training_data.py` script.
     Moved from predict_pv_yield
     """
-
 
     def __init__(
         self,
@@ -213,7 +226,9 @@ class NetCDFDataset(torch.utils.data.Dataset):
         if self.current_timestep_index is not None:
             # We are subsetting the data
             date_time_index_to_use = (
-                SATELLITE_DATETIME_INDEX if SATELLITE_DATA in self.required_keys else NWP_TARGET_TIME
+                SATELLITE_DATETIME_INDEX
+                if SATELLITE_DATA in self.required_keys
+                else NWP_TARGET_TIME
             )
             current_time = batch[date_time_index_to_use][0, self.current_timestep_index]
             # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
@@ -248,7 +263,9 @@ class NetCDFDataset(torch.utils.data.Dataset):
 
             # Do the for time constants, as either NWP or Sat data should exist and have masks
             for k in list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
-                batch[k] = batch[k][:, satellite_mask if SATELLITE_DATA in self.required_keys else nwp_mask]
+                batch[k] = batch[k][
+                    :, satellite_mask if SATELLITE_DATA in self.required_keys else nwp_mask
+                ]
 
             # Now GSP, if used
             if GSP_YIELD in self.required_keys and GSP_DATETIME_INDEX in batch:
@@ -270,9 +287,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 )
                 batch[PV_DATETIME_INDEX] = batch[PV_DATETIME_INDEX][:, pv_mask]
                 batch[PV_YIELD] = batch[PV_YIELD][:, pv_mask]  # PV is in [B, L, N]
-                batch[PV_AZIMUTH_ANGLE] = batch[PV_AZIMUTH_ANGLE][
-                    :, pv_mask
-                ]  # PV is in [B, L, N]
+                batch[PV_AZIMUTH_ANGLE] = batch[PV_AZIMUTH_ANGLE][:, pv_mask]  # PV is in [B, L, N]
                 batch[PV_ELEVATION_ANGLE] = batch[PV_ELEVATION_ANGLE][
                     :, pv_mask
                 ]  # PV is in [B, L, N]

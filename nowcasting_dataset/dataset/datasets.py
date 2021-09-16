@@ -107,7 +107,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         src_path: str,
         tmp_path: str,
         cloud: str = "gcp",
-        required_keys: Union[Tuple[str], List[str]] = (
+        required_keys: Union[Tuple[str, ...], List[str, ...]] = [
             NWP_DATA,
             NWP_X_COORDS,
             NWP_Y_COORDS,
@@ -126,8 +126,8 @@ class NetCDFDataset(torch.utils.data.Dataset):
             GSP_X_COORDS,
             GSP_Y_COORDS,
             GSP_DATETIME_INDEX,
-            list(DATETIME_FEATURE_NAMES),
-        ),
+        ]
+        + list(DATETIME_FEATURE_NAMES),
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
         current_timestep_index: Optional[int] = None,
@@ -430,7 +430,8 @@ def subselect_data(
 
     # Do the for time constants, as either NWP or Sat data should exist and have masks
     for k in list(DATETIME_FEATURE_NAMES):
-        batch[k] = batch[k][:, satellite_mask if SATELLITE_DATA in required_keys else nwp_mask]
+        if k in required_keys:
+            batch[k] = batch[k][:, satellite_mask if SATELLITE_DATA in required_keys else nwp_mask]
 
     # Now GSP, if used
     if GSP_YIELD in required_keys and GSP_DATETIME_INDEX in batch:

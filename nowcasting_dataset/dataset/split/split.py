@@ -5,7 +5,7 @@ from typing import List, Tuple, Union
 
 import logging
 
-from nowcasting_dataset.dataset.split.day import split_method
+from nowcasting_dataset.dataset.split.method import split_method
 from nowcasting_dataset.dataset.split.year import (
     split_year,
     TrainValidationTestYear,

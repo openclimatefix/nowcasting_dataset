@@ -99,7 +99,6 @@ def split_day_random(
 
     # select the datetimes
     train = [datetime for datetime in datetimes if datetime.dayofyear in train_indexes]
-
     validation = [datetime for datetime in datetimes if datetime.dayofyear in validation_indexes]
     test = [datetime for datetime in datetimes if datetime.dayofyear in test_indexes]
 

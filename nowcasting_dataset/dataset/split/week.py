@@ -100,7 +100,6 @@ def split_week_random(
 
     # select the datetimes
     train = [datetime for datetime in datetimes if datetime.isocalendar().week in train_indexes]
-
     validation = [
         datetime for datetime in datetimes if datetime.isocalendar().week in validation_indexes
     ]

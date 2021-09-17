@@ -25,3 +25,5 @@ pydantic
 pytest-cov
 plotly
 tqdm
+black
+pre-commit

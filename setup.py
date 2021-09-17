@@ -19,9 +19,4 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    extras_require={
-        "pvlive": [
-            "pvlive_api @ git+https://github.com/SheffieldSolar/PV_Live-API.git@master#egg=pvlive_api"
-        ]
-    },
 )

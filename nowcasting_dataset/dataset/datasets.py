@@ -159,7 +159,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.gcs = None
         self.s3_resource = None
 
-        assert cloud in ["gcp", "aws"]
+        assert cloud in ["gcp", "aws", "local"]
 
         if not os.path.isdir(self.tmp_path):
             os.mkdir(self.tmp_path)
@@ -167,7 +167,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
     def per_worker_init(self, worker_id: int):
         if self.cloud == "gcp":
             self.gcs = gcsfs.GCSFileSystem()
-        else:
+        elif self.cloud == "aws":
             self.s3_resource = boto3.resource("s3")
 
     def __len__(self):
@@ -198,15 +198,18 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 local_filename=local_netcdf_filename,
                 gcs=self.gcs,
             )
-        else:
+        elif self.cloud == "aws":
             aws_download_to_local(
                 remote_filename=remote_netcdf_filename,
                 local_filename=local_netcdf_filename,
                 s3_resource=self.s3_resource,
             )
+        else:
+            local_netcdf_filename = remote_netcdf_filename
 
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
-        os.remove(local_netcdf_filename)
+        if self.cloud != "local":
+            os.remove(local_netcdf_filename)
 
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,

@@ -9,13 +9,13 @@ input_data:
   solar_pv_metadata_filename: UK_PV_metadata.csv
   solar_pv_path: PV/PVOutput.org
 output_data:
-  filepath: solar-pv-nowcasting-data/prepared_ML_training_data/v5/
+  filepath: solar-pv-nowcasting-data/prepared_ML_training_data/v6/
 process:
   batch_size: 32
   forecast_minutes: 60
   history_minutes: 30
   satellite_image_size_pixels: 64
-  nwp_image_size_pixels: 2
+  nwp_image_size_pixels: 64
   nwp_channels:
     - t
     - dswrf

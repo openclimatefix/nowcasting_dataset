@@ -114,7 +114,7 @@ def test_data_module(config_name):
         validate_example(
             data=x,
             n_nwp_channels=len(config.process.nwp_channels),
-            nwp_image_size=config.process.nwp_image_size_pixels,  # TODO why is this zero
+            nwp_image_size=0,  # TODO why is this zero
             n_sat_channels=len(config.process.sat_channels),
             sat_image_size=config.process.satellite_image_size_pixels,
             seq_len_30_minutes=seq_len_30_minutes,

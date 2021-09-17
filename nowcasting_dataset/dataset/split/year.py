@@ -35,7 +35,7 @@ class TrainValidationTestYear(BaseModel):
             if vv in values.keys():
                 overlap = [year for year in v if year in values[vv]]
                 if len(overlap):
-                    raise ValueError(f"There is a year in both validation and {vv} sets")
+                    raise ValueError(f"There is a year in both test and {vv} sets")
 
         return v
 

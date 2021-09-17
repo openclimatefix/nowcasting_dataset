@@ -28,8 +28,8 @@ def split_week(
     total_weights = sum(train_test_validation_split)
     cum_weights = np.cumsum(train_test_validation_split)
 
-    # make which day indexes go i.e if the split is [3,1,1] then the
-    # - train_ indexes = [0,1,2]
+    # make which week indexes go i.e if the split is [3,1,1] then the
+    # - train_indexes = [0,1,2]
     # - validation_indexes = [3]
     # - test_indexes = [4]
     train_indexes = [i for i in range(total_weights) if i < cum_weights[0]]
@@ -62,9 +62,9 @@ def split_week_random(
     Split the data by the week. Take random weeks
 
     If the split is (3,1,1) then
-    train data will have 60% of the days
-    validation data will have 20% of the days
-    test data will have have 20% of the days
+    train data will have 60% of the weeks
+    validation data will have 20% of the weeks
+    test data will have have 20% of the weeks
 
     Args:
         datetimes: list of datetimes
@@ -87,7 +87,7 @@ def split_week_random(
     # randomly sort indexes
     random.shuffle(weeks_in_dataset)
 
-    # make which day indexes go i.e if the split is [3,1,1] then the
+    # make which week indexes go i.e if the split is [3,1,1] then the
     # - train_indexes = [0,1,2 ... 31,]
     # - validation_indexes = [32, 33, ... 42]
     # - test_indexes = [43, ...., 52]

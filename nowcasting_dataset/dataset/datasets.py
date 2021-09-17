@@ -374,7 +374,7 @@ def subselect_data(
     forecast_minutes: int,
 ) -> example.Example:
     """
-    Subselects the data temporally. This function selects all data within the range [history_minutes, forecast_minutes]
+    Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
 
     Args:
         batch: Example dictionary containing at least the required_keys

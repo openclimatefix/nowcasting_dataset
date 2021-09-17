@@ -69,7 +69,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     gsp_filename: Optional[Union[str, Path]] = None
     train_validation_percentage_split: float = 20
     pv_load_azimuth_and_elevation: bool = False
-    split_method: SplitMethod = SplitMethod.Day  # which split method should be used
+    split_method: SplitMethod = SplitMethod.DAY  # which split method should be used
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip

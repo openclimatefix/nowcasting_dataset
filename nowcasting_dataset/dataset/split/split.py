@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 class SplitMethod(Enum):
-    Day = "day"
-    DayRandom = "day_random"
-    Week = "week"
-    WeekRandom = "week_random"
-    Year = "year"
-    Same = "same"
+    DAY = "day"
+    DAY_RANDOM = "day_random"
+    WEEK = "week"
+    WEEK_RANDOM = "week_random"
+    YEAR = "year"
+    SAME = "same"
 
 
 def split_data(
@@ -52,31 +52,31 @@ def split_data(
 
     datetimes = pd.DatetimeIndex(datetimes)
 
-    if method == SplitMethod.Same:
+    if method == SplitMethod.SAME:
         train_datetimes = datetimes
         validation_datetimes = datetimes
         test_datetimes = datetimes
-    elif method == SplitMethod.Day:
+    elif method == SplitMethod.DAY:
         train_datetimes, validation_datetimes, test_datetimes = split_day(
             datetimes=datetimes,
             train_test_validation_split=train_test_validation_split,
             method="modulo",
         )
-    elif method == SplitMethod.DayRandom:
+    elif method == SplitMethod.DAY_RANDOM:
         train_datetimes, validation_datetimes, test_datetimes = split_day(
             datetimes=datetimes,
             train_test_validation_split=train_test_validation_split,
             method="random",
         )
-    elif method == SplitMethod.Week:
+    elif method == SplitMethod.WEEK:
         train_datetimes, validation_datetimes, test_datetimes = split_week(
             datetimes=datetimes, train_test_validation_split=train_test_validation_split
         )
-    elif method == SplitMethod.WeekRandom:
+    elif method == SplitMethod.WEEK_RANDOM:
         train_datetimes, validation_datetimes, test_datetimes = split_week_random(
             datetimes=datetimes, train_test_validation_split=train_test_validation_split
         )
-    elif method == SplitMethod.Year:
+    elif method == SplitMethod.YEAR:
         train_datetimes, validation_datetimes, test_datetimes = split_year(
             datetimes=datetimes, train_test_validation_year=train_test_validation_year
         )

@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
-from nowcasting_dataset.dataset.split.year import TrainValidationTestYear
+from nowcasting_dataset.dataset.split.model import TrainValidationTestSpecific
 
 
 def test_split_same():
@@ -106,7 +106,7 @@ def test_split_year():
 
     datetimes = pd.date_range("2014-01-01", "2021-01-01", freq="MS")
 
-    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.YEAR)
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.YEAR_SPECIFIC)
 
     assert len(train) == 12 * 5  # 2015, 2016, 2017, 2018, 2019 months
     assert len(validation) == 12  # months in 2020
@@ -133,13 +133,13 @@ def test_split_year():
 def test_split_year_error():
 
     with pytest.raises(Exception):
-        TrainValidationTestYear(train=[2015, 2016], validation=[2016], test=[2017])
+        TrainValidationTestSpecific(train=[2015, 2016], validation=[2016], test=[2017])
 
     with pytest.raises(Exception):
-        TrainValidationTestYear(train=[2015], validation=[2016], test=[2016, 2017])
+        TrainValidationTestSpecific(train=[2015], validation=[2016], test=[2016, 2017])
 
     with pytest.raises(Exception):
-        TrainValidationTestYear(train=[2015], validation=[2016], test=[2015, 2017])
+        TrainValidationTestSpecific(train=[2015], validation=[2016], test=[2015, 2017])
 
 
 def test_split_week():

@@ -3,10 +3,16 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
+from nowcasting_dataset.dataset.split.model import (
+    TrainValidationTestSpecific,
+    default_train_test_validation_specific,
+)
+
 
 def split_method(
     datetimes: pd.DatetimeIndex,
     train_test_validation_split: Tuple[int] = (3, 1, 1),
+    train_test_validation_specific: TrainValidationTestSpecific = default_train_test_validation_specific,
     method: str = "modulo",
     freq: str = "D",
     seed: int = 1234,
@@ -33,6 +39,8 @@ def split_method(
         method: which method to use. Can be modulo or random
         freq: This can be D=day, W=week, M=month and Y=year. This means the data is divided up by different periods
         seed: random seed used to permutate the data for the 'random' method
+        train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'. These specifies
+            which data goes into which datasets
 
     Returns: train, validation and test datetimes
 
@@ -94,6 +102,19 @@ def split_method(
             unique_periods_in_dataset[train_validation_split:validation_test_split]
         )
         test_periods = pd.to_datetime(unique_periods_in_dataset[validation_test_split:])
+
+    elif method == "specific":
+
+        train_periods = unique_periods_in_dataset[
+            unique_periods_in_dataset.isin(train_test_validation_specific.train)
+        ]
+        validation_periods = unique_periods_in_dataset[
+            unique_periods_in_dataset.isin(train_test_validation_specific.validation)
+        ]
+        test_periods = unique_periods_in_dataset[
+            unique_periods_in_dataset.isin(train_test_validation_specific.test)
+        ]
+
     else:
         raise Exception(f'method ({method}) must be in ["random", "modulo"]')
 

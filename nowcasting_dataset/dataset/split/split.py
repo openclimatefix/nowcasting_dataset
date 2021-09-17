@@ -7,10 +7,9 @@ from typing import List, Tuple, Union
 import pandas as pd
 
 from nowcasting_dataset.dataset.split.method import split_method
-from nowcasting_dataset.dataset.split.year import (
-    split_year,
-    TrainValidationTestYear,
-    default_train_test_validation_year,
+from nowcasting_dataset.dataset.split.model import (
+    TrainValidationTestSpecific,
+    default_train_test_validation_specific,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ def split_data(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     method: SplitMethod,
     train_test_validation_split: Tuple[int] = (3, 1, 1),
-    train_test_validation_year: TrainValidationTestYear = default_train_test_validation_year,
+    train_test_validation_specific: TrainValidationTestSpecific = default_train_test_validation_specific,
     seed: int = 1234,
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
@@ -41,6 +40,9 @@ def split_data(
         train_test_validation_split: ratios of how the split is made
         train_test_validation_year: pydantic class of which years below to which dataset
         seed: random seed used to permutate the data for the 'random' method
+        train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'. These specifies
+            which data goes into which datasets
+
 
     Returns: train, validation and test dataset
 
@@ -83,8 +85,13 @@ def split_data(
             seed=seed,
         )
     elif method == SplitMethod.YEAR_SPECIFIC:
-        train_datetimes, validation_datetimes, test_datetimes = split_year(
-            datetimes=datetimes, train_test_validation_year=train_test_validation_year
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            method="specific",
+            freq="Y",
+            seed=seed,
+            train_test_validation_specific=train_test_validation_specific,
         )
     else:
         raise ValueError(f"{method} for splitting day is not implemented")

@@ -38,7 +38,6 @@ def split_data(
         datetimes: The datetimes to be split
         method: the method to be used
         train_test_validation_split: ratios of how the split is made
-        train_test_validation_year: pydantic class of which years below to which dataset
         seed: random seed used to permutate the data for the 'random' method
         train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'. These specifies
             which data goes into which datasets

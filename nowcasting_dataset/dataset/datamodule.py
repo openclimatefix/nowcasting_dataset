@@ -37,6 +37,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     batch_size: int = 8
     n_training_batches_per_epoch: int = 25_000
     n_validation_batches_per_epoch: int = 1_000
+    n_test_batches_per_epoch: int = 1_000
     history_minutes: int = 30  #: Number of minutes of history, not including t0.
     forecast_minutes: int = 60  #: Number of minutes of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
@@ -73,6 +74,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
+    skip_n_test_batches: int = 0  # number of test batches to skip
 
     def __post_init__(self):
         super().__init__()
@@ -241,9 +243,22 @@ class NowcastingDataModule(pl.LightningDataModule):
         )
         logger.debug("Making validation dataset: done")
 
+        logger.debug("Making test dataset")
+        self.test_dataset = datasets.NowcastingDataset(
+            t0_datetimes=self.test_t0_datetimes,
+            data_sources=self.data_sources,
+            skip_batch_index=self.skip_n_test_batches,
+            n_batches_per_epoch_per_worker=(
+                self._n_batches_per_epoch_per_worker(self.n_test_batches_per_epoch)
+            ),
+            **self._common_dataset_params(),
+        )
+        logger.debug("Making test dataset: done")
+
         if self.num_workers == 0:
             self.train_dataset.per_worker_init(worker_id=0)
             self.val_dataset.per_worker_init(worker_id=0)
+            self.test_dataset.per_worker_init(worker_id=0)
 
         logger.debug("Setup: done")
 
@@ -277,6 +292,9 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(self.val_dataset, **self._common_dataloader_params())
+
+    def test_dataloader(self) -> torch.utils.data.DataLoader:
+        return torch.utils.data.DataLoader(self.test_dataset, **self._common_dataloader_params())
 
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
         if self.contiguous_dataset is None:

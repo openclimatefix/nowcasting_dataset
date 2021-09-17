@@ -66,6 +66,7 @@ GSP_FILENAME = BUCKET / config.input_data.gsp_filename
 DST_NETCDF4_PATH = config.output_data.filepath
 DST_TRAIN_PATH = os.path.join(DST_NETCDF4_PATH, "train")
 DST_VALIDATION_PATH = os.path.join(DST_NETCDF4_PATH, "validation")
+DST_TEST_PATH = os.path.join(DST_NETCDF4_PATH, "test")
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
 UPLOAD_EVERY_N_BATCHES = 16
@@ -83,7 +84,8 @@ def get_data_module():
 
     # get the batch id already made
     maximum_batch_id_train = get_maximum_batch_id_from_gcs(f"gs://{DST_TRAIN_PATH}")
-    maximum_batch_id_validation = get_maximum_batch_id_from_gcs(f"gs://{DST_TRAIN_PATH}")
+    maximum_batch_id_validation = get_maximum_batch_id_from_gcs(f"gs://{DST_VALIDATION_PATH}")
+    maximum_batch_id_test = get_maximum_batch_id_from_gcs(f"gs://{DST_TEST_PATH}")
 
     if maximum_batch_id_train is None:
         maximum_batch_id_train = 0
@@ -91,11 +93,15 @@ def get_data_module():
     if maximum_batch_id_validation is None:
         maximum_batch_id_validation = 0
 
+    if maximum_batch_id_test is None:
+        maximum_batch_id_test = 0
+
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
         history_minutes=config.process.history_minutes,  #: Number of minutes of history, not including t0.
         forecast_minutes=config.process.forecast_minutes,  #: Number of minutes of forecast.
-        image_size_pixels=config.process.image_size_pixels,
+        satellite_image_size_pixels=config.process.satellite_image_size_pixels,
+        nwp_image_size_pixels=config.process.nwp_image_size_pixels,
         nwp_channels=NWP_VARIABLE_NAMES,
         sat_channels=SAT_VARIABLE_NAMES,
         pv_power_filename=f"gs://{PV_DATA_FILENAME}",
@@ -109,11 +115,13 @@ def get_data_module():
         n_samples_per_timestep=8,  #: Passed to NowcastingDataset
         n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!
         n_validation_batches_per_epoch=1_008,
+        n_test_batches_per_epoch=1_008,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
         normalise_sat=False,
         skip_n_train_batches=maximum_batch_id_train // num_workers,
         skip_n_validation_batches=maximum_batch_id_validation // num_workers,
+        skip_n_test_batches=maximum_batch_id_test // num_workers,
     )
     _LOG.info("prepare_data()")
     data_module.prepare_data()
@@ -137,7 +145,7 @@ def iterate_over_dataloader_and_write_to_disk(
 
 def check_directories():
     if CLOUD == "gcp":
-        for path in [DST_TRAIN_PATH, DST_VALIDATION_PATH]:
+        for path in [DST_TRAIN_PATH, DST_VALIDATION_PATH, DST_TEST_PATH]:
             check_path_exists(path)
 
 
@@ -160,6 +168,8 @@ def main():
     iterate_over_dataloader_and_write_to_disk(datamodule.train_dataloader(), DST_TRAIN_PATH)
     _LOG.info("Preparing validation data...")
     iterate_over_dataloader_and_write_to_disk(datamodule.val_dataloader(), DST_VALIDATION_PATH)
+    _LOG.info("Preparing test data...")
+    iterate_over_dataloader_and_write_to_disk(datamodule.test_dataloader(), DST_TEST_PATH)
     _LOG.info("Done!")
 
     # save configuration to gcs

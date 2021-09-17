@@ -36,6 +36,7 @@ dependencies:
   - flake8
   - jedi
   - mypy
+  - black
 
   - pip:
     - neptune-client[pytorch-lightning]

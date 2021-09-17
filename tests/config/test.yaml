@@ -15,19 +15,20 @@ process:
   batch_size: 32
   forecast_minutes: 60
   history_minutes: 30
-  image_size_pixels: 64
+  satellite_image_size_pixels: 64
+  nwp_image_size_pixels: 2
   nwp_channels:
-  - t
-  - dswrf
-  - prate
-  - r
-  - sde
-  - si10
-  - vis
-  - lcc
-  - mcc
-  - hcc
+    - t
+    - dswrf
+    - prate
+    - r
+    - sde
+    - si10
+    - vis
+    - lcc
+    - mcc
+    - hcc
   prcesion: 16
   sat_channels:
-  - HRV
+    - HRV
   val_check_interval: 1000

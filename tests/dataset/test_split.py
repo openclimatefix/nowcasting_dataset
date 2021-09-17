@@ -115,17 +115,24 @@ def test_split_week():
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.WEEK)
 
-    for d in train:
-        assert d.isocalendar().week % 5 in [0, 1, 2]
-    for d in validation:
-        assert d.isocalendar().week % 5 in [3]
-    for d in test:
-        assert d.isocalendar().week % 5 in [4]
+    unique_weeks = pd.Series(datetimes.to_period("W").to_timestamp().unique())
+    train_weeks = pd.to_datetime(train.to_period("W").to_timestamp())
+    validation_weeks = pd.to_datetime(validation.to_period("W").to_timestamp())
+    test_weeks = pd.to_datetime(test.to_period("W").to_timestamp())
 
-    # check all first 3 days datetimes are in the same week
-    week = train[0].isocalendar().week
-    for t in train[0 : 48 * 3]:
-        assert t.isocalendar().week == week
+    train_dates = unique_weeks[unique_weeks.isin(train_weeks)]
+    assert (np.unique(train_dates.index % 5) == [0, 1, 2]).all()
+
+    validation_dates = unique_weeks[unique_weeks.isin(validation_weeks)]
+    assert (np.unique(validation_dates.index % 5) == [3]).all()
+
+    test_dates = unique_weeks[unique_weeks.isin(test_weeks)]
+    assert (np.unique(test_dates.index % 5) == [4]).all()
+
+    # check all first day datetimes are in the same week
+    week = train[0].week
+    for t in train[0:48]:
+        assert t.week == week
 
 
 def test_split_week_random():

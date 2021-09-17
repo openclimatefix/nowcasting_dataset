@@ -5,16 +5,13 @@ from typing import List, Tuple, Union
 
 import logging
 
-from nowcasting_dataset.dataset.split.day import split_day, split_day_random
+from nowcasting_dataset.dataset.split.day import split_method
 from nowcasting_dataset.dataset.split.year import (
     split_year,
     TrainValidationTestYear,
     default_train_test_validation_year,
 )
-from nowcasting_dataset.dataset.split.week import (
-    split_week_random,
-    split_week,
-)
+
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -57,30 +54,36 @@ def split_data(
         validation_datetimes = datetimes
         test_datetimes = datetimes
     elif method == SplitMethod.DAY:
-        train_datetimes, validation_datetimes, test_datetimes = split_day(
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
             datetimes=datetimes,
             train_test_validation_split=train_test_validation_split,
             method="modulo",
         )
     elif method == SplitMethod.DAY_RANDOM:
-        train_datetimes, validation_datetimes, test_datetimes = split_day(
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
             datetimes=datetimes,
             train_test_validation_split=train_test_validation_split,
             method="random",
         )
     elif method == SplitMethod.WEEK:
-        train_datetimes, validation_datetimes, test_datetimes = split_week(
-            datetimes=datetimes, train_test_validation_split=train_test_validation_split
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            method="modulo",
+            freq="W",
         )
     elif method == SplitMethod.WEEK_RANDOM:
-        train_datetimes, validation_datetimes, test_datetimes = split_week_random(
-            datetimes=datetimes, train_test_validation_split=train_test_validation_split
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            method="random",
+            freq="W",
         )
     elif method == SplitMethod.YEAR:
         train_datetimes, validation_datetimes, test_datetimes = split_year(
             datetimes=datetimes, train_test_validation_year=train_test_validation_year
         )
     else:
-        raise
+        raise ValueError(f"{method} for splitting day is not implemented")
 
     return train_datetimes, validation_datetimes, test_datetimes

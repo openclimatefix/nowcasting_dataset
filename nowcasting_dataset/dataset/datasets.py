@@ -366,6 +366,39 @@ def worker_init_fn(worker_id):
         dataset_obj.per_worker_init(worker_info.id)
 
 
+def select_time_period(
+    batch: example.Example,
+    keys: List[str],
+    time_of_first_example: pd.DatetimeIndex,
+    start_time: xr.DataArray,
+    end_time: xr.DataArray,
+    subselect_datetime: bool = False,
+) -> example.Example:
+    """
+    Selects a subset of data between the indicies of [start, end] for each key in keys
+
+    Args:
+        batch: Example containing the data
+        keys: Keys in batch to use
+        time_of_first_example: Datetime of the current time in the first example of the batch
+        start_time: Start time DataArray
+        end_time: End time DataArray
+        subselect_datetime: Whether to use the same [start,end] to subselect Datetime features
+
+    Returns:
+        Example containing the subselected data
+    """
+    start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
+    for key in keys:
+        batch[key] = batch[key].isel(time=slice(start_i, end_i))
+
+    if subselect_datetime:
+        for k in list(DATETIME_FEATURE_NAMES):
+            batch[k] = batch[k].isel(time=slice(start_i, end_i))
+
+    return batch
+
+
 def subselect_data(
     batch: example.Example,
     required_keys: Union[Tuple[str], List[str]],
@@ -399,53 +432,54 @@ def subselect_data(
     start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
     end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
     if SATELLITE_DATA in required_keys:
-        time_index_of_first_batch = batch[SATELLITE_DATETIME_INDEX][0].data
-        start_i, end_i = np.searchsorted(
-            time_index_of_first_batch, [start_time.data, end_time.data]
+        batch = select_time_period(
+            batch,
+            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+            time_of_first_example=batch[SATELLITE_DATETIME_INDEX][0].data,
+            start_time=start_time,
+            end_time=end_time,
+            subselect_datetime=True,
         )
-        for key in [SATELLITE_DATA, SATELLITE_DATETIME_INDEX]:
-            batch[key] = batch[key].isel(time=slice(start_i, end_i))
         _LOG.debug(
             f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
         )
 
     # Now for NWP, if used
     if NWP_DATA in required_keys:
-        time_index_of_first_batch = batch[NWP_TARGET_TIME][0].data
-        start_i, end_i = np.searchsorted(
-            time_index_of_first_batch, [start_time.data, end_time.data]
+        batch = select_time_period(
+            batch,
+            keys=[NWP_DATA, NWP_TARGET_TIME],
+            time_of_first_example=batch[NWP_TARGET_TIME][0].data,
+            start_time=start_time,
+            end_time=end_time,
+            subselect_datetime=True if SATELLITE_DATA not in required_keys else False,
         )
-        for key in [NWP_DATA, NWP_TARGET_TIME]:
-            batch[key] = batch[key].isel(time=slice(start_i, end_i))
         _LOG.debug(
             f"NWP Datetime Shape: {batch[NWP_TARGET_TIME].shape} NWP Data Shape: {batch[NWP_DATA].shape}"
         )
 
-    # Do the for time constants, as either NWP or Sat data should exist and have masks
-    for k in list(DATETIME_FEATURE_NAMES):
-        if k in required_keys:
-            batch[k] = batch[k].isel(time=slice(start_i, end_i))
-
     # Now GSP, if used
     if GSP_YIELD in required_keys and GSP_DATETIME_INDEX in batch:
-        time_index_of_first_batch = batch[GSP_DATETIME_INDEX][0].data
-        start_i, end_i = np.searchsorted(
-            time_index_of_first_batch, [start_time.data, end_time.data]
+        batch = select_time_period(
+            batch,
+            keys=[GSP_DATETIME_INDEX, GSP_YIELD],
+            time_of_first_example=batch[GSP_DATETIME_INDEX][0].data,
+            start_time=start_time,
+            end_time=end_time,
         )
-        for key in [GSP_DATETIME_INDEX, GSP_YIELD]:
-            batch[key] = batch[key].isel(time=slice(start_i, end_i))
         _LOG.debug(
             f"GSP Datetime Shape: {batch[GSP_DATETIME_INDEX].shape} GSP Data Shape: {batch[GSP_YIELD].shape}"
         )
 
     # Now PV systems, if used
     if PV_YIELD in required_keys and PV_DATETIME_INDEX in batch:
-        time_index_of_first_batch = batch[PV_DATETIME_INDEX][0].data
-        start_i, end_i = np.searchsorted(
-            time_index_of_first_batch, [start_time.data, end_time.data]
+        batch = select_time_period(
+            batch,
+            keys=[PV_DATETIME_INDEX, PV_YIELD, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE],
+            time_of_first_example=batch[PV_DATETIME_INDEX][0].data,
+            start_time=start_time,
+            end_time=end_time,
         )
-        for key in [PV_DATETIME_INDEX, PV_YIELD, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE]:
-            batch[key] = batch[key].isel(time=slice(start_i, end_i))
         _LOG.debug(
             f"PV Datetime Shape: {batch[PV_DATETIME_INDEX].shape} PV Data Shape: {batch[PV_YIELD].shape}"
             f" PV Azimuth Shape: {batch[PV_AZIMUTH_ANGLE].shape} PV Elevation Shape: {batch[PV_ELEVATION_ANGLE].shape}"

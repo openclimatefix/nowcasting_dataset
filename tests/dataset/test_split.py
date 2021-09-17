@@ -1,8 +1,9 @@
 import numpy as np
-from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
-from nowcasting_dataset.dataset.split.year import TrainValidationTestYear
 import pandas as pd
 import pytest
+
+from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
+from nowcasting_dataset.dataset.split.year import TrainValidationTestYear
 
 
 def test_split_same():
@@ -21,6 +22,38 @@ def test_split_day():
     datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.DAY)
+
+    unique_dates = pd.Series(np.unique(datetimes.date))
+
+    train_dates = unique_dates[unique_dates.isin(np.unique(train.date))]
+    assert (np.unique(train_dates.index % 5) == [0, 1, 2]).all()
+
+    validation_dates = unique_dates[unique_dates.isin(np.unique(validation.date))]
+    assert (np.unique(validation_dates.index % 5) == [3]).all()
+
+    test_dates = unique_dates[unique_dates.isin(np.unique(test.date))]
+    assert (np.unique(test_dates.index % 5) == [4]).all()
+
+    # check all first 288 datetimes are in the same day
+    day = train[0].dayofyear
+    for t in train[0 : 12 * 24]:
+        assert t.dayofyear == day
+    assert train[12 * 24 + 1] != day
+
+
+def test_split_day_every_5():
+
+    datetimes = pd.date_range("2021-01-01", "2021-01-02", freq="5T")
+    datetimes = datetimes.append(pd.date_range("2021-01-06", "2021-01-07", freq="5T"))
+    datetimes = datetimes.append(pd.date_range("2021-01-11", "2021-01-12", freq="5T"))
+    datetimes = datetimes.append(pd.date_range("2021-01-16", "2021-01-17", freq="5T"))
+    datetimes = datetimes.append(pd.date_range("2021-01-21", "2021-01-22", freq="5T"))
+
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.DAY)
+
+    assert len(train) > 0
+    assert len(validation) > 0
+    assert len(test) > 0
 
     unique_dates = pd.Series(np.unique(datetimes.date))
 

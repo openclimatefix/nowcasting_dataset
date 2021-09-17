@@ -44,8 +44,9 @@ A (probably older) version is also available through `pip install nowcasting-dat
 
 ## Pre-commit
 
-A pre commit hook has been installed which makes `black` runs with every commit. You need to install `black` and
- `pre-commit` and run `pre-commit install` in this repo.
+A pre commit hook has been installed which makes `black` run with every commit. You need to install
+`black` and `pre-commit` (these will be installed by `conda` or `pip` when installing
+`nowcasting_dataset`) and run `pre-commit install` in this repo.
 
 # Testing
 

@@ -384,7 +384,7 @@ def subselect_data(
         forecast_minutes: How many minutes of future data to use for forecasting
 
     Returns:
-        Example with only data between [history_minutes, forecast_minutes] remaining
+        Example with only data between [t0 - history_minutes, t0 + forecast_minutes] remaining
     """
 
     # We are subsetting the data

@@ -21,7 +21,7 @@ class SplitMethod(Enum):
     DAY_RANDOM = "day_random"
     WEEK = "week"
     WEEK_RANDOM = "week_random"
-    YEAR = "year"
+    YEAR_SPECIFIC = "year_specific"
     SAME = "same"
 
 
@@ -82,7 +82,7 @@ def split_data(
             freq="W",
             seed=seed,
         )
-    elif method == SplitMethod.YEAR:
+    elif method == SplitMethod.YEAR_SPECIFIC:
         train_datetimes, validation_datetimes, test_datetimes = split_year(
             datetimes=datetimes, train_test_validation_year=train_test_validation_year
         )

@@ -30,6 +30,7 @@ PV_SYSTEM_Y_COORDS = "pv_system_y_coords"
 PV_AZIMUTH_ANGLE = "pv_azimuth_angle"
 PV_ELEVATION_ANGLE = "pv_elevation_angle"
 PV_YIELD = "pv_yield"
+PV_DATETIME_INDEX = "pv_datetime_index"
 DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE = 128
 GSP_ID: str = "gsp_id"
 GSP_YIELD = "gsp_yield"
@@ -44,3 +45,13 @@ DATETIME_FEATURE_NAMES = (
     "day_of_year_sin",
     "day_of_year_cos",
 )
+SATELLITE_DATA = "sat_data"
+SATELLITE_Y_COORDS = "sat_y_coords"
+SATELLITE_X_COORDS = "sat_x_coords"
+SATELLITE_DATETIME_INDEX = "sat_datetime_index"
+NWP_TARGET_TIME = "nwp_target_time"
+NWP_DATA = "nwp"
+NWP_X_COORDS = "nwp_x_coords"
+NWP_Y_COORDS = "nwp_y_coords"
+X_METERS_CENTER = "x_meters_center"
+Y_METERS_CENTER = "y_meters_center"

@@ -1,10 +1,10 @@
 # Configuration
 
-Configuration for the data set. 
+Configuration for the data set.
 
 
-Decided to go for a 'Pydantic' data class. It's slightly more complicated that just having yaml files, but the 
-'Pydantic' feature I think outweigh this. There is a load from yaml file also. 
+Decided to go for a 'Pydantic' data class. It's slightly more complicated that just having yaml files, but the
+'Pydantic' feature I think outweigh this. There is a load from yaml file also.
 
 # Example
 

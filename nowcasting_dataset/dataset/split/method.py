@@ -1,6 +1,5 @@
-from typing import Union, List, Tuple
+from typing import List, Tuple
 
-import random
 import numpy as np
 import pandas as pd
 

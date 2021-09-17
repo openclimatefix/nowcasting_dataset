@@ -1,9 +1,10 @@
 """ Function to split datasets up """
 
-import pandas as pd
+import logging
+from enum import Enum
 from typing import List, Tuple, Union
 
-import logging
+import pandas as pd
 
 from nowcasting_dataset.dataset.split.method import split_method
 from nowcasting_dataset.dataset.split.year import (
@@ -11,8 +12,6 @@ from nowcasting_dataset.dataset.split.year import (
     TrainValidationTestYear,
     default_train_test_validation_year,
 )
-
-from enum import Enum
 
 logger = logging.getLogger(__name__)
 

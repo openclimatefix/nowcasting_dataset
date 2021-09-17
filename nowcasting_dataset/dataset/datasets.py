@@ -451,7 +451,6 @@ def subselect_data(
             time_of_first_example=batch[NWP_TARGET_TIME][0].data,
             start_time=start_time,
             end_time=end_time,
-            subselect_datetime=True if SATELLITE_DATA not in required_keys else False,
         )
         _LOG.debug(
             f"NWP Datetime Shape: {batch[NWP_TARGET_TIME].shape} NWP Data Shape: {batch[NWP_DATA].shape}"

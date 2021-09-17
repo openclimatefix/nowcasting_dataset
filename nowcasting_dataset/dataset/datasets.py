@@ -425,10 +425,11 @@ def subselect_data(
     # within the [start_time, end_time] range
     start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
     end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
+    used_datetime_features = [k for k in DATETIME_FEATURE_NAMES if k in required_keys]
     if SATELLITE_DATA in required_keys:
         batch = select_time_period(
             batch,
-            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX] + list(DATETIME_FEATURE_NAMES),
+            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX] + used_datetime_features,
             time_of_first_example=batch[SATELLITE_DATETIME_INDEX][0].data,
             start_time=start_time,
             end_time=end_time,
@@ -441,7 +442,7 @@ def subselect_data(
     if NWP_DATA in required_keys:
         batch = select_time_period(
             batch,
-            keys=[NWP_DATA, NWP_TARGET_TIME] + list(DATETIME_FEATURE_NAMES)
+            keys=[NWP_DATA, NWP_TARGET_TIME] + used_datetime_features
             if SATELLITE_DATA not in required_keys
             else [NWP_DATA, NWP_TARGET_TIME],
             time_of_first_example=batch[NWP_TARGET_TIME][0].data,

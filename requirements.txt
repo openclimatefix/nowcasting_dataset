@@ -25,4 +25,3 @@ pydantic
 pytest-cov
 plotly
 tqdm
-pvlive_api @ git+https://github.com/SheffieldSolar/PV_Live-API.git@master#egg=pvlive_api

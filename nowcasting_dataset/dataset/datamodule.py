@@ -54,14 +54,17 @@ class NowcastingDataModule(pl.LightningDataModule):
         "mcc",
         "hcc",
     )
-    image_size_pixels: int = 128  #: Passed to Data Sources.
+    satellite_image_size_pixels: int = 128  #: Passed to Data Sources.
+    nwp_image_size_pixels: int = 2  #: Passed to Data Sources.
     meters_per_pixel: int = 2000  #: Passed to Data Sources.
     convert_to_numpy: bool = True  #: Passed to Data Sources.
     pin_memory: bool = True  #: Passed to DataLoader.
     num_workers: int = 16  #: Passed to DataLoader.
     prefetch_factor: int = 64  #: Passed to DataLoader.
     n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
-    collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
+    collate_fn: Callable = (
+        torch.utils.data._utils.collate.default_collate
+    )  #: Passed to NowcastingDataset
     gsp_filename: Optional[Union[str, Path]] = None
     train_validation_percentage_split: float = 20
     pv_load_azimuth_and_elevation: bool = False
@@ -93,7 +96,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
-            image_size_pixels=self.image_size_pixels,
+            image_size_pixels=self.satellite_image_size_pixels,
             meters_per_pixel=self.meters_per_pixel,
             history_minutes=self.history_minutes,
             forecast_minutes=self.forecast_minutes,
@@ -117,7 +120,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
                 convert_to_numpy=self.convert_to_numpy,
-                image_size_pixels=self.image_size_pixels,
+                image_size_pixels=self.satellite_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 get_center=False,
                 load_azimuth_and_elevation=self.pv_load_azimuth_and_elevation,
@@ -133,7 +136,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
                 convert_to_numpy=self.convert_to_numpy,
-                image_size_pixels=self.image_size_pixels,
+                image_size_pixels=self.satellite_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 get_center=True,
             )
@@ -146,7 +149,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         if self.nwp_base_path is not None:
             self.nwp_data_source = data_sources.NWPDataSource(
                 filename=self.nwp_base_path,
-                image_size_pixels=2,
+                image_size_pixels=self.nwp_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,

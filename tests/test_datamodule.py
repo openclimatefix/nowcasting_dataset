@@ -67,7 +67,7 @@ def test_data_module():
         batch_size=config.process.batch_size,
         history_minutes=30,  #: Number of timesteps of history, not including t0.
         forecast_minutes=60,  #: Number of timesteps of forecast.
-        image_size_pixels=config.process.image_size_pixels,
+        satellite_image_size_pixels=config.process.image_size_pixels,
         nwp_channels=config.process.nwp_channels,
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
@@ -132,7 +132,7 @@ def test_batch_to_batch_to_dataset():
         batch_size=config.process.batch_size,
         history_minutes=30,  #: Number of timesteps of history, not including t0.
         forecast_minutes=60,  #: Number of timesteps of forecast.
-        image_size_pixels=config.process.image_size_pixels,
+        satellite_image_size_pixels=config.process.image_size_pixels,
         nwp_channels=config.process.nwp_channels,
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,

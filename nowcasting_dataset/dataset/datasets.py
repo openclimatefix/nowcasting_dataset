@@ -204,9 +204,12 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 local_filename=local_netcdf_filename,
                 s3_resource=self.s3_resource,
             )
+        else:
+            local_netcdf_filename = remote_netcdf_filename
 
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
-        os.remove(local_netcdf_filename)
+        if self.cloud != "local":
+            os.remove(local_netcdf_filename)
 
         batch = example.Example(
             sat_datetime_index=netcdf_batch.sat_time_coords,

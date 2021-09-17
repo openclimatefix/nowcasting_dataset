@@ -37,6 +37,7 @@ dependencies:
   - jedi
   - mypy
   - black
+  - pre-commit
 
   - pip:
     - neptune-client[pytorch-lightning]

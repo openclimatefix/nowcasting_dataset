@@ -27,3 +27,4 @@ plotly
 tqdm
 git+https://github.com/SheffieldSolar/PV_Live-API
 black
+pre-commit

@@ -55,12 +55,13 @@ def test_setup(nowcasting_datamodule: datamodule.NowcastingDataModule):
     nowcasting_datamodule.setup()
 
 
-def test_data_module():
+@pytest.mark.parametrize("config_name", ["test.yaml", "nwp_size_test.yaml"])
+def test_data_module(config_name):
 
     local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
 
     # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, "tests", "config", "test.yaml")
+    filename = os.path.join(local_path, "tests", "config", config_name)
     config = load_yaml_configuration(filename)
 
     data_module = NowcastingDataModule(
@@ -113,7 +114,7 @@ def test_data_module():
         validate_example(
             data=x,
             n_nwp_channels=len(config.process.nwp_channels),
-            nwp_image_size=0,  # TODO why is this zero
+            nwp_image_size=config.process.nwp_image_size_pixels,  # TODO why is this zero
             n_sat_channels=len(config.process.sat_channels),
             sat_image_size=config.process.satellite_image_size_pixels,
             seq_len_30_minutes=seq_len_30_minutes,

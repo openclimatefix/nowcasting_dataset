@@ -14,6 +14,7 @@ from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.example import validate_example
 from nowcasting_dataset.dataset.batch import batch_to_dataset
 from nowcasting_dataset.dataset.example import Example
+from nowcasting_dataset.dataset.split.split import SplitMethod
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -88,6 +89,7 @@ def test_data_module():
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
         pv_load_azimuth_and_elevation=True,
+        split_method=SplitMethod.Same,
     )
 
     _LOG.info("prepare_data()")
@@ -153,6 +155,7 @@ def test_batch_to_batch_to_dataset():
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
         pv_load_azimuth_and_elevation=False,
+        split_method=SplitMethod.Same,
     )
 
     _LOG.info("prepare_data()")

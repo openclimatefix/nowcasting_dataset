@@ -11,6 +11,7 @@ from nowcasting_dataset import utils
 from nowcasting_dataset import consts
 from nowcasting_dataset.dataset import datasets
 from dataclasses import dataclass
+from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 import warnings
 
 with warnings.catch_warnings():
@@ -61,10 +62,13 @@ class NowcastingDataModule(pl.LightningDataModule):
     num_workers: int = 16  #: Passed to DataLoader.
     prefetch_factor: int = 64  #: Passed to DataLoader.
     n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
-    collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
+    collate_fn: Callable = (
+        torch.utils.data._utils.collate.default_collate
+    )  #: Passed to NowcastingDataset
     gsp_filename: Optional[Union[str, Path]] = None
     train_validation_percentage_split: float = 20
     pv_load_azimuth_and_elevation: bool = False
+    split_method: SplitMethod = SplitMethod.Day  # which split method should be used
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
@@ -258,23 +262,9 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         logger.debug(f"Got all start times, there are {len(self.t0_datetimes)}")
 
-        # del all_datetimes
-
-        # Split t0_datetimes into train and test.
-        # TODO: Better way to split into train and val date ranges!
-        # See https://github.com/openclimatefix/nowcasting_dataset/issues/7
-
-        logger.debug(f"Taking {self.train_validation_percentage_split}% into validation")
-
-        split_number = int(100 / self.train_validation_percentage_split)
-        assert len(self.t0_datetimes) > split_number
-        split = len(self.t0_datetimes) // split_number
-        assert split > 0
-        split = len(self.t0_datetimes) - split
-
-        # set train and validation times
-        self.train_t0_datetimes = self.t0_datetimes[:split]
-        self.val_t0_datetimes = self.t0_datetimes[split:]
+        self.train_t0_datetimes, self.val_t0_datetimes, self.test_t0_datetimes = split_data(
+            datetimes=self.t0_datetimes, method=self.split_method
+        )
 
         logger.debug(
             f"Split data done, train has {len(self.train_t0_datetimes)}, "

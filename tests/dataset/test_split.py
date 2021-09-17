@@ -1,4 +1,4 @@
-from nowcasting_dataset.dataset.split.split import split
+from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 from nowcasting_dataset.dataset.split.year import TrainValidationTestYear
 import pandas as pd
 import pytest
@@ -8,7 +8,7 @@ def test_split_same():
 
     datetimes = pd.date_range("2021-01-01", "2021-01-02", freq="5T")
 
-    train, validation, test = split(datetimes=datetimes, method="same")
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.Same)
 
     assert (train == datetimes).all()
     assert (validation == datetimes).all()
@@ -19,7 +19,7 @@ def test_split_day():
 
     datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
 
-    train, validation, test = split(datetimes=datetimes, method="day")
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.Day)
 
     for d in train:
         assert d.dayofyear % 5 in [0, 1, 2]
@@ -39,7 +39,7 @@ def test_split_day_random():
 
     datetimes = pd.date_range("2021-01-01", "2021-12-31 23:59:00", freq="5T")
 
-    train, validation, test = split(datetimes=datetimes, method="day_random")
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.DayRandom)
 
     assert len(train) == int((365 * 0.6)) * 24 * 12  # 60% of days
     assert len(validation) == int((365 * 0.2)) * 24 * 12  # 20% of days
@@ -68,7 +68,7 @@ def test_split_year():
 
     datetimes = pd.date_range("2014-01-01", "2021-01-01", freq="MS")
 
-    train, validation, test = split(datetimes=datetimes, method="year")
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.Year)
 
     assert len(train) == 12 * 5  # 2015, 2016, 2017, 2018, 2019 months
     assert len(validation) == 12  # months in 2020
@@ -108,7 +108,7 @@ def test_split_week():
 
     datetimes = pd.date_range("2021-01-01", "2021-06-01", freq="30T")
 
-    train, validation, test = split(datetimes=datetimes, method="week")
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.Week)
 
     for d in train:
         assert d.isocalendar().week % 5 in [0, 1, 2]
@@ -127,7 +127,7 @@ def test_split_week_random():
 
     datetimes = pd.date_range("2021-01-04", "2022-01-02", freq="1D")
 
-    train, validation, test = split(datetimes=datetimes, method="week_random")
+    train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.WeekRandom)
 
     assert len(train) == 217  # 60% of weeks
     assert len(validation) == 70  # 20% of weeks

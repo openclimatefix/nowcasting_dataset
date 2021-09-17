@@ -42,6 +42,11 @@ sudo apt install libgl1-mesa-glx  # For optical flow
 
 A (probably older) version is also available through `pip install nowcasting-dataset`
 
+## Pre-commit
+
+A pre commit hook has been installed which makes `blacks` runs with every commit. You need to install `blacks` and
+ `pre-commit` and run `pre-commit install` in this repo.
+
 # Testing
 
 To test using the small amount of data stored in this repo: `py.test -s`

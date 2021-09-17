@@ -52,7 +52,6 @@ from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_N
 This file contains the following classes
 NetCDFDataset- torch.utils.data.Dataset: Use for loading pre-made batches
 NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
-ContiguousNowcastingDataset - NowcastingDataset
 """
 
 SAT_MEAN = xr.DataArray(
@@ -350,29 +349,6 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
         return self.data_sources[0].get_locations_for_batch(t0_datetimes)
-
-
-@dataclass
-class ContiguousNowcastingDataset(NowcastingDataset):
-    """Each batch contains contiguous timesteps for a single location."""
-
-    def __post_init__(self):
-        super().__post_init__()
-
-    def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
-        max_i = len(self.t0_datetimes) - self.batch_size
-        start_i = self.rng.integers(low=0, high=max_i)
-        end_i = start_i + self.batch_size
-        t0_datetimes = self.t0_datetimes[start_i:end_i]
-        return pd.DatetimeIndex(t0_datetimes)
-
-    def _get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[Iterable[Number], Iterable[Number]]:
-        x_locations, y_locations = super()._get_locations_for_batch(t0_datetimes)
-        x_locations = np.repeat(x_locations[0], repeats=self.batch_size)
-        y_locations = np.repeat(y_locations[0], repeats=self.batch_size)
-        return x_locations, y_locations
 
 
 def worker_init_fn(worker_id):

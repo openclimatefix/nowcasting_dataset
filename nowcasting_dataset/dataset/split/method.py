@@ -9,9 +9,10 @@ def split_method(
     train_test_validation_split: Tuple[int] = (3, 1, 1),
     method: str = "modulo",
     freq: str = "D",
+    seed: int = 1234,
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
-    Split the data by the day into train, test and validation.
+    Split the data into train, test and (optionally) validation sets.
 
     method: modulo
     If the split is (3,1,1) then, taking all the days in the dataset:
@@ -22,15 +23,16 @@ def split_method(
 
     method: random
     If the split is (3,1,1) then
-    - train data will have 60% of the days
-    - validation data will have 20% of the days
-    - test data will have have 20% of the days
+    - train data will have 60% of the data
+    - validation data will have 20% of the data
+    - test data will have have 20% of the data
 
     Args:
         datetimes: list of datetimes
         train_test_validation_split: how the split is made
         method: which method to use. Can be modulo or random
         freq: This can be D=day, W=week, M=month and Y=year. This means the data is divided up by different periods
+        seed: random seed used to permutate the data for the 'random' method
 
     Returns: train, validation and test datetimes
 
@@ -73,7 +75,8 @@ def split_method(
     elif method == "random":
 
         # randomly sort indexes
-        unique_periods_in_dataset = np.random.permutation(unique_periods_in_dataset)
+        rng = np.random.default_rng(seed)
+        unique_periods_in_dataset = rng.permutation(unique_periods_in_dataset)
 
         # find the train, validation, test indexes.
         #

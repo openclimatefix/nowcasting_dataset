@@ -30,6 +30,7 @@ def split_data(
     method: SplitMethod,
     train_test_validation_split: Tuple[int] = (3, 1, 1),
     train_test_validation_year: TrainValidationTestYear = default_train_test_validation_year,
+    seed: int = 1234,
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
     Split the date using various different methods
@@ -39,6 +40,7 @@ def split_data(
         method: the method to be used
         train_test_validation_split: ratios of how the split is made
         train_test_validation_year: pydantic class of which years below to which dataset
+        seed: random seed used to permutate the data for the 'random' method
 
     Returns: train, validation and test dataset
 
@@ -63,6 +65,7 @@ def split_data(
             datetimes=datetimes,
             train_test_validation_split=train_test_validation_split,
             method="random",
+            seed=seed,
         )
     elif method == SplitMethod.WEEK:
         train_datetimes, validation_datetimes, test_datetimes = split_method(
@@ -77,6 +80,7 @@ def split_data(
             train_test_validation_split=train_test_validation_split,
             method="random",
             freq="W",
+            seed=seed,
         )
     elif method == SplitMethod.YEAR:
         train_datetimes, validation_datetimes, test_datetimes = split_year(

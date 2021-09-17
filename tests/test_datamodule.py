@@ -56,19 +56,21 @@ def test_setup(nowcasting_datamodule: datamodule.NowcastingDataModule):
     nowcasting_datamodule.setup()
 
 
-def test_data_module():
+@pytest.mark.parametrize("config_name", ["test.yaml", "nwp_size_test.yaml"])
+def test_data_module(config_name):
 
     local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
 
     # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, "tests", "config", "test.yaml")
+    filename = os.path.join(local_path, "tests", "config", config_name)
     config = load_yaml_configuration(filename)
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
         history_minutes=30,  #: Number of timesteps of history, not including t0.
         forecast_minutes=60,  #: Number of timesteps of forecast.
-        image_size_pixels=config.process.image_size_pixels,
+        satellite_image_size_pixels=config.process.satellite_image_size_pixels,
+        nwp_image_size_pixels=config.process.nwp_image_size_pixels,
         nwp_channels=config.process.nwp_channels,
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
@@ -116,7 +118,7 @@ def test_data_module():
             n_nwp_channels=len(config.process.nwp_channels),
             nwp_image_size=0,  # TODO why is this zero
             n_sat_channels=len(config.process.sat_channels),
-            sat_image_size=config.process.image_size_pixels,
+            sat_image_size=config.process.satellite_image_size_pixels,
             seq_len_30_minutes=seq_len_30_minutes,
             seq_len_5_minutes=seq_len_5_minutes,
         )
@@ -134,7 +136,8 @@ def test_batch_to_batch_to_dataset():
         batch_size=config.process.batch_size,
         history_minutes=30,  #: Number of timesteps of history, not including t0.
         forecast_minutes=60,  #: Number of timesteps of forecast.
-        image_size_pixels=config.process.image_size_pixels,
+        satellite_image_size_pixels=config.process.satellite_image_size_pixels,
+        nwp_image_size_pixels=config.process.nwp_image_size_pixels,
         nwp_channels=config.process.nwp_channels,
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,

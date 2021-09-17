@@ -16,7 +16,7 @@ process:
   forecast_minutes: 60
   history_minutes: 30
   satellite_image_size_pixels: 64
-  nwp_image_size_pixels: 2
+  nwp_image_size_pixels: 64
   nwp_channels:
     - t
     - dswrf

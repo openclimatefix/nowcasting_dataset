@@ -1,7 +1,7 @@
+import datetime
 import pandas as pd
 from numbers import Number
-from typing import List, Tuple, Callable
-
+from typing import List, Tuple, Iterable, Callable, Union, Optional
 import nowcasting_dataset.consts
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
@@ -25,6 +25,25 @@ from nowcasting_dataset.consts import (
     GSP_X_COORDS,
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
+    SATELLITE_X_COORDS,
+    SATELLITE_Y_COORDS,
+    SATELLITE_DATA,
+    NWP_DATA,
+    NWP_X_COORDS,
+    NWP_Y_COORDS,
+    PV_SYSTEM_X_COORDS,
+    PV_SYSTEM_Y_COORDS,
+    PV_YIELD,
+    PV_AZIMUTH_ANGLE,
+    PV_ELEVATION_ANGLE,
+    PV_SYSTEM_ID,
+    PV_SYSTEM_ROW_NUMBER,
+    Y_METERS_CENTER,
+    X_METERS_CENTER,
+    SATELLITE_DATETIME_INDEX,
+    NWP_TARGET_TIME,
+    PV_DATETIME_INDEX,
+    DATETIME_FEATURE_NAMES,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
@@ -81,7 +100,37 @@ class NetCDFDataset(torch.utils.data.Dataset):
     Moved from predict_pv_yield
     """
 
-    def __init__(self, n_batches: int, src_path: str, tmp_path: str, cloud: str = "gcp"):
+    def __init__(
+        self,
+        n_batches: int,
+        src_path: str,
+        tmp_path: str,
+        cloud: str = "gcp",
+        required_keys: Union[Tuple[str], List[str]] = [
+            NWP_DATA,
+            NWP_X_COORDS,
+            NWP_Y_COORDS,
+            SATELLITE_DATA,
+            SATELLITE_X_COORDS,
+            SATELLITE_Y_COORDS,
+            PV_YIELD,
+            PV_SYSTEM_ID,
+            PV_SYSTEM_ROW_NUMBER,
+            PV_SYSTEM_X_COORDS,
+            PV_SYSTEM_Y_COORDS,
+            X_METERS_CENTER,
+            Y_METERS_CENTER,
+            GSP_ID,
+            GSP_YIELD,
+            GSP_X_COORDS,
+            GSP_Y_COORDS,
+            GSP_DATETIME_INDEX,
+        ]
+        + list(DATETIME_FEATURE_NAMES),
+        history_minutes: Optional[int] = None,
+        forecast_minutes: Optional[int] = None,
+        current_timestep_index: Optional[int] = None,
+    ):
         """
         Args:
           n_batches: Number of batches available on disk.
@@ -89,11 +138,22 @@ class NetCDFDataset(torch.utils.data.Dataset):
             Google Cloud storage.
           tmp_path: The full path to the local temporary directory
             (on a local filesystem).
+        required_keys: Tuple or list of keys required in the example for it to be considered usable
+        history_minutes: How many past minutes of data to use, if subsetting the batch
+        forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
+        current_timestep_index: Index into either sat_datetime_index or nwp_target_time indicating the current time,
+                                if None, then the entire batch is used, if not None, then subselecting is turned on, and
+                                only history_minutes + current time + forecast_minutes data is used.
+
         """
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
+        self.required_keys = list(required_keys)
+        self.history_minutes = history_minutes
+        self.forecast_minutes = forecast_minutes
+        self.current_timestep_index = current_timestep_index
 
         # setup cloud connections as None
         self.gcs = None
@@ -152,37 +212,27 @@ class NetCDFDataset(torch.utils.data.Dataset):
             sat_datetime_index=netcdf_batch.sat_time_coords,
             nwp_target_time=netcdf_batch.nwp_time_coords,
         )
-        for key in [
-            "nwp",
-            "nwp_x_coords",
-            "nwp_y_coords",
-            "sat_data",
-            "sat_x_coords",
-            "sat_y_coords",
-            "pv_yield",
-            "pv_system_id",
-            "pv_system_row_number",
-            "pv_system_x_coords",
-            "pv_system_y_coords",
-            "x_meters_center",
-            "y_meters_center",
-            GSP_ID,
-            GSP_YIELD,
-            GSP_X_COORDS,
-            GSP_Y_COORDS,
-            GSP_DATETIME_INDEX,
-        ] + list(nowcasting_dataset.consts.DATETIME_FEATURE_NAMES):
+        for key in self.required_keys:
             try:
                 batch[key] = netcdf_batch[key]
             except KeyError:
                 pass
 
-        sat_data = batch["sat_data"]
+        sat_data = batch[SATELLITE_DATA]
         if sat_data.dtype == np.int16:
             sat_data = sat_data.astype(np.float32)
             sat_data = sat_data - SAT_MEAN
             sat_data /= SAT_STD
-            batch["sat_data"] = sat_data
+            batch[SATELLITE_DATA] = sat_data
+
+        if self.current_timestep_index is not None:
+            batch = subselect_data(
+                batch=batch,
+                required_keys=self.required_keys,
+                history_minutes=self.history_minutes,
+                forecast_minutes=self.forecast_minutes,
+                current_timestep_index=self.current_timestep_index,
+            )
 
         batch = example.to_numpy(batch)
 
@@ -314,3 +364,120 @@ def worker_init_fn(worker_id):
         # The NowcastingDataset copy in this worker process.
         dataset_obj = worker_info.dataset
         dataset_obj.per_worker_init(worker_info.id)
+
+
+def select_time_period(
+    batch: example.Example,
+    keys: List[str],
+    time_of_first_example: pd.DatetimeIndex,
+    start_time: xr.DataArray,
+    end_time: xr.DataArray,
+) -> example.Example:
+    """
+    Selects a subset of data between the indicies of [start, end] for each key in keys
+
+    Args:
+        batch: Example containing the data
+        keys: Keys in batch to use
+        time_of_first_example: Datetime of the current time in the first example of the batch
+        start_time: Start time DataArray
+        end_time: End time DataArray
+
+    Returns:
+        Example containing the subselected data
+    """
+    start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
+    for key in keys:
+        batch[key] = batch[key].isel(time=slice(start_i, end_i))
+
+    return batch
+
+
+def subselect_data(
+    batch: example.Example,
+    required_keys: Union[Tuple[str], List[str]],
+    current_timestep_index: int,
+    history_minutes: int,
+    forecast_minutes: int,
+) -> example.Example:
+    """
+    Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
+
+    Args:
+        batch: Example dictionary containing at least the required_keys
+        required_keys: The required keys present in the dictionary to use
+        current_timestep_index: The index into either SATELLITE_DATETIME_INDEX or NWP_TARGET_TIME giving the current timestep
+        history_minutes: How many minutes of history to use
+        forecast_minutes: How many minutes of future data to use for forecasting
+
+    Returns:
+        Example with only data between [t0 - history_minutes, t0 + forecast_minutes] remaining
+    """
+
+    # We are subsetting the data
+    date_time_index_to_use = (
+        SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME
+    )
+    current_time = batch[date_time_index_to_use].isel(time=current_timestep_index)[0]
+    # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
+    # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
+    # The extra 30 seconds is added to ensure that the first and last timestep are always contained
+    # within the [start_time, end_time] range
+    start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
+    end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
+    used_datetime_features = [k for k in DATETIME_FEATURE_NAMES if k in required_keys]
+    if SATELLITE_DATA in required_keys:
+        batch = select_time_period(
+            batch,
+            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX] + used_datetime_features,
+            time_of_first_example=batch[SATELLITE_DATETIME_INDEX][0].data,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        _LOG.debug(
+            f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
+        )
+
+    # Now for NWP, if used
+    if NWP_DATA in required_keys:
+        batch = select_time_period(
+            batch,
+            keys=[NWP_DATA, NWP_TARGET_TIME] + used_datetime_features
+            if SATELLITE_DATA not in required_keys
+            else [NWP_DATA, NWP_TARGET_TIME],
+            time_of_first_example=batch[NWP_TARGET_TIME][0].data,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        _LOG.debug(
+            f"NWP Datetime Shape: {batch[NWP_TARGET_TIME].shape} NWP Data Shape: {batch[NWP_DATA].shape}"
+        )
+
+    # Now GSP, if used
+    if GSP_YIELD in required_keys and GSP_DATETIME_INDEX in batch:
+        batch = select_time_period(
+            batch,
+            keys=[GSP_DATETIME_INDEX, GSP_YIELD],
+            time_of_first_example=batch[GSP_DATETIME_INDEX][0].data,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        _LOG.debug(
+            f"GSP Datetime Shape: {batch[GSP_DATETIME_INDEX].shape} GSP Data Shape: {batch[GSP_YIELD].shape}"
+        )
+
+    # Now PV systems, if used
+    if PV_YIELD in required_keys and PV_DATETIME_INDEX in batch:
+        batch = select_time_period(
+            batch,
+            keys=[PV_DATETIME_INDEX, PV_YIELD, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE],
+            time_of_first_example=batch[PV_DATETIME_INDEX][0].data,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        _LOG.debug(
+            f"PV Datetime Shape: {batch[PV_DATETIME_INDEX].shape} PV Data Shape: {batch[PV_YIELD].shape}"
+            f" PV Azimuth Shape: {batch[PV_AZIMUTH_ANGLE].shape} PV Elevation Shape: {batch[PV_ELEVATION_ANGLE].shape}"
+        )
+
+    return batch

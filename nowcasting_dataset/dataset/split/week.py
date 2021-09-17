@@ -5,17 +5,17 @@ import numpy as np
 import pandas as pd
 
 
-def split_day(
+def split_week(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     train_test_validation_split: Tuple[int] = (3, 1, 1),
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
-    Split the data by the day.
+    Split the data by the week.
 
     If the split is (3,1,1) then
-    train data will have all days of the year that are module 5 remainder 0,1 or 2
-    validation data will have all days of the year that are module 5 remainder 3
-    test data will have all days of the year that are module 5 remainder 4
+    train data will have all weeks of the year that are module 5 remainder 0,1 or 2
+    validation data will have all weeks of the year that are module 5 remainder 3
+    test data will have all weeks of the year that are module 5 remainder 4
 
     Args:
         datetimes: list of datetimes
@@ -40,26 +40,26 @@ def split_day(
 
     # select the datetimes
     train = [
-        datetime for datetime in datetimes if datetime.dayofyear % total_weights in train_indexes
+        datetime for datetime in datetimes if datetime.weekofyear % total_weights in train_indexes
     ]
     validation = [
         datetime
         for datetime in datetimes
-        if datetime.dayofyear % total_weights in validation_indexes
+        if datetime.weekofyear % total_weights in validation_indexes
     ]
     test = [
-        datetime for datetime in datetimes if datetime.dayofyear % total_weights in test_indexes
+        datetime for datetime in datetimes if datetime.weekofyear % total_weights in test_indexes
     ]
 
     return train, validation, test
 
 
-def split_day_random(
+def split_week_random(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     train_test_validation_split: Tuple[int] = (3, 1, 1),
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
-    Split the data by the day. Take random days
+    Split the data by the week. Take random weeks
 
     If the split is (3,1,1) then
     train data will have 60% of the days
@@ -80,27 +80,30 @@ def split_day_random(
     if type(datetimes) is pd.DatetimeIndex:
         datetimes = datetimes.to_list()
 
-    # create list of days, that are in the dataset
-    days_in_dataset = pd.DatetimeIndex(datetimes).dayofyear.unique().to_list()
+    # get weeks of the year that are in the dataset
+    weeks_in_dataset = pd.DatetimeIndex(datetimes).isocalendar().week.unique()
+    maximum_week = max(weeks_in_dataset)
 
     # randomly sort indexes
-    random.shuffle(days_in_dataset)
+    random.shuffle(weeks_in_dataset)
 
     # make which day indexes go i.e if the split is [3,1,1] then the
-    # - train_indexes = [0,1,2 ... 220,]
-    # - validation_indexes = [221, 222, ... 293]
-    # - test_indexes = [294, ...., 366]
-    train_validation_split = int(cum_weights[0] / total_weights * 365)
-    validation_test_split = int(cum_weights[1] / total_weights * 365)
+    # - train_indexes = [0,1,2 ... 31,]
+    # - validation_indexes = [32, 33, ... 42]
+    # - test_indexes = [43, ...., 52]
+    train_validation_split = int(cum_weights[0] / total_weights * maximum_week)
+    validation_test_split = int(cum_weights[1] / total_weights * maximum_week)
 
-    train_indexes = days_in_dataset[0:train_validation_split]
-    validation_indexes = days_in_dataset[train_validation_split:validation_test_split]
-    test_indexes = days_in_dataset[validation_test_split:]
+    train_indexes = weeks_in_dataset[0:train_validation_split]
+    validation_indexes = weeks_in_dataset[train_validation_split:validation_test_split]
+    test_indexes = weeks_in_dataset[validation_test_split:]
 
     # select the datetimes
-    train = [datetime for datetime in datetimes if datetime.dayofyear in train_indexes]
+    train = [datetime for datetime in datetimes if datetime.isocalendar().week in train_indexes]
 
-    validation = [datetime for datetime in datetimes if datetime.dayofyear in validation_indexes]
-    test = [datetime for datetime in datetimes if datetime.dayofyear in test_indexes]
+    validation = [
+        datetime for datetime in datetimes if datetime.isocalendar().week in validation_indexes
+    ]
+    test = [datetime for datetime in datetimes if datetime.isocalendar().week in test_indexes]
 
     return train, validation, test

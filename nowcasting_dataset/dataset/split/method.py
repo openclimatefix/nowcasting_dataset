@@ -37,14 +37,18 @@ def split_method(
 
     """
 
-    # find all the unique dates
+    # find all the unique periods (dates, weeks, e.t.c)
     datetimes_period = pd.to_datetime(datetimes.to_period(freq).to_timestamp())
     unique_periods_in_dataset = datetimes_period.unique()
 
+    # find total weights, and cumulative weights
     total_weights = sum(train_test_validation_split)
     cum_weights = np.cumsum(train_test_validation_split)
 
     if method == "modulo":
+        # Method to split by module.
+        # I.e 1st, 2nd, 3rd periods goes to train, 4th goes to validation, 5th goes to test and repeat.
+
         # make which day indexes go i.e if the split is [3,1,1] then the
         # - train_ indexes = [0,1,2]
         # - validation_indexes = [3]
@@ -57,7 +61,7 @@ def split_method(
             i for i in range(total_weights) if (i >= cum_weights[1]) & (i < cum_weights[2])
         ]
 
-        # find all the unique dates
+        # find all the unique periods (dates, weeks, e.t.c)
         unique_periods = pd.DataFrame(unique_periods_in_dataset, columns=["period"])
         unique_periods["modulo"] = unique_periods.index % total_weights
 
@@ -72,7 +76,9 @@ def split_method(
         # randomly sort indexes
         unique_periods_in_dataset = np.random.permutation(unique_periods_in_dataset)
 
-        # make which day indexes go i.e if the split is [3,1,1] for one year then the
+        # find the train, validation, test indexes.
+        #
+        # For one year of data, for days, if the split is [3,1,1] for one year then the
         # - train_indexes - first 220 random dates
         # - validation_indexes - next 72 random dates
         # - test_indexes - next 72 random dates

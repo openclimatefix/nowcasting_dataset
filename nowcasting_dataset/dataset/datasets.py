@@ -441,11 +441,9 @@ def subselect_data(
     if NWP_DATA in required_keys:
         batch = select_time_period(
             batch,
-            keys=(
-                [NWP_DATA, NWP_TARGET_TIME] + list(DATETIME_FEATURE_NAMES)
-                if SATELLITE_DATA not in required_keys
-                else [NWP_DATA, NWP_TARGET_TIME]
-            ),
+            keys=[NWP_DATA, NWP_TARGET_TIME] + list(DATETIME_FEATURE_NAMES)
+            if SATELLITE_DATA not in required_keys
+            else [NWP_DATA, NWP_TARGET_TIME],
             time_of_first_example=batch[NWP_TARGET_TIME][0].data,
             start_time=start_time,
             end_time=end_time,

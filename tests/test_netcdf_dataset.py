@@ -24,7 +24,7 @@ import xarray as xr
 
 
 def test_subselect_date():
-    dataset = xr.open_dataset("tests/data/test.nc")
+    dataset = xr.open_dataset("tests/data/0.nc")
     x = example.Example(
         sat_data=dataset["sat_data"],
         nwp=dataset["nwp"],
@@ -42,6 +42,48 @@ def test_subselect_date():
 
     assert batch[SATELLITE_DATA].shape[1] == 5
     assert batch[NWP_DATA].shape[2] == 5
+
+
+def test_netcdf_dataset_local():
+    DATA_PATH = "tests/data"
+    TEMP_PATH = "tests/data/temp/"
+
+    train_dataset = NetCDFDataset(
+        1,
+        DATA_PATH,
+        TEMP_PATH,
+        cloud="local",
+        history_minutes=10,
+        forecast_minutes=10,
+        current_timestep_index=7,
+        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+    )
+
+    dataloader_config = dict(
+        pin_memory=True,
+        num_workers=1,
+        prefetch_factor=1,
+        worker_init_fn=worker_init_fn,
+        persistent_workers=True,
+        # Disable automatic batching because dataset
+        # returns complete batches.
+        batch_size=None,
+    )
+
+    _ = torch.utils.data.DataLoader(train_dataset, **dataloader_config)
+
+    train_dataset.per_worker_init(1)
+    t = iter(train_dataset)
+    data = next(t)
+
+    sat_data = data[SATELLITE_DATA]
+
+    # Sat is in 5min increments, so should have 2 history + current + 2 future
+    assert sat_data.shape[1] == 5
+    assert data[NWP_DATA].shape[2] == 5
+
+    # Make sure file isn't deleted!
+    assert os.path.exists("tests/data/0.nc")
 
 
 @pytest.mark.skip("CD does not have access to GCS")

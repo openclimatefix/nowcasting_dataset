@@ -64,11 +64,11 @@ def split_method(
         unique_periods = pd.DataFrame(unique_periods_in_dataset, columns=["period"])
         unique_periods["modulo"] = unique_periods.index % total_weights
 
-        train_dates = unique_periods[unique_periods["modulo"].isin(train_indexes)]["period"]
-        validation_dates = unique_periods[unique_periods["modulo"].isin(validation_indexes)][
+        train_periods = unique_periods[unique_periods["modulo"].isin(train_indexes)]["period"]
+        validation_periods = unique_periods[unique_periods["modulo"].isin(validation_indexes)][
             "period"
         ]
-        test_dates = unique_periods[unique_periods["modulo"].isin(test_indexes)]["period"]
+        test_periods = unique_periods[unique_periods["modulo"].isin(test_indexes)]["period"]
 
     elif method == "random":
 
@@ -86,16 +86,16 @@ def split_method(
         )
         validation_test_split = int(cum_weights[1] / total_weights * len(unique_periods_in_dataset))
 
-        train_dates = pd.to_datetime(unique_periods_in_dataset[0:train_validation_split])
-        validation_dates = pd.to_datetime(
+        train_periods = pd.to_datetime(unique_periods_in_dataset[0:train_validation_split])
+        validation_periods = pd.to_datetime(
             unique_periods_in_dataset[train_validation_split:validation_test_split]
         )
-        test_dates = pd.to_datetime(unique_periods_in_dataset[validation_test_split:])
+        test_periods = pd.to_datetime(unique_periods_in_dataset[validation_test_split:])
     else:
         raise Exception(f'method ({method}) must be in ["random", "modulo"]')
 
-    train = datetimes[datetimes_period.isin(train_dates)]
-    validation = datetimes[datetimes_period.isin(validation_dates)]
-    test = datetimes[datetimes_period.isin(test_dates)]
+    train = datetimes[datetimes_period.isin(train_periods)]
+    validation = datetimes[datetimes_period.isin(validation_periods)]
+    test = datetimes[datetimes_period.isin(test_periods)]
 
     return train, validation, test

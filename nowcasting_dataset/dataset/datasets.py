@@ -372,7 +372,6 @@ def select_time_period(
     time_of_first_example: pd.DatetimeIndex,
     start_time: xr.DataArray,
     end_time: xr.DataArray,
-    subselect_datetime: bool = False,
 ) -> example.Example:
     """
     Selects a subset of data between the indicies of [start, end] for each key in keys
@@ -383,7 +382,6 @@ def select_time_period(
         time_of_first_example: Datetime of the current time in the first example of the batch
         start_time: Start time DataArray
         end_time: End time DataArray
-        subselect_datetime: Whether to use the same [start,end] to subselect Datetime features
 
     Returns:
         Example containing the subselected data
@@ -391,10 +389,6 @@ def select_time_period(
     start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
     for key in keys:
         batch[key] = batch[key].isel(time=slice(start_i, end_i))
-
-    if subselect_datetime:
-        for k in list(DATETIME_FEATURE_NAMES):
-            batch[k] = batch[k].isel(time=slice(start_i, end_i))
 
     return batch
 
@@ -434,11 +428,10 @@ def subselect_data(
     if SATELLITE_DATA in required_keys:
         batch = select_time_period(
             batch,
-            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX] + list(DATETIME_FEATURE_NAMES),
             time_of_first_example=batch[SATELLITE_DATETIME_INDEX][0].data,
             start_time=start_time,
             end_time=end_time,
-            subselect_datetime=True,
         )
         _LOG.debug(
             f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
@@ -446,9 +439,15 @@ def subselect_data(
 
     # Now for NWP, if used
     if NWP_DATA in required_keys:
+        nwp_keys = [NWP_DATA, NWP_TARGET_TIME]
+        nwp_keys = (
+            nwp_keys + list(DATETIME_FEATURE_NAMES)
+            if SATELLITE_DATA not in required_keys
+            else nwp_keys
+        )
         batch = select_time_period(
             batch,
-            keys=[NWP_DATA, NWP_TARGET_TIME],
+            keys=nwp_keys,
             time_of_first_example=batch[NWP_TARGET_TIME][0].data,
             start_time=start_time,
             end_time=end_time,

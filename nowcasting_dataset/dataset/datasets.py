@@ -394,7 +394,7 @@ def subselect_data(
     current_time = batch[date_time_index_to_use].isel(time=current_timestep_index)[0]
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
-    # The extra 30 seconds is added to ensure that there to ensure that the first and last timestep are always contained
+    # The extra 30 seconds is added to ensure that the first and last timestep are always contained
     # within the [start_time, end_time] range
     start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
     end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")

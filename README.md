@@ -42,6 +42,11 @@ sudo apt install libgl1-mesa-glx  # For optical flow
 
 A (probably older) version is also available through `pip install nowcasting-dataset`
 
+## pip
+You can install a local version with `pip install -e .`.
+If you want to also install [PVLive](https://github.com/SheffieldSolar/PV_Live-API) then use `pip install git+https://github.com/SheffieldSolar/PV_Live-API
+`
+
 ## Pre-commit
 
 A pre commit hook has been installed which makes `black` run with every commit. You need to install

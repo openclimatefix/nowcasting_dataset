@@ -44,7 +44,7 @@ A (probably older) version is also available through `pip install nowcasting-dat
 
 ## Pre-commit
 
-A pre commit hook has been installed which makes `blacks` runs with every commit. You need to install `blacks` and
+A pre commit hook has been installed which makes `black` runs with every commit. You need to install `black` and
  `pre-commit` and run `pre-commit install` in this repo.
 
 # Testing

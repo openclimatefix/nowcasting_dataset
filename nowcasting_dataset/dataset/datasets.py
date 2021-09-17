@@ -407,7 +407,7 @@ def subselect_data(
     forecast_minutes: int,
 ) -> example.Example:
     """
-    Subselects the data temporally. This function selects all data within the range [history_minutes, forecast_minutes]
+    Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
 
     Args:
         batch: Example dictionary containing at least the required_keys
@@ -417,7 +417,7 @@ def subselect_data(
         forecast_minutes: How many minutes of future data to use for forecasting
 
     Returns:
-        Example with only data between [history_minutes, forecast_minutes] remaining
+        Example with only data between [t0 - history_minutes, t0 + forecast_minutes] remaining
     """
 
     # We are subsetting the data
@@ -427,7 +427,7 @@ def subselect_data(
     current_time = batch[date_time_index_to_use].isel(time=current_timestep_index)[0]
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
-    # The extra 30 seconds is added to ensure that there to ensure that the first and last timestep are always contained
+    # The extra 30 seconds is added to ensure that the first and last timestep are always contained
     # within the [start_time, end_time] range
     start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
     end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")

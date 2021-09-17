@@ -293,6 +293,9 @@ class NowcastingDataModule(pl.LightningDataModule):
     def val_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(self.val_dataset, **self._common_dataloader_params())
 
+    def test_dataloader(self) -> torch.utils.data.DataLoader:
+        return torch.utils.data.DataLoader(self.test_dataset, **self._common_dataloader_params())
+
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
         if self.contiguous_dataset is None:
             pv_data_source = deepcopy(self.pv_data_source)

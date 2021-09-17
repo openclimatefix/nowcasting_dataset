@@ -50,17 +50,23 @@ def split_data(
 
     logger.info(f"Splitting data with method {method}")
 
+    datetimes = pd.DatetimeIndex(datetimes)
+
     if method == SplitMethod.Same:
         train_datetimes = datetimes
         validation_datetimes = datetimes
         test_datetimes = datetimes
     elif method == SplitMethod.Day:
         train_datetimes, validation_datetimes, test_datetimes = split_day(
-            datetimes=datetimes, train_test_validation_split=train_test_validation_split
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            method="modulo",
         )
     elif method == SplitMethod.DayRandom:
-        train_datetimes, validation_datetimes, test_datetimes = split_day_random(
-            datetimes=datetimes, train_test_validation_split=train_test_validation_split
+        train_datetimes, validation_datetimes, test_datetimes = split_day(
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            method="random",
         )
     elif method == SplitMethod.Week:
         train_datetimes, validation_datetimes, test_datetimes = split_week(

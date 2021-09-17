@@ -1,3 +1,4 @@
+import numpy as np
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 from nowcasting_dataset.dataset.split.year import TrainValidationTestYear
 import pandas as pd
@@ -21,12 +22,16 @@ def test_split_day():
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.Day)
 
-    for d in train:
-        assert d.dayofyear % 5 in [0, 1, 2]
-    for d in validation:
-        assert d.dayofyear % 5 in [3]
-    for d in test:
-        assert d.dayofyear % 5 in [4]
+    unique_dates = pd.Series(np.unique(datetimes.date))
+
+    train_dates = unique_dates[unique_dates.isin(np.unique(train.date))]
+    assert (np.unique(train_dates.index % 5) == [0, 1, 2]).all()
+
+    validation_dates = unique_dates[unique_dates.isin(np.unique(validation.date))]
+    assert (np.unique(validation_dates.index % 5) == [3]).all()
+
+    test_dates = unique_dates[unique_dates.isin(np.unique(test.date))]
+    assert (np.unique(test_dates.index % 5) == [4]).all()
 
     # check all first 288 datetimes are in the same day
     day = train[0].dayofyear

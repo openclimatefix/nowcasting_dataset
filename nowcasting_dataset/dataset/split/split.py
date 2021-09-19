@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class SplitMethod(Enum):
     DAY = "day"
     DAY_RANDOM = "day_random"
+    DAY_SPECIFIC = "day_specific"
     WEEK = "week"
     WEEK_RANDOM = "week_random"
     YEAR_SPECIFIC = "year_specific"
@@ -67,6 +68,13 @@ def split_data(
             train_test_validation_split=train_test_validation_split,
             method="random",
             seed=seed,
+        )
+    elif method == SplitMethod.DAY_SPECIFIC:
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            train_test_validation_specific=train_test_validation_specific,
+            method="specific",
         )
     elif method == SplitMethod.WEEK:
         train_datetimes, validation_datetimes, test_datetimes = split_method(

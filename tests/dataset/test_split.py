@@ -130,6 +130,39 @@ def test_split_year():
         assert t.year == year
 
 
+def test_split_day_specific():
+
+    datetimes = pd.date_range("2021-01-01", "2021-01-10", freq="D")
+
+    train_test_validation_specific = TrainValidationTestSpecific(
+        train=["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04"],
+        validation=["2021-01-05", "2021-01-06", "2021-01-07"],
+        test=["2021-01-08", "2021-01-09", "2021-01-10"],
+    )
+
+    train, validation, test = split_data(
+        datetimes=datetimes,
+        method=SplitMethod.DAY_SPECIFIC,
+        train_test_validation_specific=train_test_validation_specific,
+    )
+
+    assert len(train) == 4
+    assert len(validation) == 3
+    assert len(test) == 3
+
+    train_df = pd.DatetimeIndex(train)
+    validation_df = pd.DatetimeIndex(validation)
+    test_df = pd.DatetimeIndex(test)
+
+    train_validation_overlap = [t for t in train_df if t in validation_df]
+    train_test_overlap = [t for t in train_df if t in test_df]
+    validation_test_overlap = [t for t in validation_df if t in test_df]
+
+    assert len(train_validation_overlap) == 0
+    assert len(train_test_overlap) == 0
+    assert len(validation_test_overlap) == 0
+
+
 def test_split_year_error():
 
     with pytest.raises(Exception):

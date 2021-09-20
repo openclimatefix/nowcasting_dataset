@@ -10,6 +10,7 @@ from nowcasting_dataset.consts import (
     GSP_YIELD,
     GSP_X_COORDS,
     GSP_Y_COORDS,
+    GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
 )
 
@@ -101,8 +102,11 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
             # GSP
             n_gsp_systems = len(example[GSP_ID])
-            one_dateset["gsp_yield"] = xr.DataArray(
+            one_dateset[GSP_YIELD] = xr.DataArray(
                 example[GSP_YIELD], dims=["time_30", "gsp_system"]
+            )
+            one_dateset[GSP_DATETIME_INDEX] = xr.DataArray(
+                example[GSP_DATETIME_INDEX], dims=["time_30"]
             )
 
             # This will expand all dataarrays to have an 'example' dim.

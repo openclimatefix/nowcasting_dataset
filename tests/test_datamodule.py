@@ -15,6 +15,7 @@ from nowcasting_dataset.dataset.example import validate_example
 from nowcasting_dataset.dataset.batch import batch_to_dataset
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.dataset.split.split import SplitMethod
+from nowcasting_dataset.consts import GSP_DATETIME_INDEX
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -171,3 +172,4 @@ def test_batch_to_batch_to_dataset():
 
     batch_xr = batch_to_dataset(batch=batch)
     assert type(batch_xr) == xr.Dataset
+    assert GSP_DATETIME_INDEX in batch_xr

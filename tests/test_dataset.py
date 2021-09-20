@@ -64,7 +64,7 @@ def test_get_batch(dataset: NowcastingDataset):
     )
 
 
-def test_get_batch_sat_gsp(dataset_gsp: NowcastingDataset):
+def test_get_batch_gsp(dataset_gsp: NowcastingDataset):
     dataset_gsp.per_worker_init(worker_id=1)
     example = dataset_gsp._get_batch()
     assert isinstance(example, dict)

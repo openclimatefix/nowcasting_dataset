@@ -12,6 +12,7 @@ from nowcasting_dataset.consts import (
     NWP_X_COORDS,
     PV_YIELD,
     GSP_YIELD,
+    GSP_DATETIME_INDEX,
 )
 from nowcasting_dataset.dataset import example
 import plotly.graph_objects as go
@@ -42,6 +43,7 @@ def test_subselect_date():
 
     assert batch[SATELLITE_DATA].shape[1] == 5
     assert batch[NWP_DATA].shape[2] == 5
+    assert GSP_DATETIME_INDEX in batch.keys()
 
 
 def test_netcdf_dataset_local():

@@ -1,5 +1,6 @@
 import numpy as np
 from nowcasting_dataset.dataset.datasets import NowcastingDataset
+from nowcasting_dataset.consts import GSP_DATETIME_INDEX
 import nowcasting_dataset.time as nd_time
 import pytest
 
@@ -13,6 +14,26 @@ def dataset(sat_data_source):
         n_batches_per_epoch_per_worker=64,
         n_samples_per_timestep=2,
         data_sources=[sat_data_source],
+        t0_datetimes=t0_datetimes,
+    )
+
+
+@pytest.fixture
+def dataset_gsp(gsp_data_source):
+    all_datetimes = gsp_data_source.datetime_index()
+    t0_datetimes = nd_time.get_t0_datetimes(
+        datetimes=all_datetimes,
+        total_seq_len=2,
+        history_len=0,
+        minute_delta=30,
+        max_gap=nd_time.THIRTY_MINUTES,
+    )
+
+    return NowcastingDataset(
+        batch_size=8,
+        n_batches_per_epoch_per_worker=64,
+        n_samples_per_timestep=2,
+        data_sources=[gsp_data_source],
         t0_datetimes=t0_datetimes,
     )
 
@@ -41,3 +62,11 @@ def test_get_batch(dataset: NowcastingDataset):
         pytest.IMAGE_SIZE_PIXELS,
         1,
     )
+
+
+def test_get_batch_sat_gsp(dataset_gsp: NowcastingDataset):
+    dataset_gsp.per_worker_init(worker_id=1)
+    example = dataset_gsp._get_batch()
+    assert isinstance(example, dict)
+
+    assert GSP_DATETIME_INDEX in example.keys()

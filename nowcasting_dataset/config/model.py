@@ -39,6 +39,7 @@ class OutputData(BaseModel):
 
 
 class Process(BaseModel):
+    seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
     batch_size: int = Field(32, description="the batch size of the data")
     forecast_minutes: int = Field(60, description="how many minutes to forecast in the future")
     history_minutes: int = Field(30, description="how many historic minutes are used")

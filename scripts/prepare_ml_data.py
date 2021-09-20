@@ -30,6 +30,7 @@ from nowcasting_dataset.utils import get_maximum_batch_id_from_gcs
 from pathlib import Path
 import torch
 import os
+import numpy as np
 
 import neptune.new as neptune
 from neptune.new.integrations.python_logger import NeptuneHandler
@@ -74,6 +75,8 @@ CLOUD = "gcp"  # either gcp or aws
 # Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
 # https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999/2
 torch.multiprocessing.set_sharing_strategy("file_system")
+
+np.random.seed(config.process.seed)
 
 
 def get_data_module():

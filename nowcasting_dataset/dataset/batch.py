@@ -106,7 +106,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 example[GSP_YIELD], dims=["time_30", "gsp_system"]
             )
             one_dateset[GSP_DATETIME_INDEX] = xr.DataArray(
-                example[GSP_DATETIME_INDEX], dims=["time_30"]
+                example[GSP_DATETIME_INDEX],
+                dims=["time_30"],
+                coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
             )
 
             # This will expand all dataarrays to have an 'example' dim.

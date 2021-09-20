@@ -173,3 +173,4 @@ def test_batch_to_batch_to_dataset():
     batch_xr = batch_to_dataset(batch=batch)
     assert type(batch_xr) == xr.Dataset
     assert GSP_DATETIME_INDEX in batch_xr
+    assert pd.DataFrame(batch_xr[GSP_DATETIME_INDEX]).isnull().sum().sum() == 0

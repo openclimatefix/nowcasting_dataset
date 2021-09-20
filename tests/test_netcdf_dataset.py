@@ -89,7 +89,7 @@ def test_netcdf_dataset_local():
 
 @pytest.mark.skip("CD does not have access to GCS")
 def test_get_dataloaders_gcp():
-    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
+    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
 
     train_dataset = NetCDFDataset(

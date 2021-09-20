@@ -92,7 +92,7 @@ def test_data_module(config_name):
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
         pv_load_azimuth_and_elevation=True,
-        split_method=SplitMethod.Same,
+        split_method=SplitMethod.SAME,
     )
 
     _LOG.info("prepare_data()")
@@ -159,7 +159,7 @@ def test_batch_to_batch_to_dataset():
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
         pv_load_azimuth_and_elevation=False,
-        split_method=SplitMethod.Same,
+        split_method=SplitMethod.SAME,
     )
 
     _LOG.info("prepare_data()")

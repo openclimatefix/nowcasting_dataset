@@ -55,3 +55,19 @@ NWP_X_COORDS = "nwp_x_coords"
 NWP_Y_COORDS = "nwp_y_coords"
 X_METERS_CENTER = "x_meters_center"
 Y_METERS_CENTER = "y_meters_center"
+
+NWP_VARIABLE_NAMES = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
+SAT_VARIABLE_NAMES = (
+    "HRV",
+    "IR_016",
+    "IR_039",
+    "IR_087",
+    "IR_097",
+    "IR_108",
+    "IR_120",
+    "IR_134",
+    "VIS006",
+    "VIS008",
+    "WV_062",
+    "WV_073",
+)

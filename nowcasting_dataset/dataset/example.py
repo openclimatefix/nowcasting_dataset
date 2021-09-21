@@ -1,6 +1,7 @@
 from typing import TypedDict
 import pandas as pd
 from nowcasting_dataset.consts import *
+from nowcasting_dataset.config.model import Configuration
 import numpy as np
 from numbers import Number
 
@@ -100,6 +101,21 @@ def to_numpy(example: Example) -> Example:
     return example
 
 
+def validate_example_from_configuration(data: Example, configuration: Configuration):
+
+    validate_example(
+        data=data,
+        seq_len_30_minutes=configuration.process.seq_len_30_minutes(),
+        seq_len_5_minutes=configuration.process.seq_len_5_minutes(),
+        sat_image_size=configuration.process.satellite_image_size_pixels,
+        n_sat_channels=len(configuration.process.sat_channels),
+        nwp_image_size=configuration.process.nwp_image_size_pixels,
+        n_nwp_channels=len(configuration.process.nwp_channels),
+        n_pv_systems_per_example=128,
+        n_gsp_per_example=32,
+    )
+
+
 def validate_example(
     data: Example,
     seq_len_30_minutes: int,
@@ -124,13 +140,18 @@ def validate_example(
         n_pv_systems_per_example: the number pv systems with nan padding
         n_gsp_per_example: the number gsp systems with nan padding
     """
-
-    assert len(data[GSP_ID]) == n_gsp_per_example
+    print(data)
+    assert (
+        len(data[GSP_ID]) == n_gsp_per_example
+    ), f"gsp_is is len {len(data[GSP_ID])}, but should be {n_gsp_per_example}"
     n_gsp_system_id = len(data[GSP_ID])
-    assert data[GSP_YIELD].shape == (seq_len_30_minutes, n_gsp_system_id)
-    assert len(data[GSP_X_COORDS]) == n_gsp_system_id
-    assert len(data[GSP_Y_COORDS]) == n_gsp_system_id
-    assert len(data[GSP_DATETIME_INDEX]) == seq_len_30_minutes
+    assert data[GSP_YIELD].shape[-2:] == (
+        seq_len_30_minutes,
+        n_gsp_system_id,
+    ), f"gsp_yield is size {data[GSP_YIELD].shape}, but should be {(seq_len_30_minutes, n_gsp_system_id)}"
+    assert data[GSP_X_COORDS].shape[-1] == n_gsp_system_id
+    assert data[GSP_Y_COORDS].shape[-1] == n_gsp_system_id
+    assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes
 
     assert data[OBJECT_AT_CENTER] == "gsp"
     assert type(data["x_meters_center"]) == np.float64

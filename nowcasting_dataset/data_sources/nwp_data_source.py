@@ -12,7 +12,7 @@ from concurrent import futures
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
-NWP_VARIABLE_NAMES = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 
 # Means computed with
 # nwp_ds = NWPDataSource(...)

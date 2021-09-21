@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
-from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 
 
 class General(BaseModel):
@@ -53,6 +53,12 @@ class Process(BaseModel):
 
     precision: int = Field(16, description="what precision to use")
     val_check_interval: int = Field(1000, description="TODO")
+
+    def seq_len_30_minutes(self):
+        return (self.history_minutes + self.forecast_minutes) / 30 + 1
+
+    def seq_len_5_minutes(self):
+        return (self.history_minutes + self.forecast_minutes) / 5 + 1
 
 
 class Configuration(BaseModel):

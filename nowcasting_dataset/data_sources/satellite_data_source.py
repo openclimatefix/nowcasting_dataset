@@ -13,20 +13,8 @@ from concurrent import futures
 _LOG = logging.getLogger("nowcasting_dataset")
 
 
-SAT_VARIABLE_NAMES = (
-    "HRV",
-    "IR_016",
-    "IR_039",
-    "IR_087",
-    "IR_097",
-    "IR_108",
-    "IR_120",
-    "IR_134",
-    "VIS006",
-    "VIS008",
-    "WV_062",
-    "WV_073",
-)
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
+
 # Means computed with
 # nwp_ds = NWPDataSource(...)
 # nwp_ds.open()

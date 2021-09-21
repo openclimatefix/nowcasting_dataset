@@ -1,5 +1,6 @@
 import datetime
 import pandas as pd
+import logging
 from numbers import Number
 from typing import List, Tuple, Iterable, Callable, Union, Optional
 import nowcasting_dataset.consts
@@ -18,6 +19,8 @@ import torch
 
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
+
+from nowcasting_dataset.config.model import Configuration
 
 from nowcasting_dataset.consts import (
     GSP_ID,
@@ -46,6 +49,9 @@ from nowcasting_dataset.consts import (
     DATETIME_FEATURE_NAMES,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 """
@@ -130,6 +136,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
         current_timestep_index: Optional[int] = None,
+        configuration: Optional[Configuration] = None,
     ):
         """
         Args:
@@ -154,6 +161,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
         self.current_timestep_index = current_timestep_index
+        self.configuration = configuration
 
         # setup cloud connections as None
         self.gcs = None
@@ -184,6 +192,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             NamedDict where each value is a numpy array. The size of this
             array's first dimension is the batch size.
         """
+        logger.debug(f"Getting batch {batch_idx}")
         if not 0 <= batch_idx < self.n_batches:
             raise IndexError(
                 "batch_idx must be in the range" f" [0, {self.n_batches}), not {batch_idx}!"
@@ -221,12 +230,13 @@ class NetCDFDataset(torch.utils.data.Dataset):
             except KeyError:
                 pass
 
-        sat_data = batch[SATELLITE_DATA]
-        if sat_data.dtype == np.int16:
-            sat_data = sat_data.astype(np.float32)
-            sat_data = sat_data - SAT_MEAN
-            sat_data /= SAT_STD
-            batch[SATELLITE_DATA] = sat_data
+        if SATELLITE_DATA in self.required_keys:
+            sat_data = batch[SATELLITE_DATA]
+            if sat_data.dtype == np.int16:
+                sat_data = sat_data.astype(np.float32)
+                sat_data = sat_data - SAT_MEAN
+                sat_data /= SAT_STD
+                batch[SATELLITE_DATA] = sat_data
 
         if self.current_timestep_index is not None:
             batch = subselect_data(
@@ -240,6 +250,26 @@ class NetCDFDataset(torch.utils.data.Dataset):
         batch = example.to_numpy(batch)
 
         return batch
+
+    def validate(self):
+
+        logger.debug("Validating dataset")
+
+        day_datetimes = None
+        for batch in iter(self):
+
+            example.validate_example_from_configuration(batch, configuration=self.configuration)
+
+            all_datetimes_from_batch = pd.to_datetime(
+                batch[GSP_DATETIME_INDEX].reshape(-1), unit="s"
+            )
+            all_day_from_batch_unique = pd.DatetimeIndex(all_datetimes_from_batch.date).unique()
+            if day_datetimes is None:
+                day_datetimes = all_day_from_batch_unique
+            else:
+                day_datetimes = day_datetimes.join(all_day_from_batch_unique)
+
+        self.day_datetimes = day_datetimes
 
 
 @dataclass

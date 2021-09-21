@@ -96,14 +96,14 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 individual_datasets.append(ds)
 
             # PV
-            one_dateset = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
-            one_dateset = one_dateset.to_dataset(name="pv_yield")
+            one_dataset = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
+            one_dataset = one_dataset.to_dataset(name="pv_yield")
             n_pv_systems = len(example["pv_system_id"])
 
             # GSP
             n_gsp = len(example[GSP_ID])
-            one_dateset[GSP_YIELD] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp"])
-            one_dateset[GSP_DATETIME_INDEX] = xr.DataArray(
+            one_dataset[GSP_YIELD] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp"])
+            one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
                 example[GSP_DATETIME_INDEX],
                 dims=["time_30"],
                 coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
@@ -113,7 +113,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             # 0D
             for name in ["x_meters_center", "y_meters_center"]:
                 try:
-                    one_dateset[name] = xr.DataArray(
+                    one_dataset[name] = xr.DataArray(
                         [example[name]], coords=example_dim, dims=["example"]
                     )
                 except Exception as e:
@@ -132,7 +132,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 "pv_system_x_coords",
                 "pv_system_y_coords",
             ]:
-                one_dateset[name] = xr.DataArray(
+                one_dataset[name] = xr.DataArray(
                     example[name][None, :],
                     coords={
                         **example_dim,
@@ -144,7 +144,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             # GSP
             for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
                 try:
-                    one_dateset[name] = xr.DataArray(
+                    one_dataset[name] = xr.DataArray(
                         example[name][None, :],
                         coords={
                             **example_dim,
@@ -157,7 +157,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                     _LOG.error(e)
                     raise e
 
-            individual_datasets.append(one_dateset)
+            individual_datasets.append(one_dataset)
 
             # Merge
             merged_ds = xr.merge(individual_datasets)

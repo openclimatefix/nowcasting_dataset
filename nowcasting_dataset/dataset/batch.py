@@ -101,10 +101,8 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             n_pv_systems = len(example["pv_system_id"])
 
             # GSP
-            n_gsp_systems = len(example[GSP_ID])
-            one_dateset[GSP_YIELD] = xr.DataArray(
-                example[GSP_YIELD], dims=["time_30", "gsp_system"]
-            )
+            n_gsp = len(example[GSP_ID])
+            one_dateset[GSP_YIELD] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp"])
             one_dateset[GSP_DATETIME_INDEX] = xr.DataArray(
                 example[GSP_DATETIME_INDEX],
                 dims=["time_30"],
@@ -150,9 +148,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                         example[name][None, :],
                         coords={
                             **example_dim,
-                            **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)},
+                            **{"gsp": np.arange(n_gsp, dtype=np.int32)},
                         },
-                        dims=["example", "gsp_system"],
+                        dims=["example", "gsp"],
                     )
                 except Exception as e:
                     _LOG.debug(f"Could not add {name} to dataset. {example[name].shape}")

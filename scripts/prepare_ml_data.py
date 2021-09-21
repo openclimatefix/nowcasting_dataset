@@ -122,6 +122,7 @@ def get_data_module():
         skip_n_train_batches=maximum_batch_id_train // num_workers,
         skip_n_validation_batches=maximum_batch_id_validation // num_workers,
         skip_n_test_batches=maximum_batch_id_test // num_workers,
+        seed=config.process.seed,
     )
     _LOG.info("prepare_data()")
     data_module.prepare_data()

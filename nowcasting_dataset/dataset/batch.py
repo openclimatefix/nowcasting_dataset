@@ -10,6 +10,7 @@ from nowcasting_dataset.consts import (
     GSP_YIELD,
     GSP_X_COORDS,
     GSP_Y_COORDS,
+    GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
 )
 
@@ -100,9 +101,12 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             n_pv_systems = len(example["pv_system_id"])
 
             # GSP
-            n_gsp_systems = len(example[GSP_ID])
-            one_dateset["gsp_yield"] = xr.DataArray(
-                example[GSP_YIELD], dims=["time_30", "gsp_system"]
+            n_gsp = len(example[GSP_ID])
+            one_dateset[GSP_YIELD] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp"])
+            one_dateset[GSP_DATETIME_INDEX] = xr.DataArray(
+                example[GSP_DATETIME_INDEX],
+                dims=["time_30"],
+                coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
             )
 
             # This will expand all dataarrays to have an 'example' dim.
@@ -144,9 +148,9 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                         example[name][None, :],
                         coords={
                             **example_dim,
-                            **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)},
+                            **{"gsp": np.arange(n_gsp, dtype=np.int32)},
                         },
-                        dims=["example", "gsp_system"],
+                        dims=["example", "gsp"],
                     )
                 except Exception as e:
                     _LOG.debug(f"Could not add {name} to dataset. {example[name].shape}")

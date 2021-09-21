@@ -12,6 +12,7 @@ from nowcasting_dataset.consts import (
     NWP_X_COORDS,
     PV_YIELD,
     GSP_YIELD,
+    GSP_DATETIME_INDEX,
 )
 from nowcasting_dataset.dataset import example
 import plotly.graph_objects as go
@@ -88,7 +89,7 @@ def test_netcdf_dataset_local():
 
 @pytest.mark.skip("CD does not have access to GCS")
 def test_get_dataloaders_gcp():
-    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
+    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
 
     train_dataset = NetCDFDataset(
@@ -159,7 +160,7 @@ def test_get_dataloaders_aws():
 @pytest.mark.skip("CD does not have access to GCP")
 def test_required_keys_gcp():
 
-    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
+    DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
     if os.path.isdir(os.path.join(TEMP_PATH, "train")):
         os.removedirs(os.path.join(TEMP_PATH, "train"))
@@ -177,6 +178,7 @@ def test_required_keys_gcp():
             SATELLITE_DATA,
             SATELLITE_X_COORDS,
             SATELLITE_Y_COORDS,
+            GSP_DATETIME_INDEX,
         ],
     )
 
@@ -199,6 +201,7 @@ def test_required_keys_gcp():
 
     assert SATELLITE_DATA in data.keys()
     assert PV_YIELD not in data.keys()
+    assert GSP_DATETIME_INDEX in data.keys()
 
 
 @pytest.mark.skip("CD does not have access to GCP")

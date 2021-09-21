@@ -3,6 +3,7 @@ import pytest
 from pathlib import Path
 from nowcasting_dataset import consts
 from nowcasting_dataset.data_sources import SatelliteDataSource
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 
 
 pytest.IMAGE_SIZE_PIXELS = 128
@@ -41,5 +42,17 @@ def sat_data_source(sat_filename: Path):
         forecast_minutes=5,
         channels=("HRV",),
         n_timesteps_per_batch=2,
+        convert_to_numpy=True,
+    )
+
+
+@pytest.fixture
+def gsp_data_source():
+    return GSPDataSource(
+        image_size_pixels=16,
+        meters_per_pixel=2000,
+        filename=Path(__file__).parent.absolute() / "tests" / "data" / "gsp" / "test.zarr",
+        history_minutes=0,
+        forecast_minutes=30,
         convert_to_numpy=True,
     )

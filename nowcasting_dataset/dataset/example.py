@@ -68,7 +68,7 @@ class Example(TypedDict):
     day_of_year_cos: Array
 
     #: GSP PV yield from all GSP in the region of interest (ROI).
-    # : Includes central GSP, which will always be the first entry.
+    # : Includes central GSP, which will always be the first entry. This will be a numpy array of values.
     gsp_yield: Array  #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
     # GSP identification.
     gsp_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example

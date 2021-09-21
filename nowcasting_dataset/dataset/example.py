@@ -113,6 +113,7 @@ def validate_example_from_configuration(data: Example, configuration: Configurat
         n_nwp_channels=len(configuration.process.nwp_channels),
         n_pv_systems_per_example=128,
         n_gsp_per_example=32,
+        batch=True,
     )
 
 
@@ -126,6 +127,7 @@ def validate_example(
     n_nwp_channels: int = 1,
     n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE,
+    batch: bool = False,
 ):
     """
     Validate the size and shape of the data
@@ -139,8 +141,9 @@ def validate_example(
         n_nwp_channels: the number of nwp channels
         n_pv_systems_per_example: the number pv systems with nan padding
         n_gsp_per_example: the number gsp systems with nan padding
+        batch: if this example class is a batch or not
     """
-    print(data)
+
     assert (
         len(data[GSP_ID]) == n_gsp_per_example
     ), f"gsp_is is len {len(data[GSP_ID])}, but should be {n_gsp_per_example}"
@@ -153,38 +156,59 @@ def validate_example(
     assert data[GSP_Y_COORDS].shape[-1] == n_gsp_system_id
     assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes
 
-    assert data[OBJECT_AT_CENTER] == "gsp"
-    assert type(data["x_meters_center"]) == np.float64
-    assert type(data["y_meters_center"]) == np.float64
+    if OBJECT_AT_CENTER in data.keys():
+        assert data[OBJECT_AT_CENTER] == "gsp"
 
-    n_pv_systems = len(data[PV_SYSTEM_ID][~np.isnan(data[PV_SYSTEM_ID])])
+    if not batch:
+        # add an extract dimension so that its similar to batch data
+        data["x_meters_center"] = np.expand_dims(data["x_meters_center"], axis=0)
+        data["y_meters_center"] = np.expand_dims(data["y_meters_center"], axis=0)
 
-    assert len(data[PV_SYSTEM_ID]) == n_pv_systems_per_example
-    assert data[PV_YIELD].shape == (seq_len_5_minutes, n_pv_systems_per_example)
-    assert len(data[PV_SYSTEM_X_COORDS]) == n_pv_systems_per_example
-    assert len(data[PV_SYSTEM_Y_COORDS]) == n_pv_systems_per_example
-    assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
-    assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
+    for d in data["x_meters_center"]:
+        assert type(d) == np.float64, f"x_meters_center should be np.float64 but is {type(d)}"
+    for d in data["y_meters_center"]:
+        assert type(d) == np.float64, f"y_meters_center should be np.float64 but is {type(d)}"
+
+    assert data[PV_SYSTEM_ID].shape[-1] == n_pv_systems_per_example
+    assert data[PV_YIELD].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
+    assert data[PV_SYSTEM_X_COORDS].shape[-1] == n_pv_systems_per_example
+    assert data[PV_SYSTEM_Y_COORDS].shape[-1] == n_pv_systems_per_example
+
+    if not batch:
+        # add an extract dimension so that its similar to batch data
+        data[PV_SYSTEM_ID] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
+        data[PV_SYSTEM_ROW_NUMBER] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
+
+    for i in range(len(data[PV_SYSTEM_ID])):
+        n_pv_systems = (data[PV_SYSTEM_ID][i, ~np.isnan(data[PV_SYSTEM_ID][i])]).shape[-1]
+        assert (data[PV_SYSTEM_ROW_NUMBER][i, ~np.isnan(data[PV_SYSTEM_ROW_NUMBER][i])]).shape[
+            -1
+        ] == n_pv_systems
 
     if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
+        assert data[PV_AZIMUTH_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
     if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
+        assert data[PV_ELEVATION_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
 
-    assert data["sat_data"].shape == (
+    assert data["sat_data"].shape[-4:] == (
         seq_len_5_minutes,
         sat_image_size,
         sat_image_size,
         n_sat_channels,
     )
-    assert len(data["sat_x_coords"]) == sat_image_size
-    assert len(data["sat_y_coords"]) == sat_image_size
-    assert len(data["sat_datetime_index"]) == seq_len_5_minutes
+    assert data["sat_x_coords"].shape[-1] == sat_image_size
+    assert data["sat_y_coords"].shape[-1] == sat_image_size
+    assert data["sat_datetime_index"].shape[-1] == seq_len_5_minutes
 
-    assert data["nwp"].shape == (n_nwp_channels, seq_len_5_minutes, nwp_image_size, nwp_image_size)
-    assert len(data["nwp_x_coords"]) == nwp_image_size
-    assert len(data["nwp_y_coords"]) == nwp_image_size
-    assert len(data["nwp_target_time"]) == seq_len_5_minutes
+    assert data["nwp"].shape[-4:] == (
+        n_nwp_channels,
+        seq_len_5_minutes,
+        nwp_image_size,
+        nwp_image_size,
+    )
+    assert data["nwp_x_coords"].shape[-1] == nwp_image_size
+    assert data["nwp_y_coords"].shape[-1] == nwp_image_size
+    assert data["nwp_target_time"].shape[-1] == seq_len_5_minutes
 
     for feature in DATETIME_FEATURE_NAMES:
-        assert len(data[feature]) == seq_len_5_minutes
+        assert data[feature].shape[-1] == seq_len_5_minutes

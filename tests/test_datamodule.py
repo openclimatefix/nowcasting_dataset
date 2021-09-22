@@ -12,10 +12,9 @@ from nowcasting_dataset.dataset import datamodule
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.example import (
-    validate_example,
-    validate_batch_from_configuration,
     xr_to_example,
 )
+from nowcasting_dataset.dataset.validate import validate_example, validate_batch_from_configuration
 from nowcasting_dataset.dataset.batch import batch_to_dataset
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.dataset.split.split import SplitMethod

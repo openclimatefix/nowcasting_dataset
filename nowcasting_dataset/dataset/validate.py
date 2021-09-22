@@ -42,7 +42,7 @@ class ValidatorDataset:
         configuration: Configuration,
     ):
         """
-        Initilize data set and run validation
+        Initialize class and run validation
 
         Args:
             batches: Dataset that needs validating
@@ -56,7 +56,7 @@ class ValidatorDataset:
 
     def validate(self):
         """
-        Validate the batches, and calculates unique days that are in the all the batches
+        This validates the batches, and calculates unique days that are in the all the batches
 
         """
         logger.debug("Validating dataset")

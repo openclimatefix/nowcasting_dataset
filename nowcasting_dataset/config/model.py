@@ -5,33 +5,48 @@ from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_N
 
 
 class General(BaseModel):
-
     name: str = Field("example", description="The name of this configuration file.")
     description: str = Field(
         "example configuration", description="Description of this confgiruation file"
     )
+    cloud: str = Field("gcp", description="gcp, aws, or local")
 
 
 class InputData(BaseModel):
-    bucket: str = Field(
-        "solar-pv-nowcasting-data", description="The gcp bucket used to load the data."
+    base_path_or_bucket: str = Field(
+        "solar-pv-nowcasting-data",
+        description=(
+            "If cloud==local then this should be the absolute path which holds nwp_zarr_path,"
+            " satellite_zarr_path, solar_pv_path, and output_data.filepath.  If cloud=={aws,gcp}"
+            " then this should be the bucket name."
+        ),
     )
 
-    solar_pv_path: str = Field("PV/PVOutput.org", description="TODO")
-    solar_pv_data_filename: str = Field("UK_PV_timeseries_batch.nc", description="TODO")
-    solar_pv_metadata_filename: str = Field("UK_PV_metadata.csv", description="TODO")
+    solar_pv_path: str = Field(
+        "PV/PVOutput.org",
+        description=(
+            "The path that contains solar_pv_data_filename and solar_pv_metadata_filename"
+        ),
+    )
+    solar_pv_data_filename: str = Field(
+        "UK_PV_timeseries_batch.nc",
+        description=("The NetCDF file holding the solar PV power timeseries."),
+    )
+    solar_pv_metadata_filename: str = Field(
+        "UK_PV_metadata.csv", description="The CSV file describing each PV system."
+    )
 
-    satelite_filename: str = Field(
+    satellite_zarr_path: str = Field(
         "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
-        description="TODO",
+        description="The path within base_path_or_bucket which holds the satellite zarr.",
     )
 
-    npw_base_path: str = Field(
+    nwp_zarr_path: str = Field(
         "NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
-        description="TODO",
+        description="The path within base_path_or_bucket which holds the NWP zarr.",
     )
 
-    gsp_filename: str = Field("PV/GSP/v0/pv_gsp.zarr")
+    gsp_zarr_path: str = Field("PV/GSP/v0/pv_gsp.zarr")
 
 
 class OutputData(BaseModel):
@@ -40,7 +55,14 @@ class OutputData(BaseModel):
 
 class Process(BaseModel):
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
-    batch_size: int = Field(32, description="the batch size of the data")
+    batch_size: int = Field(32, description="the number of examples per batch")
+    upload_every_n_batches: int = Field(
+        16,
+        description=(
+            "How frequently to move batches from the local temporary directory to the cloud bucket."
+            "  If 0 then write batches directly to output_data.filepath, not to a temp directory."
+        ),
+    )
     forecast_minutes: int = Field(60, description="how many minutes to forecast in the future")
     history_minutes: int = Field(30, description="how many historic minutes are used")
     satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
@@ -51,12 +73,8 @@ class Process(BaseModel):
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
 
-    precision: int = Field(16, description="what precision to use")
-    val_check_interval: int = Field(1000, description="TODO")
-
 
 class Configuration(BaseModel):
-
     general: General = General()
     input_data: InputData = InputData()
     output_data: OutputData = OutputData()

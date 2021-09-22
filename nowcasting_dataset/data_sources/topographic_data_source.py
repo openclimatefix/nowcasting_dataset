@@ -1,19 +1,52 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset import time as nd_time
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 import pandas as pd
 from numbers import Number
 from typing import List, Tuple
 import xarray as xr
+import numpy as np
+
+# Means computed with
+# nwp_ds = NWPDataSource(...)
+# nwp_ds.open()
+# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(
+#     dim=['step', 'x', 'init_time', 'y']).compute()
+TOPO_MEAN = xr.DataArray(
+    data=[
+        0,
+    ],
+    dims=["variable"],
+    coords={"variable": "topo_data"},
+).astype(np.float32)
+
+TOPO_STD = xr.DataArray(
+    data=[
+        0,
+    ],
+    dims=["variable"],
+    coords={"variable": "topo_data"},
+).astype(np.float32)
 
 
 @dataclass
 class TopographicDataSource(DataSource):
     """Add topographic/elevation map features."""
 
-    def __post_init__(self):
-        super().__post_init__()
+    filename: str = None
+    image_size_pixels: InitVar[int] = 128
+    meters_per_pixel: InitVar[int] = 2_000
+    normalize: bool = True
+
+    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        super().__post_init__(image_size_pixels, meters_per_pixel)
+        self._cache = {}
+        self._shape_of_example = (
+            image_size_pixels,
+            image_size_pixels,
+            1,  # Topographic data is just the height, so single channel
+        )
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -31,11 +64,18 @@ class TopographicDataSource(DataSource):
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
         return Example(
-            sat_data=selected_data,
-            sat_x_coords=selected_data.x,
-            sat_y_coords=selected_data.y,
-            sat_datetime_index=selected_data.time,
+            topo_data=selected_data,
+            topo_x_coords=selected_data.x,
+            topo_y_coords=selected_data.y,
         )
+
+    def _post_process_example(
+        self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
+    ) -> xr.DataArray:
+        if self.normalize:
+            selected_data = selected_data - TOPO_MEAN
+            selected_data = selected_data / TOPO_STD
+        return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:
         raise NotImplementedError()

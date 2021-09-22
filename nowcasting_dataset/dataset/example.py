@@ -111,8 +111,8 @@ def validate_example_from_configuration(data: Example, configuration: Configurat
         n_sat_channels=len(configuration.process.sat_channels),
         nwp_image_size=configuration.process.nwp_image_size_pixels,
         n_nwp_channels=len(configuration.process.nwp_channels),
-        n_pv_systems_per_example=128,
-        n_gsp_per_example=32,
+        n_pv_systems_per_example=DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+        n_gsp_per_example=DEFAULT_N_GSP_PER_EXAMPLE,
         batch=True,
     )
 
@@ -156,6 +156,10 @@ def validate_example(
     assert data[GSP_Y_COORDS].shape[-1] == n_gsp_system_id
     assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes
 
+    # check the GSP data is between 0 and 1
+    assert np.nanmax(data[GSP_YIELD]) <= 1.0
+    assert np.nanmin(data[GSP_YIELD]) >= 0.0
+
     if OBJECT_AT_CENTER in data.keys():
         assert data[OBJECT_AT_CENTER] == "gsp"
 
@@ -173,6 +177,10 @@ def validate_example(
     assert data[PV_YIELD].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
     assert data[PV_SYSTEM_X_COORDS].shape[-1] == n_pv_systems_per_example
     assert data[PV_SYSTEM_Y_COORDS].shape[-1] == n_pv_systems_per_example
+
+    # check the PV data is between 0 and 1
+    assert np.nanmax(data[PV_YIELD]) <= 1.0
+    assert np.nanmin(data[PV_YIELD]) >= 0.0
 
     if not batch:
         # add an extract dimension so that its similar to batch data

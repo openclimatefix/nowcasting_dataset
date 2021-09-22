@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
@@ -18,7 +19,7 @@ class InputData(BaseModel):
         description=(
             "If cloud==local then this should be the absolute path which holds nwp_zarr_path,"
             " satellite_zarr_path, solar_pv_path, and output_data.filepath.  If cloud=={aws,gcp}"
-            " then this should be the bucket name."
+            " then this should be the bucket name, including 's3://' or 'gs://'."
         ),
     )
 
@@ -50,7 +51,13 @@ class InputData(BaseModel):
 
 
 class OutputData(BaseModel):
-    filepath: str = Field("prepared_ML_training_data/v5/", description="Where the data is saved")
+    filepath: str = Field(
+        "prepared_ML_training_data/v5/",
+        description=(
+            "Where the data is saved to.  If this is running on the cloud then should include"
+            " 'gs://' or 's3://'"
+        ),
+    )
 
 
 class Process(BaseModel):
@@ -72,6 +79,7 @@ class Process(BaseModel):
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
+    local_temp_path: str = Field("~/temp/")
 
 
 class Configuration(BaseModel):

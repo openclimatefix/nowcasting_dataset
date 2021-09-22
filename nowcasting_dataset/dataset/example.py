@@ -157,8 +157,12 @@ def validate_example(
     assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes
 
     # check the GSP data is between 0 and 1
-    assert np.nanmax(data[GSP_YIELD]) <= 1.0
-    assert np.nanmin(data[GSP_YIELD]) >= 0.0
+    assert (
+        np.nanmax(data[GSP_YIELD]) <= 1.0
+    ), f"Maximum GSP value is {np.nanmax(data[GSP_YIELD])} but it should be <= 1"
+    assert (
+        np.nanmin(data[GSP_YIELD]) >= 0.0
+    ), f"Maximum GSP value is {np.nanmin(data[GSP_YIELD])} but it should be >= 0"
 
     if OBJECT_AT_CENTER in data.keys():
         assert data[OBJECT_AT_CENTER] == "gsp"
@@ -168,6 +172,7 @@ def validate_example(
         data["x_meters_center"] = np.expand_dims(data["x_meters_center"], axis=0)
         data["y_meters_center"] = np.expand_dims(data["y_meters_center"], axis=0)
 
+    # loop over batch
     for d in data["x_meters_center"]:
         assert type(d) == np.float64, f"x_meters_center should be np.float64 but is {type(d)}"
     for d in data["y_meters_center"]:
@@ -178,20 +183,26 @@ def validate_example(
     assert data[PV_SYSTEM_X_COORDS].shape[-1] == n_pv_systems_per_example
     assert data[PV_SYSTEM_Y_COORDS].shape[-1] == n_pv_systems_per_example
 
-    # check the PV data is between 0 and 1
-    assert np.nanmax(data[PV_YIELD]) <= 1.0
-    assert np.nanmin(data[PV_YIELD]) >= 0.0
-
     if not batch:
         # add an extract dimension so that its similar to batch data
         data[PV_SYSTEM_ID] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
         data[PV_SYSTEM_ROW_NUMBER] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
 
+    # loop over batch
     for i in range(len(data[PV_SYSTEM_ID])):
         n_pv_systems = (data[PV_SYSTEM_ID][i, ~np.isnan(data[PV_SYSTEM_ID][i])]).shape[-1]
         assert (data[PV_SYSTEM_ROW_NUMBER][i, ~np.isnan(data[PV_SYSTEM_ROW_NUMBER][i])]).shape[
             -1
         ] == n_pv_systems
+
+        if n_pv_systems > 0:
+            # check the PV data is between 0 and 1
+            assert (
+                np.nanmax(data[PV_YIELD]) <= 1.0
+            ), f"Maximum PV value is {np.nanmax(data[PV_YIELD])} but it should be <= 1"
+            assert (
+                np.nanmin(data[PV_YIELD]) >= 0.0
+            ), f"Maximum PV value is {np.nanmin(data[PV_YIELD])} but it should be <= 1"
 
     if PV_AZIMUTH_ANGLE in data.keys():
         assert data[PV_AZIMUTH_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)

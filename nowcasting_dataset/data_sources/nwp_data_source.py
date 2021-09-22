@@ -10,7 +10,7 @@ import numpy as np
 from numbers import Number
 from concurrent import futures
 
-_LOG = logging.getLogger("nowcasting_dataset")
+_LOG = logging.getLogger(__name__)
 
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 

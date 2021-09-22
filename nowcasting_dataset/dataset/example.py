@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, List
 import pandas as pd
 from nowcasting_dataset.consts import *
 from nowcasting_dataset.config.model import Configuration
@@ -82,6 +82,31 @@ class Example(TypedDict):
     object_at_center: str  #: shape = [batch_size, ]
 
 
+def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -> Example:
+    """
+    Change xr dataset to Example
+
+    Args:
+        batch_xr: batch data in xarray format
+        required_keys: the keys that are need
+
+    Returns: Example object of the xarray data
+
+    """
+
+    batch = Example(
+        sat_datetime_index=batch_xr.sat_time_coords,
+        nwp_target_time=batch_xr.nwp_time_coords,
+    )
+    for key in required_keys:
+        try:
+            batch[key] = batch_xr[key]
+        except KeyError:
+            pass
+
+    return batch
+
+
 def to_numpy(example: Example) -> Example:
     for key, value in example.items():
         if isinstance(value, xr.DataArray):
@@ -101,7 +126,15 @@ def to_numpy(example: Example) -> Example:
     return example
 
 
-def validate_example_from_configuration(data: Example, configuration: Configuration):
+def validate_batch_from_configuration(data: Example, configuration: Configuration):
+    """
+    Validate data using a configuration
+
+    Args:
+        data: batch of data
+        configuration: confgiruation of the data
+
+    """
 
     validate_example(
         data=data,
@@ -191,9 +224,13 @@ def validate_example(
     # loop over batch
     for i in range(len(data[PV_SYSTEM_ID])):
         n_pv_systems = (data[PV_SYSTEM_ID][i, ~np.isnan(data[PV_SYSTEM_ID][i])]).shape[-1]
-        assert (data[PV_SYSTEM_ROW_NUMBER][i, ~np.isnan(data[PV_SYSTEM_ROW_NUMBER][i])]).shape[
-            -1
-        ] == n_pv_systems
+        n_pv_syetem_row_numbers = (
+            data[PV_SYSTEM_ROW_NUMBER][i, ~np.isnan(data[PV_SYSTEM_ROW_NUMBER][i])]
+        ).shape[-1]
+        assert n_pv_syetem_row_numbers == n_pv_systems, (
+            f"Number of PV systems ({n_pv_systems}) does not match the "
+            f"pv systems row numbers ({n_pv_syetem_row_numbers})"
+        )
 
         if n_pv_systems > 0:
             # check the PV data is between 0 and 1
@@ -219,12 +256,16 @@ def validate_example(
     assert data["sat_y_coords"].shape[-1] == sat_image_size
     assert data["sat_datetime_index"].shape[-1] == seq_len_5_minutes
 
-    assert data["nwp"].shape[-4:] == (
+    nwp_correct_shape = (
         n_nwp_channels,
         seq_len_5_minutes,
         nwp_image_size,
         nwp_image_size,
     )
+    nwp_shape = data["nwp"].shape[-4:]
+    assert (
+        nwp_shape == nwp_correct_shape
+    ), f"NWP shape should be ({nwp_correct_shape}), but instead it is {nwp_shape}"
     assert data["nwp_x_coords"].shape[-1] == nwp_image_size
     assert data["nwp_y_coords"].shape[-1] == nwp_image_size
     assert data["nwp_target_time"].shape[-1] == seq_len_5_minutes

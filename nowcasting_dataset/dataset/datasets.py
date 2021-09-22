@@ -47,12 +47,12 @@ from nowcasting_dataset.consts import (
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
+    DEFAULT_REQUIRED_KEYS,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 """
 This file contains the following classes
@@ -112,27 +112,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         src_path: str,
         tmp_path: str,
         cloud: str = "gcp",
-        required_keys: Union[Tuple[str], List[str]] = [
-            NWP_DATA,
-            NWP_X_COORDS,
-            NWP_Y_COORDS,
-            SATELLITE_DATA,
-            SATELLITE_X_COORDS,
-            SATELLITE_Y_COORDS,
-            PV_YIELD,
-            PV_SYSTEM_ID,
-            PV_SYSTEM_ROW_NUMBER,
-            PV_SYSTEM_X_COORDS,
-            PV_SYSTEM_Y_COORDS,
-            X_METERS_CENTER,
-            Y_METERS_CENTER,
-            GSP_ID,
-            GSP_YIELD,
-            GSP_X_COORDS,
-            GSP_Y_COORDS,
-            GSP_DATETIME_INDEX,
-        ]
-        + list(DATETIME_FEATURE_NAMES),
+        required_keys: Union[Tuple[str], List[str]] = None,
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
         current_timestep_index: Optional[int] = None,
@@ -157,11 +137,14 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
-        self.required_keys = list(required_keys)
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
         self.current_timestep_index = current_timestep_index
         self.configuration = configuration
+
+        if required_keys is None:
+            required_keys = DEFAULT_REQUIRED_KEYS
+        self.required_keys = list(required_keys)
 
         # setup cloud connections as None
         self.gcs = None
@@ -220,15 +203,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         if self.cloud != "local":
             os.remove(local_netcdf_filename)
 
-        batch = example.Example(
-            sat_datetime_index=netcdf_batch.sat_time_coords,
-            nwp_target_time=netcdf_batch.nwp_time_coords,
-        )
-        for key in self.required_keys:
-            try:
-                batch[key] = netcdf_batch[key]
-            except KeyError:
-                pass
+        batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
 
         if SATELLITE_DATA in self.required_keys:
             sat_data = batch[SATELLITE_DATA]
@@ -254,11 +229,12 @@ class NetCDFDataset(torch.utils.data.Dataset):
     def validate(self):
 
         logger.debug("Validating dataset")
+        assert self.configuration is not None
 
         day_datetimes = None
         for batch in iter(self):
 
-            example.validate_example_from_configuration(batch, configuration=self.configuration)
+            example.validate_batch_from_configuration(batch, configuration=self.configuration)
 
             all_datetimes_from_batch = pd.to_datetime(
                 batch[GSP_DATETIME_INDEX].reshape(-1), unit="s"

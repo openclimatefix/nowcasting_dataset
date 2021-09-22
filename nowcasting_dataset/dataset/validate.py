@@ -222,7 +222,7 @@ def validate_example(
     assert data[GSP_YIELD].shape[-2:] == (
         seq_len_30_minutes,
         n_gsp_id,
-    ), f"gsp_yield is size {data[GSP_YIELD].shape}, but should be {(seq_len_30_minutes, n_gsp_system_id)}"
+    ), f"gsp_yield is size {data[GSP_YIELD].shape}, but should be {(seq_len_30_minutes, n_gsp_id)}"
     assert data[GSP_X_COORDS].shape[-1] == n_gsp_id
     assert data[GSP_Y_COORDS].shape[-1] == n_gsp_id
     assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes

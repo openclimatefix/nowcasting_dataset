@@ -54,9 +54,11 @@ class Process(BaseModel):
     precision: int = Field(16, description="what precision to use")
     val_check_interval: int = Field(1000, description="TODO")
 
+    @property
     def seq_len_30_minutes(self):
         return (self.history_minutes + self.forecast_minutes) / 30 + 1
 
+    @property
     def seq_len_5_minutes(self):
         return (self.history_minutes + self.forecast_minutes) / 5 + 1
 

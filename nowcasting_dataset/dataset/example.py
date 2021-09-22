@@ -105,8 +105,8 @@ def validate_example_from_configuration(data: Example, configuration: Configurat
 
     validate_example(
         data=data,
-        seq_len_30_minutes=configuration.process.seq_len_30_minutes(),
-        seq_len_5_minutes=configuration.process.seq_len_5_minutes(),
+        seq_len_30_minutes=configuration.process.seq_len_30_minutes,
+        seq_len_5_minutes=configuration.process.seq_len_5_minutes,
         sat_image_size=configuration.process.satellite_image_size_pixels,
         n_sat_channels=len(configuration.process.sat_channels),
         nwp_image_size=configuration.process.nwp_image_size_pixels,

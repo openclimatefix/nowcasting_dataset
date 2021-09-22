@@ -74,10 +74,10 @@ class Example(TypedDict):
     # : Includes central GSP, which will always be the first entry. This will be a numpy array of values.
     gsp_yield: Array  #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
     # GSP identification.
-    gsp_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_id: Array  #: shape = [batch_size, ] n_gsp_per_example
     #: GSP geographical location (in OSGB coords).
-    gsp_x_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
-    gsp_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_x_coords: Array  #: shape = [batch_size, ] n_gsp_per_example
+    gsp_y_coords: Array  #: shape = [batch_size, ] n_gsp_per_example
     gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
     # if the centroid type is a GSP, or a PV system
@@ -179,16 +179,16 @@ def validate_example(
         batch: if this example class is a batch or not
     """
 
+    n_gsp_id = data[GSP_ID].shape[-1]
     assert (
-        len(data[GSP_ID]) == n_gsp_per_example
-    ), f"gsp_is is len {len(data[GSP_ID])}, but should be {n_gsp_per_example}"
-    n_gsp_system_id = len(data[GSP_ID])
+        n_gsp_id == n_gsp_per_example
+    ), f"gsp_is is len {n_gsp_id}, but should be {n_gsp_per_example}"
     assert data[GSP_YIELD].shape[-2:] == (
         seq_len_30_minutes,
-        n_gsp_system_id,
+        n_gsp_id,
     ), f"gsp_yield is size {data[GSP_YIELD].shape}, but should be {(seq_len_30_minutes, n_gsp_system_id)}"
-    assert data[GSP_X_COORDS].shape[-1] == n_gsp_system_id
-    assert data[GSP_Y_COORDS].shape[-1] == n_gsp_system_id
+    assert data[GSP_X_COORDS].shape[-1] == n_gsp_id
+    assert data[GSP_Y_COORDS].shape[-1] == n_gsp_id
     assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes
 
     # check the GSP data is between 0 and 1

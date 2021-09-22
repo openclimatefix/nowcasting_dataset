@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
@@ -41,8 +41,10 @@ class OutputData(BaseModel):
 class Process(BaseModel):
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
     batch_size: int = Field(32, description="the batch size of the data")
-    forecast_minutes: int = Field(60, description="how many minutes to forecast in the future")
-    history_minutes: int = Field(30, description="how many historic minutes are used")
+    forecast_minutes: int = Field(
+        60, ge=0, description="how many minutes to forecast in the future"
+    )
+    history_minutes: int = Field(30, ge=0, description="how many historic minutes are used")
     satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
     nwp_image_size_pixels: int = Field(2, description="the size of the nwp images")
 
@@ -56,11 +58,21 @@ class Process(BaseModel):
 
     @property
     def seq_len_30_minutes(self):
-        return (self.history_minutes + self.forecast_minutes) / 30 + 1
+        return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
 
     @property
     def seq_len_5_minutes(self):
-        return (self.history_minutes + self.forecast_minutes) / 5 + 1
+        return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
+
+    @validator("history_minutes")
+    def history_minutes_divide_by_30(cls, v):
+        assert v % 30 == 0  # this means it also divides by 5
+        return v
+
+    @validator("forecast_minutes")
+    def forecast_minutes_divide_by_30(cls, v):
+        assert v % 30 == 0  # this means it also divides by 5
+        return v
 
 
 class Configuration(BaseModel):

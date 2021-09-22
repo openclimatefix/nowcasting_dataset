@@ -1,5 +1,7 @@
 from typing import TypedDict, List
 import pandas as pd
+import torch
+
 from nowcasting_dataset.consts import *
 from nowcasting_dataset.config.model import Configuration
 import numpy as np
@@ -207,9 +209,15 @@ def validate_example(
 
     # loop over batch
     for d in data["x_meters_center"]:
-        assert type(d) == np.float64, f"x_meters_center should be np.float64 but is {type(d)}"
+        assert type(d) in [
+            np.float64,
+            torch.Tensor,
+        ], f"x_meters_center should be np.float64 but is {type(d)}"
     for d in data["y_meters_center"]:
-        assert type(d) == np.float64, f"y_meters_center should be np.float64 but is {type(d)}"
+        assert type(d) in [
+            np.float64,
+            torch.Tensor,
+        ], f"y_meters_center should be np.float64 but is {type(d)}"
 
     assert data[PV_SYSTEM_ID].shape[-1] == n_pv_systems_per_example
     assert data[PV_YIELD].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)

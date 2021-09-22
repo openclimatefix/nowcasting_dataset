@@ -1,13 +1,9 @@
-import datetime
 import pandas as pd
-import logging
 from numbers import Number
-from typing import List, Tuple, Iterable, Callable, Union, Optional
-import nowcasting_dataset.consts
+from typing import List, Tuple, Callable, Union, Optional
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 from concurrent import futures
-import logging
 import gcsfs
 import boto3
 import os
@@ -20,29 +16,14 @@ import torch
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
-from nowcasting_dataset.config.model import Configuration
-
 from nowcasting_dataset.consts import (
-    GSP_ID,
     GSP_YIELD,
-    GSP_X_COORDS,
-    GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
-    SATELLITE_X_COORDS,
-    SATELLITE_Y_COORDS,
     SATELLITE_DATA,
     NWP_DATA,
-    NWP_X_COORDS,
-    NWP_Y_COORDS,
-    PV_SYSTEM_X_COORDS,
-    PV_SYSTEM_Y_COORDS,
     PV_YIELD,
     PV_AZIMUTH_ANGLE,
     PV_ELEVATION_ANGLE,
-    PV_SYSTEM_ID,
-    PV_SYSTEM_ROW_NUMBER,
-    Y_METERS_CENTER,
-    X_METERS_CENTER,
     SATELLITE_DATETIME_INDEX,
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
@@ -116,7 +97,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
         current_timestep_index: Optional[int] = None,
-        configuration: Optional[Configuration] = None,
     ):
         """
         Args:
@@ -140,7 +120,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
         self.current_timestep_index = current_timestep_index
-        self.configuration = configuration
 
         if required_keys is None:
             required_keys = DEFAULT_REQUIRED_KEYS
@@ -225,27 +204,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         batch = example.to_numpy(batch)
 
         return batch
-
-    def validate(self):
-
-        logger.debug("Validating dataset")
-        assert self.configuration is not None
-
-        day_datetimes = None
-        for batch in iter(self):
-
-            example.validate_batch_from_configuration(batch, configuration=self.configuration)
-
-            all_datetimes_from_batch = pd.to_datetime(
-                batch[GSP_DATETIME_INDEX].reshape(-1), unit="s"
-            )
-            all_day_from_batch_unique = pd.DatetimeIndex(all_datetimes_from_batch.date).unique()
-            if day_datetimes is None:
-                day_datetimes = all_day_from_batch_unique
-            else:
-                day_datetimes = day_datetimes.join(all_day_from_batch_unique)
-
-        self.day_datetimes = day_datetimes
 
 
 @dataclass

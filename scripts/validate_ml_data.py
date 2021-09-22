@@ -6,11 +6,12 @@ import nowcasting_dataset
 import torch
 from nowcasting_dataset.config.load import load_configuration_from_gcs, load_yaml_configuration
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
+from nowcasting_dataset.dataset.validate import ValidatorDataset
 from nowcasting_dataset.utils import get_maximum_batch_id_from_gcs
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
-_LOG.setLevel(logging.DEBUG)
+_LOG.setLevel(logging.INFO)
 
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
@@ -48,7 +49,6 @@ train_dataset = torch.utils.data.DataLoader(
         f"gs://{DST_TRAIN_PATH}",
         LOCAL_TEMP_PATH,
         cloud="gcp",
-        configuration=config,
     ),
     **dataloader_config,
 )
@@ -60,7 +60,6 @@ validation_dataset = torch.utils.data.DataLoader(
         f"gs://{DST_VALIDATION_PATH}",
         LOCAL_TEMP_PATH,
         cloud="gcp",
-        configuration=config,
     ),
     **dataloader_config,
 )
@@ -71,20 +70,18 @@ test_dataset = torch.utils.data.DataLoader(
         f"gs://{DST_TEST_PATH}",
         LOCAL_TEMP_PATH,
         cloud="gcp",
-        configuration=config,
     ),
     **dataloader_config,
 )
 
-# validate all datasets
-train_dataset.validate()
-validation_dataset.validate()
-test_dataset.validate()
+v_train_dataset = ValidatorDataset(configuration=config, batches=train_dataset)
+v_validation_dataset = ValidatorDataset(configuration=config, batches=validation_dataset)
+v_test_dataset = ValidatorDataset(configuration=config, batches=test_dataset)
 
 # check there is no overlaps in the datasets
-train_datetimes = train_dataset.day_datetimes
-validation_datetimes = validation_dataset.day_datetimes
-test_datetimes = validation_dataset.day_datetimes
+train_datetimes = v_train_dataset.day_datetimes
+validation_datetimes = v_validation_dataset.day_datetimes
+test_datetimes = v_test_dataset.day_datetimes
 
 assert len(train_datetimes.join(validation_datetimes, how="inner")) == 0
 assert len(train_datetimes.join(test_datetimes, how="inner")) == 0

@@ -14,17 +14,19 @@ dependencies:
   - zarr
   - xarray
   - ipykernel
-  - h5netcdf  # For opening NetCDF files from cloud buckets.
-  
+  - h5netcdf # For opening NetCDF files from cloud buckets.
+
   # Cloud & distributed compute
   - gcsfs
+  - fsspec
+  - pathy
 
   # Images & optical flow
-  - conda-forge::opencv  # also run `apt install libgl1-mesa-glx`
+  - conda-forge::opencv # also run `apt install libgl1-mesa-glx`
   - scikit-image
-  
+
   # Machine learning
-  - pytorch::pytorch  # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
+  - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
   - pytorch-lightning
 
   # PV & Geospatial
@@ -40,5 +42,5 @@ dependencies:
   - pre-commit
 
   - pip:
-    - neptune-client[pytorch-lightning]
-    - tilemapbase
+      - neptune-client[pytorch-lightning]
+      - tilemapbase

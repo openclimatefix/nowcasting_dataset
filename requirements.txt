@@ -27,3 +27,5 @@ plotly
 tqdm
 black
 pre-commit
+fsspec
+pathy

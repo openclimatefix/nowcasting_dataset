@@ -1,4 +1,4 @@
-from nowcasting_dataset.data_sources.data_source import DataSource
+from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
@@ -33,7 +33,7 @@ TOPO_STD = xr.DataArray(
 
 
 @dataclass
-class TopographicDataSource(DataSource):
+class TopographicDataSource(ImageDataSource):
     """Add topographic/elevation map features."""
 
     filename: str = None
@@ -51,16 +51,10 @@ class TopographicDataSource(DataSource):
         )
 
     def open(self) -> None:
-        self._data = xr.open_dataset(filename_or_obj=self.filename)
+        self._data = xr.open_dataset(filename_or_obj=self.filename).to_array(dim=TOPOGRAPHIC_DATA)
 
-    def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
-        del t0_dt
-        # Select the data in the area
-        data = self._data
-
-        return NotImplementedError
+    def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
+        return self._data
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
         return Example(

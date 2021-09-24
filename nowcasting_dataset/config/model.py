@@ -16,7 +16,7 @@ class General(BaseModel):
 
 
 class Git(BaseModel):
-    hash: str = Field(..., description="The git harsh has for when a dataset is created.")
+    hash: str = Field(..., description="The git hash has for when a dataset is created.")
     message: str = Field(..., description="The git message has for when a dataset is created.")
     committed_date: datetime = Field(
         ..., description="The git datestamp has for when a dataset is created."

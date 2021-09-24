@@ -48,7 +48,10 @@ class TopographicDataSource(ImageDataSource):
             1,  # Topographic data is just the height, so single channel
         )
         self._data = xr.open_dataset(filename_or_obj=self.filename).to_array(dim=TOPOGRAPHIC_DATA)
-        self._stored_pixel_size = self._data.attrs["scale_km"]
+        self._stored_pixel_size_meters = self._data.attrs["scale_km"]
+        assert self._stored_pixel_size_meters <= meters_per_pixel, AttributeError(
+            "The stored topographical map has a lower resolution than requested"
+        )
         print(self._data)
 
     def get_example(
@@ -58,7 +61,6 @@ class TopographicDataSource(ImageDataSource):
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
-        print(bounding_box)
         selected_data = selected_data.sel(
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
@@ -85,6 +87,10 @@ class TopographicDataSource(ImageDataSource):
         return self._put_data_into_example(selected_data)
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
+        # Reduce pixels to the meters_per_pixel size
+        # Downsampling only, using the mean
+        down_scale = int(self.meters_per_pixel) / self._stored_pixel_size_meters
+        self._data = self._data.coarsen(x=down_scale).mean().coarsen(y=down_scale).mean()
         return self._data
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:

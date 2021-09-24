@@ -167,14 +167,14 @@ class NetCDFDataset(torch.utils.data.Dataset):
         if self.forecast_minutes is None:
             self.forecast_minutes = configuration.process.forecast_minutes
         if self.history_minutes is None:
-            self.forecast_minutes = configuration.process.history_minutes
+            self.history_minutes = configuration.process.history_minutes
 
         # see if we need to select the subset of data. If turned on -
         # only history_minutes + current time + forecast_minutes data is used.
         self.select_subset_data = False
         if self.forecast_minutes != configuration.process.forecast_minutes:
             self.select_subset_data = True
-        if self.history_minutes != configuration.process.forecast_minutes:
+        if self.history_minutes != configuration.process.history_minutes:
             self.select_subset_data = True
 
         # Index into either sat_datetime_index or nwp_target_time indicating the current time,
@@ -441,6 +441,11 @@ def subselect_data(
     Returns:
         Example with only data between [t0 - history_minutes, t0 + forecast_minutes] remaining
     """
+
+    _LOG.debug(
+        f"Select sub data with new historic minutes of {history_minutes} "
+        f"and forecast minutes if {forecast_minutes}"
+    )
 
     # We are subsetting the data
     date_time_index_to_use = (

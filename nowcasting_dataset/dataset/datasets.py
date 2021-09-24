@@ -157,13 +157,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.forecast_minutes = forecast_minutes
         self.configuration = configuration
 
-        # check that either both forecast_minutes and history_minutes are set, or both are None
-        if sum([True for v in [forecast_minutes, history_minutes] if v is None]) == 1:
-            Exception(
-                f"One of history minutes ({history_minutes}) or forecast minutes ({forecast_minutes}) "
-                f"is None. They both need to be None, or both not None"
-            )
-
         if self.forecast_minutes is None:
             self.forecast_minutes = configuration.process.forecast_minutes
         if self.history_minutes is None:

@@ -18,7 +18,7 @@ class Example(TypedDict):
     that they're immutable so we cannot change the values in the transforms.
     """
 
-    # timestamp of now. In this data set there will be both
+    # timestamp of now. In this data object there will be both
     # - historic data before this timestamp,
     # - and future data after this timestamp
     # shape is [batch_size,]

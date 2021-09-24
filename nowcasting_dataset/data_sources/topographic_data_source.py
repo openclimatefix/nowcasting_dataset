@@ -1,6 +1,6 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset import time as nd_time
+from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from dataclasses import dataclass, InitVar
 import pandas as pd
 from numbers import Number
@@ -19,7 +19,7 @@ TOPO_MEAN = xr.DataArray(
         365.486887,
     ],
     dims=["variable"],
-    coords={"variable": "topo_data"},
+    coords={"variable": TOPOGRAPHIC_DATA},
 ).astype(np.float32)
 
 TOPO_STD = xr.DataArray(
@@ -27,7 +27,7 @@ TOPO_STD = xr.DataArray(
         478.841369,
     ],
     dims=["variable"],
-    coords={"variable": "topo_data"},
+    coords={"variable": TOPOGRAPHIC_DATA},
 ).astype(np.float32)
 
 

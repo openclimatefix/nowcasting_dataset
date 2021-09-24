@@ -1,11 +1,9 @@
 from nowcasting_dataset.data_sources.data_source import ImageDataSource, ZarrDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
-from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from dataclasses import dataclass, InitVar
-import pandas as pd
 from numbers import Number
-from typing import List, Tuple
+import pandas as pd
 import xarray as xr
 import numpy as np
 
@@ -20,7 +18,7 @@ TOPO_MEAN = xr.DataArray(
         365.486887,
     ],
     dims=["variable"],
-    coords={"variable": TOPOGRAPHIC_DATA},
+    coords={"variable": [TOPOGRAPHIC_DATA]},
 ).astype(np.float32)
 
 TOPO_STD = xr.DataArray(
@@ -28,30 +26,57 @@ TOPO_STD = xr.DataArray(
         478.841369,
     ],
     dims=["variable"],
-    coords={"variable": TOPOGRAPHIC_DATA},
+    coords={"variable": [TOPOGRAPHIC_DATA]},
 ).astype(np.float32)
 
 
 @dataclass
-class TopographicDataSource(ZarrDataSource):
+class TopographicDataSource(ImageDataSource):
     """Add topographic/elevation map features."""
 
     filename: str = None
-    image_size_pixels: InitVar[int] = 128
-    meters_per_pixel: InitVar[int] = 2_000
     normalize: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        self._cache = {}
         self._shape_of_example = (
             image_size_pixels,
             image_size_pixels,
             1,  # Topographic data is just the height, so single channel
         )
-
-    def open(self) -> None:
         self._data = xr.open_dataset(filename_or_obj=self.filename).to_array(dim=TOPOGRAPHIC_DATA)
+
+    def get_example(
+        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+    ) -> Example:
+        selected_data = self._get_time_slice(t0_dt)
+        bounding_box = self._square.bounding_box_centered_on(
+            x_meters_center=x_meters_center, y_meters_center=y_meters_center
+        )
+        selected_data = selected_data.sel(
+            x=slice(bounding_box.left, bounding_box.right),
+            y=slice(bounding_box.top, bounding_box.bottom),
+        )
+
+        # selected_sat_data is likely to have 1 too many pixels in x and y
+        # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
+        selected_data = selected_data.isel(
+            x=slice(0, self._square.size_pixels), y=slice(0, self._square.size_pixels)
+        )
+
+        selected_data = self._post_process_example(selected_data, t0_dt)
+        print(selected_data.shape)
+        if selected_data.shape != self._shape_of_example:
+            raise RuntimeError(
+                "Example is wrong shape! "
+                f"x_meters_center={x_meters_center}\n"
+                f"y_meters_center={y_meters_center}\n"
+                f"t0_dt={t0_dt}\n"
+                f"expected shape={self._shape_of_example}\n"
+                f"actual shape {selected_data.shape}"
+            )
+
+        return self._put_data_into_example(selected_data)
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         return self._data
@@ -69,4 +94,6 @@ class TopographicDataSource(ZarrDataSource):
         if self.normalize:
             selected_data = selected_data - TOPO_MEAN
             selected_data = selected_data / TOPO_STD
+        # Shrink extra dims
+        selected_data = selected_data.squeeze(axis=[0, 1])
         return selected_data

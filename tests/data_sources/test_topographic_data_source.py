@@ -29,6 +29,7 @@ def test_get_example(x, y, left, right, top, bottom):
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
     example = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    print(example)
     sat_data = example["topo_data"]
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]

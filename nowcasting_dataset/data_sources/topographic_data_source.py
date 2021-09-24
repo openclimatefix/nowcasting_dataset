@@ -65,7 +65,6 @@ class TopographicDataSource(ImageDataSource):
         )
 
         selected_data = self._post_process_example(selected_data, t0_dt)
-        print(selected_data.shape)
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
                 "Example is wrong shape! "

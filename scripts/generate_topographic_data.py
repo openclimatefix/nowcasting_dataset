@@ -13,6 +13,10 @@ from rasterio.plot import show
 from rasterio.enums import Resampling
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from itertools import zip_longest
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+from nowcasting_dataset.geospatial import OSGB
+
+dst_crs = OSGB
 
 # Go through, open all the files, combined by coords, then save out to NetCDF, or GeoTIFF
 files = glob.glob("/run/media/jacob/data/SRTM/*.tif")
@@ -70,26 +74,29 @@ with rasterio.open(out_fp, "w", **out_meta) as dest:
 out = rasterio.open(out_fp)
 show(out, cmap="terrain")
 
+with rasterio.open(out_fp) as src:
+    transform, width, height = calculate_default_transform(
+        src.crs, dst_crs, src.width, src.height, *src.bounds
+    )
+    kwargs = src.meta.copy()
+    kwargs.update({"crs": dst_crs, "transform": transform, "width": width, "height": height})
+
+    with rasterio.open("europe_dem_1km_osgb.tif", "w", **kwargs) as dst:
+        for i in range(1, src.count + 1):
+            reproject(
+                source=rasterio.band(src, i),
+                destination=rasterio.band(dst, i),
+                src_transform=src.transform,
+                src_crs=src.crs,
+                dst_transform=transform,
+                dst_crs=dst_crs,
+                resampling=Resampling.bilinear,
+            )
+
+out = rasterio.open("europe_dem_1km_osgb.tif")
+print(out.meta)
+show(out, cmap="terrain", with_bounds=True)
+out_fp = "europe_dem_1km_osgb.tif"
 data = xarray.open_rasterio(out_fp, parse_coordinates=True)
-data.to_netcdf("europe_dem_1km.nc")
-
-
-lats = data.coords["x"].values
-lons = data.coords["y"].values
-
-osgb_x = []
-osgb_y = []
-
-for lat, lon in zip_longest(lats, lons, fillvalue=lons[0]):
-    # lat is much larger than lon so stop recording y coords after length of lons
-    x, y = lat_lon_to_osgb(lat, lon)
-    if len(osgb_y) < len(lons):
-        osgb_y.append(y)
-    osgb_x.append(x)
-
-assert len(lats) == len(osgb_x)
-assert len(lons) == len(osgb_y)
-# Convert to OSGB meters for the coordinates
-data.assign_coords({"x": osgb_x, "y": osgb_y})
-
-data.to_netcdf("europe_dem_1km_meters.nc")
+print(data)
+data.to_netcdf("europe_dem_1km_meters_osgb.nc")

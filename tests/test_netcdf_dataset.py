@@ -13,6 +13,7 @@ from nowcasting_dataset.consts import (
     PV_YIELD,
     GSP_YIELD,
     GSP_DATETIME_INDEX,
+    T0_DT,
 )
 from nowcasting_dataset.dataset import example
 from nowcasting_dataset.config.model import Configuration
@@ -26,8 +27,8 @@ from pathlib import Path
 import xarray as xr
 
 
-def test_subselect_date():
-    dataset = xr.open_dataset("tests/data/0.nc")
+def test_subselect_date(test_data_folder):
+    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
     x = example.Example(
         sat_data=dataset["sat_data"],
         nwp=dataset["nwp"],
@@ -39,6 +40,27 @@ def test_subselect_date():
         x,
         required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
         current_timestep_index=7,
+        history_minutes=10,
+        forecast_minutes=10,
+    )
+
+    assert batch[SATELLITE_DATA].shape[1] == 5
+    assert batch[NWP_DATA].shape[2] == 5
+
+
+def test_subselect_date_with_t0_dt(test_data_folder):
+    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
+    x = example.Example(
+        sat_data=dataset["sat_data"],
+        nwp=dataset["nwp"],
+        nwp_target_time=dataset["nwp_time_coords"],
+        sat_datetime_index=dataset["sat_time_coords"],
+    )
+    x[T0_DT] = x[SATELLITE_DATETIME_INDEX].isel(time=7)
+
+    batch = subselect_data(
+        x,
+        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
         history_minutes=10,
         forecast_minutes=10,
     )

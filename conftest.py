@@ -68,3 +68,8 @@ def configuration():
     config = load_yaml_configuration(filename)
 
     return config
+
+
+@pytest.fixture
+def test_data_folder():
+    return os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests/data")

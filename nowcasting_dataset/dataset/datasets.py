@@ -46,6 +46,7 @@ from nowcasting_dataset.consts import (
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
+    T0_DT,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
@@ -417,9 +418,9 @@ def select_time_period(
 def subselect_data(
     batch: example.Example,
     required_keys: Union[Tuple[str], List[str]],
-    current_timestep_index: int,
     history_minutes: int,
     forecast_minutes: int,
+    current_timestep_index: Optional[int] = None,
 ) -> example.Example:
     """
     Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
@@ -444,13 +445,23 @@ def subselect_data(
     date_time_index_to_use = (
         SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME
     )
-    current_time = batch[date_time_index_to_use].isel(time=current_timestep_index)[0]
+
+    # t0_dt or if not available use a different datetime index
+    if T0_DT in batch.keys():
+        current_time_of_first_batch = batch[T0_DT][0]
+    else:
+        current_time_of_first_batch = batch[date_time_index_to_use].isel(
+            time=current_timestep_index
+        )[0]
+
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
     # The extra 30 seconds is added to ensure that the first and last timestep are always contained
     # within the [start_time, end_time] range
-    start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
-    end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
+    start_time = current_time_of_first_batch - pd.to_timedelta(
+        f"{history_minutes} minute 30 second"
+    )
+    end_time = current_time_of_first_batch + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
     used_datetime_features = [k for k in DATETIME_FEATURE_NAMES if k in required_keys]
     if SATELLITE_DATA in required_keys:
         batch = select_time_period(

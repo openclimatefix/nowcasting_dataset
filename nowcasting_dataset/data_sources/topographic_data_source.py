@@ -48,14 +48,20 @@ class TopographicDataSource(DataSource):
             1,  # Topographic data is just the height, so single channel
         )
 
+    def open(self) -> None:
+        # We don't want to open_sat_data in __init__.
+        # If we did that, then we couldn't copy SatelliteDataSource
+        # instances into separate processes.  Instead,
+        # call open() _after_ creating separate processes.
+        self._data = self._open_data()
+        self._data = self._data.sel(variable=list(self.channels))
+
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
-        del x_meters_center, y_meters_center
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
-        index = pd.date_range(start_dt, end_dt, freq="5T")
-        return nd_time.datetime_features_in_example(index)
+        del t0_dt
+
+        return NotImplementedError
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

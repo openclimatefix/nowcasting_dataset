@@ -4,13 +4,14 @@ from nowcasting_dataset.config.save import (
     save_configuration_to_gcs,
     save_configuration_to_aws,
 )
-from nowcasting_dataset.config.model import Configuration
+from nowcasting_dataset.config.model import Configuration, set_git_commit
 import nowcasting_dataset
 import os
 import tempfile
 import pytest
 import moto
 import boto3
+from datetime import datetime
 
 
 def test_default():
@@ -81,3 +82,18 @@ def test_load_to_gcs():
     config = load_configuration_from_gcs(gcp_dir="prepared_ML_training_data/v-default")
 
     assert isinstance(config, Configuration)
+
+
+def test_config_get():
+    """Test that git commit is working"""
+
+    filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "example.yaml")
+
+    config = load_yaml_configuration(filename)
+
+    config = set_git_commit(configuration=config)
+
+    assert config.git is not None
+    assert type(config.git.message) == str
+    assert type(config.git.hash) == str
+    assert type(config.git.committed_date) == datetime

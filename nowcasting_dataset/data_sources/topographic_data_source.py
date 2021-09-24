@@ -47,24 +47,41 @@ class TopographicDataSource(ImageDataSource):
             image_size_pixels,
             1,  # Topographic data is just the height, so single channel
         )
-        self._data = xr.open_dataset(filename_or_obj=self.filename).to_array(dim=TOPOGRAPHIC_DATA)
-        self._stored_pixel_size_meters = self._data.attrs["scale_km"]
+        self._data = xr.open_dataset(filename_or_obj=self.filename)
+        # Scale factor can be computed from distance between pixels, that would be it in meters
+        self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
+        self._scale_factor = int(meters_per_pixel / self._stored_pixel_size_meters)
+        self._data = self._data.to_array(dim=TOPOGRAPHIC_DATA)
         assert self._stored_pixel_size_meters <= meters_per_pixel, AttributeError(
             "The stored topographical map has a lower resolution than requested"
         )
-        print(self._data)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
-        selected_data = self._get_time_slice(t0_dt)
+
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
-        selected_data = selected_data.sel(
+        selected_data = self._data.sel(
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
         )
+        # Rescale here to the exact size, assumes that the above is good slice
+        # Xarray doesn't have good rescaling built in, so convert to numpy then back
+        # TODO This is very slow, it would probably be faster to do in Numpy and convert back
+        # Coarsen is built in but doesn't end up with the correct shape a lot of the time, the output
+        # will be cut off on the right and bottom sides
+        # Could get data, resample down with Numpy, resample coordinates and then recreate the data?
+        # Or use EMFPy as optional dependency, as needs conda install or other complicated
+        nsamples = self._square.size_pixels + 1
+        xbins = np.linspace(selected_data.x.min(), selected_data.x.max(), nsamples).astype(int)
+        ybins = np.linspace(selected_data.y.min(), selected_data.y.max(), nsamples).astype(int)
+        selected_data = (
+            selected_data.groupby_bins("x", xbins).mean().groupby_bins("y", ybins).mean()
+        )
+        # TODO get coordinates again with center of bin?
+        print(selected_data)
         print(selected_data.shape)
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
@@ -85,13 +102,6 @@ class TopographicDataSource(ImageDataSource):
             )
 
         return self._put_data_into_example(selected_data)
-
-    def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
-        # Reduce pixels to the meters_per_pixel size
-        # Downsampling only, using the mean
-        down_scale = int(int(self.meters_per_pixel) / self._stored_pixel_size_meters)
-        self._data = self._data.coarsen(x=down_scale).mean().coarsen(y=down_scale).mean()
-        return self._data
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
         return Example(

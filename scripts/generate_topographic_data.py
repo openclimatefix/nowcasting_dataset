@@ -2,7 +2,7 @@
 Script that takes the SRTM 30m worldwide elevation maps and creates a
 single representation of the area in NetCDF and GeoTIFF formats
 
-The SRTM files can be downloaded from NASA
+The SRTM files can be downloaded from NASA, and are in CRS EPSG:4326
 """
 import os.path
 import xarray
@@ -11,11 +11,10 @@ import rasterio
 from rasterio.merge import merge
 from rasterio.plot import show
 from rasterio.enums import Resampling
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
+from itertools import zip_longest
 
-
-# Go through, open all the files, combined by coords, then save out to NetCDF, or Zarr
-# While we want to move away from intermediate zarr files, this is one example where it might make sense?
-
+# Go through, open all the files, combined by coords, then save out to NetCDF, or GeoTIFF
 files = glob.glob("/run/media/jacob/data/SRTM/*.tif")
 out_dir = "/run/media/jacob/data/SRTM1KM/"
 
@@ -73,3 +72,24 @@ show(out, cmap="terrain")
 
 data = xarray.open_rasterio(out_fp, parse_coordinates=True)
 data.to_netcdf("europe_dem_1km.nc")
+
+
+lats = data.coords["x"].values
+lons = data.coords["y"].values
+
+osgb_x = []
+osgb_y = []
+
+for lat, lon in zip_longest(lats, lons, fillvalue=lons[0]):
+    # lat is much larger than lon so stop recording y coords after length of lons
+    x, y = lat_lon_to_osgb(lat, lon)
+    if len(osgb_y) < len(lons):
+        osgb_y.append(y)
+    osgb_x.append(x)
+
+assert len(lats) == len(osgb_x)
+assert len(lons) == len(osgb_y)
+# Convert to OSGB meters for the coordinates
+data.assign_coords({"x": osgb_x, "y": osgb_y})
+
+data.to_netcdf("europe_dem_1km_meters.nc")

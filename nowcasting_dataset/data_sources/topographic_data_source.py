@@ -1,6 +1,7 @@
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from dataclasses import dataclass, InitVar
 import pandas as pd
 from numbers import Number
@@ -50,24 +51,16 @@ class TopographicDataSource(DataSource):
         )
 
     def open(self) -> None:
-        # We don't want to open_sat_data in __init__.
-        # If we did that, then we couldn't copy SatelliteDataSource
-        # instances into separate processes.  Instead,
-        # call open() _after_ creating separate processes.
-        self._data = self._open_data()
-        self._data = self._data.sel(variable=list(self.channels))
+        self._data = xr.open_dataset(filename_or_obj=self.filename)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
         del t0_dt
+        # Select the data in the area
+        data = self._data
 
         return NotImplementedError
-
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
-        raise NotImplementedError()
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
         return Example(

@@ -1,10 +1,14 @@
 """Configure PyTest"""
-import pytest
+import os
 from pathlib import Path
+
+import pytest
+
+import nowcasting_dataset
 from nowcasting_dataset import consts
+from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.data_sources import SatelliteDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-
 
 pytest.IMAGE_SIZE_PIXELS = 128
 
@@ -56,3 +60,11 @@ def gsp_data_source():
         forecast_minutes=30,
         convert_to_numpy=True,
     )
+
+
+@pytest.fixture
+def configuration():
+    filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "example.yaml")
+    config = load_yaml_configuration(filename)
+
+    return config

@@ -107,6 +107,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         n_batches: int,
         src_path: str,
         tmp_path: str,
+        configuration: Configuration,
         cloud: str = "gcp",
         required_keys: Union[Tuple[str], List[str]] = [
             NWP_DATA,
@@ -131,8 +132,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         + list(DATETIME_FEATURE_NAMES),
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
-        current_timestep_index: Optional[int] = None,
-        configuration: Optional[Configuration] = None,
     ):
         """
 
@@ -146,9 +145,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
             required_keys: Tuple or list of keys required in the example for it to be considered usable
             history_minutes: How many past minutes of data to use, if subsetting the batch
             forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
-            current_timestep_index: Index into either sat_datetime_index or nwp_target_time indicating the current time,
-                                if None, then the entire batch is used, if not None, then subselecting is turned on, and
-                                only history_minutes + current time + forecast_minutes data is used.
             configuration: configuration object
         """
 
@@ -159,13 +155,30 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.required_keys = list(required_keys)
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
-        self.current_timestep_index = current_timestep_index
         self.configuration = configuration
+
+        # check that either both forecast_minutes and history_minutes are set, or both are None
+        if sum([True for v in [forecast_minutes, history_minutes] if v is None]) == 1:
+            Exception(
+                f"One of history minutes ({history_minutes}) or forecast minutes ({forecast_minutes}) "
+                f"is None. They both need to be None, or both not None"
+            )
 
         if self.forecast_minutes is None:
             self.forecast_minutes = configuration.process.forecast_minutes
         if self.history_minutes is None:
-            self.history_minutes = configuration.process.history_minutes
+            self.forecast_minutes = configuration.process.history_minutes
+
+        # see if we need to select the subset of data. If turned on -
+        # only history_minutes + current time + forecast_minutes data is used.
+        self.select_subset_data = False
+        if self.forecast_minutes != configuration.process.forecast_minutes:
+            self.select_subset_data = True
+        if self.history_minutes != configuration.process.forecast_minutes:
+            self.select_subset_data = True
+
+        # Index into either sat_datetime_index or nwp_target_time indicating the current time,
+        self.current_timestep_5_index = int(configuration.process.history_minutes // 5) + 1
 
         # setup cloud connections as None
         self.gcs = None
@@ -240,13 +253,13 @@ class NetCDFDataset(torch.utils.data.Dataset):
             sat_data /= SAT_STD
             batch[SATELLITE_DATA] = sat_data
 
-        if self.current_timestep_index is not None:
+        if self.select_subset_data:
             batch = subselect_data(
                 batch=batch,
                 required_keys=self.required_keys,
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
-                current_timestep_index=self.current_timestep_index,
+                current_timestep_index=self.current_timestep_5_index,
             )
 
         batch = example.to_numpy(batch)

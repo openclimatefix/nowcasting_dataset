@@ -15,6 +15,8 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
 )
 from nowcasting_dataset.dataset import example
+from nowcasting_dataset.config.model import Configuration
+import nowcasting_dataset
 import plotly.graph_objects as go
 import plotly
 import pandas as pd
@@ -45,9 +47,11 @@ def test_subselect_date():
     assert batch[NWP_DATA].shape[2] == 5
 
 
-def test_netcdf_dataset_local():
-    DATA_PATH = "tests/data"
-    TEMP_PATH = "tests/data/temp/"
+def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
+    DATA_PATH = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests", "data")
+    TEMP_PATH = os.path.join(
+        os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "temp"
+    )
 
     train_dataset = NetCDFDataset(
         1,
@@ -56,8 +60,8 @@ def test_netcdf_dataset_local():
         cloud="local",
         history_minutes=10,
         forecast_minutes=10,
-        current_timestep_index=7,
-        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+        required_keys=[NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+        configuration=configuration,
     )
 
     dataloader_config = dict(
@@ -84,7 +88,7 @@ def test_netcdf_dataset_local():
     assert data[NWP_DATA].shape[2] == 5
 
     # Make sure file isn't deleted!
-    assert os.path.exists("tests/data/0.nc")
+    assert os.path.exists(os.path.join(DATA_PATH, "0.nc"))
 
 
 @pytest.mark.skip("CD does not have access to GCS")

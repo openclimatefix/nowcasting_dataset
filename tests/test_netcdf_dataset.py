@@ -92,12 +92,15 @@ def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
 
 
 @pytest.mark.skip("CD does not have access to GCS")
-def test_get_dataloaders_gcp():
+def test_get_dataloaders_gcp(configuration: Configuration):
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
 
     train_dataset = NetCDFDataset(
-        24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train")
+        24_900,
+        os.path.join(DATA_PATH, "train"),
+        os.path.join(TEMP_PATH, "train"),
+        configuration=configuration,
     )
 
     dataloader_config = dict(
@@ -129,7 +132,7 @@ def test_get_dataloaders_gcp():
 
 
 @pytest.mark.skip("CD does not have access to AWS")
-def test_get_dataloaders_aws():
+def test_get_dataloaders_aws(configuration: Configuration):
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         TEMP_PATH = Path(tmpdirname)
@@ -138,7 +141,11 @@ def test_get_dataloaders_aws():
         os.mkdir(os.path.join(TEMP_PATH, "train"))
 
         train_dataset = NetCDFDataset(
-            24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"), cloud="aws"
+            24_900,
+            os.path.join(DATA_PATH, "train"),
+            os.path.join(TEMP_PATH, "train"),
+            cloud="aws",
+            configuration=configuration,
         )
 
         dataloader_config = dict(
@@ -162,7 +169,7 @@ def test_get_dataloaders_aws():
 
 
 @pytest.mark.skip("CD does not have access to GCP")
-def test_required_keys_gcp():
+def test_required_keys_gcp(configuration: Configuration):
 
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
@@ -184,6 +191,7 @@ def test_required_keys_gcp():
             SATELLITE_Y_COORDS,
             GSP_DATETIME_INDEX,
         ],
+        configuration=configuration,
     )
 
     dataloader_config = dict(
@@ -209,7 +217,7 @@ def test_required_keys_gcp():
 
 
 @pytest.mark.skip("CD does not have access to GCP")
-def test_subsetting_gcp():
+def test_subsetting_gcp(configuration: Configuration):
 
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
     TEMP_PATH = "../nowcasting_dataset"
@@ -224,7 +232,7 @@ def test_subsetting_gcp():
         cloud="gcp",
         history_minutes=10,
         forecast_minutes=10,
-        current_timestep_index=7,
+        configuration=configuration,
     )
 
     dataloader_config = dict(

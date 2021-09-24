@@ -54,6 +54,10 @@ def fix_dtypes(concat_ds):
         "pv_system_row_number": np.float32,
         "pv_system_x_coords": np.float32,
         "pv_system_y_coords": np.float32,
+        GSP_YIELD: np.float32,
+        GSP_ID: np.float32,
+        GSP_X_COORDS: np.float32,
+        GSP_Y_COORDS: np.float32,
     }
 
     for name, dtype in ds_dtypes.items():

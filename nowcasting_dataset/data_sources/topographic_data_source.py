@@ -89,7 +89,7 @@ class TopographicDataSource(ImageDataSource):
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         # Reduce pixels to the meters_per_pixel size
         # Downsampling only, using the mean
-        down_scale = int(self.meters_per_pixel) / self._stored_pixel_size_meters
+        down_scale = int(int(self.meters_per_pixel) / self._stored_pixel_size_meters)
         self._data = self._data.coarsen(x=down_scale).mean().coarsen(y=down_scale).mean()
         return self._data
 

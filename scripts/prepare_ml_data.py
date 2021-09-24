@@ -21,6 +21,7 @@ from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_configuration_to_cloud
+from nowcasting_dataset.config.model import set_git_commit
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.batch import write_batch_locally
@@ -46,6 +47,7 @@ logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 # load configuration, this can be changed to a different filename as needed
 filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
 config = load_yaml_configuration(filename)
+config = set_git_commit(config)
 
 # set the gcs bucket name
 BUCKET = Path(config.input_data.bucket)
@@ -122,6 +124,7 @@ def get_data_module():
         skip_n_train_batches=maximum_batch_id_train // num_workers,
         skip_n_validation_batches=maximum_batch_id_validation // num_workers,
         skip_n_test_batches=maximum_batch_id_test // num_workers,
+        seed=config.process.seed,
     )
     _LOG.info("prepare_data()")
     data_module.prepare_data()

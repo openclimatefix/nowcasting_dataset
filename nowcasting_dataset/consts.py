@@ -55,7 +55,6 @@ NWP_X_COORDS = "nwp_x_coords"
 NWP_Y_COORDS = "nwp_y_coords"
 X_METERS_CENTER = "x_meters_center"
 Y_METERS_CENTER = "y_meters_center"
-
 NWP_VARIABLE_NAMES = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
 SAT_VARIABLE_NAMES = (
     "HRV",
@@ -92,3 +91,4 @@ DEFAULT_REQUIRED_KEYS = [
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
 ] + list(DATETIME_FEATURE_NAMES)
+T0_DT = "t0_dt"

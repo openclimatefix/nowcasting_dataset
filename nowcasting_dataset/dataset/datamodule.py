@@ -71,6 +71,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     train_validation_percentage_split: float = 20
     pv_load_azimuth_and_elevation: bool = False
     split_method: SplitMethod = SplitMethod.DAY  # which split method should be used
+    seed: Optional[int] = None  # seed used to make quasi random split data
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
@@ -279,7 +280,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug(f"Got all start times, there are {len(self.t0_datetimes)}")
 
         self.train_t0_datetimes, self.val_t0_datetimes, self.test_t0_datetimes = split_data(
-            datetimes=self.t0_datetimes, method=self.split_method
+            datetimes=self.t0_datetimes, method=self.split_method, seed=self.seed
         )
 
         logger.debug(

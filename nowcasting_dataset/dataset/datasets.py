@@ -13,6 +13,8 @@ from nowcasting_dataset import utils as nd_utils
 from nowcasting_dataset.dataset import example
 import torch
 
+from nowcasting_dataset.config.model import Configuration
+
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
@@ -29,6 +31,7 @@ from nowcasting_dataset.consts import (
     PV_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
     DEFAULT_REQUIRED_KEYS,
+    T0_DT,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 import logging
@@ -92,34 +95,50 @@ class NetCDFDataset(torch.utils.data.Dataset):
         n_batches: int,
         src_path: str,
         tmp_path: str,
+        configuration: Configuration,
         cloud: str = "gcp",
         required_keys: Union[Tuple[str], List[str]] = None,
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
-        current_timestep_index: Optional[int] = None,
     ):
         """
-        Args:
-          n_batches: Number of batches available on disk.
-          src_path: The full path (including 'gs://') to the data on
-            Google Cloud storage.
-          tmp_path: The full path to the local temporary directory
-            (on a local filesystem).
-        required_keys: Tuple or list of keys required in the example for it to be considered usable
-        history_minutes: How many past minutes of data to use, if subsetting the batch
-        forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
-        current_timestep_index: Index into either sat_datetime_index or nwp_target_time indicating the current time,
-                                if None, then the entire batch is used, if not None, then subselecting is turned on, and
-                                only history_minutes + current time + forecast_minutes data is used.
 
+        Args:
+            n_batches: Number of batches available on disk.
+            src_path: The full path (including 'gs://') to the data on
+                Google Cloud storage.
+            tmp_path: The full path to the local temporary directory
+                (on a local filesystem).
+            cloud:
+            required_keys: Tuple or list of keys required in the example for it to be considered usable
+            history_minutes: How many past minutes of data to use, if subsetting the batch
+            forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
+            configuration: configuration object
         """
+
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
-        self.current_timestep_index = current_timestep_index
+        self.configuration = configuration
+
+        if self.forecast_minutes is None:
+            self.forecast_minutes = configuration.process.forecast_minutes
+        if self.history_minutes is None:
+            self.history_minutes = configuration.process.history_minutes
+
+        # see if we need to select the subset of data. If turned on -
+        # only history_minutes + current time + forecast_minutes data is used.
+        self.select_subset_data = False
+        if self.forecast_minutes != configuration.process.forecast_minutes:
+            self.select_subset_data = True
+        if self.history_minutes != configuration.process.history_minutes:
+            self.select_subset_data = True
+
+        # Index into either sat_datetime_index or nwp_target_time indicating the current time,
+        self.current_timestep_5_index = int(configuration.process.history_minutes // 5) + 1
 
         if required_keys is None:
             required_keys = DEFAULT_REQUIRED_KEYS
@@ -192,13 +211,13 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 sat_data /= SAT_STD
                 batch[SATELLITE_DATA] = sat_data
 
-        if self.current_timestep_index is not None:
+        if self.select_subset_data:
             batch = subselect_data(
                 batch=batch,
                 required_keys=self.required_keys,
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
-                current_timestep_index=self.current_timestep_index,
+                current_timestep_index=self.current_timestep_5_index,
             )
 
         batch = example.to_numpy(batch)
@@ -363,9 +382,9 @@ def select_time_period(
 def subselect_data(
     batch: example.Example,
     required_keys: Union[Tuple[str], List[str]],
-    current_timestep_index: int,
     history_minutes: int,
     forecast_minutes: int,
+    current_timestep_index: Optional[int] = None,
 ) -> example.Example:
     """
     Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
@@ -381,17 +400,32 @@ def subselect_data(
         Example with only data between [t0 - history_minutes, t0 + forecast_minutes] remaining
     """
 
+    _LOG.debug(
+        f"Select sub data with new historic minutes of {history_minutes} "
+        f"and forecast minutes if {forecast_minutes}"
+    )
+
     # We are subsetting the data
     date_time_index_to_use = (
         SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME
     )
-    current_time = batch[date_time_index_to_use].isel(time=current_timestep_index)[0]
+
+    # t0_dt or if not available use a different datetime index
+    if T0_DT in batch.keys():
+        current_time_of_first_batch = batch[T0_DT][0]
+    else:
+        current_time_of_first_batch = batch[date_time_index_to_use].isel(
+            time=current_timestep_index
+        )[0]
+
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
     # The extra 30 seconds is added to ensure that the first and last timestep are always contained
     # within the [start_time, end_time] range
-    start_time = current_time - pd.to_timedelta(f"{history_minutes} minute 30 second")
-    end_time = current_time + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
+    start_time = current_time_of_first_batch - pd.to_timedelta(
+        f"{history_minutes} minute 30 second"
+    )
+    end_time = current_time_of_first_batch + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
     used_datetime_features = [k for k in DATETIME_FEATURE_NAMES if k in required_keys]
     if SATELLITE_DATA in required_keys:
         batch = select_time_period(

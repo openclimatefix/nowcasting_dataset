@@ -12,6 +12,7 @@ from nowcasting_dataset.consts import (
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
+    T0_DT,
 )
 
 from nowcasting_dataset.dataset.example import Example
@@ -111,7 +112,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D
-            for name in ["x_meters_center", "y_meters_center"]:
+            for name in ["x_meters_center", "y_meters_center", T0_DT]:
                 try:
                     one_dataset[name] = xr.DataArray(
                         [example[name]], coords=example_dim, dims=["example"]

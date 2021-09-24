@@ -70,7 +70,7 @@ def test_gsp_pv_data_source_get_example():
     assert len(l["gsp_id"]) == len(l["gsp_yield"][0])
     assert len(l["gsp_x_coords"]) == len(l["gsp_y_coords"])
     assert len(l["gsp_x_coords"]) > 0
-    assert type(l[T0_DT]) == datetime
+    assert type(l[T0_DT]) == pd.Timestamp
 
 
 def test_gsp_pv_data_source_get_batch():

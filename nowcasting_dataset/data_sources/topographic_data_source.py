@@ -48,6 +48,7 @@ class TopographicDataSource(ImageDataSource):
             1,  # Topographic data is just the height, so single channel
         )
         self._data = xr.open_dataset(filename_or_obj=self.filename).to_array(dim=TOPOGRAPHIC_DATA)
+        self._stored_pixel_size = self._data.attrs["scale_km"]
         print(self._data)
 
     def get_example(

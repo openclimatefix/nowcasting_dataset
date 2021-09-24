@@ -7,6 +7,14 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 
+try:
+    import xesmf as xe
+
+    XESMF_AVAILABLE = True
+except ImportError:
+    print("xESMF is not installed, Topological data will be unavailable")
+    XESMF_AVAILABLE = False
+
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
 # out = rasterio.open(out_fp)
@@ -42,6 +50,7 @@ class TopographicDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        assert XESMF_AVAILABLE, ValueError("xESMF is not available, cannot use Topographic data")
         self._shape_of_example = (
             image_size_pixels,
             image_size_pixels,
@@ -51,6 +60,7 @@ class TopographicDataSource(ImageDataSource):
         # Scale factor can be computed from distance between pixels, that would be it in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
         self._scale_factor = int(meters_per_pixel / self._stored_pixel_size_meters)
+        self._meters_per_pixel = meters_per_pixel
         self._data = self._data.to_array(dim=TOPOGRAPHIC_DATA)
         assert self._stored_pixel_size_meters <= meters_per_pixel, AttributeError(
             "The stored topographical map has a lower resolution than requested"
@@ -68,19 +78,21 @@ class TopographicDataSource(ImageDataSource):
             y=slice(bounding_box.top, bounding_box.bottom),
         )
         # Rescale here to the exact size, assumes that the above is good slice
-        # Xarray doesn't have good rescaling built in, so convert to numpy then back
-        # TODO This is very slow, it would probably be faster to do in Numpy and convert back
-        # Coarsen is built in but doesn't end up with the correct shape a lot of the time, the output
-        # will be cut off on the right and bottom sides
-        # Could get data, resample down with Numpy, resample coordinates and then recreate the data?
-        # Or use EMFPy as optional dependency, as needs conda install or other complicated
-        nsamples = self._square.size_pixels + 1
-        xbins = np.linspace(selected_data.x.min(), selected_data.x.max(), nsamples).astype(int)
-        ybins = np.linspace(selected_data.y.min(), selected_data.y.max(), nsamples).astype(int)
-        selected_data = (
-            selected_data.groupby_bins("x", xbins).mean().groupby_bins("y", ybins).mean()
+        regridded_data = xr.Dataset(
+            {
+                "x": (
+                    ["x"],
+                    np.arange(bounding_box.left, bounding_box.right, self._meters_per_pixel),
+                ),
+                "y": (
+                    ["y"],
+                    np.arange(bounding_box.top, bounding_box.bottom, self._meters_per_pixel),
+                ),
+            }
         )
-        # TODO get coordinates again with center of bin?
+        regridder = xe.Regridder(selected_data, regridded_data, "bilinear")
+        regridded_data = regridder(selected_data)
+        selected_data = regridded_data
         print(selected_data)
         print(selected_data.shape)
 

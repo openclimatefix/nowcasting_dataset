@@ -13,8 +13,11 @@ from nowcasting_dataset.consts import (
     PV_YIELD,
     GSP_YIELD,
     GSP_DATETIME_INDEX,
+    T0_DT,
 )
 from nowcasting_dataset.dataset import example
+from nowcasting_dataset.config.model import Configuration
+import nowcasting_dataset
 import plotly.graph_objects as go
 import plotly
 import pandas as pd
@@ -24,8 +27,8 @@ from pathlib import Path
 import xarray as xr
 
 
-def test_subselect_date():
-    dataset = xr.open_dataset("tests/data/0.nc")
+def test_subselect_date(test_data_folder):
+    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
     x = example.Example(
         sat_data=dataset["sat_data"],
         nwp=dataset["nwp"],
@@ -45,9 +48,32 @@ def test_subselect_date():
     assert batch[NWP_DATA].shape[2] == 5
 
 
-def test_netcdf_dataset_local():
-    DATA_PATH = "tests/data"
-    TEMP_PATH = "tests/data/temp/"
+def test_subselect_date_with_t0_dt(test_data_folder):
+    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
+    x = example.Example(
+        sat_data=dataset["sat_data"],
+        nwp=dataset["nwp"],
+        nwp_target_time=dataset["nwp_time_coords"],
+        sat_datetime_index=dataset["sat_time_coords"],
+    )
+    x[T0_DT] = x[SATELLITE_DATETIME_INDEX].isel(time=7)
+
+    batch = subselect_data(
+        x,
+        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+        history_minutes=10,
+        forecast_minutes=10,
+    )
+
+    assert batch[SATELLITE_DATA].shape[1] == 5
+    assert batch[NWP_DATA].shape[2] == 5
+
+
+def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
+    DATA_PATH = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests", "data")
+    TEMP_PATH = os.path.join(
+        os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "temp"
+    )
 
     train_dataset = NetCDFDataset(
         1,
@@ -56,8 +82,8 @@ def test_netcdf_dataset_local():
         cloud="local",
         history_minutes=10,
         forecast_minutes=10,
-        current_timestep_index=7,
-        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+        required_keys=[NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+        configuration=configuration,
     )
 
     dataloader_config = dict(
@@ -84,16 +110,19 @@ def test_netcdf_dataset_local():
     assert data[NWP_DATA].shape[2] == 5
 
     # Make sure file isn't deleted!
-    assert os.path.exists("tests/data/0.nc")
+    assert os.path.exists(os.path.join(DATA_PATH, "0.nc"))
 
 
 @pytest.mark.skip("CD does not have access to GCS")
-def test_get_dataloaders_gcp():
+def test_get_dataloaders_gcp(configuration: Configuration):
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
 
     train_dataset = NetCDFDataset(
-        24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train")
+        24_900,
+        os.path.join(DATA_PATH, "train"),
+        os.path.join(TEMP_PATH, "train"),
+        configuration=configuration,
     )
 
     dataloader_config = dict(
@@ -125,7 +154,7 @@ def test_get_dataloaders_gcp():
 
 
 @pytest.mark.skip("CD does not have access to AWS")
-def test_get_dataloaders_aws():
+def test_get_dataloaders_aws(configuration: Configuration):
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         TEMP_PATH = Path(tmpdirname)
@@ -134,7 +163,11 @@ def test_get_dataloaders_aws():
         os.mkdir(os.path.join(TEMP_PATH, "train"))
 
         train_dataset = NetCDFDataset(
-            24_900, os.path.join(DATA_PATH, "train"), os.path.join(TEMP_PATH, "train"), cloud="aws"
+            24_900,
+            os.path.join(DATA_PATH, "train"),
+            os.path.join(TEMP_PATH, "train"),
+            cloud="aws",
+            configuration=configuration,
         )
 
         dataloader_config = dict(
@@ -158,7 +191,7 @@ def test_get_dataloaders_aws():
 
 
 @pytest.mark.skip("CD does not have access to GCP")
-def test_required_keys_gcp():
+def test_required_keys_gcp(configuration: Configuration):
 
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/"
     TEMP_PATH = "../nowcasting_dataset"
@@ -180,6 +213,7 @@ def test_required_keys_gcp():
             SATELLITE_Y_COORDS,
             GSP_DATETIME_INDEX,
         ],
+        configuration=configuration,
     )
 
     dataloader_config = dict(
@@ -205,7 +239,7 @@ def test_required_keys_gcp():
 
 
 @pytest.mark.skip("CD does not have access to GCP")
-def test_subsetting_gcp():
+def test_subsetting_gcp(configuration: Configuration):
 
     DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/"
     TEMP_PATH = "../nowcasting_dataset"
@@ -220,7 +254,7 @@ def test_subsetting_gcp():
         cloud="gcp",
         history_minutes=10,
         forecast_minutes=10,
-        current_timestep_index=7,
+        configuration=configuration,
     )
 
     dataloader_config = dict(

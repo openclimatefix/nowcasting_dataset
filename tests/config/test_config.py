@@ -88,7 +88,6 @@ def test_config_get():
     """Test that git commit is working"""
 
     filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "example.yaml")
-
     config = load_yaml_configuration(filename)
 
     config = set_git_commit(configuration=config)

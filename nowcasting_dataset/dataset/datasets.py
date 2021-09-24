@@ -16,6 +16,8 @@ from nowcasting_dataset import utils as nd_utils
 from nowcasting_dataset.dataset import example
 import torch
 
+from nowcasting_dataset.config.model import Configuration
+
 from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
@@ -130,22 +132,26 @@ class NetCDFDataset(torch.utils.data.Dataset):
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
         current_timestep_index: Optional[int] = None,
+        configuration: Optional[Configuration] = None,
     ):
         """
+
         Args:
-          n_batches: Number of batches available on disk.
-          src_path: The full path (including 'gs://') to the data on
-            Google Cloud storage.
-          tmp_path: The full path to the local temporary directory
-            (on a local filesystem).
-        required_keys: Tuple or list of keys required in the example for it to be considered usable
-        history_minutes: How many past minutes of data to use, if subsetting the batch
-        forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
-        current_timestep_index: Index into either sat_datetime_index or nwp_target_time indicating the current time,
+            n_batches: Number of batches available on disk.
+            src_path: The full path (including 'gs://') to the data on
+                Google Cloud storage.
+            tmp_path: The full path to the local temporary directory
+                (on a local filesystem).
+            cloud:
+            required_keys: Tuple or list of keys required in the example for it to be considered usable
+            history_minutes: How many past minutes of data to use, if subsetting the batch
+            forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
+            current_timestep_index: Index into either sat_datetime_index or nwp_target_time indicating the current time,
                                 if None, then the entire batch is used, if not None, then subselecting is turned on, and
                                 only history_minutes + current time + forecast_minutes data is used.
-
+            configuration: configuration object
         """
+
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
@@ -154,6 +160,12 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
         self.current_timestep_index = current_timestep_index
+        self.configuration = configuration
+
+        if self.forecast_minutes is None:
+            self.forecast_minutes = configuration.process.forecast_minutes
+        if self.history_minutes is None:
+            self.history_minutes = configuration.process.history_minutes
 
         # setup cloud connections as None
         self.gcs = None

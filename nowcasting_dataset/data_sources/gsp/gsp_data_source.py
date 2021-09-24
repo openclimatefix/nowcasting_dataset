@@ -198,7 +198,7 @@ class GSPDataSource(ImageDataSource):
 
         # Save data into the Example dict...
         example = Example(
-            to_dt=t0_dt,
+            t0_dt=t0_dt,
             gsp_id=all_gsp_ids,
             gsp_yield=selected_gsp_power,
             x_meters_center=x_meters_center,

@@ -10,6 +10,7 @@ import geopandas as gpd
 from datetime import datetime
 
 import nowcasting_dataset
+from nowcasting_dataset.consts import T0_DT
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 
 
@@ -69,6 +70,7 @@ def test_gsp_pv_data_source_get_example():
     assert len(l["gsp_id"]) == len(l["gsp_yield"][0])
     assert len(l["gsp_x_coords"]) == len(l["gsp_y_coords"])
     assert len(l["gsp_x_coords"]) > 0
+    assert type(l[T0_DT]) == datetime
 
 
 def test_gsp_pv_data_source_get_batch():
@@ -103,3 +105,4 @@ def test_gsp_pv_data_source_get_batch():
     assert len(batch[0]["gsp_id"]) == len(batch[0]["gsp_x_coords"])
     assert len(batch[1]["gsp_x_coords"]) == len(batch[1]["gsp_y_coords"])
     assert len(batch[2]["gsp_x_coords"]) > 0
+    assert T0_DT in batch[3].keys()

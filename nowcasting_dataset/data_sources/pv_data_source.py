@@ -238,6 +238,7 @@ class PVDataSource(ImageDataSource):
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
         # Save data into the Example dict...
         example = Example(
+            to_dt=t0_dt,
             pv_system_id=all_pv_system_ids,
             pv_system_row_number=pv_system_row_number,
             pv_yield=selected_pv_power,

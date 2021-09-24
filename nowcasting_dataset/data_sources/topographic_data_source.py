@@ -34,6 +34,9 @@ TOPO_STD = xr.DataArray(
 class TopographicDataSource(ImageDataSource):
     """Add topographic/elevation map features."""
 
+    # TODO Have to resample on fly, if meters_per_pixel is greater than 1km, than resample area of interest
+    # to match that new resolution, gives artifacts, but matches size and shape
+
     filename: str = None
     normalize: bool = True
 
@@ -45,6 +48,7 @@ class TopographicDataSource(ImageDataSource):
             1,  # Topographic data is just the height, so single channel
         )
         self._data = xr.open_dataset(filename_or_obj=self.filename).to_array(dim=TOPOGRAPHIC_DATA)
+        print(self._data)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -53,10 +57,12 @@ class TopographicDataSource(ImageDataSource):
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
+        print(bounding_box)
         selected_data = selected_data.sel(
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
         )
+        print(selected_data.shape)
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:

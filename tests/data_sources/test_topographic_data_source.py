@@ -30,6 +30,11 @@ def test_get_example(x, y, left, right, top, bottom):
     t0_dt = pd.Timestamp("2019-01-01T13:00")
     example = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
     sat_data = example["topo_data"]
+    print(f"Top: {top} Bottom: {bottom} Example:")
+    print(example["topo_y_coords"])
+    print(f"Left: {left} Right: {right} Example:")
+    print(example["topo_x_coords"])
+    # Topo data has issues with exactly being correct
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]
     # sat_data.y is top-to-bottom.

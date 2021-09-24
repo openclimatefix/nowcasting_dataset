@@ -43,6 +43,8 @@ for f in files:
             (dataset.width / data.shape[-1]), (dataset.height / data.shape[-2])
         )
         name = f.split("/")[-1]
+        # Set the nodata values to 0, as nearly all ocean.
+        data[data == -32767] = 0
         out_meta = dataset.meta.copy()
         out_meta.update(
             {
@@ -98,5 +100,7 @@ print(out.meta)
 show(out, cmap="terrain", with_bounds=True)
 out_fp = "europe_dem_1km_osgb.tif"
 data = xarray.open_rasterio(out_fp, parse_coordinates=True)
+data.attrs["scale_km"] = 0.03 * upscale_factor  # 30m * upscale factor to get current scale in km
+data.attrs["upscale_factor_used"] = upscale_factor  # Factor used for upscaling
 print(data)
 data.to_netcdf("europe_dem_1km_meters_osgb.nc")

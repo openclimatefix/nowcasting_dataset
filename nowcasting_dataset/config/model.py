@@ -88,9 +88,9 @@ def set_git_commit(configuration: Configuration):
     repo = git.Repo(search_parent_directories=True)
 
     git_details = Git(
-        hash=repo.head.reference.commit.hexsha,
-        committed_date=datetime.fromtimestamp(repo.head.reference.commit.committed_date),
-        message=repo.head.reference.commit.message,
+        hash=repo.head.object.hexsha,
+        committed_date=datetime.fromtimestamp(repo.head.object.committed_date),
+        message=repo.head.object.message,
     )
 
     configuration.git = git_details

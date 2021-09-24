@@ -9,13 +9,14 @@ import xarray as xr
 import numpy as np
 
 # Means computed with
-# nwp_ds = NWPDataSource(...)
-# nwp_ds.open()
-# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(
-#     dim=['step', 'x', 'init_time', 'y']).compute()
+# out_fp = "europe_dem_1km.tif"
+# out = rasterio.open(out_fp)
+# data = out.read(masked=True)
+# print(np.mean(data))
+# print(np.std(data))
 TOPO_MEAN = xr.DataArray(
     data=[
-        0,
+        365.486887,
     ],
     dims=["variable"],
     coords={"variable": "topo_data"},
@@ -23,7 +24,7 @@ TOPO_MEAN = xr.DataArray(
 
 TOPO_STD = xr.DataArray(
     data=[
-        0,
+        478.841369,
     ],
     dims=["variable"],
     coords={"variable": "topo_data"},

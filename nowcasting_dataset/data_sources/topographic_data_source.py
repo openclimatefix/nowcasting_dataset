@@ -1,4 +1,4 @@
-from nowcasting_dataset.data_sources.data_source import ImageDataSource
+from nowcasting_dataset.data_sources.data_source import ImageDataSource, ZarrDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
@@ -33,7 +33,7 @@ TOPO_STD = xr.DataArray(
 
 
 @dataclass
-class TopographicDataSource(ImageDataSource):
+class TopographicDataSource(ZarrDataSource):
     """Add topographic/elevation map features."""
 
     filename: str = None
@@ -70,6 +70,3 @@ class TopographicDataSource(ImageDataSource):
             selected_data = selected_data - TOPO_MEAN
             selected_data = selected_data / TOPO_STD
         return selected_data
-
-    def datetime_index(self) -> pd.DatetimeIndex:
-        raise NotImplementedError()

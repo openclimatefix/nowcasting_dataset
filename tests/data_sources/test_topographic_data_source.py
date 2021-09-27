@@ -1,5 +1,6 @@
 import pytest
 import pandas as pd
+import numpy as np
 from nowcasting_dataset.data_sources import TopographicDataSource
 
 
@@ -17,11 +18,12 @@ from nowcasting_dataset.data_sources import TopographicDataSource
         (2001, 2001, -124_000, 130_000, 130_000, -124_000),
     ],
 )
-def test_get_example(x, y, left, right, top, bottom):
+def test_get_example_2km(x, y, left, right, top, bottom):
+    size = 2000  # meters
     topo_source = TopographicDataSource(
-        filename="/home/jacob/Development/nowcasting_dataset/tests/data/europe_dem_1km_osgb.tif",
+        filename="tests/data/europe_dem_2km_osgb.tif",
         image_size_pixels=128,
-        meters_per_pixel=2000,
+        meters_per_pixel=size,
         normalize=True,
         convert_to_numpy=True,
         forecast_minutes=300,
@@ -29,16 +31,29 @@ def test_get_example(x, y, left, right, top, bottom):
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
     example = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
-    sat_data = example["topo_data"]
-    print(f"Top: {top} Bottom: {bottom} Example:")
-    print(example["topo_y_coords"])
-    print(f"Left: {left} Right: {right} Example:")
-    print(example["topo_x_coords"])
-    # Topo data has issues with exactly being correct
-    assert left == sat_data.x.values[0]
-    assert right == sat_data.x.values[-1]
-    # sat_data.y is top-to-bottom.
-    assert top == sat_data.y.values[0]
-    assert bottom == sat_data.y.values[-1]
-    assert len(sat_data.x) == pytest.IMAGE_SIZE_PIXELS
-    assert len(sat_data.y) == pytest.IMAGE_SIZE_PIXELS
+    topo_data = example["topo_data"]
+    assert len(topo_data.x) == 128
+    assert len(topo_data.y) == 128
+    assert not np.isnan(topo_data).any()
+    # Topo x and y coords are not exactly set on the edges, but the center of the pixels
+    assert np.isclose(left, topo_data.x.values[0], atol=size)
+    assert np.isclose(right, topo_data.x.values[-1], atol=size)
+    assert np.isclose(top, topo_data.y.values[0], atol=size)
+    assert np.isclose(bottom, topo_data.y.values[-1], atol=size)
+    # Check normalization works
+    assert np.max(topo_data) <= 1.0
+    assert np.min(topo_data) >= -1.0
+
+
+def test_resolution_error():
+    size = 250  # meters
+    with pytest.raises(AssertionError):
+        topo_source = TopographicDataSource(
+            filename="/home/jacob/Development/nowcasting_dataset/tests/data/europe_dem_2km_osgb.tif",
+            image_size_pixels=256,
+            meters_per_pixel=size,
+            normalize=True,
+            convert_to_numpy=True,
+            forecast_minutes=300,
+            history_minutes=10,
+        )

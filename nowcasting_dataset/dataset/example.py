@@ -32,7 +32,7 @@ class Example(TypedDict):
 
     # Topographic data
     # Elevation map of the area covered by the satellite data
-    # Shape: [batch_size,] width, height, 1
+    # Shape: [batch_size,] width, height
     topo_data: Array
     topo_x_coords: Array
     topo_y_coords: Array

@@ -28,3 +28,4 @@ tqdm
 black
 pre-commit
 s3fs
+fsspec

@@ -5,15 +5,10 @@ single representation of the area in NetCDF and GeoTIFF formats
 The SRTM files can be downloaded from NASA, and are in CRS EPSG:4326
 """
 import os.path
-import xarray
 import glob
 import rasterio
 from rasterio.merge import merge
-from rasterio.plot import show
-from rasterio.enums import Resampling
-from nowcasting_dataset.geospatial import lat_lon_to_osgb
-from itertools import zip_longest
-from rasterio.warp import calculate_default_transform, reproject, Resampling
+from rasterio.warp import Resampling
 from nowcasting_dataset.geospatial import OSGB
 import rioxarray
 
@@ -24,8 +19,7 @@ files = glob.glob("/run/media/jacob/data/SRTM/*.tif")
 out_dir = "/run/media/jacob/data/SRTM1KM/"
 
 
-upscale_factor = 0.12  # 30m to 1km
-# upscale_factor = 0.026761596 # Not actually quite 30m, so this should make it exactly 1km
+upscale_factor = 0.12  # 30m to 250m, just making it small enough files to actuall merge
 for f in files:
     with rasterio.open(f) as dataset:
 

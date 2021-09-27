@@ -32,6 +32,7 @@ def test_nwp_data_source_open():
         forecast_minutes=60,
         convert_to_numpy=True,
         n_timesteps_per_batch=8,
+        channels=["t"],
     )
 
     nwp.open()
@@ -50,6 +51,7 @@ def test_nwp_data_source_batch():
         forecast_minutes=60,
         convert_to_numpy=True,
         n_timesteps_per_batch=8,
+        channels=["t"],
     )
 
     nwp.open()

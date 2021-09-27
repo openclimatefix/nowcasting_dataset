@@ -28,3 +28,7 @@ NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
 Main thing in here is a Typed Dictionary. This is used to store one element of data use for one step in the ML models.
 There is also a validation function. See this file for documentation about exactly what data is available in each ML
 training Example.
+
+## validatey.py
+
+Contains a class that can validate the prepare ml dataset

@@ -154,6 +154,9 @@ class FakeDataset(torch.utils.data.Dataset):
                 self.batch_size, self.seq_length_30, DEFAULT_N_GSP_PER_EXAMPLE
             ),
             "gsp_id": torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE),
+            "topo_data": torch.randn(
+                self.batch_size, self.satellite_image_size_pixels, self.satellite_image_size_pixels
+            ),
         }
 
         # add a nan
@@ -169,6 +172,12 @@ class FakeDataset(torch.utils.data.Dataset):
         x["gsp_x_coords"], _ = torch.sort(torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE))
         x["gsp_y_coords"], _ = torch.sort(
             torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE), descending=True
+        )
+        x["topo_x_coords"], _ = torch.sort(
+            torch.randn(self.batch_size, self.satellite_image_size_pixels)
+        )
+        x["topo_y_coords"], _ = torch.sort(
+            torch.randn(self.batch_size, self.satellite_image_size_pixels), descending=True
         )
 
         x["nwp_x_coords"], _ = torch.sort(torch.randn(self.batch_size, self.nwp_image_size_pixels))

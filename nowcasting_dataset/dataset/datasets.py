@@ -47,6 +47,9 @@ from nowcasting_dataset.consts import (
     PV_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
     T0_DT,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_Y_COORDS,
+    TOPOGRAPHIC_X_COORDS,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 
@@ -129,6 +132,9 @@ class NetCDFDataset(torch.utils.data.Dataset):
             GSP_X_COORDS,
             GSP_Y_COORDS,
             GSP_DATETIME_INDEX,
+            TOPOGRAPHIC_DATA,
+            TOPOGRAPHIC_Y_COORDS,
+            TOPOGRAPHIC_X_COORDS,
         ]
         + list(DATETIME_FEATURE_NAMES),
         history_minutes: Optional[int] = None,

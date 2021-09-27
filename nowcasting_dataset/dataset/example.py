@@ -173,6 +173,10 @@ def validate_example(
     assert len(data["sat_y_coords"]) == sat_image_size
     assert len(data["sat_datetime_index"]) == seq_len_5_minutes
 
+    assert data[TOPOGRAPHIC_DATA].shape == (sat_image_size, sat_image_size)
+    assert len(data[TOPOGRAPHIC_X_COORDS]) == sat_image_size
+    assert len(data[TOPOGRAPHIC_Y_COORDS]) == sat_image_size
+
     assert data["nwp"].shape == (n_nwp_channels, seq_len_5_minutes, nwp_image_size, nwp_image_size)
     assert len(data["nwp_x_coords"]) == nwp_image_size
     assert len(data["nwp_y_coords"]) == nwp_image_size

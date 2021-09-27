@@ -13,6 +13,9 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
     T0_DT,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_X_COORDS,
+    TOPOGRAPHIC_Y_COORDS,
 )
 
 from nowcasting_dataset.dataset.example import Example
@@ -58,6 +61,9 @@ def fix_dtypes(concat_ds):
         GSP_ID: np.float32,
         GSP_X_COORDS: np.float32,
         GSP_Y_COORDS: np.float32,
+        TOPOGRAPHIC_X_COORDS: np.float32,
+        TOPOGRAPHIC_Y_COORDS: np.float32,
+        TOPOGRAPHIC_DATA: np.float32,
     }
 
     for name, dtype in ds_dtypes.items():
@@ -113,6 +119,20 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 dims=["time_30"],
                 coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
             )
+
+            # Topographic
+            ds = example[TOPOGRAPHIC_DATA].to_dataset(name=name)
+            short_name = name.replace("_data", "")
+            for dim in ["x", "y"]:
+                ds = coord_to_range(ds, dim, prefix=short_name)
+            ds = ds.rename(
+                {
+                    "variable": f"{short_name}_variable",
+                    "x": f"{short_name}_x",
+                    "y": f"{short_name}_y",
+                }
+            )
+            individual_datasets.append(ds)
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D

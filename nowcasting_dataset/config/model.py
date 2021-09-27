@@ -37,7 +37,7 @@ class InputData(BaseModel):
         description="TODO",
     )
 
-    npw_base_path: str = Field(
+    nwp_base_path: str = Field(
         "NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
         description="TODO",
     )

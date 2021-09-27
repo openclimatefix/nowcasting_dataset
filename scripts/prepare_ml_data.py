@@ -60,7 +60,7 @@ PV_METADATA_FILENAME = PV_PATH / config.input_data.solar_pv_metadata_filename
 SAT_FILENAME = BUCKET / config.input_data.satellite_filename
 
 # Numerical weather predictions
-NWP_BASE_PATH = BUCKET / config.input_data.npw_base_path
+NWP_BASE_PATH = BUCKET / config.input_data.nwp_base_path
 
 # GSP data
 GSP_FILENAME = BUCKET / config.input_data.gsp_filename

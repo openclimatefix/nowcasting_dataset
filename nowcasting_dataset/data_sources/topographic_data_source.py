@@ -52,7 +52,6 @@ class TopographicDataSource(ImageDataSource):
         self._data = self._data.fillna(0)  # Set nodata values to 0 (mostly should be ocean)
         # Add CRS for later, topo maps are assumed to be in OSGB
         self._data.attrs["crs"] = OSGB
-        print(self._data.shape)
         # Distance between pixels, giving their spatial extant, in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
         self._meters_per_pixel = meters_per_pixel

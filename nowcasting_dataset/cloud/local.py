@@ -1,12 +1,12 @@
 import glob
 import os
 import shutil
-
+from typing import Union
 
 import logging
 from pathlib import Path
 
-_LOG = logging.getLogger("nowcasting_dataset")
+_LOG = logging.getLogger(__name__)
 
 
 def delete_all_files_and_folder_in_temp_path(path: str):
@@ -32,3 +32,9 @@ def delete_all_files_in_temp_path(path: Path):
     _LOG.info(f"Deleting {len(files)} files from {path}.")
     for f in files:
         os.remove(f)
+
+
+def check_path_exists(path: Union[str, Path]):
+    path = Path(path)
+    if not path.exists():
+        raise RuntimeError(f"{path} does not exist!")

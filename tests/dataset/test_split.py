@@ -224,6 +224,7 @@ def test_split_week_random():
     assert len(validation_test_overlap) == 0
 
     # check all first 3 days datetimes are in the same week
-    week = train[0].isocalendar().week
+    # train is a pd.DatetimeIndex object.
+    week = train[0].week
     for t in train[0:3]:
-        assert t.isocalendar().week == week
+        assert t.week == week

@@ -19,7 +19,7 @@ from nowcasting_dataset.data_sources import TopographicDataSource
 )
 def test_get_example(x, y, left, right, top, bottom):
     topo_source = TopographicDataSource(
-        filename="/home/jacob/Development/nowcasting_dataset/tests/data/europe_dem_1km_meters_osgb.nc",
+        filename="/home/jacob/Development/nowcasting_dataset/tests/data/europe_dem_1km_osgb.tif",
         image_size_pixels=128,
         meters_per_pixel=2000,
         normalize=True,

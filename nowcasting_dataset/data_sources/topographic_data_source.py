@@ -6,14 +6,7 @@ from numbers import Number
 import pandas as pd
 import xarray as xr
 import numpy as np
-
-try:
-    import xesmf as xe
-
-    XESMF_AVAILABLE = True
-except ImportError:
-    print("xESMF is not installed, Topological data will be unavailable")
-    XESMF_AVAILABLE = False
+import rioxarray
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
@@ -50,15 +43,19 @@ class TopographicDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        assert XESMF_AVAILABLE, ValueError("xESMF is not available, cannot use Topographic data")
         self._shape_of_example = (
             image_size_pixels,
             image_size_pixels,
             1,  # Topographic data is just the height, so single channel
         )
-        self._data = xr.open_dataset(filename_or_obj=self.filename)
+        self._data = rioxarray.open_rasterio(filename=self.filename, parse_coordinates=True)
         # Scale factor can be computed from distance between pixels, that would be it in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
+        print(
+            self._stored_pixel_size_meters
+        )  # Gives values of 892.053ish, not the 1km that is expected
+        print(self._data)
+        exit()
         self._scale_factor = int(meters_per_pixel / self._stored_pixel_size_meters)
         self._meters_per_pixel = meters_per_pixel
         self._data = self._data.to_array(dim=TOPOGRAPHIC_DATA)
@@ -78,21 +75,7 @@ class TopographicDataSource(ImageDataSource):
             y=slice(bounding_box.top, bounding_box.bottom),
         )
         # Rescale here to the exact size, assumes that the above is good slice
-        regridded_data = xr.Dataset(
-            {
-                "x": (
-                    ["x"],
-                    np.arange(bounding_box.left, bounding_box.right, self._meters_per_pixel),
-                ),
-                "y": (
-                    ["y"],
-                    np.arange(bounding_box.top, bounding_box.bottom, self._meters_per_pixel),
-                ),
-            }
-        )
-        regridder = xe.Regridder(selected_data, regridded_data, "bilinear")
-        regridded_data = regridder(selected_data)
-        selected_data = regridded_data
+
         print(selected_data)
         print(selected_data.shape)
 

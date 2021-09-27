@@ -121,7 +121,7 @@ def get_gsp_shape_from_eso(
                 x=shape_gpd["centroid_x"], y=shape_gpd["centroid_y"]
             )
 
-            # project to WGS84 i.e
+            # project to WGS84
             shape_gpd = shape_gpd.to_crs(WGS84_CRS)
 
     if save_local_file:

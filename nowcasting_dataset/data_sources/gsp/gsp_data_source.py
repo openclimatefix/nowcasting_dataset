@@ -77,8 +77,9 @@ class GSPDataSource(ImageDataSource):
         self.metadata = get_gsp_metadata_from_eso()
 
         # make location x,y in osgb
-        self.metadata["location_x"] = self.metadata["centroid_x"]
-        self.metadata["location_y"] = self.metadata["centroid_y"]
+        self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
+            lat=self.metadata["centroid_lat"], lon=self.metadata["centroid_lon"]
+        )
 
         # load gsp data from file / gcp
         self.gsp_power = load_solar_gsp_data(

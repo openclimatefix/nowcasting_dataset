@@ -46,6 +46,8 @@ def test_gsp_pv_data_source_get_locations_for_batch():
     locations_x, locations_y = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:10])
 
     assert len(locations_x) == len(locations_y)
+    assert locations_x[0] > 180  # this makes sure it is not in lat/lon
+    assert locations_y[0] > 90  # this makes sure it is not in lat/lon
 
 
 def test_gsp_pv_data_source_get_example():

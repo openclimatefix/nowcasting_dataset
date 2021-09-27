@@ -21,9 +21,18 @@ from urllib.request import urlopen
 import geopandas as gpd
 import pandas as pd
 
-from nowcasting_dataset.geospatial import WGS84_CRS
+from nowcasting_dataset.geospatial import osgb_to_lat_lon, WGS84_CRS
+
 
 logger = logging.getLogger(__name__)
+
+rename_save_columns = {
+    "centroid_x": "cen_x",
+    "centroid_y": "cen_y",
+    "centroid_lat": "cen_lat",
+    "centroid_lon": "cen_lon",
+}
+rename_load_columns = {v: k for k, v in rename_save_columns.items()}
 
 
 def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
@@ -63,10 +72,6 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
             metadata.merge(shape_data, right_on="RegionID", left_on="region_id", how="left")
         )
 
-        # make centroid
-        metadata["centroid_x"] = metadata["geometry"].centroid.x
-        metadata["centroid_y"] = metadata["geometry"].centroid.y
-
     return metadata
 
 
@@ -95,6 +100,8 @@ def get_gsp_shape_from_eso(
     if load_local_file:
         logger.debug("loading local file for GSP shape data")
         shape_gpd = gpd.read_file(local_file)
+        # rename the columns to full name
+        shape_gpd.rename(columns=rename_load_columns, inplace=True)
         logger.debug("loading local file for GSP shape data:done")
     else:
         # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
@@ -105,10 +112,26 @@ def get_gsp_shape_from_eso(
         )
 
         with urlopen(url) as response:
-            shape_gpd = gpd.read_file(response).to_crs(WGS84_CRS)
+            shape_gpd = gpd.read_file(response)
+
+            # calculate the centroid before using - to_crs
+            shape_gpd["centroid_x"] = shape_gpd["geometry"].centroid.x
+            shape_gpd["centroid_y"] = shape_gpd["geometry"].centroid.y
+            shape_gpd["centroid_lat"], shape_gpd["centroid_lon"] = osgb_to_lat_lon(
+                x=shape_gpd["centroid_x"], y=shape_gpd["centroid_y"]
+            )
+
+            # project to WGS84 i.e
+            shape_gpd = shape_gpd.to_crs(WGS84_CRS)
 
     if save_local_file:
-        shape_gpd.to_file(local_file)
+
+        # rename the columns to less than 10 characters
+        shape_gpd_to_save = shape_gpd.copy()
+        shape_gpd_to_save.rename(columns=rename_save_columns, inplace=True)
+
+        # save file
+        shape_gpd_to_save.to_file(local_file)
 
     # sort
     shape_gpd = shape_gpd.sort_values(by=["RegionID"])

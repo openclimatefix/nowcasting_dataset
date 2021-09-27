@@ -114,7 +114,7 @@ def check_directories_exist():
 
 
 def get_data_module():
-    num_workers = 1
+    num_workers = 4
 
     # get the batch id already made
     maximum_batch_id_train = utils.get_maximum_batch_id(DST_TRAIN_PATH)

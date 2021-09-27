@@ -57,7 +57,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         "hcc",
     )
     satellite_image_size_pixels: int = 128  #: Passed to Data Sources.
-    topographic_base_path: Optional[Union[str, Path]] = None
+    topographic_filename: Optional[Union[str, Path]] = None
     nwp_image_size_pixels: int = 2  #: Passed to Data Sources.
     meters_per_pixel: int = 2000  #: Passed to Data Sources.
     convert_to_numpy: bool = True  #: Passed to Data Sources.
@@ -116,7 +116,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         sat_datetimes = self.sat_data_source.datetime_index()
 
         # Topographic
-        if self.topographic_base_path is not None:
+        if self.topographic_filename is not None:
             # TODO Fill out
             self.topo_data_source = data_sources.TopographicDataSource()
 

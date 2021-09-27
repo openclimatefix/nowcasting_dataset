@@ -145,6 +145,7 @@ def test_batch_to_batch_to_dataset():
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
         sat_filename=config.input_data.satellite_filename,
+        topographic_base_path=config.input_data.topographic_filename,
         nwp_base_path=config.input_data.nwp_base_path,
         gsp_filename=config.input_data.gsp_filename,
         pin_memory=True,  #: Passed to DataLoader.

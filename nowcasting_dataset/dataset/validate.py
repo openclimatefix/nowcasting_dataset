@@ -25,6 +25,9 @@ from nowcasting_dataset.consts import (
     PV_AZIMUTH_ANGLE,
     PV_ELEVATION_ANGLE,
     DATETIME_FEATURE_NAMES,
+    TOPOGRAPHIC_X_COORDS,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_Y_COORDS,
 )
 from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
@@ -299,6 +302,10 @@ def validate_example(
     assert data["sat_x_coords"].shape[-1] == sat_image_size
     assert data["sat_y_coords"].shape[-1] == sat_image_size
     assert data["sat_datetime_index"].shape[-1] == seq_len_5_minutes
+
+    assert data[TOPOGRAPHIC_DATA].shape[-2:] == (sat_image_size, sat_image_size)
+    assert data[TOPOGRAPHIC_Y_COORDS].shape[-1] == sat_image_size
+    assert data[TOPOGRAPHIC_X_COORDS].shape[-1] == sat_image_size
 
     nwp_correct_shape = (
         n_nwp_channels,

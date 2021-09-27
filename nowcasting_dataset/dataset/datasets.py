@@ -1,12 +1,9 @@
-import datetime
 import pandas as pd
 from numbers import Number
-from typing import List, Tuple, Iterable, Callable, Union, Optional
-import nowcasting_dataset.consts
+from typing import List, Tuple, Callable, Union, Optional
 from nowcasting_dataset import data_sources
 from dataclasses import dataclass
 from concurrent import futures
-import logging
 import gcsfs
 import boto3
 import os
@@ -22,37 +19,27 @@ from nowcasting_dataset.cloud.gcp import gcp_download_to_local
 from nowcasting_dataset.cloud.aws import aws_download_to_local
 
 from nowcasting_dataset.consts import (
-    GSP_ID,
     GSP_YIELD,
-    GSP_X_COORDS,
-    GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
-    SATELLITE_X_COORDS,
-    SATELLITE_Y_COORDS,
     SATELLITE_DATA,
     NWP_DATA,
-    NWP_X_COORDS,
-    NWP_Y_COORDS,
-    PV_SYSTEM_X_COORDS,
-    PV_SYSTEM_Y_COORDS,
     PV_YIELD,
     PV_AZIMUTH_ANGLE,
     PV_ELEVATION_ANGLE,
-    PV_SYSTEM_ID,
-    PV_SYSTEM_ROW_NUMBER,
-    Y_METERS_CENTER,
-    X_METERS_CENTER,
     SATELLITE_DATETIME_INDEX,
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
+    DEFAULT_REQUIRED_KEYS,
     T0_DT,
     TOPOGRAPHIC_DATA,
     TOPOGRAPHIC_Y_COORDS,
     TOPOGRAPHIC_X_COORDS,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+import logging
 
+logger = logging.getLogger(__name__)
 
 """
 This file contains the following classes
@@ -113,30 +100,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         tmp_path: str,
         configuration: Configuration,
         cloud: str = "gcp",
-        required_keys: Union[Tuple[str], List[str]] = [
-            NWP_DATA,
-            NWP_X_COORDS,
-            NWP_Y_COORDS,
-            SATELLITE_DATA,
-            SATELLITE_X_COORDS,
-            SATELLITE_Y_COORDS,
-            PV_YIELD,
-            PV_SYSTEM_ID,
-            PV_SYSTEM_ROW_NUMBER,
-            PV_SYSTEM_X_COORDS,
-            PV_SYSTEM_Y_COORDS,
-            X_METERS_CENTER,
-            Y_METERS_CENTER,
-            GSP_ID,
-            GSP_YIELD,
-            GSP_X_COORDS,
-            GSP_Y_COORDS,
-            GSP_DATETIME_INDEX,
-            TOPOGRAPHIC_DATA,
-            TOPOGRAPHIC_Y_COORDS,
-            TOPOGRAPHIC_X_COORDS,
-        ]
-        + list(DATETIME_FEATURE_NAMES),
+        required_keys: Union[Tuple[str], List[str]] = None,
         history_minutes: Optional[int] = None,
         forecast_minutes: Optional[int] = None,
     ):
@@ -159,7 +123,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.src_path = src_path
         self.tmp_path = tmp_path
         self.cloud = cloud
-        self.required_keys = list(required_keys)
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
         self.configuration = configuration
@@ -179,6 +142,10 @@ class NetCDFDataset(torch.utils.data.Dataset):
 
         # Index into either sat_datetime_index or nwp_target_time indicating the current time,
         self.current_timestep_5_index = int(configuration.process.history_minutes // 5) + 1
+
+        if required_keys is None:
+            required_keys = DEFAULT_REQUIRED_KEYS
+        self.required_keys = list(required_keys)
 
         # setup cloud connections as None
         self.gcs = None
@@ -209,6 +176,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             NamedDict where each value is a numpy array. The size of this
             array's first dimension is the batch size.
         """
+        logger.debug(f"Getting batch {batch_idx}")
         if not 0 <= batch_idx < self.n_batches:
             raise IndexError(
                 "batch_idx must be in the range" f" [0, {self.n_batches}), not {batch_idx}!"
@@ -236,22 +204,15 @@ class NetCDFDataset(torch.utils.data.Dataset):
         if self.cloud != "local":
             os.remove(local_netcdf_filename)
 
-        batch = example.Example(
-            sat_datetime_index=netcdf_batch.sat_time_coords,
-            nwp_target_time=netcdf_batch.nwp_time_coords,
-        )
-        for key in self.required_keys:
-            try:
-                batch[key] = netcdf_batch[key]
-            except KeyError:
-                pass
+        batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
 
-        sat_data = batch[SATELLITE_DATA]
-        if sat_data.dtype == np.int16:
-            sat_data = sat_data.astype(np.float32)
-            sat_data = sat_data - SAT_MEAN
-            sat_data /= SAT_STD
-            batch[SATELLITE_DATA] = sat_data
+        if SATELLITE_DATA in self.required_keys:
+            sat_data = batch[SATELLITE_DATA]
+            if sat_data.dtype == np.int16:
+                sat_data = sat_data.astype(np.float32)
+                sat_data = sat_data - SAT_MEAN
+                sat_data /= SAT_STD
+                batch[SATELLITE_DATA] = sat_data
 
         if self.select_subset_data:
             batch = subselect_data(

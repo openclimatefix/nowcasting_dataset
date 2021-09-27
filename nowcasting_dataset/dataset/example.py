@@ -1,5 +1,6 @@
-from typing import TypedDict
+from typing import TypedDict, List
 import pandas as pd
+
 from nowcasting_dataset.consts import *
 import numpy as np
 from numbers import Number
@@ -84,14 +85,39 @@ class Example(TypedDict):
     # : Includes central GSP, which will always be the first entry. This will be a numpy array of values.
     gsp_yield: Array  #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
     # GSP identification.
-    gsp_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_id: Array  #: shape = [batch_size, ] n_gsp_per_example
     #: GSP geographical location (in OSGB coords).
-    gsp_x_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
-    gsp_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_x_coords: Array  #: shape = [batch_size, ] n_gsp_per_example
+    gsp_y_coords: Array  #: shape = [batch_size, ] n_gsp_per_example
     gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
     # if the centroid type is a GSP, or a PV system
     object_at_center: str  #: shape = [batch_size, ]
+
+
+def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -> Example:
+    """
+    Change xr dataset to Example
+
+    Args:
+        batch_xr: batch data in xarray format
+        required_keys: the keys that are need
+
+    Returns: Example object of the xarray data
+
+    """
+
+    batch = Example(
+        sat_datetime_index=batch_xr.sat_time_coords,
+        nwp_target_time=batch_xr.nwp_time_coords,
+    )
+    for key in required_keys:
+        try:
+            batch[key] = batch_xr[key]
+        except KeyError:
+            pass
+
+    return batch
 
 
 def to_numpy(example: Example) -> Example:

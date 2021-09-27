@@ -18,11 +18,11 @@
     "filters": null,
     "order": "C",
     "shape": [
-        10,
+        1,
         9,
-        37,
-        51,
-        51
+        5,
+        704,
+        548
     ],
     "zarr_format": 2
 }

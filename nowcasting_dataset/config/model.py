@@ -13,6 +13,14 @@ class General(BaseModel):
     description: str = Field(
         "example configuration", description="Description of this confgiruation file"
     )
+    cloud: str = Field(
+        "gcp",
+        description=(
+            "local, gcp, or aws.  Deprecated.  Will be removed when issue"
+            " https://github.com/openclimatefix/nowcasting_dataset/issues/153"
+            " is implemented"
+        ),
+    )
 
 
 class Git(BaseModel):
@@ -24,6 +32,10 @@ class Git(BaseModel):
 
 
 class InputData(BaseModel):
+    # All paths must include the protocol prefix.  For local files,
+    # it's sufficient to just start with a '/'.  For aws, start with 's3://',
+    # for gcp start with 'gs://'.
+
     solar_pv_data_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
         description=("The NetCDF file holding the solar PV power timeseries."),

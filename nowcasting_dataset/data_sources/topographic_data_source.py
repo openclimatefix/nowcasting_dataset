@@ -1,6 +1,8 @@
 from nowcasting_dataset.data_sources.data_source import ImageDataSource, ZarrDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
+from nowcasting_dataset.geospatial import OSGB
+from rasterio.warp import Resampling
 from dataclasses import dataclass, InitVar
 from numbers import Number
 import pandas as pd
@@ -35,9 +37,6 @@ TOPO_STD = xr.DataArray(
 class TopographicDataSource(ImageDataSource):
     """Add topographic/elevation map features."""
 
-    # TODO Have to resample on fly, if meters_per_pixel is greater than 1km, than resample area of interest
-    # to match that new resolution, gives artifacts, but matches size and shape
-
     filename: str = None
     normalize: bool = True
 
@@ -48,17 +47,16 @@ class TopographicDataSource(ImageDataSource):
             image_size_pixels,
             1,  # Topographic data is just the height, so single channel
         )
-        self._data = rioxarray.open_rasterio(filename=self.filename, parse_coordinates=True)
+        self._data = rioxarray.open_rasterio(
+            filename=self.filename, parse_coordinates=True, masked=True
+        )
+        self._data = self._data.fillna(0)  # Set nodata values to 0 (mostly should be ocean)
+        # Add CRS for later, topo maps are assuemd to be in OSGB
+        self._data.attrs["crs"] = OSGB
         # Scale factor can be computed from distance between pixels, that would be it in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
-        print(
-            self._stored_pixel_size_meters
-        )  # Gives values of 892.053ish, not the 1km that is expected
-        print(self._data)
-        exit()
-        self._scale_factor = int(meters_per_pixel / self._stored_pixel_size_meters)
+        self._scale_factor = meters_per_pixel / self._stored_pixel_size_meters
         self._meters_per_pixel = meters_per_pixel
-        self._data = self._data.to_array(dim=TOPOGRAPHIC_DATA)
         assert self._stored_pixel_size_meters <= meters_per_pixel, AttributeError(
             "The stored topographical map has a lower resolution than requested"
         )
@@ -74,9 +72,15 @@ class TopographicDataSource(ImageDataSource):
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
         )
-        # Rescale here to the exact size, assumes that the above is good slice
-
-        print(selected_data)
+        print(selected_data.shape)
+        if self._stored_pixel_size_meters != self._meters_per_pixel:
+            # Rescale here to the exact size, assumes that the above is good slice
+            # Useful if using different spatially sized grids
+            selected_data = selected_data.rio.reproject(
+                dst_crs=selected_data.attrs["crs"],
+                shape=(self._square.size_pixels, self._square.size_pixels),
+                resampling=Resampling.bilinear,
+            )
         print(selected_data.shape)
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
@@ -112,5 +116,5 @@ class TopographicDataSource(ImageDataSource):
             selected_data = selected_data - TOPO_MEAN
             selected_data = selected_data / TOPO_STD
         # Shrink extra dims
-        selected_data = selected_data.squeeze(axis=[0, 1])
+        selected_data = selected_data.squeeze(axis=0)
         return selected_data

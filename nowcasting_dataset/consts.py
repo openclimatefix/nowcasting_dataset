@@ -55,4 +55,40 @@ NWP_X_COORDS = "nwp_x_coords"
 NWP_Y_COORDS = "nwp_y_coords"
 X_METERS_CENTER = "x_meters_center"
 Y_METERS_CENTER = "y_meters_center"
+NWP_VARIABLE_NAMES = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
+SAT_VARIABLE_NAMES = (
+    "HRV",
+    "IR_016",
+    "IR_039",
+    "IR_087",
+    "IR_097",
+    "IR_108",
+    "IR_120",
+    "IR_134",
+    "VIS006",
+    "VIS008",
+    "WV_062",
+    "WV_073",
+)
+
+DEFAULT_REQUIRED_KEYS = [
+    NWP_DATA,
+    NWP_X_COORDS,
+    NWP_Y_COORDS,
+    SATELLITE_DATA,
+    SATELLITE_X_COORDS,
+    SATELLITE_Y_COORDS,
+    PV_YIELD,
+    PV_SYSTEM_ID,
+    PV_SYSTEM_ROW_NUMBER,
+    PV_SYSTEM_X_COORDS,
+    PV_SYSTEM_Y_COORDS,
+    X_METERS_CENTER,
+    Y_METERS_CENTER,
+    GSP_ID,
+    GSP_YIELD,
+    GSP_X_COORDS,
+    GSP_Y_COORDS,
+    GSP_DATETIME_INDEX,
+] + list(DATETIME_FEATURE_NAMES)
 T0_DT = "t0_dt"

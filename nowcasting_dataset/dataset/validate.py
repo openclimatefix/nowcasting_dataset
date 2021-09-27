@@ -132,10 +132,12 @@ class FakeDataset(torch.utils.data.Dataset):
             "pv_yield": torch.randn(
                 self.batch_size, self.seq_length_5, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
             ),
-            "pv_system_id": torch.randn(self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE),
+            "pv_system_id": torch.randint(940, (self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)),
             "pv_system_x_coords": torch.randn(self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE),
             "pv_system_y_coords": torch.randn(self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE),
-            "pv_system_row_number": torch.randn(self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE),
+            "pv_system_row_number": torch.randint(
+                940, (self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)
+            ),
             "nwp": torch.randn(
                 self.batch_size,
                 self.number_nwp_channels,
@@ -150,7 +152,7 @@ class FakeDataset(torch.utils.data.Dataset):
             "gsp_yield": torch.randn(
                 self.batch_size, self.seq_length_30, DEFAULT_N_GSP_PER_EXAMPLE
             ),
-            "gsp_id": torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE),
+            "gsp_id": torch.randint(340, (self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE)),
         }
 
         # add a nan
@@ -184,11 +186,6 @@ class FakeDataset(torch.utils.data.Dataset):
         # clip yield values from 0 to 1
         x["pv_yield"] = torch.clip(x["pv_yield"], min=0, max=1)
         x["gsp_yield"] = torch.clip(x["gsp_yield"], min=0, max=1)
-
-        # clip pv and system ids
-        x["gsp_id"] = torch.clip(x["gsp_id"], min=0, max=340)
-        x["pv_system_id"] = torch.clip(x["pv_system_id"], min=0, max=940)
-        x["pv_system_row_number"] = torch.clip(x["pv_system_id"], min=0, max=940)
 
         return x
 

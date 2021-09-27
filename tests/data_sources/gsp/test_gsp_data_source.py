@@ -46,7 +46,7 @@ def test_gsp_pv_data_source_get_locations_for_batch():
 
     lat, lon = osgb_to_lat_lon(locations_x, locations_y)
 
-    assert lat[0] < 90  # this makes sure it is in lat/lon
+    assert 0 < lat[0] < 90  # this makes sure it is in lat/lon
     assert -90 < lon[0] < 90  # this makes sure it is in lat/lon
 
 

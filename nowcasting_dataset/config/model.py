@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+from pathy import Pathy
 
 from datetime import datetime
 import git
@@ -12,7 +13,6 @@ class General(BaseModel):
     description: str = Field(
         "example configuration", description="Description of this confgiruation file"
     )
-    cloud: str = Field("gcp", description="gcp, aws, or local")
 
 
 class Git(BaseModel):
@@ -24,45 +24,31 @@ class Git(BaseModel):
 
 
 class InputData(BaseModel):
-    base_path_or_bucket: str = Field(
-        "solar-pv-nowcasting-data",
-        description=(
-            "If cloud==local then this should be the absolute path which holds nwp_zarr_path,"
-            " satellite_zarr_path, solar_pv_path, and output_data.filepath.  If cloud=={aws,gcp}"
-            " then this should be the bucket name, including 's3://' or 'gs://'."
-        ),
-    )
-
-    solar_pv_path: str = Field(
-        "PV/PVOutput.org",
-        description=(
-            "The path that contains solar_pv_data_filename and solar_pv_metadata_filename"
-        ),
-    )
     solar_pv_data_filename: str = Field(
-        "UK_PV_timeseries_batch.nc",
+        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
         description=("The NetCDF file holding the solar PV power timeseries."),
     )
     solar_pv_metadata_filename: str = Field(
-        "UK_PV_metadata.csv", description="The CSV file describing each PV system."
+        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
+        description="The CSV file describing each PV system.",
     )
 
     satellite_zarr_path: str = Field(
-        "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
-        description="The path within base_path_or_bucket which holds the satellite zarr.",
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        description="The path which holds the satellite zarr.",
     )
 
     nwp_zarr_path: str = Field(
-        "NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
-        description="The path within base_path_or_bucket which holds the NWP zarr.",
+        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
+        description="The path which holds the NWP zarr.",
     )
 
-    gsp_zarr_path: str = Field("PV/GSP/v0/pv_gsp.zarr")
+    gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
 
 
 class OutputData(BaseModel):
     filepath: str = Field(
-        "prepared_ML_training_data/v5/",
+        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/",
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"
@@ -98,6 +84,24 @@ class Configuration(BaseModel):
     output_data: OutputData = OutputData()
     process: Process = Process()
     git: Optional[Git] = None
+
+    def set_base_path(self, base_path: str):
+        """Append base_path to all paths.
+
+        Mostly used for testing."""
+        base_path = Pathy(base_path)
+        path_attrs = [
+            "solar_pv_data_filename",
+            "solar_pv_metadata_filename",
+            "satellite_zarr_path",
+            "nwp_zarr_path",
+            "gsp_zarr_path",
+        ]
+        for attr_name in path_attrs:
+            path = getattr(self.input_data, attr_name)
+            path = base_path / path
+            setattr(self.input_data, attr_name, path)
+            print(path)
 
 
 def set_git_commit(configuration: Configuration):

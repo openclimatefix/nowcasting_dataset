@@ -7,6 +7,8 @@ Decided to go for a 'Pydantic' data class. It's slightly more complicated that j
 
 See `model.py` for documentation of the expected configuration fields.
 
+See either `gcp.yaml` or `on_premises.yaml` for example config files.
+
 # Example
 
 ```python

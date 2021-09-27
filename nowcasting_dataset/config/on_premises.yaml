@@ -1,15 +1,13 @@
 general:
   name: on_premises
   description: Config for producing batches on OCF's on-premises hardware.
-  cloud: local
 input_data:
-  base_path_or_bucket: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/
-  nwp_zarr_path: zarr_intermediate/NWP/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
-  satellite_zarr_path: zarr_intermediate/EUMETSAT/all_zarr_int16_single_timestep.zarr
-  solar_pv_path: raw/PV/PVOutput.org
-  solar_pv_data_filename: UK_PV_timeseries_batch.nc
-  solar_pv_metadata_filename: UK_PV_metadata.csv
-  gsp_zarr_path: raw/PV/GSP/v0/pv_gsp.zarr
+  nwp_zarr_path: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/zarr_intermediate/NWP/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
+  satellite_zarr_path: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/zarr_intermediate/EUMETSAT/all_zarr_int16_single_timestep.zarr
+  solar_pv_path:
+  solar_pv_data_filename: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/raw/PV/PVOutput.org/UK_PV_timeseries_batch.nc
+  solar_pv_metadata_filename: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/raw/PV/PVOutput.org/UK_PV_metadata.csv
+  gsp_zarr_path: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v0/pv_gsp.zarr
 output_data:
   filepath: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v7/
 process:
@@ -31,7 +29,6 @@ process:
     - lcc
     - mcc
     - hcc
-  prcesion: 16
   sat_channels:
     - HRV
     - IR_016
@@ -45,4 +42,3 @@ process:
     - VIS008
     - WV_062
     - WV_073
-  val_check_interval: 1000

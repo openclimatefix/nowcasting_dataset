@@ -1,5 +1,6 @@
-from typing import TypedDict
+from typing import TypedDict, List
 import pandas as pd
+
 from nowcasting_dataset.consts import *
 import numpy as np
 from numbers import Number
@@ -77,14 +78,39 @@ class Example(TypedDict):
     # : Includes central GSP, which will always be the first entry. This will be a numpy array of values.
     gsp_yield: Array  #: shape = [batch_size, ] seq_length, n_gsp_systems_per_example
     # GSP identification.
-    gsp_id: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_id: Array  #: shape = [batch_size, ] n_gsp_per_example
     #: GSP geographical location (in OSGB coords).
-    gsp_x_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
-    gsp_y_coords: Array  #: shape = [batch_size, ] n_pv_systems_per_example
+    gsp_x_coords: Array  #: shape = [batch_size, ] n_gsp_per_example
+    gsp_y_coords: Array  #: shape = [batch_size, ] n_gsp_per_example
     gsp_datetime_index: Array  #: shape = [batch_size, ] seq_length
 
     # if the centroid type is a GSP, or a PV system
     object_at_center: str  #: shape = [batch_size, ]
+
+
+def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -> Example:
+    """
+    Change xr dataset to Example
+
+    Args:
+        batch_xr: batch data in xarray format
+        required_keys: the keys that are need
+
+    Returns: Example object of the xarray data
+
+    """
+
+    batch = Example(
+        sat_datetime_index=batch_xr.sat_time_coords,
+        nwp_target_time=batch_xr.nwp_time_coords,
+    )
+    for key in required_keys:
+        try:
+            batch[key] = batch_xr[key]
+        except KeyError:
+            pass
+
+    return batch
 
 
 def to_numpy(example: Example) -> Example:
@@ -104,72 +130,3 @@ def to_numpy(example: Example) -> Example:
 
         example[key] = value
     return example
-
-
-def validate_example(
-    data: Example,
-    seq_len_30_minutes: int,
-    seq_len_5_minutes: int,
-    sat_image_size: int = 64,
-    n_sat_channels: int = 1,
-    nwp_image_size: int = 0,
-    n_nwp_channels: int = 1,
-    n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-    n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE,
-):
-    """
-    Validate the size and shape of the data
-    Args:
-        data: Typed dictionary of the data
-        seq_len_30_minutes: the length of the sequence for 30 minutely data
-        seq_len_5_minutes: the length of the sequence for 5 minutely data
-        sat_image_size: the satellite image size
-        n_sat_channels: the number of satellite channgles
-        nwp_image_size: the nwp image size
-        n_nwp_channels: the number of nwp channels
-        n_pv_systems_per_example: the number pv systems with nan padding
-        n_gsp_per_example: the number gsp systems with nan padding
-    """
-
-    assert len(data[GSP_ID]) == n_gsp_per_example
-    n_gsp_system_id = len(data[GSP_ID])
-    assert data[GSP_YIELD].shape == (seq_len_30_minutes, n_gsp_system_id)
-    assert len(data[GSP_X_COORDS]) == n_gsp_system_id
-    assert len(data[GSP_Y_COORDS]) == n_gsp_system_id
-    assert len(data[GSP_DATETIME_INDEX]) == seq_len_30_minutes
-
-    assert data[OBJECT_AT_CENTER] == "gsp"
-    assert type(data["x_meters_center"]) == np.float64
-    assert type(data["y_meters_center"]) == np.float64
-
-    n_pv_systems = len(data[PV_SYSTEM_ID][~np.isnan(data[PV_SYSTEM_ID])])
-
-    assert len(data[PV_SYSTEM_ID]) == n_pv_systems_per_example
-    assert data[PV_YIELD].shape == (seq_len_5_minutes, n_pv_systems_per_example)
-    assert len(data[PV_SYSTEM_X_COORDS]) == n_pv_systems_per_example
-    assert len(data[PV_SYSTEM_Y_COORDS]) == n_pv_systems_per_example
-    assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
-    assert len(data[PV_SYSTEM_ROW_NUMBER][~np.isnan(data[PV_SYSTEM_ROW_NUMBER])]) == n_pv_systems
-
-    if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_AZIMUTH_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
-    if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_ELEVATION_ANGLE].shape == (seq_len_5_minutes, n_pv_systems_per_example)
-
-    assert data["sat_data"].shape == (
-        seq_len_5_minutes,
-        sat_image_size,
-        sat_image_size,
-        n_sat_channels,
-    )
-    assert len(data["sat_x_coords"]) == sat_image_size
-    assert len(data["sat_y_coords"]) == sat_image_size
-    assert len(data["sat_datetime_index"]) == seq_len_5_minutes
-
-    assert data["nwp"].shape == (n_nwp_channels, seq_len_5_minutes, nwp_image_size, nwp_image_size)
-    assert len(data["nwp_x_coords"]) == nwp_image_size
-    assert len(data["nwp_y_coords"]) == nwp_image_size
-    assert len(data["nwp_target_time"]) == seq_len_5_minutes
-
-    for feature in DATETIME_FEATURE_NAMES:
-        assert len(data[feature]) == seq_len_5_minutes

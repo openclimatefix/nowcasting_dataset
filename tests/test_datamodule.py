@@ -11,11 +11,14 @@ import nowcasting_dataset
 from nowcasting_dataset.dataset import datamodule
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.dataset.example import validate_example
+from nowcasting_dataset.dataset.example import (
+    xr_to_example,
+)
+from nowcasting_dataset.dataset.validate import validate_example, validate_batch_from_configuration
 from nowcasting_dataset.dataset.batch import batch_to_dataset
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.dataset.split.split import SplitMethod
-from nowcasting_dataset.consts import GSP_DATETIME_INDEX
+from nowcasting_dataset.consts import GSP_DATETIME_INDEX, DEFAULT_REQUIRED_KEYS
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -125,7 +128,7 @@ def test_data_module(config_filename):
         validate_example(
             data=x,
             n_nwp_channels=len(config.process.nwp_channels),
-            nwp_image_size=0,  # TODO why is this zero
+            nwp_image_size=config.process.nwp_image_size_pixels,
             n_sat_channels=len(config.process.sat_channels),
             sat_image_size=config.process.satellite_image_size_pixels,
             seq_len_30_minutes=seq_len_30_minutes,
@@ -142,7 +145,7 @@ def test_batch_to_batch_to_dataset():
         forecast_minutes=60,  #: Number of timesteps of forecast.
         satellite_image_size_pixels=config.process.satellite_image_size_pixels,
         nwp_image_size_pixels=config.process.nwp_image_size_pixels,
-        nwp_channels=config.process.nwp_channels,
+        nwp_channels=config.process.nwp_channels[0:1],
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
@@ -177,3 +180,10 @@ def test_batch_to_batch_to_dataset():
     assert type(batch_xr) == xr.Dataset
     assert GSP_DATETIME_INDEX in batch_xr
     assert pd.DataFrame(batch_xr[GSP_DATETIME_INDEX]).isnull().sum().sum() == 0
+
+    # validate batch
+    from nowcasting_dataset.dataset.example import to_numpy
+
+    batch0 = xr_to_example(batch_xr=batch_xr, required_keys=DEFAULT_REQUIRED_KEYS)
+    batch0 = to_numpy(batch0)
+    validate_batch_from_configuration(data=batch0, configuration=config)

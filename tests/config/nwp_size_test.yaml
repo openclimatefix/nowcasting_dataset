@@ -17,14 +17,5 @@ process:
   nwp_image_size_pixels: 64
   nwp_channels:
     - t
-    - dswrf
-    - prate
-    - r
-    - sde
-    - si10
-    - vis
-    - lcc
-    - mcc
-    - hcc
   sat_channels:
     - HRV

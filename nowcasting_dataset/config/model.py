@@ -1,8 +1,11 @@
+from pydantic import BaseModel, Field, validator
+
 from pydantic import BaseModel, Field
 from typing import Optional
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from pathy import Pathy
+
 
 from datetime import datetime
 import git
@@ -78,8 +81,10 @@ class Process(BaseModel):
             "  If 0 then write batches directly to output_data.filepath, not to a temp directory."
         ),
     )
-    forecast_minutes: int = Field(60, description="how many minutes to forecast in the future")
-    history_minutes: int = Field(30, description="how many historic minutes are used")
+    forecast_minutes: int = Field(
+        60, ge=0, description="how many minutes to forecast in the future"
+    )
+    history_minutes: int = Field(30, ge=0, description="how many historic minutes are used")
     satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
     nwp_image_size_pixels: int = Field(2, description="the size of the nwp images")
 
@@ -88,6 +93,24 @@ class Process(BaseModel):
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
     local_temp_path: str = Field("~/temp/")
+
+    @property
+    def seq_len_30_minutes(self):
+        return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
+
+    @property
+    def seq_len_5_minutes(self):
+        return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
+
+    @validator("history_minutes")
+    def history_minutes_divide_by_30(cls, v):
+        assert v % 30 == 0  # this means it also divides by 5
+        return v
+
+    @validator("forecast_minutes")
+    def forecast_minutes_divide_by_30(cls, v):
+        assert v % 30 == 0  # this means it also divides by 5
+        return v
 
 
 class Configuration(BaseModel):

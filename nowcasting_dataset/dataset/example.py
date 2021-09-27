@@ -18,6 +18,12 @@ class Example(TypedDict):
     that they're immutable so we cannot change the values in the transforms.
     """
 
+    # timestamp of now. In this data object there will be both
+    # - historic data before this timestamp,
+    # - and future data after this timestamp
+    # shape is [batch_size,]
+    t0_dt = Array
+
     # IMAGES
     # Shape: [batch_size,] seq_length, width, height, channel
     sat_data: Array

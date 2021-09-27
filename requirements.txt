@@ -7,7 +7,6 @@ xarray
 ipykernel
 h5netcdf
 gcsfs
-s3fs
 scikit-image
 torch
 pytorch-lightning
@@ -28,5 +27,6 @@ plotly
 tqdm
 black
 pre-commit
+s3fs
 fsspec
 pathy

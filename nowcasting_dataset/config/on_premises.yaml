@@ -7,7 +7,7 @@ input_data:
   solar_pv_path:
   solar_pv_data_filename: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/raw/PV/PVOutput.org/UK_PV_timeseries_batch.nc
   solar_pv_metadata_filename: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/raw/PV/PVOutput.org/UK_PV_metadata.csv
-  gsp_zarr_path: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v0/pv_gsp.zarr
+  gsp_zarr_path: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/raw/PV/GSP/v0/pv_gsp.zarr
 output_data:
   filepath: /storage/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v7/
 process:

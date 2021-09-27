@@ -52,22 +52,18 @@ filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", 
 config = load_yaml_configuration(filename)
 config = set_git_commit(config)
 
-# Where's all the input data at?!
-BASE_PATH_OR_BUCKET = Pathy(config.input_data.base_path_or_bucket)
-
 # Solar PV data
-PV_PATH = BASE_PATH_OR_BUCKET / config.input_data.solar_pv_path
-PV_DATA_FILENAME = PV_PATH / config.input_data.solar_pv_data_filename
-PV_METADATA_FILENAME = PV_PATH / config.input_data.solar_pv_metadata_filename
+PV_DATA_FILENAME = config.input_data.solar_pv_data_filename
+PV_METADATA_FILENAME = config.input_data.solar_pv_metadata_filename
 
 # Satellite data
-SAT_ZARR_PATH = BASE_PATH_OR_BUCKET / config.input_data.satellite_zarr_path
+SAT_ZARR_PATH = config.input_data.satellite_zarr_path
 
 # Numerical weather predictions
-NWP_ZARR_PATH = BASE_PATH_OR_BUCKET / config.input_data.nwp_zarr_path
+NWP_ZARR_PATH = config.input_data.nwp_zarr_path
 
 # GSP data
-GSP_ZARR_PATH = BASE_PATH_OR_BUCKET / config.input_data.gsp_zarr_path
+GSP_ZARR_PATH = config.input_data.gsp_zarr_path
 
 # Paths for output data.
 DST_NETCDF4_PATH = Pathy(config.output_data.filepath)
@@ -85,10 +81,9 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 np.random.seed(config.process.seed)
 
-filesystem = fsspec.open(BASE_PATH_OR_BUCKET).fs
-
 
 def check_path_exists(path: Union[Pathy, str]):
+    filesystem = fsspec.open(path).fs
     if not filesystem.exists(path):
         raise RuntimeError(f"{path} does not exist!")
 
@@ -96,7 +91,6 @@ def check_path_exists(path: Union[Pathy, str]):
 def check_directories_exist():
     _LOG.info("Checking if all paths exist...")
     for path in [
-        PV_PATH,
         PV_DATA_FILENAME,
         PV_METADATA_FILENAME,
         SAT_ZARR_PATH,

@@ -13,6 +13,7 @@ from nowcasting_dataset.consts import (
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
+    T0_DT,
 )
 
 from nowcasting_dataset.dataset.example import Example
@@ -52,6 +53,10 @@ def fix_dtypes(concat_ds):
         "pv_system_row_number": np.float32,
         "pv_system_x_coords": np.float32,
         "pv_system_y_coords": np.float32,
+        GSP_YIELD: np.float32,
+        GSP_ID: np.float32,
+        GSP_X_COORDS: np.float32,
+        GSP_Y_COORDS: np.float32,
     }
 
     for name, dtype in ds_dtypes.items():
@@ -110,7 +115,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D
-            for name in ["x_meters_center", "y_meters_center"]:
+            for name in ["x_meters_center", "y_meters_center", T0_DT]:
                 try:
                     one_dataset[name] = xr.DataArray(
                         [example[name]], coords=example_dim, dims=["example"]

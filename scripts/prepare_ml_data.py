@@ -13,14 +13,13 @@ Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548
 
 """
 
-from nowcasting_dataset.cloud import gcp
 from nowcasting_dataset.cloud import utils
 from nowcasting_dataset.cloud import local
-
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_yaml_configuration
+from nowcasting_dataset.config.model import set_git_commit
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.batch import write_batch_locally
@@ -51,6 +50,7 @@ ENABLE_NEPTUNE_LOGGING = False
 # TODO: Pass this in as a command-line argument.
 filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "on_premises.yaml")
 config = load_yaml_configuration(filename)
+config = set_git_commit(config)
 
 # Where's all the input data at?!
 BASE_PATH_OR_BUCKET = Pathy(config.input_data.base_path_or_bucket)

@@ -1,8 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+
+from datetime import datetime
+import git
 
 
 class General(BaseModel):
@@ -11,6 +13,14 @@ class General(BaseModel):
         "example configuration", description="Description of this confgiruation file"
     )
     cloud: str = Field("gcp", description="gcp, aws, or local")
+
+
+class Git(BaseModel):
+    hash: str = Field(..., description="The git hash has for when a dataset is created.")
+    message: str = Field(..., description="The git message has for when a dataset is created.")
+    committed_date: datetime = Field(
+        ..., description="The git datestamp has for when a dataset is created."
+    )
 
 
 class InputData(BaseModel):
@@ -87,3 +97,27 @@ class Configuration(BaseModel):
     input_data: InputData = InputData()
     output_data: OutputData = OutputData()
     process: Process = Process()
+    git: Optional[Git] = None
+
+
+def set_git_commit(configuration: Configuration):
+    """
+    Set the git information in the configuration file
+
+    Args:
+        configuration: configuration object
+
+    Returns: configuration object with git information
+
+    """
+    repo = git.Repo(search_parent_directories=True)
+
+    git_details = Git(
+        hash=repo.head.object.hexsha,
+        committed_date=datetime.fromtimestamp(repo.head.object.committed_date),
+        message=repo.head.object.message,
+    )
+
+    configuration.git = git_details
+
+    return configuration

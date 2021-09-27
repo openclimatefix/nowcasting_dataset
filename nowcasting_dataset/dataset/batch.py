@@ -121,15 +121,15 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             )
 
             # Topographic
-            ds = example[TOPOGRAPHIC_DATA].to_dataset(name=name)
-            short_name = name.replace("_data", "")
+            ds = example[TOPOGRAPHIC_DATA].to_dataset(name=TOPOGRAPHIC_DATA)
+            topo_name = "topo"
             for dim in ["x", "y"]:
-                ds = coord_to_range(ds, dim, prefix=short_name)
+                ds = coord_to_range(ds, dim, prefix=topo_name)
             ds = ds.rename(
                 {
-                    "variable": f"{short_name}_variable",
-                    "x": f"{short_name}_x",
-                    "y": f"{short_name}_y",
+                    "variable": f"{topo_name}_variable",
+                    "x": f"{topo_name}_x",
+                    "y": f"{topo_name}_y",
                 }
             )
             individual_datasets.append(ds)

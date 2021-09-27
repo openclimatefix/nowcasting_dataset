@@ -3,8 +3,8 @@ general:
   name: example
 input_data:
   bucket: solar-pv-nowcasting-data
-  npw_base_path: tests/data/nwp_data/test.zarr
-  satelite_filename: tests/data/sat_data.zarr
+  nwp_base_path: tests/data/nwp_data/test.zarr
+  satellite_filename: tests/data/sat_data.zarr
   solar_pv_data_filename: tests/data/pv_data/test.nc
   solar_pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
   solar_pv_path: tests/data/pv_data

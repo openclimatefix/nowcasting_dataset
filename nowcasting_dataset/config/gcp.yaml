@@ -3,8 +3,8 @@ general:
   name: example
 input_data:
   bucket: solar-pv-nowcasting-data
-  npw_base_path: NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
-  satelite_filename: satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
+  nwp_base_path: NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
+  satellite_filename: satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
   solar_pv_data_filename: UK_PV_timeseries_batch.nc
   solar_pv_metadata_filename: UK_PV_metadata.csv
   solar_pv_path: PV/PVOutput.org

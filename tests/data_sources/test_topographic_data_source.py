@@ -32,7 +32,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     t0_dt = pd.Timestamp("2019-01-01T13:00")
     example = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
     topo_data = example["topo_data"]
-    assert topo_data.shape == (128, 128, 1)
+    assert topo_data.shape == (128, 128)
     assert len(topo_data.x) == 128
     assert len(topo_data.y) == 128
     assert not np.isnan(topo_data).any()

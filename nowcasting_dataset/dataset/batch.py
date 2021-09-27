@@ -127,7 +127,6 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 ds = coord_to_range(ds, dim, prefix=topo_name)
             ds = ds.rename(
                 {
-                    "variable": f"{topo_name}_variable",
                     "x": f"{topo_name}_x",
                     "y": f"{topo_name}_y",
                 }

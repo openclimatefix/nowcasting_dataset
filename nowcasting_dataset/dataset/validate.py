@@ -185,6 +185,10 @@ class FakeDataset(torch.utils.data.Dataset):
         x["pv_yield"] = torch.clip(x["pv_yield"], min=0, max=1)
         x["gsp_yield"] = torch.clip(x["gsp_yield"], min=0, max=1)
 
+        # clip pv and system ids
+        x["gsp_id"] = torch.clip(x["gsp_id"], min=0, max=340)
+        x["pv_system_id"] = torch.clip(x["pv_system_id"], min=0, max=940)
+
         return x
 
 

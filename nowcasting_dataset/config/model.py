@@ -32,7 +32,7 @@ class InputData(BaseModel):
     solar_pv_data_filename: str = Field("UK_PV_timeseries_batch.nc", description="TODO")
     solar_pv_metadata_filename: str = Field("UK_PV_metadata.csv", description="TODO")
 
-    satelite_filename: str = Field(
+    satellite_filename: str = Field(
         "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
         description="TODO",
     )
@@ -40,6 +40,10 @@ class InputData(BaseModel):
     npw_base_path: str = Field(
         "NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
         description="TODO",
+    )
+
+    topographic_filename: str = Field(
+        "europe_dem_1km_osgb.tif", description="Path to the GeoTIFF Topographic data source"
     )
 
     gsp_filename: str = Field("PV/GSP/v0/pv_gsp.zarr")

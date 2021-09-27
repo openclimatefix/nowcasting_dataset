@@ -76,7 +76,8 @@ def test_data_module(config_name):
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
-        sat_filename=config.input_data.satelite_filename,
+        sat_filename=config.input_data.satellite_filename,
+        topographic_base_path=config.input_data.topographic_filename,
         nwp_base_path=config.input_data.npw_base_path,
         gsp_filename=config.input_data.gsp_filename,
         pin_memory=True,  #: Passed to DataLoader.
@@ -143,7 +144,7 @@ def test_batch_to_batch_to_dataset():
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
-        sat_filename=config.input_data.satelite_filename,
+        sat_filename=config.input_data.satellite_filename,
         nwp_base_path=config.input_data.npw_base_path,
         gsp_filename=config.input_data.gsp_filename,
         pin_memory=True,  #: Passed to DataLoader.

@@ -19,7 +19,7 @@ files = glob.glob("/run/media/jacob/data/SRTM/*.tif")
 out_dir = "/run/media/jacob/data/SRTM1KM/"
 
 
-upscale_factor = 0.12  # 30m to 250m, just making it small enough files to actuall merge
+upscale_factor = 0.12  # 30m to 250m-ish, just making it small enough files to actually merge
 for f in files:
     with rasterio.open(f) as dataset:
 
@@ -63,7 +63,7 @@ out_meta.update(
         "transform": out_trans,
     }
 )
-out_fp = "europe_dem_1km.tif"
+out_fp = "europe_dem_250m.tif"
 with rasterio.open(out_fp, "w", **out_meta) as dest:
     dest.write(mosaic)
 

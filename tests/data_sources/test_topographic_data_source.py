@@ -43,17 +43,3 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     # Check normalization works
     assert np.max(topo_data) <= 1.0
     assert np.min(topo_data) >= -1.0
-
-
-def test_resolution_error():
-    size = 250  # meters
-    with pytest.raises(AssertionError):
-        topo_source = TopographicDataSource(
-            filename="/home/jacob/Development/nowcasting_dataset/tests/data/europe_dem_2km_osgb.tif",
-            image_size_pixels=256,
-            meters_per_pixel=size,
-            normalize=True,
-            convert_to_numpy=True,
-            forecast_minutes=300,
-            history_minutes=10,
-        )

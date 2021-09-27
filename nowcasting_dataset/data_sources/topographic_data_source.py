@@ -1,4 +1,4 @@
-from nowcasting_dataset.data_sources.data_source import ImageDataSource, ZarrDataSource
+from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.geospatial import OSGB
@@ -51,19 +51,26 @@ class TopographicDataSource(ImageDataSource):
             filename=self.filename, parse_coordinates=True, masked=True
         )
         self._data = self._data.fillna(0)  # Set nodata values to 0 (mostly should be ocean)
-        # Add CRS for later, topo maps are assuemd to be in OSGB
+        # Add CRS for later, topo maps are assumed to be in OSGB
         self._data.attrs["crs"] = OSGB
-        # Scale factor can be computed from distance between pixels, that would be it in meters
+        # Distance between pixels, giving their spatial extant, in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
-        self._scale_factor = meters_per_pixel / self._stored_pixel_size_meters
         self._meters_per_pixel = meters_per_pixel
-        assert self._stored_pixel_size_meters <= meters_per_pixel, AttributeError(
-            "The stored topographical map has a lower resolution than requested"
-        )
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
+        """
+        Get a single example
+
+        Args:
+            t0_dt: Current datetime for the example, unused
+            x_meters_center: Center of the example in meters in the x direction in OSGB coordinates
+            y_meters_center: Center of the example in meters in the y direction in OSGB coordinates
+
+        Returns:
+            Example containing topographic data for the selected area
+        """
 
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
@@ -72,7 +79,6 @@ class TopographicDataSource(ImageDataSource):
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
         )
-        print(selected_data.shape)
         if self._stored_pixel_size_meters != self._meters_per_pixel:
             # Rescale here to the exact size, assumes that the above is good slice
             # Useful if using different spatially sized grids
@@ -81,7 +87,6 @@ class TopographicDataSource(ImageDataSource):
                 shape=(self._square.size_pixels, self._square.size_pixels),
                 resampling=Resampling.bilinear,
             )
-        print(selected_data.shape)
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
@@ -103,6 +108,15 @@ class TopographicDataSource(ImageDataSource):
         return self._put_data_into_example(selected_data)
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
+        """
+        Insert the data and coordinates into an Example
+
+        Args:
+            selected_data: DataArray containing the data to insert
+
+        Returns:
+            Example containing the Topographic data
+        """
         return Example(
             topo_data=selected_data,
             topo_x_coords=selected_data.x,
@@ -112,6 +126,17 @@ class TopographicDataSource(ImageDataSource):
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
     ) -> xr.DataArray:
+        """
+        Post process the topographical data, removing an extra dim and optionally
+        normalizing
+
+        Args:
+            selected_data: DataArray containing the topographic data
+            t0_dt: Unused
+
+        Returns:
+            DataArray with optionally normalized data, and removed first dimension
+        """
         if self.normalize:
             selected_data = selected_data - TOPO_MEAN
             selected_data = selected_data / TOPO_STD

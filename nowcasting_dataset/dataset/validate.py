@@ -188,6 +188,7 @@ class FakeDataset(torch.utils.data.Dataset):
         # clip pv and system ids
         x["gsp_id"] = torch.clip(x["gsp_id"], min=0, max=340)
         x["pv_system_id"] = torch.clip(x["pv_system_id"], min=0, max=940)
+        x["pv_system_row_number"] = torch.clip(x["pv_system_id"], min=0, max=940)
 
         return x
 

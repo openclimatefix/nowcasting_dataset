@@ -66,6 +66,9 @@ NWP_ZARR_PATH = config.input_data.nwp_zarr_path
 # GSP data
 GSP_ZARR_PATH = config.input_data.gsp_zarr_path
 
+# Topographic data
+TOPO_TIFF_PATH = config.input_data.topographic_filename
+
 # Paths for output data.
 DST_NETCDF4_PATH = Pathy(config.output_data.filepath)
 DST_TRAIN_PATH = DST_NETCDF4_PATH / "train"
@@ -97,6 +100,7 @@ def check_directories_exist():
         SAT_ZARR_PATH,
         NWP_ZARR_PATH,
         GSP_ZARR_PATH,
+        TOPO_TIFF_PATH,
         DST_TRAIN_PATH,
         DST_VALIDATION_PATH,
         DST_TEST_PATH,
@@ -138,6 +142,7 @@ def get_data_module():
         sat_filename=SAT_ZARR_PATH,
         nwp_base_path=NWP_ZARR_PATH,
         gsp_filename=GSP_ZARR_PATH,
+        topographic_filename=TOPO_TIFF_PATH,
         pin_memory=False,  #: Passed to DataLoader.
         num_workers=num_workers,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.

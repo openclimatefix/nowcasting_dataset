@@ -15,8 +15,8 @@ import rioxarray
 dst_crs = OSGB
 
 # Go through, open all the files, combined by coords, then save out to NetCDF, or GeoTIFF
-files = glob.glob("/run/media/jacob/data/SRTM/*.tif")
-out_dir = "/run/media/jacob/data/SRTM1KM/"
+files = glob.glob("/SRTM/*.tif")
+out_dir = "/SRTM_TEMP/"
 
 
 upscale_factor = 0.12  # 30m to 250m-ish, just making it small enough files to actually merge
@@ -50,7 +50,7 @@ for f in files:
         )
         with rasterio.open(os.path.join(out_dir, name), "w", **out_meta) as dest:
             dest.write(data)
-files = glob.glob("/run/media/jacob/data/SRTM1KM/*.tif")
+files = glob.glob("/SRTM_TEMP/*.tif")
 src = rasterio.open(files[0])
 
 mosaic, out_trans = merge(files)

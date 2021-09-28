@@ -29,7 +29,9 @@ def split_data(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     method: SplitMethod,
     train_test_validation_split: Tuple[int] = (3, 1, 1),
-    train_test_validation_specific: TrainValidationTestSpecific = default_train_test_validation_specific,
+    train_test_validation_specific: TrainValidationTestSpecific = (
+        default_train_test_validation_specific
+    ),
     seed: int = 1234,
 ) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
     """
@@ -40,12 +42,10 @@ def split_data(
         method: the method to be used
         train_test_validation_split: ratios of how the split is made
         seed: random seed used to permutate the data for the 'random' method
-        train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'. These specifies
-            which data goes into which datasets
-
+        train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'.
+            These specify which data goes into which dataset.
 
     Returns: train, validation and test dataset
-
     """
 
     logger.info(f"Splitting data with method {method}")

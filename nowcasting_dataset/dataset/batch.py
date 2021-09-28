@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import logging
 
 import numpy as np
@@ -23,22 +23,20 @@ from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
-
-def write_batch_locally(batch: List[Example], batch_i: int):
+def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
     """
     Write a batch to a locally file
     Args:
-        batch: batch of data
-        batch_i: the number of the batch
-
+        batch: A batch of data
+        batch_i: The number of the batch
+        path: The directory to write the batch into.
     """
     dataset = batch_to_dataset(batch)
     dataset = fix_dtypes(dataset)
     encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
     filename = get_netcdf_filename(batch_i)
-    local_filename = LOCAL_TEMP_PATH / filename
+    local_filename = path / filename
     dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
 

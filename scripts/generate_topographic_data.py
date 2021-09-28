@@ -73,14 +73,17 @@ with rasterio.open(out_fp) as src:
     src_crs = src.crs
     xds.attrs["crs"] = src_crs
 
+# 500 meter resolution map
 xds_resampled = xds.rio.reproject(dst_crs=dst_crs, resolution=500, resampling=Resampling.bilinear)
 print(xds_resampled)
 print(abs(xds_resampled.coords["x"][1] - xds_resampled.coords["x"][0]))
 xds_resampled.rio.to_raster("europe_dem_500m_osgb.tif")
+# 1000 meter resolution map
 xds_resampled = xds.rio.reproject(dst_crs=dst_crs, resolution=1000, resampling=Resampling.bilinear)
 print(xds_resampled)
 print(abs(xds_resampled.coords["x"][1] - xds_resampled.coords["x"][0]))
 xds_resampled.rio.to_raster("europe_dem_1km_osgb.tif")
+# 2000 meter resolution meter map
 xds_resampled = xds.rio.reproject(dst_crs=dst_crs, resolution=2000, resampling=Resampling.bilinear)
 print(xds_resampled)
 print(abs(xds_resampled.coords["x"][1] - xds_resampled.coords["x"][0]))

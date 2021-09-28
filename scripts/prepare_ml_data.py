@@ -48,6 +48,7 @@ ENABLE_NEPTUNE_LOGGING = False
 
 # load configuration, this can be changed to a different filename as needed.
 # TODO: Pass this in as a command-line argument.
+# See https://github.com/openclimatefix/nowcasting_dataset/issues/171
 filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "on_premises.yaml")
 config = load_yaml_configuration(filename)
 config = set_git_commit(config)

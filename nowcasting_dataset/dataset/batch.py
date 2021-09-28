@@ -4,7 +4,6 @@ import logging
 import numpy as np
 import xarray as xr
 from pathlib import Path
-from pathy import Pathy
 
 from nowcasting_dataset.consts import (
     GSP_ID,
@@ -22,13 +21,13 @@ from nowcasting_dataset.utils import get_netcdf_filename
 _LOG = logging.getLogger(__name__)
 
 
-def write_batch_locally(batch: List[Example], batch_i: int, path: Union[Path, Pathy]):
+def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
     """
     Write a batch to a locally file
     Args:
-        batch: batch of data
-        batch_i: the number of the batch
-
+        batch: A batch of data
+        batch_i: The number of the batch
+        path: The directory to write the batch into.
     """
     dataset = batch_to_dataset(batch)
     dataset = fix_dtypes(dataset)

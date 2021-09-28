@@ -8,7 +8,7 @@ input_data:
   solar_pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
   gsp_zarr_path: tests/data/gsp/test.zarr
 output_data:
-  filepath: NA
+  filepath: not used by unittests!
 process:
   batch_size: 32
   forecast_minutes: 60

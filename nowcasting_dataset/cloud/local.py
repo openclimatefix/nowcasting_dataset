@@ -35,6 +35,7 @@ def delete_all_files_in_temp_path(path: Path):
 
 
 def check_path_exists(path: Union[str, Path]):
+    """Raises a RuntimeError if `path` does not exist in the local filesystem."""
     path = Path(path)
     if not path.exists():
         raise RuntimeError(f"{path} does not exist!")

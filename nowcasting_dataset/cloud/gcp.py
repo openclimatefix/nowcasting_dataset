@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import gcsfs
 
@@ -9,17 +9,19 @@ from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_p
 _LOG = logging.getLogger(__name__)
 
 
-def check_path_exists(path: Path):
+def check_path_exists(path: Union[str, Path]):
     """
-    Check that the path exists in GCS
-    @param path: the path in GCS that is checked
+    Check that the path exists in GCS.
+
+    Args:
+        path: the path in GCS that is checked
     """
     gcs = gcsfs.GCSFileSystem()
     if not gcs.exists(path):
         raise RuntimeError(f"{path} does not exist!")
 
 
-def gcp_upload_and_delete_local_files(dst_path: str, local_path: Path):
+def gcp_upload_and_delete_local_files(dst_path: str, local_path: Union[str, Path]):
     """
     Upload the files in a local path, to a path in gcs
     """
@@ -32,11 +34,12 @@ def gcp_upload_and_delete_local_files(dst_path: str, local_path: Path):
 def gcp_download_to_local(
     remote_filename: str, local_filename: str, gcs: gcsfs.GCSFileSystem = None
 ):
-    """
-    Download file from gcs
-    @param remote_filename: the gcs file name, should start with gs://
-    @param local_filename:
-    @param gcs: gcsfs.GCSFileSystem connection, means a new one doesnt have to be made everytime.
+    """Download file from gcs.
+
+    Args:
+        remote_filename: the gcs file name, should start with gs://
+        local_filename:
+        gcs: gcsfs.GCSFileSystem connection, means a new one doesnt have to be made everytime.
     """
 
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
@@ -46,14 +49,16 @@ def gcp_download_to_local(
     gcs.get(remote_filename, local_filename)
 
 
-def get_all_filenames_in_path(remote_path) -> List[str]:
+def get_all_filenames_in_path(remote_path: str) -> List[str]:
     """
     Get all the files names from one folder in gcp
-    @param remote_path: the path that we should look in
-    @return: a list of strings, of files names
+
+    Args:
+        remote_path: the path that we should look in
+
+    Returns: a list of files names represented as strings.
     """
     gcs = gcsfs.GCSFileSystem()
-
     return gcs.ls(remote_path)
 
 
@@ -67,5 +72,4 @@ def rename_file(remote_file: str, new_filename: str):
 
     """
     gcs = gcsfs.GCSFileSystem()
-
     gcs.mv(remote_file, new_filename)

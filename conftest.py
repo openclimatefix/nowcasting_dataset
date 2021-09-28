@@ -64,7 +64,7 @@ def gsp_data_source():
 
 @pytest.fixture
 def configuration():
-    filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "example.yaml")
+    filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
     config = load_yaml_configuration(filename)
 
     return config

@@ -25,6 +25,9 @@ from nowcasting_dataset.consts import (
     SUN_AZIMUTH_ANGLE,
     SUN_ELEVATION_ANGLE,
     DATETIME_FEATURE_NAMES,
+    TOPOGRAPHIC_X_COORDS,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_Y_COORDS,
 )
 from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
@@ -153,6 +156,9 @@ class FakeDataset(torch.utils.data.Dataset):
                 self.batch_size, self.seq_length_30, DEFAULT_N_GSP_PER_EXAMPLE
             ),
             "gsp_id": torch.randint(340, (self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE)),
+            "topo_data": torch.randn(
+                self.batch_size, self.satellite_image_size_pixels, self.satellite_image_size_pixels
+            ),
         }
 
         # add a nan
@@ -168,6 +174,12 @@ class FakeDataset(torch.utils.data.Dataset):
         x["gsp_x_coords"], _ = torch.sort(torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE))
         x["gsp_y_coords"], _ = torch.sort(
             torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE), descending=True
+        )
+        x["topo_x_coords"], _ = torch.sort(
+            torch.randn(self.batch_size, self.satellite_image_size_pixels)
+        )
+        x["topo_y_coords"], _ = torch.sort(
+            torch.randn(self.batch_size, self.satellite_image_size_pixels), descending=True
         )
 
         x["nwp_x_coords"], _ = torch.sort(torch.randn(self.batch_size, self.nwp_image_size_pixels))
@@ -301,6 +313,10 @@ def validate_example(
     assert data["sat_x_coords"].shape[-1] == sat_image_size
     assert data["sat_y_coords"].shape[-1] == sat_image_size
     assert data["sat_datetime_index"].shape[-1] == seq_len_5_minutes
+
+    assert data[TOPOGRAPHIC_DATA].shape[-2:] == (sat_image_size, sat_image_size)
+    assert data[TOPOGRAPHIC_Y_COORDS].shape[-1] == sat_image_size
+    assert data[TOPOGRAPHIC_X_COORDS].shape[-1] == sat_image_size
 
     nwp_correct_shape = (
         n_nwp_channels,

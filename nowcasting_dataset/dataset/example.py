@@ -31,6 +31,13 @@ class Example(TypedDict):
     sat_x_coords: Array  #: OSGB geo-spatial coordinates.
     sat_y_coords: Array
 
+    # Topographic data
+    # Elevation map of the area covered by the satellite data
+    # Shape: [batch_size,] width, height
+    topo_data: Array
+    topo_x_coords: Array
+    topo_y_coords: Array
+
     #: PV yield from all PV systems in the region of interest (ROI).
     #: Includes central PV system, which will always be the first entry.
     #: shape = [batch_size, ] seq_length, n_pv_systems_per_example

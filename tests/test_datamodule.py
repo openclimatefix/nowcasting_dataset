@@ -60,14 +60,22 @@ def test_setup(nowcasting_datamodule: datamodule.NowcastingDataModule):
     nowcasting_datamodule.setup()
 
 
-@pytest.mark.parametrize("config_name", ["test.yaml", "nwp_size_test.yaml"])
-def test_data_module(config_name):
-
+def _get_config_with_test_paths(config_filename: str):
+    """Sets the base paths to point to the testing data in this repository."""
     local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
 
     # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, "tests", "config", config_name)
+    filename = os.path.join(local_path, "tests", "config", config_filename)
     config = load_yaml_configuration(filename)
+    config.set_base_path(local_path)
+    return config
+
+
+@pytest.mark.parametrize("config_filename", ["test.yaml", "nwp_size_test.yaml"])
+def test_data_module(config_filename):
+
+    # load configuration, this can be changed to a different filename as needed
+    config = _get_config_with_test_paths(config_filename)
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
@@ -79,9 +87,10 @@ def test_data_module(config_name):
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
-        sat_filename=config.input_data.satelite_filename,
-        nwp_base_path=config.input_data.npw_base_path,
-        gsp_filename=config.input_data.gsp_filename,
+        sat_filename=config.input_data.satellite_zarr_path,
+        nwp_base_path=config.input_data.nwp_zarr_path,
+        gsp_filename=config.input_data.gsp_zarr_path,
+        topographic_filename=config.input_data.topographic_filename,
         pin_memory=True,  #: Passed to DataLoader.
         num_workers=0,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
@@ -129,12 +138,7 @@ def test_data_module(config_name):
 
 
 def test_batch_to_batch_to_dataset():
-
-    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
-
-    # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, "tests", "config", "test.yaml")
-    config = load_yaml_configuration(filename)
+    config = _get_config_with_test_paths("test.yaml")
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
@@ -146,9 +150,10 @@ def test_batch_to_batch_to_dataset():
         sat_channels=config.process.sat_channels,  # reduced for test data
         pv_power_filename=config.input_data.solar_pv_data_filename,
         pv_metadata_filename=config.input_data.solar_pv_metadata_filename,
-        sat_filename=config.input_data.satelite_filename,
-        nwp_base_path=config.input_data.npw_base_path,
-        gsp_filename=config.input_data.gsp_filename,
+        sat_filename=config.input_data.satellite_zarr_path,
+        nwp_base_path=config.input_data.nwp_zarr_path,
+        gsp_filename=config.input_data.gsp_zarr_path,
+        topographic_filename=config.input_data.topographic_filename,
         pin_memory=True,  #: Passed to DataLoader.
         num_workers=0,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.

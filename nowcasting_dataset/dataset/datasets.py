@@ -32,6 +32,9 @@ from nowcasting_dataset.consts import (
     DATETIME_FEATURE_NAMES,
     DEFAULT_REQUIRED_KEYS,
     T0_DT,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_Y_COORDS,
+    TOPOGRAPHIC_X_COORDS,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 import logging

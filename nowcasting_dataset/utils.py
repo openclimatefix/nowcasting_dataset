@@ -7,7 +7,6 @@ from typing import List
 from pathlib import Path
 import hashlib
 from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset.cloud.gcp import get_all_filenames_in_path
 
 logger = logging.getLogger(__name__)
 
@@ -133,38 +132,3 @@ def pad_data(
         data[variable] = pad_nans(data[variable], pad_width=((0, 0), pad_shape))  # (axis0, axis1)
 
     return data
-
-
-def get_maximum_batch_id_from_gcs(remote_path: str):
-    """
-    Get the last batch id from gcs.
-    Args:
-        remote_path: the remote path folder to look in. Warning currently only works for GCS
-
-    Returns: the maximum batch id of data in the remote folder
-
-    """
-
-    logger.debug(f"Looking for maximum batch id in {remote_path}")
-
-    filenames = get_all_filenames_in_path(remote_path=remote_path)
-
-    # just take filename
-    filenames = [filename.split("/")[-1] for filename in filenames]
-
-    # remove suffix
-    filenames = [filename.split(".")[0] for filename in filenames]
-
-    # change to integer
-    batch_indexes = [int(filename) for filename in filenames if len(filename) > 0]
-
-    # if there is no files, return None
-    if len(batch_indexes) == 0:
-        logger.debug(f"Did not find any files in {remote_path}")
-        return None
-
-    # get the maximum batch id
-    maximum_batch_id = max(batch_indexes)
-    logger.debug(f"Found maximum of batch it of {maximum_batch_id} in {remote_path}")
-
-    return maximum_batch_id

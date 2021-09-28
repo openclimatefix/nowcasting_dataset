@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+from pathy import Pathy
 
 
 from datetime import datetime
@@ -11,10 +12,17 @@ import git
 
 
 class General(BaseModel):
-
     name: str = Field("example", description="The name of this configuration file.")
     description: str = Field(
         "example configuration", description="Description of this confgiruation file"
+    )
+    cloud: str = Field(
+        "gcp",
+        description=(
+            "local, gcp, or aws.  Deprecated.  Will be removed when issue"
+            " https://github.com/openclimatefix/nowcasting_dataset/issues/153"
+            " is implemented"
+        ),
     )
 
 
@@ -27,34 +35,56 @@ class Git(BaseModel):
 
 
 class InputData(BaseModel):
-    bucket: str = Field(
-        "solar-pv-nowcasting-data", description="The gcp bucket used to load the data."
+    # All paths must include the protocol prefix.  For local files,
+    # it's sufficient to just start with a '/'.  For aws, start with 's3://',
+    # for gcp start with 'gs://'.
+
+    solar_pv_data_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
+        description=("The NetCDF file holding the solar PV power timeseries."),
+    )
+    solar_pv_metadata_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
+        description="The CSV file describing each PV system.",
     )
 
-    solar_pv_path: str = Field("PV/PVOutput.org", description="TODO")
-    solar_pv_data_filename: str = Field("UK_PV_timeseries_batch.nc", description="TODO")
-    solar_pv_metadata_filename: str = Field("UK_PV_metadata.csv", description="TODO")
-
-    satelite_filename: str = Field(
-        "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
-        description="TODO",
+    satellite_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        description="The path which holds the satellite zarr.",
     )
 
-    npw_base_path: str = Field(
-        "NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
-        description="TODO",
+    nwp_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
+        description="The path which holds the NWP zarr.",
     )
 
-    gsp_filename: str = Field("PV/GSP/v0/pv_gsp.zarr")
+    gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
+    topographic_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
+        description="Path to the GeoTIFF Topographic data source",
+    )
 
 
 class OutputData(BaseModel):
-    filepath: str = Field("prepared_ML_training_data/v5/", description="Where the data is saved")
+    filepath: str = Field(
+        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/",
+        description=(
+            "Where the data is saved to.  If this is running on the cloud then should include"
+            " 'gs://' or 's3://'"
+        ),
+    )
 
 
 class Process(BaseModel):
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
-    batch_size: int = Field(32, description="the batch size of the data")
+    batch_size: int = Field(32, description="the number of examples per batch")
+    upload_every_n_batches: int = Field(
+        16,
+        description=(
+            "How frequently to move batches from the local temporary directory to the cloud bucket."
+            "  If 0 then write batches directly to output_data.filepath, not to a temp directory."
+        ),
+    )
     forecast_minutes: int = Field(
         60, ge=0, description="how many minutes to forecast in the future"
     )
@@ -66,9 +96,7 @@ class Process(BaseModel):
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
-
-    precision: int = Field(16, description="what precision to use")
-    val_check_interval: int = Field(1000, description="TODO")
+    local_temp_path: str = Field("~/temp/")
 
     @property
     def seq_len_30_minutes(self):
@@ -90,12 +118,29 @@ class Process(BaseModel):
 
 
 class Configuration(BaseModel):
-
     general: General = General()
     input_data: InputData = InputData()
     output_data: OutputData = OutputData()
     process: Process = Process()
     git: Optional[Git] = None
+
+    def set_base_path(self, base_path: str):
+        """Append base_path to all paths.
+
+        Mostly used for testing."""
+        base_path = Pathy(base_path)
+        path_attrs = [
+            "solar_pv_data_filename",
+            "solar_pv_metadata_filename",
+            "satellite_zarr_path",
+            "nwp_zarr_path",
+            "gsp_zarr_path",
+        ]
+        for attr_name in path_attrs:
+            path = getattr(self.input_data, attr_name)
+            path = base_path / path
+            setattr(self.input_data, attr_name, path)
+            print(path)
 
 
 def set_git_commit(configuration: Configuration):

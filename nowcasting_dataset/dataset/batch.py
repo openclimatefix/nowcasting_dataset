@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import logging
 
 import numpy as np
@@ -13,6 +13,9 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
     T0_DT,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_X_COORDS,
+    TOPOGRAPHIC_Y_COORDS,
 )
 
 from nowcasting_dataset.dataset.example import Example
@@ -20,22 +23,20 @@ from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
-
-def write_batch_locally(batch: List[Example], batch_i: int):
+def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
     """
     Write a batch to a locally file
     Args:
-        batch: batch of data
-        batch_i: the number of the batch
-
+        batch: A batch of data
+        batch_i: The number of the batch
+        path: The directory to write the batch into.
     """
     dataset = batch_to_dataset(batch)
     dataset = fix_dtypes(dataset)
     encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
     filename = get_netcdf_filename(batch_i)
-    local_filename = LOCAL_TEMP_PATH / filename
+    local_filename = path / filename
     dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
 
@@ -58,6 +59,9 @@ def fix_dtypes(concat_ds):
         GSP_ID: np.float32,
         GSP_X_COORDS: np.float32,
         GSP_Y_COORDS: np.float32,
+        TOPOGRAPHIC_X_COORDS: np.float32,
+        TOPOGRAPHIC_Y_COORDS: np.float32,
+        TOPOGRAPHIC_DATA: np.float32,
     }
 
     for name, dtype in ds_dtypes.items():
@@ -113,6 +117,19 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 dims=["time_30"],
                 coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
             )
+
+            # Topographic
+            ds = example[TOPOGRAPHIC_DATA].to_dataset(name=TOPOGRAPHIC_DATA)
+            topo_name = "topo"
+            for dim in ["x", "y"]:
+                ds = coord_to_range(ds, dim, prefix=topo_name)
+            ds = ds.rename(
+                {
+                    "x": f"{topo_name}_x",
+                    "y": f"{topo_name}_y",
+                }
+            )
+            individual_datasets.append(ds)
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D

@@ -26,6 +26,7 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_GSP_PER_EXAMPLE,
     OBJECT_AT_CENTER,
 )
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,9 @@ class GSPDataSource(ImageDataSource):
         """
 
         # load metadata
+        t = time.time()
         self.metadata = get_gsp_metadata_from_eso()
+        print(time.time() - t)
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(

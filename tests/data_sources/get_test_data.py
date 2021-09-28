@@ -9,7 +9,12 @@ import os
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.satellite_data_source import SatelliteDataSource
+from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
+    save_to_zarr,
+    get_azimuth_and_elevation,
+)
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
@@ -124,3 +129,28 @@ data_xarray.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w")
 #
 # data_df = data_xarray.to_dataframe()
 # TODO reduce and save
+
+
+#####################
+# SUN
+#####################
+
+pv_longitudes = pv_metadata["longitude"]
+pv_latitudes = pv_metadata["latitude"]
+
+gsp_metadata = get_gsp_metadata_from_eso()
+
+# probably need to change this to centroid
+gsp_lon = gsp_metadata["gsp_lon"]
+gsp_lat = gsp_metadata["gsp_lat"]
+
+longitudes = list(pv_longitudes.values) + list(gsp_lon.values)
+latitudes = list(pv_latitudes.values) + list(gsp_lat.values)
+
+datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
+azimuth, elevation = get_azimuth_and_elevation(
+    longitudes=longitudes, latitudes=latitudes, datestamps=datestamps
+)
+
+filename = f"{local_path}/tests/data/sun/test.zarr"
+save_to_zarr(azimuth=azimuth, elevation=elevation, filename=filename)

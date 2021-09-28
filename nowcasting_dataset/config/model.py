@@ -46,7 +46,8 @@ class InputData(BaseModel):
     )
 
     topographic_filename: str = Field(
-        "europe_dem_1km_osgb.tif", description="Path to the GeoTIFF Topographic data source"
+        "Topographic/europe_dem_1km_osgb.tif",
+        description="Path to the GeoTIFF Topographic data source",
     )
 
     gsp_filename: str = Field("PV/GSP/v0/pv_gsp.zarr")

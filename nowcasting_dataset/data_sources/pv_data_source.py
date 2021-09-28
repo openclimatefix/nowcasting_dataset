@@ -51,8 +51,6 @@ class PVDataSource(ImageDataSource):
     def load(self):
         self._load_metadata()
         self._load_pv_power()
-        if self.load_azimuth_and_elevation:
-            self._calculate_azimuth_and_elevation()
         self.pv_metadata, self.pv_power = align_pv_system_ids(self.pv_metadata, self.pv_power)
 
     def _load_metadata(self):
@@ -118,18 +116,10 @@ class PVDataSource(ImageDataSource):
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
 
-        if self.load_azimuth_and_elevation:
-            selected_pv_azimuth_angle = self.pv_azimuth.loc[start_dt:end_dt].dropna(
-                axis="columns", how="any"
-            )
-            selected_pv_elevation_angle = self.pv_elevation.loc[start_dt:end_dt].dropna(
-                axis="columns", how="any"
-            )
-        else:
-            selected_pv_azimuth_angle = None
-            selected_pv_elevation_angle = None
+        selected_pv_azimuth_angle = None
+        selected_pv_elevation_angle = None
 
-        return selected_pv_power, selected_pv_azimuth_angle, selected_pv_elevation_angle
+        return selected_pv_power
 
     def _get_central_pv_system_id(
         self,
@@ -203,11 +193,7 @@ class PVDataSource(ImageDataSource):
 
         logger.debug("Getting PV example data")
 
-        (
-            selected_pv_power,
-            selected_pv_azimuth_angle,
-            selected_pv_elevation_angle,
-        ) = self._get_time_slice(t0_dt)
+        selected_pv_power = self._get_time_slice(t0_dt)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
             x_meters_center, y_meters_center, selected_pv_power.columns
         )
@@ -224,9 +210,6 @@ class PVDataSource(ImageDataSource):
         all_pv_system_ids = all_pv_system_ids[: self.n_pv_systems_per_example]
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
-        if self.load_azimuth_and_elevation:
-            selected_pv_azimuth_angle = selected_pv_azimuth_angle[all_pv_system_ids]
-            selected_pv_elevation_angle = selected_pv_elevation_angle[all_pv_system_ids]
 
         pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]

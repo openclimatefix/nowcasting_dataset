@@ -83,6 +83,10 @@ def get_azimuth_and_elevation(
     azimuth = pd.concat(azimuth, axis=1)
     elevation = pd.concat(elevation, axis=1)
 
+    # remove timezone
+    elevation.index = elevation.index.tz_localize(None)
+    azimuth.index = azimuth.index.tz_localize(None)
+
     logger.debug(f"Calculated Azimuth and Elevation angles in {time.time() - t} seconds")
 
     return azimuth.round(2), elevation.round(2)

@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import pandas as pd
 import os
+import numcodecs
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
@@ -135,22 +136,15 @@ data_xarray.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w")
 # SUN
 #####################
 
-pv_longitudes = pv_metadata["longitude"]
-pv_latitudes = pv_metadata["latitude"]
+filename = "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/"
+# filename = "./scripts/sun.zarr"
 
-gsp_metadata = get_gsp_metadata_from_eso()
+# open file
+sun_xr = xr.open_dataset(filename, engine="zarr", mode="r", consolidated=True, chunks=None)
 
-# probably need to change this to centroid
-gsp_lon = gsp_metadata["gsp_lon"]
-gsp_lat = gsp_metadata["gsp_lat"]
+# just select one date
+sun_xr = sun_xr.sel(time_5=slice(start_dt, end_dt))
+sun_xr["locations"] = sun_xr.locations.astype("str")
 
-longitudes = list(pv_longitudes.values) + list(gsp_lon.values)
-latitudes = list(pv_latitudes.values) + list(gsp_lat.values)
-
-datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
-azimuth, elevation = get_azimuth_and_elevation(
-    longitudes=longitudes, latitudes=latitudes, datestamps=datestamps
-)
-
-filename = f"{local_path}/tests/data/sun/test.zarr"
-save_to_zarr(azimuth=azimuth, elevation=elevation, filename=filename)
+# save to file
+sun_xr.to_zarr(f"{local_path}/tests/data/sun/test.zarr", mode="w")

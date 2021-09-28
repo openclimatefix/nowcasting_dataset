@@ -87,7 +87,7 @@ class TopographicDataSource(ImageDataSource):
                 resampling=Resampling.bilinear,
             )
 
-        # selected_sat_data is likely to have 1 too many pixels in x and y
+        # selected_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
             x=slice(0, self._square.size_pixels), y=slice(0, self._square.size_pixels)

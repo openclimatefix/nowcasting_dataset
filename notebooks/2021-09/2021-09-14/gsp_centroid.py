@@ -7,8 +7,8 @@ import json
 
 # load data
 shape_data_raw = get_gsp_metadata_from_eso()
-shape_data_raw = shape_data_raw.sort_values(by=['RegionName'])
-shape_data_raw['Amount'] = 0
+shape_data_raw = shape_data_raw.sort_values(by=["RegionName"])
+shape_data_raw["Amount"] = 0
 
 # for index in range(0, len(shape_data_raw)):
 for index in range(140, 150):
@@ -16,8 +16,8 @@ for index in range(140, 150):
     # just select the first one
     shape_data = shape_data_raw.iloc[index : index + 1]
     shapes_dict = json.loads(shape_data["geometry"].to_json())
-    lon = shape_data["centroid_x"].iloc[0]
-    lat = shape_data["centroid_y"].iloc[0]
+    lon = shape_data["centroid_lon"].iloc[0]
+    lat = shape_data["centroid_lat"].iloc[0]
 
     gsp_lon = shape_data["gsp_lon"].iloc[0]
     gsp_lat = shape_data["gsp_lat"].iloc[0]
@@ -47,7 +47,11 @@ for index in range(140, 150):
     )
     fig.add_trace(
         go.Scattermapbox(
-            lon=[gsp_lon], lat=[gsp_lat], mode="markers", name="GSP Location", marker=dict(size=[10])
+            lon=[gsp_lon],
+            lat=[gsp_lat],
+            mode="markers",
+            name="GSP Location",
+            marker=dict(size=[10]),
         )
     )
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
@@ -56,6 +60,3 @@ for index in range(140, 150):
     # fig.show(renderer="browser")
     fig.write_html(f"images/{region_name}.html")
     fig.write_image(f"images/{region_name}_{index}.png")
-
-
-

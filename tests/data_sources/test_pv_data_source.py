@@ -92,7 +92,7 @@ def test_drop_pv_systems_which_produce_overnight():
 
 def test_calculate_azimuth_and_elevation_all_pv_systems():
     datestamps = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
-    N = 2548
+    N = 100
     pv_metadata = pd.DataFrame(index=range(0, N))
 
     pv_metadata["latitude"] = np.random.random(N)
@@ -106,4 +106,4 @@ def test_calculate_azimuth_and_elevation_all_pv_systems():
     assert len(azimuth) == len(datestamps)
     assert len(azimuth.columns) == N
 
-    # 49 * 2548 = 100,000 takes 26 seconds
+    # 49 * 100 = 4,900 takes ~1 seconds

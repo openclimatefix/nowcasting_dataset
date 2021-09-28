@@ -55,6 +55,9 @@ NWP_X_COORDS = "nwp_x_coords"
 NWP_Y_COORDS = "nwp_y_coords"
 X_METERS_CENTER = "x_meters_center"
 Y_METERS_CENTER = "y_meters_center"
+TOPOGRAPHIC_DATA = "topo_data"
+TOPOGRAPHIC_X_COORDS = "topo_x_coords"
+TOPOGRAPHIC_Y_COORDS = "topo_y_coords"
 NWP_VARIABLE_NAMES = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
 SAT_VARIABLE_NAMES = (
     "HRV",
@@ -90,5 +93,8 @@ DEFAULT_REQUIRED_KEYS = [
     GSP_X_COORDS,
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_Y_COORDS,
+    TOPOGRAPHIC_X_COORDS,
 ] + list(DATETIME_FEATURE_NAMES)
 T0_DT = "t0_dt"

@@ -59,6 +59,10 @@ class InputData(BaseModel):
     )
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
+    topographic_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
+        description="Path to the GeoTIFF Topographic data source",
+    )
 
 
 class OutputData(BaseModel):

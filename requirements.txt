@@ -30,3 +30,4 @@ pre-commit
 s3fs
 fsspec
 pathy
+rioxarray

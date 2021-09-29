@@ -19,7 +19,7 @@ from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zar
 
 @dataclass
 class SunDataSource(DataSource):
-    """Add azimuth and elevation angles."""
+    """Add azimuth and elevation angles of the sun."""
 
     filename: Union[str, Path]
     start_dt: Optional[datetime] = None
@@ -33,14 +33,14 @@ class SunDataSource(DataSource):
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
         """
+        Get example data from t0_dt and x and y xoordinates
 
         Args:
-            t0_dt:
-            x_meters_center:
-            y_meters_center:
+            t0_dt: the timestamp to get the sun data for
+            x_meters_center: the x coordinate (OSGB)
+            y_meters_center: the y coordinate (OSGB)
 
-        Returns:
-
+        Returns: Dictionary of azimuth and elevation data
         """
 
         # all sun data is from 2019, analaysis showed over the timescale we are interested in the

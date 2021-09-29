@@ -23,12 +23,18 @@ def get_azimuth_and_elevation(
 ) -> (pd.DataFrame, pd.DataFrame):
     """
 
-    Args:
-        datestamps:
-        x_locations:
-        y_locations:
+    Get Azimuth and elevation positions of the sun
 
-    Returns:
+    For a list of datestamps and a list of coordinates, get the azimuth and elevation degrees.
+    Note that the degrees are rounded to 2 decimal places, as we at most need that.
+
+    Args:
+        datestamps: list of datestamps that are needed
+        x_centers: list of x coordinates - ref. OSGB
+        y_centers: list of y coordinates - ref. OSGB
+
+    Returns: Tuple of dataframes for azimuth and elevation.
+        The index is timestamps, and the columns are the x and y coordinates
 
     """
 
@@ -96,13 +102,12 @@ def get_azimuth_and_elevation(
 
 def save_to_zarr(azimuth: pd.DataFrame, elevation: pd.DataFrame, filename: Union[str, Path]):
     """
+    Save azimuth and elevation to zarr file
 
     Args:
-        azimuth:
-        elevation:
-        filename:
-
-    Returns:
+        azimuth: data to be saved
+        elevation: data to be saved
+        filename: the file name where it should be save, can be local of gcs
 
     """
 
@@ -128,14 +133,18 @@ def load_from_zarr(
     filename: Union[str, Path],
     start_dt: Optional[datetime.datetime] = None,
     end_dt: Optional[datetime.datetime] = None,
-) -> pd.DataFrame:
+) -> (pd.DataFrame, pd.DataFrame):
     """
-    Load solar pv data from gcs (althought there is an option to load from loca - for testing)
-    @param filename: filename of file to be loaded
-    @param start_dt: the start datetime, which to trim the data to
-    @param end_dt: the end datetime, which to trim the data to
-    @param from_gcs: option to laod from gcs, or form local file
-    @return: dataframe of pv data
+    Load sun data
+
+    Args:
+        filename: the filename to be loaded, can be local or gcs
+        start_dt: optional start datetime. Both start and end need to be set to be used.
+        end_dt: optional end datetime. Both start and end need to be set to be used.
+
+    Returns: Tuple of dataframes for azimuth and elevation.
+        The index is timestamps, and the columns are the x and y coordinates
+
     """
 
     logger.debug("Loading Solar PV Data from GCS")
@@ -160,5 +169,15 @@ def load_from_zarr(
     return azimuth, elevation
 
 
-def x_y_to_name(x, y):
+def x_y_to_name(x, y) -> str:
+    """
+    Make name form x, y coords
+
+    Args:
+        x: x coordinate
+        y: y cooridante
+
+    Returns: name made from x and y
+
+    """
     return f"{x},{y}"

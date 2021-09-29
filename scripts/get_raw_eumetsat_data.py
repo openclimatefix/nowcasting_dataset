@@ -8,12 +8,11 @@
 ############
 from datetime import datetime
 import pytz
-import yaml
-import os
-import numcodecs
-
 from satip import eumetsat
-from satip.eumetsat import compress_downloaded_files
+import requests
+import json
+
+from typing import Optional
 
 from satflow.data.utils.utils import eumetsat_name_to_datetime, eumetsat_filename_to_datetime
 from datetime import datetime, timedelta
@@ -22,6 +21,32 @@ from pathlib import Path
 from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files
 import logging
+import click
+
+
+@click.command()
+@click.option(
+    "--download_directory",
+    default="./",
+    help="Where to download the data to. Also where the script searches for previously downloaded data.",
+)
+@click.option("--start_date", prompt="Starting date to download data")
+@click.option("--end_date", prompt="Ending date to download data")
+@click.option(
+    "--backfill",
+    prompt="Whether to download any missing data from the start date of the data on disk to the end date",
+    is_flag=True,
+)
+@click.option("--bandwidth_limit", prompt="Bandwidth limit, in MB/sec", type=float)
+def download_eumetsat_data(
+    download_directory,
+    start_date,
+    end_date,
+    backfill: bool = False,
+    bandwidth_limit: Optional[float] = None,
+):
+    pass
+
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -34,24 +59,20 @@ gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v1"
 config = {"start": start, "end": end, "gcp_path": gcp_path}
 dm = eumetsat.DownloadManager(user_key, user_secret, data_dir, metadata_db_fp, debug_fp)
 
-for day in range(0, 31):
-    for month in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+for day in range(0, 32):
+    for month in range(0, 13):
         for year in range(2010, 2022):
-            curr_date = f"{year}/{month}/{day}"
-            curr_date = datetime.strptime(curr_date, "%Y/%m/%d")
-            # make_day((os.path.join(data_dir, curr_date.strftime("%Y/%m/%d/")), curr_date, 0))
-            # continue
+            # Download 1 day at a time
             dm.download_date_range(
-                f"{year}-{month}-{day} 07:59",
-                f"{year}-{month}-{day} 20:05",
+                f"{year}-{month}-{day} 00:00",
+                f"{year}-{month}-{day} 23:59",
                 product_id="EO:EUM:DAT:MSG:RSS-CLM",
             )
             dm.download_date_range(
-                f"{year}-{month}-{day} 07:59",
-                f"{year}-{month}-{day} 20:05",
+                f"{year}-{month}-{day} 00:00",
+                f"{year}-{month}-{day} 23:59",
                 product_id="EO:EUM:DAT:MSG:MSG15-RSS",
             )
-            dm.download_date_range(f"{year}-{month}-{day} 07:59", f"{year}-{month}-{day} 20:05")
 
 # format local temp folder
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()

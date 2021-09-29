@@ -34,13 +34,15 @@ def get_azimuth_and_elevation(
         y_centers: list of y coordinates - ref. OSGB
 
     Returns: Tuple of dataframes for azimuth and elevation.
-        The index is timestamps, and the columns are the x and y coordinates
+        The index is timestamps, and the columns are the x and y coordinates in OSGB projection
 
     """
 
     logger.debug(
         f"Will be calculating for {len(datestamps)} datestamps and {len(x_centers)} locations"
     )
+
+    assert len(x_centers) == len(y_centers)
 
     # create array of index datetime, columns of system_id for both azimuth and elevation
     azimuth = []
@@ -76,8 +78,7 @@ def get_azimuth_and_elevation(
         logger.debug(f"Getting results")
 
         # Collect results from each thread.
-        for i in tqdm(range(len(future_azimuth_and_elevation_per_location))):
-            future_azimuth_and_elevation, name = future_azimuth_and_elevation_per_location[i]
+        for future_azimuth_and_elevation, name in tqdm(future_azimuth_and_elevation_per_location):
             azimuth_and_elevation = future_azimuth_and_elevation.result()
 
             azimuth_per_location = azimuth_and_elevation.loc[:, "azimuth"].rename(name)

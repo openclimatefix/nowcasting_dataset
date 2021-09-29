@@ -91,7 +91,7 @@ def test_data_module(config_filename):
         nwp_base_path=config.input_data.nwp_zarr_path,
         gsp_filename=config.input_data.gsp_zarr_path,
         topographic_filename=config.input_data.topographic_filename,
-        sun_filename=config.input_data.sun_filename,
+        sun_filename=config.input_data.sun_zarr_path,
         pin_memory=True,  #: Passed to DataLoader.
         num_workers=0,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.

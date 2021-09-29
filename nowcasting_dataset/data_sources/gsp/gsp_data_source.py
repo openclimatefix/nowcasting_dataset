@@ -75,9 +75,7 @@ class GSPDataSource(ImageDataSource):
         """
 
         # load metadata
-        t = time.time()
         self.metadata = get_gsp_metadata_from_eso()
-        print(time.time() - t)
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(

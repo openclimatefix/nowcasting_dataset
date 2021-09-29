@@ -19,7 +19,7 @@ def test_calculate_azimuth_and_elevation():
     metadata["name"] = np.random.random(N)
 
     azimuth, elevation = get_azimuth_and_elevation(
-        datestamps=datestamps, latitudes=metadata["latitude"], longitudes=metadata["longitude"]
+        datestamps=datestamps, x_centers=metadata["latitude"], y_centers=metadata["longitude"]
     )
 
     assert len(azimuth) == len(datestamps)
@@ -39,7 +39,7 @@ def test_save():
     metadata["name"] = np.random.random(N)
 
     azimuth, elevation = get_azimuth_and_elevation(
-        datestamps=datestamps, latitudes=metadata["latitude"], longitudes=metadata["longitude"]
+        datestamps=datestamps, x_centers=metadata["latitude"], y_centers=metadata["longitude"]
     )
 
     with tempfile.TemporaryDirectory() as fp:

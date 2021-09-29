@@ -20,11 +20,11 @@ def test_get_example(test_data_folder):
         filename=filename, history_minutes=30, forecast_minutes=60, convert_to_numpy=True
     )
 
-    lon = 50.14
-    lat = -5.08
+    x = 256895.63164759654
+    y = 666180.3018829626
     start_dt = pd.Timestamp("2019-01-01 12:00:00.000")
 
-    example = sun_data_source.get_example(t0_dt=start_dt, x_meters_center=lon, y_meters_center=lat)
+    example = sun_data_source.get_example(t0_dt=start_dt, x_meters_center=x, y_meters_center=y)
 
     assert SUN_ELEVATION_ANGLE in example.keys()
     assert SUN_AZIMUTH_ANGLE in example.keys()

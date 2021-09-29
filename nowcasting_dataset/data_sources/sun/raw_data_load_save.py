@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_azimuth_and_elevation(
-    datestamps: List[datetime.datetime], longitudes: List[int], latitudes: List[int]
+    datestamps: List[datetime.datetime], x_centers: List[int], y_centers: List[int]
 ) -> (pd.DataFrame, pd.DataFrame):
     """
 
@@ -33,7 +33,7 @@ def get_azimuth_and_elevation(
     """
 
     logger.debug(
-        f"Will be calculating for {len(datestamps)} datestamps and {len(longitudes)} locations"
+        f"Will be calculating for {len(datestamps)} datestamps and {len(x_centers)} locations"
     )
 
     # create array of index datetime, columns of system_id for both azimuth and elevation
@@ -51,15 +51,17 @@ def get_azimuth_and_elevation(
 
         # Submit tasks to the executor.
         future_azimuth_and_elevation_per_location = []
-        for i in tqdm(range(len(longitudes))):
+        for i in tqdm(range(len(x_centers))):
 
-            name = x_y_to_name(latitudes[i], longitudes[i])
+            name = x_y_to_name(x_centers[i], y_centers[i])
             if name not in names:
+
+                lat, lon = geospatial.osgb_to_lat_lon(x=x_centers[i], y=y_centers[i])
 
                 future_azimuth_and_elevation = executor.submit(
                     geospatial.calculate_azimuth_and_elevation_angle,
-                    latitude=latitudes[i],
-                    longitude=longitudes[i],
+                    latitude=lat,
+                    longitude=lon,
                     datestamps=datestamps,
                 )
                 future_azimuth_and_elevation_per_location.append(

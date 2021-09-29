@@ -300,9 +300,9 @@ def validate_example(
             ), f"Maximum PV value is {np.nanmin(data[PV_YIELD])} but it should be <= 1"
 
     if SUN_AZIMUTH_ANGLE in data.keys():
-        assert data[SUN_AZIMUTH_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
+        assert data[SUN_AZIMUTH_ANGLE].shape[-1] == seq_len_5_minutes
     if SUN_ELEVATION_ANGLE in data.keys():
-        assert data[SUN_ELEVATION_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
+        assert data[SUN_ELEVATION_ANGLE].shape[-1] == seq_len_5_minutes
 
     assert data["sat_data"].shape[-4:] == (
         seq_len_5_minutes,

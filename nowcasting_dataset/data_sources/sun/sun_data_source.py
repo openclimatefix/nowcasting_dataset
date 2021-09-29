@@ -6,6 +6,7 @@ import pandas as pd
 from numbers import Number
 from typing import List, Tuple, Union, Optional
 from pathlib import Path
+import numpy as np
 import io
 import gcsfs
 import xarray as xr
@@ -35,12 +36,23 @@ class SunDataSource(DataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
-        # convert x_meters_center, y_meters_center to lat and lon
-        lat, lon = osgb_to_lat_lon(x=x_meters_center, y=y_meters_center)
+        # The names of the columns get truncated when saving, therefore we need to look for the
+        # name of the columns near the location we are looking for
+        locations = np.array(
+            [[float(z.split(",")[0]), float(z.split(",")[1])] for z in self.azimuth.columns]
+        )
+        location = locations[
+            np.isclose(locations[:, 0], x_meters_center)
+            & np.isclose(locations[:, 1], y_meters_center)
+        ]
+        # lets make sure there is atleast one
+        assert len(location) > 0
+        # Take the first location, and x and y coordinates are the first and center entries in this array
+        location = location[0]
+        # make name of column to pull data from
+        name = x_y_to_name(x=location[0], y=location[1])
 
-        name = x_y_to_name(lon, lat)
         del x_meters_center, y_meters_center
-
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 

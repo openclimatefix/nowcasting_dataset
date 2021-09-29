@@ -44,9 +44,9 @@ class Example(TypedDict):
     pv_yield: Array
 
     # PV azimuth and elevation angles i.e where the sun is.
-    #: shape = [batch_size, ] seq_length, n_pv_systems_per_example
-    pv_azimuth_angle: Array
-    pv_elevation_angle: Array
+    #: shape = [batch_size, ] seq_length
+    sun_azimuth_angle: Array
+    sun_elevation_angle: Array
 
     #: PV identification.
     #: shape = [batch_size, ] n_pv_systems_per_example

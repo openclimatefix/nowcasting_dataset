@@ -19,7 +19,7 @@ start_dt = datetime.fromisoformat("2019-06-22 00:00:00.000+00:00")
 end_dt = datetime.fromisoformat("2019-06-23 00:00:00.000+00:00")
 # start_dt = datetime.fromisoformat("2019-01-01 12:00:00.000+00:00")
 # end_dt = datetime.fromisoformat("2019-01-01 14:00:00.000+00:00")
-range = pd.date_range(start=start_dt, end=end_dt, freq="5T")
+data_range = pd.date_range(start=start_dt, end=end_dt, freq="30T")
 gsp_df = load_pv_gsp_raw_data_from_pvlive(start=start_dt, end=end_dt)
 data_df = gsp_df.pivot(index="gsp_id", columns="datetime_gmt", values="generation_mw")
 max_generation = data_df.max().max()
@@ -75,20 +75,75 @@ fig.write_image(f"midday_fix.png")
 
 # make annimation
 frames = []
-for col in data_df.columns[1:]:
+for N, col in enumerate(data_df.columns[1:]):
     print(col)
-    frames.append(go.Frame(data=[get_frame(col)], layout=go.Layout(title=str(col))))
+    frames.append(
+        go.Frame(data=[get_frame(col)], layout=go.Layout(title=str(col)), name=f"frame{N+1}")
+    )
+
+# This blog helped a lot - https://community.plotly.com/t/animation-with-slider-not-moving-when-pressing-play/34763
+sliders = [
+    dict(
+        steps=[
+            dict(
+                method="animate",
+                args=[
+                    [f"frame{k+1}"],
+                    dict(
+                        mode="immediate",
+                        frame=dict(duration=600, redraw=True),
+                        transition=dict(duration=200),
+                    ),
+                ],
+                label="{}".format(data_range[k]),
+            )
+            for k in range(0, len(frames))
+        ],
+        transition=dict(duration=100),
+        x=0,
+        y=0,
+        currentvalue=dict(font=dict(size=12), visible=True, xanchor="center"),
+        len=1.0,
+    )
+]
+
+layout = go.Layout(
+    mapbox_style="carto-positron", mapbox_zoom=6, mapbox_center={"lat": 55, "lon": 0}
+)
+layout.update(
+    updatemenus=[
+        dict(
+            type="buttons",
+            showactive=False,
+            y=0,
+            x=0,
+            xanchor="left",
+            pad=dict(t=5, r=10),
+            buttons=[
+                dict(
+                    label="Play",
+                    method="animate",
+                    args=[
+                        None,
+                        dict(
+                            frame=dict(duration=600, redraw=True),
+                            transition=dict(duration=200),
+                            fromcurrent=True,
+                            mode="immediate",
+                        ),
+                    ],
+                )
+            ],
+        )
+    ],
+    sliders=sliders,
+)
 
 fig = go.Figure(
     frames=frames,
     data=get_trace(midday),
-    layout=go.Layout(
-        updatemenus=[
-            dict(type="buttons", buttons=[dict(label="Play", method="animate", args=[None])])
-        ],
-    ),
+    layout=layout,
 )
-fig.update_layout(mapbox_style="carto-positron", mapbox_zoom=6, mapbox_center={"lat": 55, "lon": 0})
 
 fig.show(renderer="browser")
 fig.write_html(f"video.html")

@@ -11,6 +11,7 @@ import pytz
 from satip import eumetsat
 import requests
 import json
+import pandas as pd
 
 from typing import Optional
 
@@ -24,20 +25,25 @@ import logging
 import click
 
 
+format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 @click.command()
 @click.option(
     "--download_directory",
+    "-dir",
     default="./",
     help="Where to download the data to. Also where the script searches for previously downloaded data.",
 )
-@click.option("--start_date", prompt="Starting date to download data")
-@click.option("--end_date", prompt="Ending date to download data")
+@click.option("--start_date", "--start", prompt="Starting date to download data")
+@click.option("--end_date", "--end", prompt="Ending date to download data")
 @click.option(
     "--backfill",
+    "-b",
     prompt="Whether to download any missing data from the start date of the data on disk to the end date",
     is_flag=True,
 )
-@click.option("--bandwidth_limit", prompt="Bandwidth limit, in MB/sec", type=float)
+@click.option("--bandwidth_limit", "--bw_limit", prompt="Bandwidth limit, in MB/sec", type=float)
 def download_eumetsat_data(
     download_directory,
     start_date,
@@ -45,7 +51,8 @@ def download_eumetsat_data(
     backfill: bool = False,
     bandwidth_limit: Optional[float] = None,
 ):
-    pass
+    start_date = format_dt_str(start_date)
+    end_date = format_dt_str(end_date)
 
 
 logging.basicConfig()
@@ -83,3 +90,6 @@ data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
 
 # upload to gcp
 gcp_upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)
+
+if __name__ == "__main__":
+    download_eumetsat_data()

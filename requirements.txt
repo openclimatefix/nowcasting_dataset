@@ -7,7 +7,6 @@ xarray
 ipykernel
 h5netcdf
 gcsfs
-scikit-image
 torch
 pytorch-lightning
 dask

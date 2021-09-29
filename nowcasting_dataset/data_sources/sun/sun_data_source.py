@@ -32,6 +32,20 @@ class SunDataSource(DataSource):
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
+        """
+
+        Args:
+            t0_dt:
+            x_meters_center:
+            y_meters_center:
+
+        Returns:
+
+        """
+
+        # all sun data is from 2019, analaysis showed over the timescale we are interested in the
+        # elevation and azimuth angles change by < 1 degree, so to save data, we just use data form 2019
+        t0_dt = t0_dt.replace(year=2019)
 
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)

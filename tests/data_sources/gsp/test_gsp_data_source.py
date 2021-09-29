@@ -41,8 +41,11 @@ def test_gsp_pv_data_source_get_locations_for_batch():
     locations_x, locations_y = gsp.get_locations_for_batch(t0_datetimes=gsp.gsp_power.index[0:10])
 
     assert len(locations_x) == len(locations_y)
-    assert locations_x[0] > 90  # this makes sure it is not in lat/lon
-    assert locations_y[0] > 90  # this makes sure it is not in lat/lon
+    # This makes sure it is not in lat/lon.
+    # Note that OSGB could be <= than 90, but that would mean a location in the middle of the sea,
+    # which is impossible for GSP data
+    assert locations_x[0] > 90
+    assert locations_y[0] > 90
 
     lat, lon = osgb_to_lat_lon(locations_x, locations_y)
 

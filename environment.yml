@@ -22,10 +22,6 @@ dependencies:
   - fsspec
   - pathy
 
-  # Images & optical flow
-  - conda-forge::opencv # also run `apt install libgl1-mesa-glx`
-  - scikit-image
-
   # Machine learning
   - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
   - pytorch-lightning
@@ -33,6 +29,7 @@ dependencies:
   # PV & Geospatial
   - pvlib
   - pyproj
+  - rioxarray
 
   # Development tools
   - pytest

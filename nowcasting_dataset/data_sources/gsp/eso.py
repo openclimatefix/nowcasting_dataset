@@ -21,11 +21,14 @@ from urllib.request import urlopen
 import geopandas as gpd
 import pandas as pd
 
-from nowcasting_dataset.geospatial import osgb_to_lat_lon, WGS84_CRS
+from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 
 logger = logging.getLogger(__name__)
 
+# When saving a file, the columns need to be less than 10 characters -
+# - https://github.com/geopandas/geopandas/issues/1417
+# - https://en.wikipedia.org/wiki/Shapefile#Limitations
 rename_save_columns = {
     "centroid_x": "cen_x",
     "centroid_y": "cen_y",
@@ -121,8 +124,10 @@ def get_gsp_shape_from_eso(
                 x=shape_gpd["centroid_x"], y=shape_gpd["centroid_y"]
             )
 
-            # project to WGS84
-            shape_gpd = shape_gpd.to_crs(WGS84_CRS)
+            # Decided not project the shape data to WGS84, as we want to keep
+            # all 'batch' data the same projection.
+            # However when plotting it may be useful to project to WGS84
+            # i.e shape_gpd = shape_gpd.to_crs(WGS84_CRS)
 
     if save_local_file:
 

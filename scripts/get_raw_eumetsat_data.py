@@ -13,7 +13,7 @@ import requests
 import json
 import pandas as pd
 
-from typing import Optional
+from typing import Optional, List, Union, Tuple
 
 from satflow.data.utils.utils import eumetsat_name_to_datetime, eumetsat_filename_to_datetime
 from datetime import datetime, timedelta
@@ -28,6 +28,13 @@ import click
 format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def validate_date(ctx, param, value):
+    try:
+        return format_dt_str(value)
+    except ValueError:
+        raise click.BadParameter("Date must be in format accepted by pd.to_datetime()")
+
+
 @click.command()
 @click.option(
     "--download_directory",
@@ -35,24 +42,87 @@ format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
     default="./",
     help="Where to download the data to. Also where the script searches for previously downloaded data.",
 )
-@click.option("--start_date", "--start", prompt="Starting date to download data")
-@click.option("--end_date", "--end", prompt="Ending date to download data")
+@click.option(
+    "--start_date",
+    "--start",
+    prompt="Starting date to download data, in format accepted by pd.to_datetime()",
+    callback=validate_date,
+)
+@click.option(
+    "--end_date",
+    "--end",
+    prompt="Ending date to download data, in format accepted by pd.to_datetime()",
+    callback=validate_date,
+)
 @click.option(
     "--backfill",
     "-b",
     prompt="Whether to download any missing data from the start date of the data on disk to the end date",
     is_flag=True,
 )
+@click.option(
+    "--user_key",
+    "--key",
+    default=None,
+    help="The User Key for EUMETSAT access",
+)
+@click.option(
+    "--user_secret",
+    "--secret",
+    default=None,
+    help="The User secret for EUMETSAT access",
+)
+@click.option(
+    "--auth_filename",
+    default="auth.json",
+    help="The auth file containing the user key and access key for EUMETSAT access",
+)
 @click.option("--bandwidth_limit", "--bw_limit", prompt="Bandwidth limit, in MB/sec", type=float)
 def download_eumetsat_data(
     download_directory,
-    start_date,
-    end_date,
+    start_date: datetime,
+    end_date: datetime,
     backfill: bool = False,
     bandwidth_limit: Optional[float] = None,
+    user_key: Optional[str] = None,
+    user_secret: Optional[str] = None,
+    auth_filename: Optional[str] = None,
 ):
-    start_date = format_dt_str(start_date)
-    end_date = format_dt_str(end_date)
+    """
+    Downloads EUMETSAT RSS and Cloud Masks to the given directory,
+     checking first to see if the requested files are already downloaded
+
+    Args:
+        download_directory:
+        start_date:
+        end_date:
+        backfill:
+        bandwidth_limit:
+        user_key:
+        user_secret:
+        auth_filename: Path to a file containing the user_secret and user_key
+
+    Returns:
+
+    """
+    pass
+
+
+def determine_datetimes_to_download_files(directory) -> List[Tuple[datetime, datetime]]:
+    """
+    Check the given directory, and sub-directories, for all downloaded files.
+
+    Args:
+        directory: The top-level directory to check in
+
+    Returns:
+        List Tuples
+
+    """
+    # TODO get list of all files in directories
+    # Convert filenames to datetimes, remove those datetimes from ones to download
+    # Return list of all datetime range tuples to download files
+    pass
 
 
 logging.basicConfig()

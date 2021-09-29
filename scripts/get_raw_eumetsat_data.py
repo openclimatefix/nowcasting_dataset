@@ -13,6 +13,7 @@ import pytz
 import yaml
 from satip import eumetsat
 import pandas as pd
+import os
 
 from typing import Optional, List, Union, Tuple
 
@@ -164,7 +165,7 @@ def load_key_secret(filename) -> Tuple[str, str]:
 
 
 def determine_datetimes_to_download_files(
-    directory, start_date, end_date, product_id
+    directory, start_date, end_date
 ) -> List[Tuple[datetime, datetime]]:
     """
     Check the given directory, and sub-directories, for all downloaded files.
@@ -173,13 +174,11 @@ def determine_datetimes_to_download_files(
         directory: The top-level directory to check in
         start_date:
         end_date:
-        product_id:
 
     Returns:
         List of tuples of datetimes giving the ranges of time to download
 
     """
-    # TODO get list of all files in directories
     # Get all days from start_date to end_date
     day_split = pd.date_range(start_date, end_date, freq="D")
 
@@ -191,8 +190,8 @@ def determine_datetimes_to_download_files(
     missing_cloud_mask_timesteps = []
     for day in day_split:
         day_string = day.strftime(format="%Y/%m/%d")
-        rss_images = fs.glob(day_string + "*.nat")
-        cloud_masks = fs.glob(day_string + "*.grb")
+        rss_images = fs.glob(os.path.join(day_string, "*.nat"))
+        cloud_masks = fs.glob(os.path.join(day_string, "*.grb"))
         missing_rss_timesteps = missing_rss_timesteps + get_missing_datetimes_from_list_of_files(
             rss_images
         )
@@ -200,12 +199,40 @@ def determine_datetimes_to_download_files(
             missing_cloud_mask_timesteps + get_missing_datetimes_from_list_of_files(cloud_masks)
         )
 
-    # Convert filenames to datetimes, remove those datetimes from ones to download
     # Return list of all datetime range tuples to download files
-    available_dates = eumetsat.identify_available_datasets(
-        start_date, end_date, product_id=product_id
+    available_rss_dates = eumetsat.identify_available_datasets(
+        start_date, end_date, product_id="EO:EUM:DAT:MSG:MSG15-RSS"  # RSS Images
     )
+    # Extracting the datetime each dataset was finished
+    rss_end_dates = [
+        dataset["properties"]["date"].split("/")[-1] for dataset in available_rss_dates
+    ]
+    try:
+        rss_end_dates = (
+            pd.to_datetime(rss_end_dates).floor(freq="s").tz_localize("UTC").tz_convert(None)
+        )
+    except:
+        rss_end_dates = pd.to_datetime(rss_end_dates).floor(freq="s").tz_convert(None)
+    # Sort
+    rss_end_dates = sorted(rss_end_dates)
+    available_cloud_masks_dates = eumetsat.identify_available_datasets(
+        start_date, end_date, product_id="EO:EUM:DAT:MSG:RSS-CLM"  # Cloud Masks
+    )
+    # Extracting the datetime each dataset was finished
+    cloud_mask_end_dates = [
+        dataset["properties"]["date"].split("/")[-1] for dataset in available_cloud_masks_dates
+    ]
+    try:
+        cloud_mask_end_dates = (
+            pd.to_datetime(cloud_mask_end_dates).floor(freq="s").tz_localize("UTC").tz_convert(None)
+        )
+    except:
+        cloud_mask_end_dates = pd.to_datetime(cloud_mask_end_dates).floor(freq="s").tz_convert(None)
+    cloud_mask_end_dates = sorted(cloud_mask_end_dates)
+    print(cloud_mask_end_dates)
+    print(rss_end_dates)
 
+    # Now compare the two
     pass
 
 

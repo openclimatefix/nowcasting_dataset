@@ -48,9 +48,7 @@ def get_azimuth_and_elevation(
 
     t = time.time()
     names = []
-    # loop over all metadata and fine azimuth and elevation angles,
-    # not sure this is the best method to use, as currently this step takes ~2 minute for 745 pv systems,
-    # and 235 datestamps (~100,000 point). But this only needs to be done once.
+    # loop over locations and find azimuth and elevation angles,
     with futures.ThreadPoolExecutor() as executor:
 
         logger.debug("Setting up jobs")

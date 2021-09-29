@@ -155,12 +155,12 @@ def get_gsp_shape_from_eso(
             ].index
 
             # join geometries together
-            new_geometry = shape_gpd_no_duplicates.loc[index_other]["geometry"].union(
+            new_geometry = shape_gpd_no_duplicates.loc[index_other, "geometry"].union(
                 duplicate.geometry
             )
 
             # set new geometry
-            shape_gpd_no_duplicates.loc[index_other]["geometry"] = new_geometry
+            shape_gpd_no_duplicates.loc[index_other, "geometry"] = new_geometry
 
         shape_gpd = shape_gpd_no_duplicates
 

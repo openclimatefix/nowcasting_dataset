@@ -34,7 +34,7 @@ def get_azimuth_and_elevation(
         y_centers: list of y coordinates - ref. OSGB
 
     Returns: Tuple of dataframes for azimuth and elevation.
-        The index is timestamps, and the columns are the x and y coordinates
+        The index is timestamps, and the columns are the x and y coordinates in OSGB projection
 
     """
 

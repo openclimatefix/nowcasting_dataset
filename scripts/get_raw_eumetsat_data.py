@@ -7,10 +7,11 @@
 # The data is about 1MB for a month of data
 ############
 from datetime import datetime
+
+import fsspec
 import pytz
+import yaml
 from satip import eumetsat
-import requests
-import json
 import pandas as pd
 
 from typing import Optional, List, Union, Tuple
@@ -105,7 +106,53 @@ def download_eumetsat_data(
     Returns:
 
     """
+    # Get authentication
+    if auth_filename is not None:
+        user_key, user_secret = load_key_secret(auth_filename)
+
+    # Get already downloaded timestamps
+    times_to_use = determine_datetimes_to_download_files(download_directory)
+
+    # Download the data
+    dm = eumetsat.DownloadManager(
+        user_key, user_secret, download_directory, download_directory, download_directory
+    )
+
+    for start_time, end_time in times_to_use:
+        # Because the satellite data is off by 1 minute
+        # Need to download RSS images from 23:59 the day before start_time
+        # And end 23:59 the day of
+        # Derived products are at the 5min, so need to go from 00:00 to 23:59 each day
+        dm.download_date_range(
+            start_time,
+            end_time,
+            product_id="EO:EUM:DAT:MSG:RSS-CLM",
+        )
+        dm.download_date_range(
+            start_time,
+            end_time,
+            product_id="EO:EUM:DAT:MSG:MSG15-RSS",
+        )
+    # Sanity check each time range after downloaded
+
+    #
     pass
+
+
+def load_key_secret(filename) -> Tuple[str, str]:
+    """
+    Load user secret and key stored in a yaml file
+
+    Args:
+        filename: Filename to read
+
+    Returns:
+        The user secret and key
+
+    """
+    with fsspec.open(filename, mode="r") as f:
+        keys = yaml.load(f, Loader=yaml.FullLoader)
+        return keys["key"], keys["secret"]
 
 
 def determine_datetimes_to_download_files(directory) -> List[Tuple[datetime, datetime]]:
@@ -116,12 +163,13 @@ def determine_datetimes_to_download_files(directory) -> List[Tuple[datetime, dat
         directory: The top-level directory to check in
 
     Returns:
-        List Tuples
+        List of tuples of datetimes giving the ranges of time to download
 
     """
     # TODO get list of all files in directories
     # Convert filenames to datetimes, remove those datetimes from ones to download
     # Return list of all datetime range tuples to download files
+
     pass
 
 
@@ -154,9 +202,6 @@ for day in range(0, 32):
 # format local temp folder
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
-
-# get data
-data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
 
 # upload to gcp
 gcp_upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)

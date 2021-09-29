@@ -4,9 +4,12 @@ from nowcasting_dataset.data_sources.gsp.eso import (
 )
 import plotly.graph_objects as go
 import json
+from nowcasting_dataset.geospatial import WGS84_CRS
+
 
 # load data
 shape_data_raw = get_gsp_metadata_from_eso()
+shape_data_raw = shape_data_raw.to_crs(WGS84_CRS)
 shape_data_raw = shape_data_raw.sort_values(by=["RegionName"])
 shape_data_raw["Amount"] = 0
 

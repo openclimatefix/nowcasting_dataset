@@ -1,3 +1,4 @@
+""" Usual setup file for package """
 from setuptools import setup, find_packages
 
 # read the contents of your README file

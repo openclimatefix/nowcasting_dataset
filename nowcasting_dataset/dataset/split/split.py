@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class SplitMethod(Enum):
+    """  Different split methods """
+
     DAY = "day"
     DAY_RANDOM = "day_random"
     DAY_SPECIFIC = "day_specific"
@@ -47,7 +49,6 @@ def split_data(
 
     Returns: train, validation and test dataset
     """
-
     logger.info(f"Splitting data with method {method}")
 
     datetimes = pd.DatetimeIndex(datetimes)

@@ -1,3 +1,4 @@
+""" NWP Data Source """
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.dataset.example import Example, to_numpy
 from nowcasting_dataset import utils
@@ -57,6 +58,8 @@ NWP_STD = xr.DataArray(
 @dataclass
 class NWPDataSource(ZarrDataSource):
     """
+    NWP Data Source (Numerical Weather Predictions)
+
     Args (for init):
       filename: The base path in which we find '2018_1-6', etc.
 
@@ -86,6 +89,14 @@ class NWPDataSource(ZarrDataSource):
     meters_per_pixel: InitVar[int] = 2_000
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """
+        Post init
+
+        Args:
+            image_size_pixels: number of pixels in image
+            meters_per_pixel: how many meteres for each pixel
+
+        """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (
@@ -96,10 +107,14 @@ class NWPDataSource(ZarrDataSource):
         )
 
     def open(self) -> None:
-        # We don't want to open_sat_data in __init__.
-        # If we did that, then we couldn't copy NWPDataSource
-        # instances into separate processes.  Instead,
-        # call open() _after_ creating separate processes.
+        """
+        Open NWP data
+
+        We don't want to open_sat_data in __init__.
+        If we did that, then we couldn't copy NWPDataSource
+        instances into separate processes.  Instead,
+        call open() _after_ creating separate processes.
+        """
         data = self._open_data()
         self._data = data["UKV"].sel(variable=list(self.channels))
 
@@ -109,7 +124,17 @@ class NWPDataSource(ZarrDataSource):
         x_locations: Iterable[Number],
         y_locations: Iterable[Number],
     ) -> List[Example]:
+        """
+        Get batch data
 
+        Args:
+            t0_datetimes: list of timstamps
+            x_locations: list of x locations, where the batch data is for
+            y_locations: list of y locations, where the batch data is for
+
+        Returns: batch data
+
+        """
         # Lazily select time slices.
         selections = []
         for t0_dt in t0_datetimes[: self.n_timesteps_per_batch]:
@@ -168,12 +193,20 @@ class NWPDataSource(ZarrDataSource):
         )
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
-        """Select the numerical weather predictions for a single time slice.
+        """
+        Select the numerical weather predictions for a single time slice.
 
         Note that this function does *not* resample from hourly to 5 minutely.
         Resampling would be very expensive if done on the whole geographical
         extent of the NWP data!  So resampling is done in
-        _post_process_example()."""
+        _post_process_example().
+
+        Args:
+            t0_dt: the time slice is around t0_dt.
+
+        Returns: Slice of data
+
+        """
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
@@ -222,8 +255,14 @@ class NWPDataSource(ZarrDataSource):
 
 def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     """
+    Open The NWP data
+
     Args:
-        filename must start with 'gs://' if it's on GCP.
+        filename: filename must start with 'gs://' if it's on GCP.
+        consolidated: consolidate the zarr file?
+
+    Returns: nwp data
+
     """
     _LOG.debug("Opening NWP data: %s", filename)
     utils.set_fsspec_for_multiprocess()

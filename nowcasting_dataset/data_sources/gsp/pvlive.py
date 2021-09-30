@@ -1,3 +1,4 @@
+""" Functions used to query the PVlive api """
 from datetime import datetime, timedelta
 import logging
 import pandas as pd
@@ -15,6 +16,7 @@ def load_pv_gsp_raw_data_from_pvlive(
 ) -> pd.DataFrame:
     """
     Load raw pv gsp data from pvlive. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
+
     Args:
         start: the start date for gsp data to load
         end: the end date for gsp data to load
@@ -23,7 +25,6 @@ def load_pv_gsp_raw_data_from_pvlive(
     Returns: Data frame of time series of gsp data. Shows PV data for each GSP from {start} to {end}
 
     """
-
     # get a lit of gsp ids
     gsp_ids = get_list_of_gsp_ids(maximum_number_of_gsp=number_of_gsp)
 

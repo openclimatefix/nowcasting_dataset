@@ -396,16 +396,3 @@ def load_solar_gsp_data(
     gsp_power_df.columns = [int(col) for col in gsp_power_df.columns]
 
     return gsp_power_df
-
-
-def normalize_gsp_data(gsp_power: pd.DataFrame):
-
-    # load installed capacity
-
-    # merged with gsp power
-
-    # check that no gsp dont have installed capacity
-
-    # normalize by installed capacity
-
-    return gsp_power

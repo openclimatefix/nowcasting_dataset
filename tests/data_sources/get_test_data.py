@@ -81,7 +81,7 @@ nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 # ### GSP data
 
 gsp = GSPDataSource(
-    filename="gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr",
+    filename="gs://solar-pv-nowcasting-data/PV/GSP/v1/pv_gsp.zarr",
     start_dt=start_dt,
     end_dt=end_dt,
     history_minutes=30,

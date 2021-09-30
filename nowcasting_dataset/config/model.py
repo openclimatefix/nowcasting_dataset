@@ -1,3 +1,4 @@
+""" Configuration model for the dataset """
 from pydantic import BaseModel, Field, validator
 
 from pydantic import BaseModel, Field
@@ -12,6 +13,8 @@ import git
 
 
 class General(BaseModel):
+    """ General pydantic model """
+
     name: str = Field("example", description="The name of this configuration file.")
     description: str = Field(
         "example configuration", description="Description of this confgiruation file"
@@ -27,6 +30,8 @@ class General(BaseModel):
 
 
 class Git(BaseModel):
+    """ Git model """
+
     hash: str = Field(..., description="The git hash has for when a dataset is created.")
     message: str = Field(..., description="The git message has for when a dataset is created.")
     committed_date: datetime = Field(
@@ -35,9 +40,13 @@ class Git(BaseModel):
 
 
 class InputData(BaseModel):
-    # All paths must include the protocol prefix.  For local files,
-    # it's sufficient to just start with a '/'.  For aws, start with 's3://',
-    # for gcp start with 'gs://'.
+    """
+    Input data model
+
+    All paths must include the protocol prefix.  For local files,
+    it's sufficient to just start with a '/'.  For aws, start with 's3://',
+    for gcp start with 'gs://'.
+    """
 
     solar_pv_data_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
@@ -66,6 +75,8 @@ class InputData(BaseModel):
 
 
 class OutputData(BaseModel):
+    """ Output data model """
+
     filepath: str = Field(
         "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/",
         description=(
@@ -76,6 +87,8 @@ class OutputData(BaseModel):
 
 
 class Process(BaseModel):
+    """ Pydantic model of how the data is processed """
+
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
     batch_size: int = Field(32, description="the number of examples per batch")
     upload_every_n_batches: int = Field(
@@ -100,24 +113,30 @@ class Process(BaseModel):
 
     @property
     def seq_len_30_minutes(self):
+        """ How many steps are there in 30 minute datasets """
         return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
 
     @property
     def seq_len_5_minutes(self):
+        """ How many steps are there in 5 minute datasets """
         return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
+        """ Validate 'history_minutes' """
         assert v % 30 == 0  # this means it also divides by 5
         return v
 
     @validator("forecast_minutes")
     def forecast_minutes_divide_by_30(cls, v):
+        """ Validate 'forecast_minutes' """
         assert v % 30 == 0  # this means it also divides by 5
         return v
 
 
 class Configuration(BaseModel):
+    """ Configuration model for the dataset """
+
     general: General = General()
     input_data: InputData = InputData()
     output_data: OutputData = OutputData()
@@ -125,9 +144,7 @@ class Configuration(BaseModel):
     git: Optional[Git] = None
 
     def set_base_path(self, base_path: str):
-        """Append base_path to all paths.
-
-        Mostly used for testing."""
+        """Append base_path to all paths. Mostly used for testing."""
         base_path = Pathy(base_path)
         path_attrs = [
             "solar_pv_data_filename",

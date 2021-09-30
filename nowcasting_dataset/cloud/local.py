@@ -1,3 +1,4 @@
+""" Functions for local files """
 import glob
 import os
 import shutil
@@ -10,10 +11,7 @@ _LOG = logging.getLogger(__name__)
 
 
 def delete_all_files_and_folder_in_temp_path(path: str):
-    """
-    Delete all the files and folders in a temporary path
-    """
-
+    """ Delete all the files and folders in a temporary path """
     _LOG.info(f"Deleting files and folder from {path} .")
 
     for files in os.listdir(path):

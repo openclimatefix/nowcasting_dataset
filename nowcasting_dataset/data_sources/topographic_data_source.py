@@ -1,3 +1,4 @@
+""" Topological DataSource """
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
@@ -41,6 +42,7 @@ class TopographicDataSource(ImageDataSource):
     normalize: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """ Post init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._shape_of_example = (
             image_size_pixels,
@@ -70,7 +72,6 @@ class TopographicDataSource(ImageDataSource):
         Returns:
             Example containing topographic data for the selected area
         """
-
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
@@ -126,8 +127,7 @@ class TopographicDataSource(ImageDataSource):
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
     ) -> xr.DataArray:
         """
-        Post process the topographical data, removing an extra dim and optionally
-        normalizing
+        Post process the topographical data, removing an extra dim and optionally normalizing
 
         Args:
             selected_data: DataArray containing the topographic data

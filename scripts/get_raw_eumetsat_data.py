@@ -26,7 +26,6 @@ from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files
 import logging
 import click
 
-import glob
 
 NATIVE_FILESIZE_MB = 102.210123
 
@@ -43,7 +42,7 @@ def validate_date(ctx, param, value):
 @click.command()
 @click.option(
     "--download_directory",
-    "-dir",
+    "--dir",
     default="./",
     help="Where to download the data to. Also where the script searches for previously downloaded data.",
 )
@@ -79,14 +78,14 @@ def validate_date(ctx, param, value):
 )
 @click.option(
     "--auth_filename",
-    default="auth.json",
+    default="auth.yaml",
     help="The auth file containing the user key and access key for EUMETSAT access",
 )
 @click.option("--bandwidth_limit", "--bw_limit", prompt="Bandwidth limit, in MB/sec", type=float)
 def download_eumetsat_data(
     download_directory,
-    start_date: datetime,
-    end_date: datetime,
+    start_date: str,
+    end_date: str,
     backfill: bool = False,
     bandwidth_limit: Optional[float] = None,
     user_key: Optional[str] = None,
@@ -110,6 +109,7 @@ def download_eumetsat_data(
     Returns:
 
     """
+    print(f"Start: {start_date} End: {end_date}")
     # Get authentication
     if auth_filename is not None:
         user_key, user_secret = load_key_secret(auth_filename)
@@ -131,8 +131,8 @@ def download_eumetsat_data(
             # And end 23:59 the day of
             # Derived products are at the 5min, so need to go from 00:00 to 23:59 each day
             dm.download_date_range(
-                start_time,
-                end_time,
+                format_dt_str(start_time),
+                format_dt_str(end_time),
                 product_id=product_id,
             )
             # Sanity check, able to open/right size
@@ -191,11 +191,22 @@ def determine_datetimes_to_download_files(
     # Go through each directory, and for each day, list any missing data
     missing_rss_timesteps = []
     for day in day_split:
+        print(day)
         day_string = day.strftime(format="%Y/%m/%d")
         rss_images = fs.glob(os.path.join(directory, day_string, pattern))
-        missing_rss_timesteps = missing_rss_timesteps + get_missing_datetimes_from_list_of_files(
-            rss_images
-        )
+        if len(rss_images) > 0:
+            missing_rss_timesteps = (
+                missing_rss_timesteps + get_missing_datetimes_from_list_of_files(rss_images)
+            )
+        else:
+            # No files, so whole day should be included
+            # Each one is at the start of the day, this then needs 1 minute before day
+            missing_day = (
+                day - timedelta(minutes=1),
+                day + timedelta(hours=23, minutes=59, seconds=59),
+            )
+            print(missing_day)
+            missing_rss_timesteps.append(missing_day)
 
     # Return list of all datetime range tuples to download files
     available_rss_dates = eumetsat.identify_available_datasets(
@@ -213,6 +224,7 @@ def determine_datetimes_to_download_files(
         rss_end_dates = pd.to_datetime(rss_end_dates).floor(freq="s").tz_convert(None)
     # Sort
     rss_end_dates = sorted(rss_end_dates)
+    print(rss_end_dates)
 
     # Now compare the two and only keep ones that are in both the available ones and timesteps
 
@@ -265,39 +277,6 @@ def get_missing_datetimes_from_list_of_files(
 
     return missing_date_ranges
 
-
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-
-start = datetime(2018, 1, 1, tzinfo=pytz.utc)
-end = datetime(2021, 1, 1, tzinfo=pytz.utc)
-gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v1"
-
-config = {"start": start, "end": end, "gcp_path": gcp_path}
-dm = eumetsat.DownloadManager(user_key, user_secret, data_dir, metadata_db_fp, debug_fp)
-
-for day in range(0, 32):
-    for month in range(0, 13):
-        for year in range(2010, 2022):
-            # Download 1 day at a time
-            dm.download_date_range(
-                f"{year}-{month}-{day} 00:00",
-                f"{year}-{month}-{day} 23:59",
-                product_id="EO:EUM:DAT:MSG:RSS-CLM",
-            )
-            dm.download_date_range(
-                f"{year}-{month}-{day} 00:00",
-                f"{year}-{month}-{day} 23:59",
-                product_id="EO:EUM:DAT:MSG:MSG15-RSS",
-            )
-
-# format local temp folder
-LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
-delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
-
-# upload to gcp
-gcp_upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)
 
 if __name__ == "__main__":
     download_eumetsat_data()

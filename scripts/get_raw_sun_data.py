@@ -1,5 +1,5 @@
 ############
-# Pull raw sun data using pvlib
+# Compute raw sun data using pvlib
 #
 # 2021-09-01
 # Peter Dudfield

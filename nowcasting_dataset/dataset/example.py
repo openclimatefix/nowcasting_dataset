@@ -1,3 +1,4 @@
+""" Example Data Class """
 from typing import TypedDict, List
 import pandas as pd
 
@@ -106,7 +107,6 @@ def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -
     Returns: Example object of the xarray data
 
     """
-
     batch = Example(
         sat_datetime_index=batch_xr.sat_time_coords,
         nwp_target_time=batch_xr.nwp_time_coords,
@@ -121,6 +121,9 @@ def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -
 
 
 def to_numpy(example: Example) -> Example:
+    """
+    Change items in Example to numpy objects
+    """
     for key, value in example.items():
         if isinstance(value, xr.DataArray):
             # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?

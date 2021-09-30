@@ -1,3 +1,4 @@
+""" Loading configuration functions """
 import logging
 import gcsfs
 import os
@@ -14,11 +15,14 @@ logger = logging.getLogger(__name__)
 def load_yaml_configuration(filename: Union[str, Pathy]) -> Configuration:
     """
     Load a yaml file which has a configuration in it
-    filename: the file name that you want to load.  Will load from local, AWS, or GCP
-      depending on the protocol suffix (e.g. 's3://bucket/config.yaml').
-    Returns: pydantic class
-    """
 
+    Args:
+        filename: the file name that you want to load.  Will load from local, AWS, or GCP
+            depending on the protocol suffix (e.g. 's3://bucket/config.yaml').
+
+    Returns:pydantic class
+
+    """
     # load the file to a dictionary
     with fsspec.open(filename, mode="r") as stream:
         configuration = yaml.safe_load(stream)
@@ -41,7 +45,6 @@ def load_configuration_from_gcs(
 
     Returns: configuration class
     """
-
     logger.info("Loading configuration from gcs")
 
     bucket_and_dir = os.path.join(f"gs://{bucket}", gcp_dir)

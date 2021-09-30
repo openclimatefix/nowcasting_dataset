@@ -1,3 +1,7 @@
+""" GSP Data Source. GSP - Grid Supply Points
+
+Read more https://data.nationalgrideso.com/system/gis-boundaries-for-gb-grid-supply-points
+"""
 import logging
 
 import xarray as xr
@@ -73,7 +77,6 @@ class GSPDataSource(ImageDataSource):
         """
         Load the meta data and load the GSP power data
         """
-
         # load metadata
         self.metadata = get_gsp_metadata_from_eso()
 
@@ -109,11 +112,16 @@ class GSPDataSource(ImageDataSource):
     ) -> Tuple[List[Number], List[Number]]:
         """
         Get x and y locations for a batch. Assume that all data is available for all GSP.
+
         Random GSP are taken, and the locations of them are returned. This is useful as other datasources need to know
         which x,y locations to get
-        Returns: list of x and y locations
-        """
 
+        Args:
+            t0_datetimes: list of datetimes that the batches locations have data for
+
+        Returns: list of x and y locations
+
+        """
         logger.debug("Getting locations for the batch")
 
         # Pick a random GSP for each t0_datetime, and then grab
@@ -231,6 +239,7 @@ class GSPDataSource(ImageDataSource):
     ) -> int:
         """
         Get the GSP id of the central GSP from coordinates
+
         Args:
             x_meters_center: the location of the gsp (x)
             y_meters_center: the location of the gsp (y)
@@ -238,7 +247,6 @@ class GSPDataSource(ImageDataSource):
 
         Returns: GSP id
         """
-
         logger.debug("Getting Central GSP")
 
         # If x_meters_center and y_meters_center have been chosen
@@ -280,6 +288,7 @@ class GSPDataSource(ImageDataSource):
     ) -> pd.Int64Index:
         """
         Find the GSP IDs for all the GSP within the geospatial region of interest, defined by self.square.
+
         Args:
             x_meters_center: center of area of interest (x coords)
             y_meters_center: center of area of interest (y coords)
@@ -288,7 +297,6 @@ class GSPDataSource(ImageDataSource):
         Returns: list of GSP ids that are in area of interest
 
         """
-
         logger.debug("Getting all gsp in ROI")
 
         # creating bounding box
@@ -312,13 +320,14 @@ class GSPDataSource(ImageDataSource):
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> [pd.DataFrame]:
         """
         Get time slice of GSP power data for give time.
+
         Note the time is extended backwards by history lenght and forward by prediction time
+
         Args:
             t0_dt: timestamp of interest
 
         Returns: pandas data frame of GSP power data
         """
-
         logger.debug(f"Getting power slice for {t0_dt}")
 
         # get start and end datetime, takening into account history and forecast length.
@@ -339,6 +348,7 @@ class GSPDataSource(ImageDataSource):
 def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
     """
     Drop GSP where the max power is below a certain threshold
+
     Args:
         gsp_power: GSP power data
         meta_data: the GSP meta data
@@ -373,10 +383,9 @@ def load_solar_gsp_data(
         start_dt: the start datetime, which to trim the data to
         end_dt: the end datetime, which to trim the data to
 
-    Returns:dataframe of pv data
+    Returns: dataframe of pv data
 
     """
-
     logger.debug(f"Loading Solar GSP Data from GCS {filename} from {start_dt} to {end_dt}")
     # Open data - it may be quicker to open byte file first, but decided just to keep it like this at the moment
     gsp_power = xr.open_dataset(filename, engine="zarr")

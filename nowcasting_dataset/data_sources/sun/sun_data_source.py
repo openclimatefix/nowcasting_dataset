@@ -88,4 +88,4 @@ class SunDataSource(DataSource):
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
     def datetime_index(self) -> pd.DatetimeIndex:
-        raise self.azimuth.index
+        return self.azimuth.index

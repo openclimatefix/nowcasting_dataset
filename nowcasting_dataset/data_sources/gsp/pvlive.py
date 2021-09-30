@@ -125,7 +125,6 @@ def get_installed_capacity(
     Returns: pd.Series of installed capacity indexed by gsp_id
 
     """
-
     logger.debug(f"Getting all installed capacity at {start}")
 
     # get a lit of gsp ids

@@ -275,7 +275,7 @@ def validate_example(
     assert data[PV_SYSTEM_Y_COORDS].shape[-1] == n_pv_systems_per_example
 
     if not batch:
-        # add an extract dimension so that its similar to batch data
+        # add an extra dimension so that it's similar to batch data
         data[PV_SYSTEM_ID] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
         data[PV_SYSTEM_ROW_NUMBER] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
 

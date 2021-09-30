@@ -1,15 +1,19 @@
+""" Model for splitting data """
 from typing import List
 
 from pydantic import BaseModel, validator
 
 
 class TrainValidationTestSpecific(BaseModel):
+    """ Class on how to specifically split the data into train, validation and test. """
+
     train: List[str]
     validation: List[str]
     test: List[str]
 
     @validator("train")
     def train_validation_test(cls, v, values):
+        """ Make sure there is no overlap for the train data """
         for vv in ["test", "validation"]:
             if vv in values.keys():
                 overlap = [period for period in v if period in values[vv]]
@@ -20,6 +24,7 @@ class TrainValidationTestSpecific(BaseModel):
 
     @validator("validation")
     def validation_overlap(cls, v, values):
+        """ Make sure there is no overlap for the validation data """
         for vv in ["test", "train"]:
             if vv in values.keys():
                 overlap = [period for period in v if period in values[vv]]
@@ -30,6 +35,7 @@ class TrainValidationTestSpecific(BaseModel):
 
     @validator("test")
     def test_overlap(cls, v, values):
+        """ Make sure there is no overlap for the test data """
         for vv in ["validation", "train"]:
             if vv in values.keys():
                 overlap = [period for period in v if period in values[vv]]

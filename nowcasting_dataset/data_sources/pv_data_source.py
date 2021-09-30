@@ -1,3 +1,4 @@
+""" PV Data Source """
 from nowcasting_dataset.consts import (
     PV_SYSTEM_ID,
     PV_SYSTEM_ROW_NUMBER,
@@ -35,6 +36,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PVDataSource(ImageDataSource):
+    """ PV Data Source """
+
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
     start_dt: Optional[datetime.datetime] = None
@@ -48,12 +51,16 @@ class PVDataSource(ImageDataSource):
     get_center: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """ Post Init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()
 
     def load(self):
+        """
+        Load metadata and pv power
+        """
         self._load_metadata()
         self._load_pv_power()
         if self.load_azimuth_and_elevation:
@@ -180,9 +187,12 @@ class PVDataSource(ImageDataSource):
         y_meters_center: Number,
         pv_system_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
-        """Find the PV system IDs for all the PV systems within the geospatial
-        region of interest, defined by self.square."""
+        """
+        Find the PV system IDs. for all the PV systems within the geospatial
 
+        This is for all the PV systems within the geospatial
+        region of interest, defined by self.square.
+        """
         logger.debug(f"Getting PV example data for {x_meters_center} and {y_meters_center}")
 
         bounding_box = self._square.bounding_box_centered_on(
@@ -205,7 +215,18 @@ class PVDataSource(ImageDataSource):
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
+        """
+        Get Example data for PV data
 
+        Args:
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include data
+                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            x_meters_center: x center batch locations
+            y_meters_center: y center batch locations
+
+        Returns: Example data
+
+        """
         logger.debug("Getting PV example data")
 
         (
@@ -288,7 +309,6 @@ class PVDataSource(ImageDataSource):
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
             Locations are in OSGB coordinates.
         """
-
         # Set this up as a separate function, so we can cache the result!
         @functools.cache  # functools.cache requires Python >= 3.9
         def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Index:
@@ -323,7 +343,6 @@ class PVDataSource(ImageDataSource):
         """
         Calculate the azimuth and elevation angles for each datestamp, for each pv system.
         """
-
         logger.debug("Calculating azimuth and elevation angles")
 
         self.pv_azimuth, self.pv_elevation = calculate_azimuth_and_elevation_all_pv_systems(
@@ -336,8 +355,14 @@ def calculate_azimuth_and_elevation_all_pv_systems(
 ) -> (pd.Series, pd.Series):
     """
     Calculate the azimuth and elevation angles for each datestamp, for each pv system.
-    """
 
+    Args:
+        datestamps: list of timestamps for when to collected data for
+        pv_metadata: pv metadata, so we know where to collected data for
+
+    Returns: Azimuth and Elevations data
+
+    """
     logger.debug(
         f"Will be calculating for {len(datestamps)} datestamps and {len(pv_metadata)} pv systems"
     )
@@ -395,12 +420,16 @@ def load_solar_pv_data_from_gcs(
     from_gcs: bool = True,
 ) -> pd.DataFrame:
     """
-    Load solar pv data from gcs (althought there is an option to load from loca - for testing)
-    @param filename: filename of file to be loaded
-    @param start_dt: the start datetime, which to trim the data to
-    @param end_dt: the end datetime, which to trim the data to
-    @param from_gcs: option to laod from gcs, or form local file
-    @return: dataframe of pv data
+    Load solar pv data from gcs (although there is an option to load from local - for testing)
+
+    Args:
+        filename: filename of file to be loaded
+        start_dt: the start datetime, which to trim the data to
+        end_dt: the end datetime, which to trim the data to
+        from_gcs: option to laod from gcs, or form local file
+
+    Returns: Solar PV data
+
     """
     gcs = gcsfs.GCSFileSystem(access="read_only")
 

@@ -85,7 +85,7 @@ class SunDataSource(DataSource):
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
-        raise NotImplementedError()
+        raise NotImplementedError("Sun data should not be used to get batch locations")
 
     def datetime_index(self) -> pd.DatetimeIndex:
-        raise NotImplementedError()
+        raise self.azimuth.index

@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 import logging
 import pandas as pd
 from pvlive_api import PVLive
+from typing import Optional
+import pytz
 
 from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
 
@@ -87,3 +89,50 @@ def load_pv_gsp_raw_data_from_pvlive(
     gsp_data_df["datetime_gmt"] = gsp_data_df["datetime_gmt"].dt.tz_localize(None)
 
     return gsp_data_df
+
+
+def get_installed_capacity(
+    start: Optional[datetime] = datetime(2021, 1, 1, tzinfo=pytz.utc),
+    maximum_number_of_gsp: Optional[int] = None,
+) -> pd.Series:
+    """
+    Get the installed capacity of each gsp
+
+    This can take ~30 seconds for getting the full list
+
+    Args:
+        start: optional datetime when the installed cpapcity is collected
+        maximum_number_of_gsp: Truncate list of GSPs to be no larger than this number of GSPs.
+            Set to None to disable truncation.
+
+    Returns: pd.Series of installed capacity indexed by gsp_id
+
+    """
+
+    logger.debug(f"Getting all installed capacity at {start}")
+
+    # get a lit of gsp ids
+    gsp_ids = get_list_of_gsp_ids(maximum_number_of_gsp=maximum_number_of_gsp)
+
+    # setup pv Live class, although here we are getting historic data
+    pvl = PVLive()
+
+    # loop over gsp_id to get installed capacity
+    data = []
+    for gsp_id in gsp_ids:
+        d = pvl.at_time(
+            start,
+            entity_type="gsp",
+            extra_fields="installedcapacity_mwp",
+            dataframe=True,
+            entity_id=gsp_id,
+        )
+        data.append(d)
+
+    # join data together
+    data_df = pd.concat(data)
+
+    # set gsp_id as index
+    data_df.set_index("gsp_id", inplace=True)
+
+    return data_df["installedcapacity_mwp"]

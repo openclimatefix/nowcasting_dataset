@@ -1,3 +1,4 @@
+""" Sun Data Source """
 import datetime
 import time
 import io
@@ -37,7 +38,6 @@ def get_azimuth_and_elevation(
         The index is timestamps, and the columns are the x and y coordinates in OSGB projection
 
     """
-
     logger.debug(
         f"Will be calculating for {len(datestamps)} datestamps and {len(x_centers)} locations"
     )
@@ -109,7 +109,6 @@ def save_to_zarr(azimuth: pd.DataFrame, elevation: pd.DataFrame, filename: Union
         filename: the file name where it should be save, can be local of gcs
 
     """
-
     # change pandas dataframe to xr Dataset
     elevation_xr = xr.DataArray(elevation, dims=["time_5", "locations"]).to_dataset(
         name="elevation"
@@ -145,7 +144,6 @@ def load_from_zarr(
         The index is timestamps, and the columns are the x and y coordinates
 
     """
-
     logger.debug("Loading Solar PV Data from GCS")
 
     # It is possible to simplify the code below and do

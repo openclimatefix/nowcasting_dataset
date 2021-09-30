@@ -1,3 +1,4 @@
+""" Loading Raw data """
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset import time as nd_time
@@ -26,6 +27,7 @@ class SunDataSource(DataSource):
     end_dt: Optional[datetime] = None
 
     def __post_init__(self):
+        """ Post Init """
         super().__post_init__()
         self._load()
 
@@ -42,7 +44,6 @@ class SunDataSource(DataSource):
 
         Returns: Dictionary of azimuth and elevation data
         """
-
         # all sun data is from 2019, analaysis showed over the timescale we are interested in the
         # elevation and azimuth angles change by < 1 degree, so to save data, we just use data form 2019
         t0_dt = t0_dt.replace(year=2019)
@@ -85,7 +86,9 @@ class SunDataSource(DataSource):
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
+        """ Sun data should not be used to get batch locations """
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
     def datetime_index(self) -> pd.DatetimeIndex:
+        """ The datetime index of this datasource """
         return self.azimuth.index

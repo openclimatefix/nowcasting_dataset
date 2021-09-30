@@ -28,6 +28,8 @@ import click
 
 
 NATIVE_FILESIZE_MB = 102.210123
+RSS_ID = "EO:EUM:DAT:MSG:MSG15-RSS"
+CLOUD_ID = "EO:EUM:DAT:MSG:RSS-CLM"
 
 format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -109,7 +111,6 @@ def download_eumetsat_data(
     Returns:
 
     """
-    print(f"Start: {start_date} End: {end_date}")
     # Get authentication
     if auth_filename is not None:
         user_key, user_secret = load_key_secret(auth_filename)
@@ -121,11 +122,13 @@ def download_eumetsat_data(
         user_key, user_secret, download_directory, download_directory, download_directory
     )
 
-    for product_id in ["EO:EUM:DAT:MSG:MSG15-RSS", "EO:EUM:DAT:MSG:RSS-CLM"]:
+    for product_id in [RSS_ID, CLOUD_ID]:
         times_to_use = determine_datetimes_to_download_files(
             download_directory, start_date, end_date, product_id=product_id
         )
         for start_time, end_time in times_to_use:
+            print(format_dt_str(start_time))
+            print(format_dt_str(end_time))
             # Because the satellite data is off by 1 minute
             # Need to download RSS images from 23:59 the day before start_time
             # And end 23:59 the day of
@@ -181,7 +184,7 @@ def determine_datetimes_to_download_files(
 
     """
 
-    pattern = "*.nat" if product_id == "EO:EUM:DAT:MSG:MSG15-RSS" else "*.grb"
+    pattern = "*.nat" if product_id == RSS_ID else "*.grb"
     # Get all days from start_date to end_date
     day_split = pd.date_range(start_date, end_date, freq="D")
 
@@ -191,7 +194,6 @@ def determine_datetimes_to_download_files(
     # Go through each directory, and for each day, list any missing data
     missing_rss_timesteps = []
     for day in day_split:
-        print(day)
         day_string = day.strftime(format="%Y/%m/%d")
         rss_images = fs.glob(os.path.join(directory, day_string, pattern))
         if len(rss_images) > 0:
@@ -200,33 +202,12 @@ def determine_datetimes_to_download_files(
             )
         else:
             # No files, so whole day should be included
-            # Each one is at the start of the day, this then needs 1 minute before day
+            # Each one is at the start of the day, this then needs 1 minute before for the RSS image
             missing_day = (
                 day - timedelta(minutes=1),
                 day + timedelta(hours=23, minutes=59, seconds=59),
             )
-            print(missing_day)
             missing_rss_timesteps.append(missing_day)
-
-    # Return list of all datetime range tuples to download files
-    available_rss_dates = eumetsat.identify_available_datasets(
-        start_date, end_date, product_id=product_id  # RSS Images
-    )
-    # Extracting the datetime each dataset was finished
-    rss_end_dates = [
-        dataset["properties"]["date"].split("/")[-1] for dataset in available_rss_dates
-    ]
-    try:
-        rss_end_dates = (
-            pd.to_datetime(rss_end_dates).floor(freq="s").tz_localize("UTC").tz_convert(None)
-        )
-    except:
-        rss_end_dates = pd.to_datetime(rss_end_dates).floor(freq="s").tz_convert(None)
-    # Sort
-    rss_end_dates = sorted(rss_end_dates)
-    print(rss_end_dates)
-
-    # Now compare the two and only keep ones that are in both the available ones and timesteps
 
     return missing_rss_timesteps
 

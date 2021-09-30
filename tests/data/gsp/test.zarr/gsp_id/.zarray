@@ -1,6 +1,6 @@
 {
     "chunks": [
-        49
+        21
     ],
     "compressor": {
         "blocksize": 0,
@@ -9,12 +9,12 @@
         "id": "blosc",
         "shuffle": 1
     },
-    "dtype": "<i8",
+    "dtype": "<U2",
     "fill_value": null,
     "filters": null,
     "order": "C",
     "shape": [
-        49
+        21
     ],
     "zarr_format": 2
 }

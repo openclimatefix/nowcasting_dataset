@@ -4,6 +4,8 @@ import pandas as pd
 from pvlive_api import PVLive
 from typing import Optional
 import pytz
+from tqdm import tqdm
+from concurrent import futures
 
 from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
 
@@ -40,21 +42,22 @@ def load_pv_gsp_raw_data_from_pvlive(
     gsp_data_df = []
     logger.debug(f"Will be getting data for {len(gsp_ids)} gsp ids")
     # loop over gsp ids
-    for gsp_id in gsp_ids:
+    # limit the total number of concurrent tasks to be 4, so that we don't hit the pvlive api too much
+    future_tasks = []
+    with futures.ThreadPoolExecutor(max_workers=4) as executor:
+        for gsp_id in gsp_ids:
 
-        one_gsp_data_df = []
+            # set the first chunk start and end times
+            start_chunk = first_start_chunk
+            end_chunk = first_end_chunk
 
-        # set the first chunk start and end times
-        start_chunk = first_start_chunk
-        end_chunk = first_end_chunk
+            # loop over 30 days chunks (nice to see progress instead of waiting a long time for one command - this might
+            # not be the fastest)
+            while start_chunk <= end:
+                logger.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
 
-        # loop over 30 days chunks (nice to see progress instead of waiting a long time for one command - this might
-        # not be the fastest)
-        while start_chunk <= end:
-            logger.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
-
-            one_gsp_data_df.append(
-                pvl.between(
+                task = executor.submit(
+                    pvl.between,
                     start=start_chunk,
                     end=end_chunk,
                     entity_type="gsp",
@@ -62,29 +65,35 @@ def load_pv_gsp_raw_data_from_pvlive(
                     extra_fields="installedcapacity_mwp",
                     dataframe=True,
                 )
-            )
 
-            # add 30 days to the chunk, to get the next chunk
-            start_chunk = start_chunk + CHUNK_DURATION
-            end_chunk = end_chunk + CHUNK_DURATION
+                future_tasks.append(task)
 
-            if end_chunk > end:
-                end_chunk = end
+                # add 30 days to the chunk, to get the next chunk
+                start_chunk = start_chunk + CHUNK_DURATION
+                end_chunk = end_chunk + CHUNK_DURATION
 
-        # join together one gsp data, and sort
-        one_gsp_data_df = pd.concat(one_gsp_data_df)
-        one_gsp_data_df = one_gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
+                if end_chunk > end:
+                    end_chunk = end
 
-        # normalize
-        if normalize_data:
-            one_gsp_data_df["generation_mw"] = (
-                one_gsp_data_df["generation_mw"] / one_gsp_data_df["installedcapacity_mwp"]
-            )
+        logger.debug(f"Getting results")
+        # Collect results from each thread.
+        for task in tqdm(future_tasks):
+            one_chunk_one_gsp_gsp_data_df = task.result()
 
-        # append to longer list
-        gsp_data_df.append(one_gsp_data_df)
+            if normalize_data:
+                one_chunk_one_gsp_gsp_data_df["generation_mw"] = (
+                    one_chunk_one_gsp_gsp_data_df["generation_mw"]
+                    / one_chunk_one_gsp_gsp_data_df["installedcapacity_mwp"]
+                )
 
+            # append to longer list
+            gsp_data_df.append(one_chunk_one_gsp_gsp_data_df)
+
+    # join together gsp data
     gsp_data_df = pd.concat(gsp_data_df)
+
+    # sort
+    gsp_data_df = gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
 
     # remove any extra data loaded
     gsp_data_df = gsp_data_df[gsp_data_df["datetime_gmt"] <= end]

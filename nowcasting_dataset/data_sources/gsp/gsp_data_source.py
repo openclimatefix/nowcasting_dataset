@@ -65,7 +65,7 @@ class GSPDataSource(ImageDataSource):
         self.load()
 
     def _get_sample_period_minutes(self):
-        """ Override the default sample minutes"""
+        """Override the default sample minutes"""
         return self.sample_period_minutes
 
     def load(self):
@@ -78,7 +78,7 @@ class GSPDataSource(ImageDataSource):
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
-            self.metadata["gsp_lat"], self.metadata["gsp_lon"]
+            lat=self.metadata["centroid_lat"], lon=self.metadata["centroid_lon"]
         )
 
         # load gsp data from file / gcp
@@ -198,6 +198,7 @@ class GSPDataSource(ImageDataSource):
 
         # Save data into the Example dict...
         example = Example(
+            t0_dt=t0_dt,
             gsp_id=all_gsp_ids,
             gsp_yield=selected_gsp_power,
             x_meters_center=x_meters_center,

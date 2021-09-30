@@ -11,6 +11,7 @@ from nowcasting_dataset import utils
 from nowcasting_dataset import consts
 from nowcasting_dataset.dataset import datasets
 from dataclasses import dataclass
+from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 import warnings
 
 with warnings.catch_warnings():
@@ -36,6 +37,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     batch_size: int = 8
     n_training_batches_per_epoch: int = 25_000
     n_validation_batches_per_epoch: int = 1_000
+    n_test_batches_per_epoch: int = 1_000
     history_minutes: int = 30  #: Number of minutes of history, not including t0.
     forecast_minutes: int = 60  #: Number of minutes of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
@@ -54,20 +56,27 @@ class NowcastingDataModule(pl.LightningDataModule):
         "mcc",
         "hcc",
     )
-    image_size_pixels: int = 128  #: Passed to Data Sources.
+    satellite_image_size_pixels: int = 128  #: Passed to Data Sources.
+    topographic_filename: Optional[Union[str, Path]] = None
+    nwp_image_size_pixels: int = 2  #: Passed to Data Sources.
     meters_per_pixel: int = 2000  #: Passed to Data Sources.
     convert_to_numpy: bool = True  #: Passed to Data Sources.
     pin_memory: bool = True  #: Passed to DataLoader.
     num_workers: int = 16  #: Passed to DataLoader.
     prefetch_factor: int = 64  #: Passed to DataLoader.
     n_samples_per_timestep: int = 2  #: Passed to NowcastingDataset
-    collate_fn: Callable = torch.utils.data._utils.collate.default_collate  #: Passed to NowcastingDataset
+    collate_fn: Callable = (
+        torch.utils.data._utils.collate.default_collate
+    )  #: Passed to NowcastingDataset
     gsp_filename: Optional[Union[str, Path]] = None
     train_validation_percentage_split: float = 20
     pv_load_azimuth_and_elevation: bool = False
+    split_method: SplitMethod = SplitMethod.DAY  # which split method should be used
+    seed: Optional[int] = None  # seed used to make quasi random split data
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
+    skip_n_test_batches: int = 0  # number of test batches to skip
 
     def __post_init__(self):
         super().__init__()
@@ -93,7 +102,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         self.sat_data_source = data_sources.SatelliteDataSource(
             filename=self.sat_filename,
-            image_size_pixels=self.image_size_pixels,
+            image_size_pixels=self.satellite_image_size_pixels,
             meters_per_pixel=self.meters_per_pixel,
             history_minutes=self.history_minutes,
             forecast_minutes=self.forecast_minutes,
@@ -117,7 +126,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
                 convert_to_numpy=self.convert_to_numpy,
-                image_size_pixels=self.image_size_pixels,
+                image_size_pixels=self.satellite_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 get_center=False,
                 load_azimuth_and_elevation=self.pv_load_azimuth_and_elevation,
@@ -133,7 +142,7 @@ class NowcastingDataModule(pl.LightningDataModule):
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
                 convert_to_numpy=self.convert_to_numpy,
-                image_size_pixels=self.image_size_pixels,
+                image_size_pixels=self.satellite_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 get_center=True,
             )
@@ -146,7 +155,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         if self.nwp_base_path is not None:
             self.nwp_data_source = data_sources.NWPDataSource(
                 filename=self.nwp_base_path,
-                image_size_pixels=2,
+                image_size_pixels=self.nwp_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
@@ -156,6 +165,20 @@ class NowcastingDataModule(pl.LightningDataModule):
             )
 
             self.data_sources.append(self.nwp_data_source)
+
+        # Topographic data
+        if self.topographic_filename is not None:
+            self.topo_data_source = data_sources.TopographicDataSource(
+                filename=self.topographic_filename,
+                image_size_pixels=self.satellite_image_size_pixels,
+                meters_per_pixel=self.meters_per_pixel,
+                history_minutes=self.history_minutes,
+                forecast_minutes=self.forecast_minutes,
+                convert_to_numpy=self.convert_to_numpy,
+                normalize=self.normalise_sat,
+            )
+
+            self.data_sources.append(self.topo_data_source)
 
         self.datetime_data_source = data_sources.DatetimeDataSource(
             history_minutes=self.history_minutes,
@@ -236,9 +259,22 @@ class NowcastingDataModule(pl.LightningDataModule):
         )
         logger.debug("Making validation dataset: done")
 
+        logger.debug("Making test dataset")
+        self.test_dataset = datasets.NowcastingDataset(
+            t0_datetimes=self.test_t0_datetimes,
+            data_sources=self.data_sources,
+            skip_batch_index=self.skip_n_test_batches,
+            n_batches_per_epoch_per_worker=(
+                self._n_batches_per_epoch_per_worker(self.n_test_batches_per_epoch)
+            ),
+            **self._common_dataset_params(),
+        )
+        logger.debug("Making test dataset: done")
+
         if self.num_workers == 0:
             self.train_dataset.per_worker_init(worker_id=0)
             self.val_dataset.per_worker_init(worker_id=0)
+            self.test_dataset.per_worker_init(worker_id=0)
 
         logger.debug("Setup: done")
 
@@ -258,23 +294,9 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         logger.debug(f"Got all start times, there are {len(self.t0_datetimes)}")
 
-        # del all_datetimes
-
-        # Split t0_datetimes into train and test.
-        # TODO: Better way to split into train and val date ranges!
-        # See https://github.com/openclimatefix/nowcasting_dataset/issues/7
-
-        logger.debug(f"Taking {self.train_validation_percentage_split}% into validation")
-
-        split_number = int(100 / self.train_validation_percentage_split)
-        assert len(self.t0_datetimes) > split_number
-        split = len(self.t0_datetimes) // split_number
-        assert split > 0
-        split = len(self.t0_datetimes) - split
-
-        # set train and validation times
-        self.train_t0_datetimes = self.t0_datetimes[:split]
-        self.val_t0_datetimes = self.t0_datetimes[split:]
+        self.train_t0_datetimes, self.val_t0_datetimes, self.test_t0_datetimes = split_data(
+            datetimes=self.t0_datetimes, method=self.split_method, seed=self.seed
+        )
 
         logger.debug(
             f"Split data done, train has {len(self.train_t0_datetimes)}, "
@@ -286,6 +308,9 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(self.val_dataset, **self._common_dataloader_params())
+
+    def test_dataloader(self) -> torch.utils.data.DataLoader:
+        return torch.utils.data.DataLoader(self.test_dataset, **self._common_dataloader_params())
 
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
         if self.contiguous_dataset is None:

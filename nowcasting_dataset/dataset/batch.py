@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import logging
 
 import numpy as np
@@ -10,7 +10,12 @@ from nowcasting_dataset.consts import (
     GSP_YIELD,
     GSP_X_COORDS,
     GSP_Y_COORDS,
+    GSP_DATETIME_INDEX,
     DATETIME_FEATURE_NAMES,
+    T0_DT,
+    TOPOGRAPHIC_DATA,
+    TOPOGRAPHIC_X_COORDS,
+    TOPOGRAPHIC_Y_COORDS,
 )
 
 from nowcasting_dataset.dataset.example import Example
@@ -18,22 +23,20 @@ from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
-
-def write_batch_locally(batch: List[Example], batch_i: int):
+def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
     """
     Write a batch to a locally file
     Args:
-        batch: batch of data
-        batch_i: the number of the batch
-
+        batch: A batch of data
+        batch_i: The number of the batch
+        path: The directory to write the batch into.
     """
     dataset = batch_to_dataset(batch)
     dataset = fix_dtypes(dataset)
     encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
     filename = get_netcdf_filename(batch_i)
-    local_filename = LOCAL_TEMP_PATH / filename
+    local_filename = path / filename
     dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
 
@@ -52,6 +55,13 @@ def fix_dtypes(concat_ds):
         "pv_system_row_number": np.float32,
         "pv_system_x_coords": np.float32,
         "pv_system_y_coords": np.float32,
+        GSP_YIELD: np.float32,
+        GSP_ID: np.float32,
+        GSP_X_COORDS: np.float32,
+        GSP_Y_COORDS: np.float32,
+        TOPOGRAPHIC_X_COORDS: np.float32,
+        TOPOGRAPHIC_Y_COORDS: np.float32,
+        TOPOGRAPHIC_DATA: np.float32,
     }
 
     for name, dtype in ds_dtypes.items():
@@ -95,21 +105,37 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 individual_datasets.append(ds)
 
             # PV
-            one_dateset = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
-            one_dateset = one_dateset.to_dataset(name="pv_yield")
+            one_dataset = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
+            one_dataset = one_dataset.to_dataset(name="pv_yield")
             n_pv_systems = len(example["pv_system_id"])
 
             # GSP
-            n_gsp_systems = len(example[GSP_ID])
-            one_dateset["gsp_yield"] = xr.DataArray(
-                example[GSP_YIELD], dims=["time_30", "gsp_system"]
+            n_gsp = len(example[GSP_ID])
+            one_dataset[GSP_YIELD] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp"])
+            one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
+                example[GSP_DATETIME_INDEX],
+                dims=["time_30"],
+                coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
             )
+
+            # Topographic
+            ds = example[TOPOGRAPHIC_DATA].to_dataset(name=TOPOGRAPHIC_DATA)
+            topo_name = "topo"
+            for dim in ["x", "y"]:
+                ds = coord_to_range(ds, dim, prefix=topo_name)
+            ds = ds.rename(
+                {
+                    "x": f"{topo_name}_x",
+                    "y": f"{topo_name}_y",
+                }
+            )
+            individual_datasets.append(ds)
 
             # This will expand all dataarrays to have an 'example' dim.
             # 0D
-            for name in ["x_meters_center", "y_meters_center"]:
+            for name in ["x_meters_center", "y_meters_center", T0_DT]:
                 try:
-                    one_dateset[name] = xr.DataArray(
+                    one_dataset[name] = xr.DataArray(
                         [example[name]], coords=example_dim, dims=["example"]
                     )
                 except Exception as e:
@@ -128,7 +154,7 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
                 "pv_system_x_coords",
                 "pv_system_y_coords",
             ]:
-                one_dateset[name] = xr.DataArray(
+                one_dataset[name] = xr.DataArray(
                     example[name][None, :],
                     coords={
                         **example_dim,
@@ -140,20 +166,20 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
             # GSP
             for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
                 try:
-                    one_dateset[name] = xr.DataArray(
+                    one_dataset[name] = xr.DataArray(
                         example[name][None, :],
                         coords={
                             **example_dim,
-                            **{"gsp_system": np.arange(n_gsp_systems, dtype=np.int32)},
+                            **{"gsp": np.arange(n_gsp, dtype=np.int32)},
                         },
-                        dims=["example", "gsp_system"],
+                        dims=["example", "gsp"],
                     )
                 except Exception as e:
                     _LOG.debug(f"Could not add {name} to dataset. {example[name].shape}")
                     _LOG.error(e)
                     raise e
 
-            individual_datasets.append(one_dateset)
+            individual_datasets.append(one_dataset)
 
             # Merge
             merged_ds = xr.merge(individual_datasets)

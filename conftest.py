@@ -1,9 +1,14 @@
 """Configure PyTest"""
-import pytest
+import os
 from pathlib import Path
-from nowcasting_dataset import consts
-from nowcasting_dataset.data_sources import SatelliteDataSource
 
+import pytest
+
+import nowcasting_dataset
+from nowcasting_dataset import consts
+from nowcasting_dataset.config.load import load_yaml_configuration
+from nowcasting_dataset.data_sources import SatelliteDataSource
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 
 pytest.IMAGE_SIZE_PIXELS = 128
 
@@ -43,3 +48,28 @@ def sat_data_source(sat_filename: Path):
         n_timesteps_per_batch=2,
         convert_to_numpy=True,
     )
+
+
+@pytest.fixture
+def gsp_data_source():
+    return GSPDataSource(
+        image_size_pixels=16,
+        meters_per_pixel=2000,
+        filename=Path(__file__).parent.absolute() / "tests" / "data" / "gsp" / "test.zarr",
+        history_minutes=0,
+        forecast_minutes=30,
+        convert_to_numpy=True,
+    )
+
+
+@pytest.fixture
+def configuration():
+    filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
+    config = load_yaml_configuration(filename)
+
+    return config
+
+
+@pytest.fixture
+def test_data_folder():
+    return os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests/data")

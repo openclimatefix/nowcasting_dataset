@@ -238,6 +238,7 @@ class PVDataSource(ImageDataSource):
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
         # Save data into the Example dict...
         example = Example(
+            t0_dt=t0_dt,
             pv_system_id=all_pv_system_ids,
             pv_system_row_number=pv_system_row_number,
             pv_yield=selected_pv_power,
@@ -289,7 +290,7 @@ class PVDataSource(ImageDataSource):
         """
 
         # Set this up as a separate function, so we can cache the result!
-        @functools.cache
+        @functools.cache  # functools.cache requires Python >= 3.9
         def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Index:
             start_dt = self._get_start_dt(t0_datetime)
             end_dt = self._get_end_dt(t0_datetime)

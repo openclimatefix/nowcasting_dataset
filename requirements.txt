@@ -1,3 +1,4 @@
+rioxarray
 numpy
 pandas
 geopandas
@@ -7,7 +8,6 @@ xarray
 ipykernel
 h5netcdf
 gcsfs
-scikit-image
 torch
 pytorch-lightning
 dask
@@ -25,4 +25,8 @@ pydantic
 pytest-cov
 plotly
 tqdm
-git+https://github.com/SheffieldSolar/PV_Live-API
+black
+pre-commit
+s3fs
+fsspec
+pathy

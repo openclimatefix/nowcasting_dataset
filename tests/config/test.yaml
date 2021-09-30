@@ -2,32 +2,21 @@ general:
   description: example configuration
   name: example
 input_data:
-  bucket: solar-pv-nowcasting-data
-  npw_base_path: tests/data/nwp_data/test.zarr
-  satelite_filename: tests/data/sat_data.zarr
+  nwp_zarr_path: tests/data/nwp_data/test.zarr
+  satellite_zarr_path: tests/data/sat_data.zarr
   solar_pv_data_filename: tests/data/pv_data/test.nc
   solar_pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
-  solar_pv_path: tests/data/pv_data
-  gsp_filename: tests/data/gsp/test.zarr
+  gsp_zarr_path: tests/data/gsp/test.zarr
+  topographic_filename: tests/data/europe_dem_2km_osgb.tif
 output_data:
-  filepath: solar-pv-nowcasting-data/prepared_ML_training_data/v5/
+  filepath: not used by unittests!
 process:
   batch_size: 32
   forecast_minutes: 60
   history_minutes: 30
-  image_size_pixels: 64
+  satellite_image_size_pixels: 64
+  nwp_image_size_pixels: 2
   nwp_channels:
-  - t
-  - dswrf
-  - prate
-  - r
-  - sde
-  - si10
-  - vis
-  - lcc
-  - mcc
-  - hcc
-  prcesion: 16
+    - t
   sat_channels:
-  - HRV
-  val_check_interval: 1000
+    - HRV

@@ -383,7 +383,16 @@ def load_solar_gsp_data(
     # Open data - it may be quicker to open byte file first, but decided just to keep it like this at the moment
     gsp_power = xr.open_dataset(filename, engine="zarr")
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
+
+    # only take generation data
+    gsp_power = gsp_power.generation_mw
+
+    # make dataframe with index datetime_gmt and columns og gsp_id
     gsp_power_df = gsp_power.to_dataframe()
+    gsp_power_df.reset_index(inplace=True)
+    gsp_power_df = gsp_power_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="generation_mw"
+    )
 
     # Save memory
     del gsp_power

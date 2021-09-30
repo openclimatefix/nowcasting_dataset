@@ -11,6 +11,7 @@ import pytz
 import yaml
 import os
 import numcodecs
+import xarray as xr
 
 from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
 from pathlib import Path
@@ -36,11 +37,21 @@ delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
 
 # pivot to index as datetime_gmt, and columns as gsp_id
-data_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
-data_df.columns = [str(col) for col in data_df.columns]
+data_generation = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
+data_generation.columns = [str(col) for col in data_generation.columns]
+data_generation_xarray = xr.DataArray(
+    data_generation, name="generation_mw", dims=["datetime_gmt", "gsp_id"]
+)
 
-# change to xarray
-data_xarray = data_df.to_xarray()
+data_capacity = data_df.pivot(
+    index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp"
+)
+data_capacity.columns = [str(col) for col in data_capacity.columns]
+data_capacity_xarray = xr.DataArray(
+    data_capacity, name="installedcapacity_mwp", dims=["datetime_gmt", "gsp_id"]
+)
+
+data_xarray = xr.merge([data_generation_xarray, data_capacity_xarray])
 
 # save config to file
 with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:

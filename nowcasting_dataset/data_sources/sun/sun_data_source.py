@@ -63,7 +63,7 @@ class SunDataSource(DataSource):
         assert len(location) > 0
         # Take the first location, and x and y coordinates are the first and center entries in this array
         location = location[0]
-        # make name of column to pull data from
+        # make name of column to pull data from. The columns name will be about something like '22222.555,3333.6666'
         name = x_y_to_name(x=location[0], y=location[1])
 
         del x_meters_center, y_meters_center

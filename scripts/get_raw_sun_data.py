@@ -57,7 +57,6 @@ pv_y = pv_metadata["location_y"]
 # GSP Metadata
 gsp_metadata = get_gsp_metadata_from_eso()
 gsp_metadata = gsp_metadata.dropna(subset=["centroid_lon", "centroid_lat"])
-# probably need to change this to centroid
 gsp_x = gsp_metadata["centroid_x"]
 gsp_y = gsp_metadata["centroid_y"]
 

@@ -97,7 +97,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             self.prefetch_factor = 2  # Set to default when not using multiprocessing.
 
     def prepare_data(self) -> None:
-        # Satellite data
+        """ Prepare all datasources """
         n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
 
         self.sat_data_source = data_sources.SatelliteDataSource(
@@ -286,7 +286,6 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def _split_data(self):
         """Sets self.train_t0_datetimes and self.val_t0_datetimes."""
-
         logger.debug("Going to split data")
 
         self._check_has_prepared_data()
@@ -304,15 +303,19 @@ class NowcastingDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Train dataloader """
         return torch.utils.data.DataLoader(self.train_dataset, **self._common_dataloader_params())
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Validation dataloader """
         return torch.utils.data.DataLoader(self.val_dataset, **self._common_dataloader_params())
 
     def test_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Test dataloader """
         return torch.utils.data.DataLoader(self.test_dataset, **self._common_dataloader_params())
 
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Get continours dataloader TODO this is not needed anymore?"""
         if self.contiguous_dataset is None:
             pv_data_source = deepcopy(self.pv_data_source)
             pv_data_source.random_pv_system_for_given_location = False
@@ -351,7 +354,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     def _get_datetimes(
         self, interpolate_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True
     ) -> pd.DatetimeIndex:
-        """Compute the datetime index.
+        """
+        Compute the datetime index.
 
         interpolate_for_30_minute_data: If True,
         1. all datetimes from source will be interpolated to 5 min intervals,
@@ -364,7 +368,8 @@ class NowcastingDataModule(pl.LightningDataModule):
         This deals with a mixture of data sources that have 5 mins and 30 min datatime.
 
         Returns the intersection of the datetime indicies of all the
-        data_sources, filtered by daylight hours."""
+        data_sources, filtered by daylight hours.
+        """
         logger.debug("Get the datetimes")
         self._check_has_prepared_data()
 

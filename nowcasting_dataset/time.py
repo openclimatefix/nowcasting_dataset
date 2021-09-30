@@ -1,3 +1,4 @@
+""" Time functions """
 import pandas as pd
 import numpy as np
 from typing import Iterable, Tuple, List
@@ -18,15 +19,17 @@ THIRTY_MINUTES = pd.Timedelta("30 minutes")
 def select_daylight_datetimes(
     datetimes: pd.DatetimeIndex, locations: Iterable[Tuple[float, float]], ghi_threshold: float = 10
 ) -> pd.DatetimeIndex:
-    """Returns datetimes for which the global horizontal irradiance
-    (GHI) is above ghi_threshold across all locations.
+    """
+    Select only the day time datetimes
 
     Args:
-      dt_index: DatetimeIndex to filter.
-      locations: List of Tuples of x, y coordinates in OSGB projection.
+        datetimes: DatetimeIndex to filter.
+        locations: List of Tuples of x, y coordinates in OSGB projection.
         For example, use the four corners of the satellite imagery.
-      ghi_threshold: Global horizontal irradiance threshold.
+        ghi_threshold: Global horizontal irradiance threshold.
           (Watts per square meter?)
+
+    Returns: datetimes for which the global horizontal irradiance (GHI) is above ghi_threshold across all locations.
 
     """
     ghi_for_all_locations = []
@@ -50,6 +53,7 @@ def select_daylight_datetimes(
 
 
 def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
+    """ Get intersections of datetime indexes """
     assert len(indexes) > 0
     intersection = indexes[0]
     for index in indexes[1:]:
@@ -113,6 +117,7 @@ def get_t0_datetimes(
 ) -> pd.DatetimeIndex:
     """
     Get datetimes for ML learning batches. T0 refers to the time 'now'.
+
     Args:
         datetimes: list of datetimes when data is available
         total_seq_len: total sequence length of data for ml model
@@ -123,7 +128,6 @@ def get_t0_datetimes(
     Returns: Datetimes that ml learning data can be built around.
 
     """
-
     logger.debug("Getting t0 datetimes")
 
     start_datetimes = get_start_datetimes(
@@ -138,11 +142,21 @@ def get_t0_datetimes(
 
 
 def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
+    """ Change timesteps to a time duration """
     assert n_timesteps >= 0
     return pd.Timedelta(n_timesteps * minute_delta, unit="minutes")
 
 
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
+    """
+    Make datetime features, hour_of_day and day_of_year
+
+    Args:
+        index: index of datestamps
+
+    Returns: Example data with datetime features
+
+    """
     features = {}
     features["hour_of_day"] = index.hour + (index.minute / 60)
     features["day_of_year"] = index.day_of_year
@@ -150,6 +164,15 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
 
 
 def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
+    """
+    Make datetime features with sin and cos
+
+    Args:
+        index: index of datestamps
+
+    Returns: Example data with datetime features
+
+    """
     dt_features = datetime_features(index)
     dt_features["hour_of_day"] /= 24
     dt_features["day_of_year"] /= 365
@@ -164,7 +187,6 @@ def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.Datet
     """
     Fill a 30 minute index with 5 minute timestamps too. Note any gaps in 30 mins are not filled
     """
-
     # resample index to 5 mins
     index_5 = pd.Series(0, index=index).resample("5T")
 

@@ -26,10 +26,11 @@ dependencies:
   - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
   - pytorch-lightning
 
-  # PV & Geospatial
+  # PV, satellite & geospatial
   - pvlib
   - pyproj
   - rioxarray
+  - satpy
 
   # Development tools
   - pytest

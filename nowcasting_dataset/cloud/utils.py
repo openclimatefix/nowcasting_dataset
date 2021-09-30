@@ -1,9 +1,10 @@
 """ General utils functions """
 import logging
-from pathlib import Path
-import gcsfs
 import tempfile
+from pathlib import Path
+
 import fsspec
+import gcsfs
 
 from nowcasting_dataset.cloud.aws import aws_upload_and_delete_local_files, upload_one_file
 from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files, gcp_download_to_local

@@ -1,15 +1,17 @@
 """  General Data Source Class """
-from numbers import Number
-import pandas as pd
-import numpy as np
-from nowcasting_dataset.dataset.example import Example, to_numpy
-from nowcasting_dataset import square
-import nowcasting_dataset.time as nd_time
-from dataclasses import dataclass, InitVar
-from typing import List, Tuple, Iterable
-import xarray as xr
 import itertools
 import logging
+from dataclasses import dataclass, InitVar
+from numbers import Number
+from typing import List, Tuple, Iterable
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+import nowcasting_dataset.time as nd_time
+from nowcasting_dataset import square
+from nowcasting_dataset.dataset.example import Example, to_numpy
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,11 @@
+from datetime import timedelta
+
+import numpy as np
+import pandas as pd
 import pytest
+
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset.time import THIRTY_MINUTES, FIVE_MINUTES
-import pandas as pd
-import numpy as np
-from datetime import timedelta
 
 
 def test_select_daylight_datetimes():

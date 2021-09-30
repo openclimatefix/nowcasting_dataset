@@ -1,8 +1,9 @@
 """ AWS functions """
 import logging
-from pathlib import Path
 import os
+from pathlib import Path
 from typing import List
+
 import boto3
 
 from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_path

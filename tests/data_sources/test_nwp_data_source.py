@@ -1,6 +1,7 @@
-from nowcasting_dataset.data_sources.nwp_data_source import NWPDataSource
-import nowcasting_dataset
 import os
+
+import nowcasting_dataset
+from nowcasting_dataset.data_sources.nwp_data_source import NWPDataSource
 
 
 def test_nwp_data_source_init():

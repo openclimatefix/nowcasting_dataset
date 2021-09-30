@@ -1,14 +1,16 @@
-from moto import mock_s3
+import os
+import tempfile
+from pathlib import Path
+
 import boto3
+from moto import mock_s3
+
 from nowcasting_dataset.cloud.aws import (
     aws_upload_and_delete_local_files,
     aws_download_to_local,
     upload_one_file,
     get_all_filenames_in_path_aws,
 )
-from pathlib import Path
-import tempfile
-import os
 
 
 @mock_s3

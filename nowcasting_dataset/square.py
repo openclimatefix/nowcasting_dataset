@@ -1,6 +1,6 @@
 """ Square objects """
-from typing import NamedTuple, Union
 from numbers import Number
+from typing import NamedTuple, Union
 
 from nowcasting_dataset.consts import Array
 

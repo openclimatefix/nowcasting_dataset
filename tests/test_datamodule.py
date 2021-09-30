@@ -4,21 +4,21 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 import pytest
+import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.dataset import datamodule
 from nowcasting_dataset.config.load import load_yaml_configuration
+from nowcasting_dataset.consts import GSP_DATETIME_INDEX, DEFAULT_REQUIRED_KEYS
+from nowcasting_dataset.dataset import datamodule
+from nowcasting_dataset.dataset.batch import batch_to_dataset
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
+from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.dataset.example import (
     xr_to_example,
 )
-from nowcasting_dataset.dataset.validate import validate_example, validate_batch_from_configuration
-from nowcasting_dataset.dataset.batch import batch_to_dataset
-from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.dataset.split.split import SplitMethod
-from nowcasting_dataset.consts import GSP_DATETIME_INDEX, DEFAULT_REQUIRED_KEYS
+from nowcasting_dataset.dataset.validate import validate_example, validate_batch_from_configuration
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")

@@ -1,10 +1,11 @@
 """ Example Data Class """
+from numbers import Number
 from typing import TypedDict, List
+
+import numpy as np
 import pandas as pd
 
 from nowcasting_dataset.consts import *
-import numpy as np
-from numbers import Number
 
 
 class Example(TypedDict):

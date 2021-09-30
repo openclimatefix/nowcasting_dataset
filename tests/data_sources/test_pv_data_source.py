@@ -1,15 +1,16 @@
-import pandas as pd
-import numpy as np
+import logging
+import os
+from datetime import datetime
 
+import numpy as np
+import pandas as pd
+
+import nowcasting_dataset
 from nowcasting_dataset.data_sources.pv_data_source import (
     PVDataSource,
     drop_pv_systems_which_produce_overnight,
     calculate_azimuth_and_elevation_all_pv_systems,
 )
-from datetime import datetime
-import nowcasting_dataset
-import os
-import logging
 
 logger = logging.getLogger(__name__)
 

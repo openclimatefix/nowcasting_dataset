@@ -1,11 +1,10 @@
 """ Functions for local files """
 import glob
+import logging
 import os
 import shutil
-from typing import Union
-
-import logging
 from pathlib import Path
+from typing import Union
 
 _LOG = logging.getLogger(__name__)
 

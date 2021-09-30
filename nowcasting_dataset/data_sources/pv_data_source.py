@@ -1,4 +1,23 @@
 """ PV Data Source """
+import datetime
+import functools
+import io
+import logging
+import time
+from concurrent import futures
+from dataclasses import dataclass
+from numbers import Number
+from pathlib import Path
+from typing import List, Tuple, Union, Optional
+
+import gcsfs
+import numpy as np
+import pandas as pd
+import torch
+import xarray as xr
+from tqdm import tqdm
+
+from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.consts import (
     PV_SYSTEM_ID,
     PV_SYSTEM_ROW_NUMBER,
@@ -12,24 +31,7 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.square import get_bounding_box_mask
-from dataclasses import dataclass
-import pandas as pd
-import numpy as np
-import torch
-from tqdm import tqdm
-from numbers import Number
-from typing import List, Tuple, Union, Optional
-import datetime
-from pathlib import Path
-import io
-import gcsfs
-import xarray as xr
-import functools
-import logging
-import time
-from concurrent import futures
 
 logger = logging.getLogger(__name__)
 

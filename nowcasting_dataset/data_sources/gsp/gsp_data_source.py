@@ -54,6 +54,8 @@ class GSPDataSource(ImageDataSource):
     get_center: bool = True
     # the maximum number of gsp's to be loaded for data sample
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
+    # scale from zero to one
+    do_scale_0_to_1: bool = False
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -93,7 +95,8 @@ class GSPDataSource(ImageDataSource):
         )
 
         # scale from 0 to 1
-        self.gsp_power = scale_to_0_to_1(self.gsp_power)
+        if self.do_scale_0_to_1:
+            self.gsp_power = scale_to_0_to_1(self.gsp_power)
 
         logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 

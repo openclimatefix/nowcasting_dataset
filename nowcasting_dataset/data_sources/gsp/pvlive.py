@@ -13,7 +13,7 @@ CHUNK_DURATION = timedelta(days=30)
 
 
 def load_pv_gsp_raw_data_from_pvlive(
-    start: datetime, end: datetime, number_of_gsp: int = None
+    start: datetime, end: datetime, number_of_gsp: int = None, normalize_data: bool = True
 ) -> pd.DataFrame:
     """
     Load raw pv gsp data from pvlive. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
@@ -21,6 +21,7 @@ def load_pv_gsp_raw_data_from_pvlive(
         start: the start date for gsp data to load
         end: the end date for gsp data to load
         number_of_gsp: The number of gsp to load. Note that on 2021-09-01 there were 338 to load.
+        normalize_data: Option to normalize the generation according to installed capacity
 
     Returns: Data frame of time series of gsp data. Shows PV data for each GSP from {start} to {end}
 
@@ -58,7 +59,7 @@ def load_pv_gsp_raw_data_from_pvlive(
                     end=end_chunk,
                     entity_type="gsp",
                     entity_id=gsp_id,
-                    extra_fields="",
+                    extra_fields="installedcapacity_mwp",
                     dataframe=True,
                 )
             )
@@ -73,6 +74,12 @@ def load_pv_gsp_raw_data_from_pvlive(
         # join together one gsp data, and sort
         one_gsp_data_df = pd.concat(one_gsp_data_df)
         one_gsp_data_df = one_gsp_data_df.sort_values(by=["gsp_id", "datetime_gmt"])
+
+        # normalize
+        if normalize_data:
+            one_gsp_data_df["generation_mw"] = (
+                one_gsp_data_df["generation_mw"] / one_gsp_data_df["installedcapacity_mwp"]
+            )
 
         # append to longer list
         gsp_data_df.append(one_gsp_data_df)

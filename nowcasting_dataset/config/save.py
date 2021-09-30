@@ -1,3 +1,4 @@
+""" Save functions for the configuration model"""
 import yaml
 import logging
 import fsspec
@@ -18,7 +19,6 @@ def save_yaml_configuration(
 
     Will save to GCP, AWS, or local, depending on the protocol suffix of filepath.
     """
-
     # make a dictionary from the configuration
     d = configuration.dict()
     if filename is None:

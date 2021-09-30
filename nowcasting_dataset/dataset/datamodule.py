@@ -1,3 +1,4 @@
+""" Data Modules """
 from typing import Union, Optional, Iterable, Dict, Callable
 from pathlib import Path
 import pandas as pd
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NowcastingDataModule(pl.LightningDataModule):
     """
+    Nowcasting Data Module, used to make batches
+
     Attributes (additional to the dataclass attributes):
       pv_data_source: PVDataSource
       sat_data_source: SatelliteDataSource
@@ -79,6 +82,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     skip_n_test_batches: int = 0  # number of test batches to skip
 
     def __post_init__(self):
+        """ Post Init """
         super().__init__()
 
         self.history_len_30_minutes = self.history_minutes // 30

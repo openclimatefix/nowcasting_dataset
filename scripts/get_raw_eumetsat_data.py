@@ -14,6 +14,8 @@ import yaml
 from satip import eumetsat
 import pandas as pd
 import os
+import requests
+import urllib
 
 from typing import Optional, List, Union, Tuple
 
@@ -114,9 +116,49 @@ def download_eumetsat_data(
     # Get authentication
     if auth_filename is not None:
         user_key, user_secret = load_key_secret(auth_filename)
-
     # Get already downloaded timestamps
+    print(user_key)
+    print(user_secret)
 
+    # API endpoint
+    apis_endpoint = "https://api.eumetsat.int/"
+
+    # Application Token
+    token_url = apis_endpoint + "token"
+
+    response = requests.post(
+        token_url,
+        auth=requests.auth.HTTPBasicAuth(user_key, user_secret),
+        data={"grant_type": "client_credentials"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert response.status_code == 200, "API Request Failed: {}\n{}".format(
+        response.status_code, response.content
+    )
+
+    access_token = response.json()["access_token"]
+    print("Your access token is: ", access_token)
+
+    # API base endpoint
+    apis_endpoint = "http://api.eumetsat.int"
+
+    # Searching endpoint
+    service_search = apis_endpoint + "/data/search-products/os"
+
+    # Downloading endpoint
+    service_download = apis_endpoint + "/data/download"
+
+    # Select our collection
+    selected_collection_id = "EO:EUM:DAT:MSG:MSG15-RSS"
+
+    product_id = "MSG3-SEVI-MSG15-0100-NA-20201231235915.622000000Z-NA"
+    download_url = service_download + "/collections/{}/products/{}".format(
+        urllib.parse.quote(selected_collection_id), urllib.parse.quote(product_id)
+    )
+    print(
+        "Download URL (via product-ID) ({}): ".format(str(1)),
+        download_url + "?access_token=" + access_token,
+    )
     # Download the data
     dm = eumetsat.DownloadManager(
         user_key, user_secret, download_directory, download_directory, download_directory
@@ -129,10 +171,6 @@ def download_eumetsat_data(
         for start_time, end_time in times_to_use:
             print(format_dt_str(start_time))
             print(format_dt_str(end_time))
-            # Because the satellite data is off by 1 minute
-            # Need to download RSS images from 23:59 the day before start_time
-            # And end 23:59 the day of
-            # Derived products are at the 5min, so need to go from 00:00 to 23:59 each day
             dm.download_date_range(
                 format_dt_str(start_time),
                 format_dt_str(end_time),

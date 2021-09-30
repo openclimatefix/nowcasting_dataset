@@ -1,8 +1,9 @@
-from nowcasting_dataset import geospatial
 import numpy as np
 
 # import pyproj
 import pandas as pd
+
+from nowcasting_dataset import geospatial
 
 
 def test_osgb_to_lat_lon():

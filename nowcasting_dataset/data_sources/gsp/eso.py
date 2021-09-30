@@ -13,9 +13,9 @@ Peter Dudfield
 """
 
 import json
+import logging
 import os
 import urllib
-import logging
 from typing import List, Optional
 from urllib.request import urlopen
 
@@ -23,7 +23,6 @@ import geopandas as gpd
 import pandas as pd
 
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
-
 
 logger = logging.getLogger(__name__)
 

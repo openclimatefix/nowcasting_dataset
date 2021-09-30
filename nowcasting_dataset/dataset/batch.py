@@ -1,10 +1,10 @@
 """ batch functions """
-from typing import List, Optional, Union
 import logging
+from pathlib import Path
+from typing import List, Optional
 
 import numpy as np
 import xarray as xr
-from pathlib import Path
 
 from nowcasting_dataset.consts import (
     GSP_ID,
@@ -18,7 +18,6 @@ from nowcasting_dataset.consts import (
     TOPOGRAPHIC_X_COORDS,
     TOPOGRAPHIC_Y_COORDS,
 )
-
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.utils import get_netcdf_filename
 

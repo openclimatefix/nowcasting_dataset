@@ -1,15 +1,17 @@
 """ Satellite Data Source """
+import logging
+from concurrent import futures
+from dataclasses import dataclass, InitVar
+from numbers import Number
+from typing import Iterable, Optional, List
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.dataset.example import Example, to_numpy
-from nowcasting_dataset import utils
-from typing import Iterable, Optional, List
-from numbers import Number
-import numpy as np
-import xarray as xr
-import pandas as pd
-import logging
-from dataclasses import dataclass, InitVar
-from concurrent import futures
 
 _LOG = logging.getLogger("nowcasting_dataset")
 

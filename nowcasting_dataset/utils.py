@@ -1,12 +1,14 @@
 """ utils functions """
+import hashlib
 import logging
+from pathlib import Path
+from typing import List
+
+import fsspec.asyn
 import numpy as np
 import pandas as pd
+
 from nowcasting_dataset.consts import Array
-import fsspec.asyn
-from typing import List
-from pathlib import Path
-import hashlib
 from nowcasting_dataset.dataset.example import Example
 
 logger = logging.getLogger(__name__)

@@ -27,7 +27,6 @@ from nowcasting_dataset.consts import (
     TOPOGRAPHIC_DATA,
     TOPOGRAPHIC_Y_COORDS,
 )
-from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
 from nowcasting_dataset.dataset.example import Example
 

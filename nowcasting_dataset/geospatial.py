@@ -1,11 +1,11 @@
 """ Geospatial functions """
-import pandas as pd
-import pyproj
+import datetime
 from numbers import Number
 from typing import Tuple
-import datetime
-import pvlib
 
+import pandas as pd
+import pvlib
+import pyproj
 
 # OSGB is also called "OSGB 1936 / British National Grid -- United
 # Kingdom Ordnance Survey".  OSGB is used in many UK electricity

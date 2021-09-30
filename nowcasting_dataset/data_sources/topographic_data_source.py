@@ -1,15 +1,17 @@
 """ Topological DataSource """
+from dataclasses import dataclass
+from numbers import Number
+
+import numpy as np
+import pandas as pd
+import rioxarray
+import xarray as xr
+from rasterio.warp import Resampling
+
+from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.geospatial import OSGB
-from rasterio.warp import Resampling
-from dataclasses import dataclass, InitVar
-from numbers import Number
-import pandas as pd
-import xarray as xr
-import numpy as np
-import rioxarray
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"

@@ -1,11 +1,13 @@
 """ Datetime DataSource - add hour and year features """
-from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset import time as nd_time
 from dataclasses import dataclass
-import pandas as pd
 from numbers import Number
 from typing import List, Tuple
+
+import pandas as pd
+
+from nowcasting_dataset import time as nd_time
+from nowcasting_dataset.data_sources.data_source import DataSource
+from nowcasting_dataset.dataset.example import Example
 
 
 @dataclass

@@ -1,13 +1,15 @@
 """ Loading configuration functions """
-import logging
-import gcsfs
-import os
 import io
-import yaml
-from nowcasting_dataset.config.model import Configuration
-from pathy import Pathy
+import logging
+import os
 from typing import Union
+
 import fsspec
+import gcsfs
+import yaml
+from pathy import Pathy
+
+from nowcasting_dataset.config.model import Configuration
 
 logger = logging.getLogger(__name__)
 

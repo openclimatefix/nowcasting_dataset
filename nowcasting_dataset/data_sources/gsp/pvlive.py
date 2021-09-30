@@ -1,12 +1,13 @@
 """ Functions used to query the PVlive api """
-from datetime import datetime, timedelta
 import logging
-import pandas as pd
-from pvlive_api import PVLive
-from typing import Optional
-import pytz
-from tqdm import tqdm
 from concurrent import futures
+from datetime import datetime, timedelta
+from typing import Optional
+
+import pandas as pd
+import pytz
+from pvlive_api import PVLive
+from tqdm import tqdm
 
 from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
 

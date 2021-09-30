@@ -1,24 +1,23 @@
 """ Dataset and functions"""
-import pandas as pd
+import logging
+import os
+from concurrent import futures
+from dataclasses import dataclass
 from numbers import Number
 from typing import List, Tuple, Callable, Union, Optional
-from nowcasting_dataset import data_sources
-from dataclasses import dataclass
-from concurrent import futures
-import gcsfs
+
 import boto3
-import os
+import gcsfs
 import numpy as np
-import xarray as xr
-from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset.dataset import example
+import pandas as pd
 import torch
+import xarray as xr
 
-from nowcasting_dataset.config.model import Configuration
-
-from nowcasting_dataset.cloud.gcp import gcp_download_to_local
+from nowcasting_dataset import data_sources
+from nowcasting_dataset import utils as nd_utils
 from nowcasting_dataset.cloud.aws import aws_download_to_local
-
+from nowcasting_dataset.cloud.gcp import gcp_download_to_local
+from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     GSP_YIELD,
     GSP_DATETIME_INDEX,
@@ -33,12 +32,9 @@ from nowcasting_dataset.consts import (
     DATETIME_FEATURE_NAMES,
     DEFAULT_REQUIRED_KEYS,
     T0_DT,
-    TOPOGRAPHIC_DATA,
-    TOPOGRAPHIC_Y_COORDS,
-    TOPOGRAPHIC_X_COORDS,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
-import logging
+from nowcasting_dataset.dataset import example
 
 logger = logging.getLogger(__name__)
 

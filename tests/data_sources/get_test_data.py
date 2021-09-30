@@ -1,21 +1,16 @@
-import time
 import io
-import gcsfs
-import xarray as xr
+import os
+import time
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
-import os
+
+import gcsfs
 import numcodecs
+import pandas as pd
+import xarray as xr
+
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
-from nowcasting_dataset.data_sources.satellite_data_source import SatelliteDataSource
-from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
-    save_to_zarr,
-    get_azimuth_and_elevation,
-)
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")

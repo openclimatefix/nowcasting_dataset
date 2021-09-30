@@ -1,10 +1,12 @@
 """ Save functions for the configuration model"""
-import yaml
 import logging
-import fsspec
-from pathy import Pathy
-from nowcasting_dataset.config.model import Configuration
 from typing import Optional, Union
+
+import fsspec
+import yaml
+from pathy import Pathy
+
+from nowcasting_dataset.config.model import Configuration
 
 logger = logging.getLogger(__name__)
 

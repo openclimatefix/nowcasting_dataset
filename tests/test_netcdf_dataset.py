@@ -1,6 +1,16 @@
 import os
+import tempfile
+from pathlib import Path
+
+import pandas as pd
+import plotly
+import plotly.graph_objects as go
+import pytest
 import torch
-from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
+import xarray as xr
+
+import nowcasting_dataset
+from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     SATELLITE_X_COORDS,
     SATELLITE_Y_COORDS,
@@ -16,15 +26,7 @@ from nowcasting_dataset.consts import (
     T0_DT,
 )
 from nowcasting_dataset.dataset import example
-from nowcasting_dataset.config.model import Configuration
-import nowcasting_dataset
-import plotly.graph_objects as go
-import plotly
-import pandas as pd
-import pytest
-import tempfile
-from pathlib import Path
-import xarray as xr
+from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 
 
 def test_subselect_date(test_data_folder):

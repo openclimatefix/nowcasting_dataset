@@ -1,15 +1,14 @@
 """ Configuration model for the dataset """
-from pydantic import BaseModel, Field, validator
-
-from pydantic import BaseModel, Field
+from datetime import datetime
 from typing import Optional
+
+import git
+from pathy import Pathy
+from pydantic import BaseModel, Field
+from pydantic import validator
+
 from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
-from pathy import Pathy
-
-
-from datetime import datetime
-import git
 
 
 class General(BaseModel):

@@ -59,6 +59,8 @@ class GSPDataSource(ImageDataSource):
     get_center: bool = True
     # the maximum number of gsp's to be loaded for data sample
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
+    # scale from zero to one
+    do_scale_0_to_1: bool = False
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -97,7 +99,8 @@ class GSPDataSource(ImageDataSource):
         )
 
         # scale from 0 to 1
-        self.gsp_power = scale_to_0_to_1(self.gsp_power)
+        if self.do_scale_0_to_1:
+            self.gsp_power = scale_to_0_to_1(self.gsp_power)
 
         logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 
@@ -390,7 +393,16 @@ def load_solar_gsp_data(
     # Open data - it may be quicker to open byte file first, but decided just to keep it like this at the moment
     gsp_power = xr.open_dataset(filename, engine="zarr")
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
+
+    # only take generation data
+    gsp_power = gsp_power.generation_mw
+
+    # make dataframe with index datetime_gmt and columns og gsp_id
     gsp_power_df = gsp_power.to_dataframe()
+    gsp_power_df.reset_index(inplace=True)
+    gsp_power_df = gsp_power_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="generation_mw"
+    )
 
     # Save memory
     del gsp_power

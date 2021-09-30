@@ -85,27 +85,19 @@ nwp_data = nwp_data.sel(step=slice(nwp_data.step[0], nwp_data.step[4]))  # take 
 nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 
 # ### GSP data
+filename = "gs://solar-pv-nowcasting-data/PV/GSP/v1/pv_gsp.zarr"
 
-gsp = GSPDataSource(
-    filename="gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr",
-    start_dt=start_dt,
-    end_dt=end_dt,
-    history_minutes=30,
-    forecast_minutes=60,
-    convert_to_numpy=True,
-    image_size_pixels=64,
-    meters_per_pixel=2000,
-)
+gsp_power = xr.open_dataset(filename, engine="zarr")
+gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
+gsp_power = gsp_power.sel(gsp_id=slice(gsp_power.gsp_id[0], gsp_power.gsp_id[20]))
 
+gsp_power["gsp_id"] = gsp_power.gsp_id.astype("str")
 
-gsp.gsp_power.columns = [str(col) for col in gsp.gsp_power.columns]
+encoding = {
+    var: {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)} for var in gsp_power.data_vars
+}
 
-# select limited data
-data = gsp.gsp_power
-data = data[data.columns[0:20]]
-
-data_xarray = data.to_xarray()
-data_xarray.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w")
+gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=encoding)
 
 
 # ### satellite

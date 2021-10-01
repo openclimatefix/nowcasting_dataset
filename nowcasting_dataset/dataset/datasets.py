@@ -352,7 +352,8 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 def worker_init_fn(worker_id):
     """Configures each dataset worker process.
 
-    Just has one job!  To call NowcastingDataset.per_worker_init().
+    1. Get fsspec ready for multi process
+    2. To call NowcastingDataset.per_worker_init().
     """
     # fix for fsspec when using multprocess
     set_fsspec_for_multiprocess()

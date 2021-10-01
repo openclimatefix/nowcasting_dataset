@@ -24,8 +24,8 @@ from nowcasting_dataset.consts import (
     SATELLITE_DATA,
     NWP_DATA,
     PV_YIELD,
-    PV_AZIMUTH_ANGLE,
-    PV_ELEVATION_ANGLE,
+    SUN_ELEVATION_ANGLE,
+    SUN_AZIMUTH_ANGLE,
     SATELLITE_DATETIME_INDEX,
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
@@ -479,14 +479,14 @@ def subselect_data(
     if PV_YIELD in required_keys and PV_DATETIME_INDEX in batch:
         batch = select_time_period(
             batch,
-            keys=[PV_DATETIME_INDEX, PV_YIELD, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE],
+            keys=[PV_DATETIME_INDEX, PV_YIELD, SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
             time_of_first_example=batch[PV_DATETIME_INDEX][0].data,
             start_time=start_time,
             end_time=end_time,
         )
         _LOG.debug(
             f"PV Datetime Shape: {batch[PV_DATETIME_INDEX].shape} PV Data Shape: {batch[PV_YIELD].shape}"
-            f" PV Azimuth Shape: {batch[PV_AZIMUTH_ANGLE].shape} PV Elevation Shape: {batch[PV_ELEVATION_ANGLE].shape}"
+            f" PV Azimuth Shape: {batch[SUN_ELEVATION_ANGLE].shape} PV Elevation Shape: {batch[SUN_AZIMUTH_ANGLE].shape}"
         )
 
     return batch

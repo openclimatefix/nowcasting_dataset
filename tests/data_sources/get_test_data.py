@@ -117,3 +117,21 @@ gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=e
 #
 # data_df = data_xarray.to_dataframe()
 # TODO reduce and save
+
+
+#####################
+# SUN
+#####################
+
+filename = "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/"
+# filename = "./scripts/sun.zarr"
+
+# open file
+sun_xr = xr.open_dataset(filename, engine="zarr", mode="r", consolidated=True, chunks=None)
+
+# just select one date
+sun_xr = sun_xr.sel(time_5=slice(start_dt, end_dt))
+sun_xr["locations"] = sun_xr.locations.astype("str")
+
+# save to file
+sun_xr.to_zarr(f"{local_path}/tests/data/sun/test.zarr", mode="w")

@@ -72,6 +72,11 @@ class InputData(BaseModel):
         description="Path to the GeoTIFF Topographic data source",
     )
 
+    sun_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
+        description="Path to the Sun data source i.e Azimuth and Elevation",
+    )
+
 
 class OutputData(BaseModel):
     """ Output data model """

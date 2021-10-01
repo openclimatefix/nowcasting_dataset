@@ -14,6 +14,7 @@ from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 
@@ -63,6 +64,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     )
     satellite_image_size_pixels: int = 128  #: Passed to Data Sources.
     topographic_filename: Optional[Union[str, Path]] = None
+    sun_filename: Optional[Union[str, Path]] = None
     nwp_image_size_pixels: int = 2  #: Passed to Data Sources.
     meters_per_pixel: int = 2000  #: Passed to Data Sources.
     convert_to_numpy: bool = True  #: Passed to Data Sources.
@@ -185,6 +187,16 @@ class NowcastingDataModule(pl.LightningDataModule):
             )
 
             self.data_sources.append(self.topo_data_source)
+
+        # Sun data
+        if self.sun_filename is not None:
+            self.sun_data_source = SunDataSource(
+                filename=self.sun_filename,
+                history_minutes=self.history_minutes,
+                forecast_minutes=self.forecast_minutes,
+                convert_to_numpy=self.convert_to_numpy,
+            )
+            self.data_sources.append(self.sun_data_source)
 
         self.datetime_data_source = data_sources.DatetimeDataSource(
             history_minutes=self.history_minutes,

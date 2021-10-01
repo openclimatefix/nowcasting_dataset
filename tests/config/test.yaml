@@ -8,6 +8,7 @@ input_data:
   solar_pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
   gsp_zarr_path: tests/data/gsp/test.zarr
   topographic_filename: tests/data/europe_dem_2km_osgb.tif
+  sun_zarr_path: tests/data/sun/test.zarr
 output_data:
   filepath: not used by unittests!
 process:

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
+import torch
 import xarray as xr
 
 # DEFAULT PATHS
@@ -23,7 +24,7 @@ PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
 NWP_FILENAME = "gs://" + str(BUCKET / "NWP/UK_Met_Office/UKV_zarr")
 
 # Typing
-Array = Union[xr.DataArray, np.ndarray]
+Array = Union[xr.DataArray, np.ndarray, torch.Tensor]
 PV_SYSTEM_ID: str = "pv_system_id"
 PV_SYSTEM_ROW_NUMBER = "pv_system_row_number"
 PV_SYSTEM_X_COORDS = "pv_system_x_coords"

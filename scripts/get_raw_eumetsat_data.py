@@ -139,6 +139,11 @@ def download_eumetsat_data(
         RSS_ID,
         CLOUD_ID,
     ]:
+        # Do this to clear out any partially downloaded days
+        sanity_check_files_and_move_to_directory(
+            directory=download_directory, product_id=product_id
+        )
+
         times_to_use = determine_datetimes_to_download_files(
             download_directory, start_date, end_date, product_id=product_id
         )
@@ -206,19 +211,25 @@ def sanity_check_files_and_move_to_directory(directory, product_id):
 
     if product_id == RSS_ID:
         for f in new_files:
-            file_size = eumetsat.get_filesize_megabytes(f)
-            if not math.isclose(file_size, NATIVE_FILESIZE_MB, abs_tol=1):
-                print("Wrong Size")
-            scene = Scene(filenames=[f], reader=satpy_reader)
-            scene.load(SAT_VARIABLE_NAMES)
-            # Now that the file has been checked and can be open, move it to the final directory
-            base_name = get_basename(f)
-            file_date = date_func(base_name)
-            # Want to move it 1 minute in the future to correct the difference
-            file_date = file_date + timedelta(minutes=1)
-            if not fs.exists(os.path.join(directory, file_date.strftime(format="%Y/%m/%d"))):
-                fs.mkdir(os.path.join(directory, file_date.strftime(format="%Y/%m/%d")))
-            fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
+            try:
+                file_size = eumetsat.get_filesize_megabytes(f)
+                if not math.isclose(file_size, NATIVE_FILESIZE_MB, abs_tol=1):
+                    print("Wrong Size")
+                scene = Scene(filenames=[f], reader=satpy_reader)
+                scene.load(SAT_VARIABLE_NAMES)
+                # Now that the file has been checked and can be open, move it to the final directory
+                base_name = get_basename(f)
+                file_date = date_func(base_name)
+                # Want to move it 1 minute in the future to correct the difference
+                file_date = file_date + timedelta(minutes=1)
+                if not fs.exists(os.path.join(directory, file_date.strftime(format="%Y/%m/%d"))):
+                    fs.mkdir(os.path.join(directory, file_date.strftime(format="%Y/%m/%d")))
+                fs.move(
+                    f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name)
+                )
+            except:
+                # Something is wrong with the file, redownload later
+                fs.rm(f)
     else:
         for f in new_files:
             base_name = get_basename(f)
@@ -228,6 +239,8 @@ def sanity_check_files_and_move_to_directory(directory, product_id):
                 # Removes if not the right size
                 fs.rm(f)
             else:
+                if not fs.exists(os.path.join(directory, file_date.strftime(format="%Y/%m/%d"))):
+                    fs.mkdir(os.path.join(directory, file_date.strftime(format="%Y/%m/%d")))
                 # Only move if the correct size
                 fs.move(
                     f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name)

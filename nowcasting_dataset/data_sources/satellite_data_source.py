@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.dataset.example import Example, to_numpy
 
@@ -203,7 +202,6 @@ def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
     _LOG.debug("Opening satellite data: %s", filename)
-    utils.set_fsspec_for_multiprocess()
 
     # We load using chunks=None so xarray *doesn't* use Dask to
     # load the Zarr chunks from disk.  Using Dask to load the data

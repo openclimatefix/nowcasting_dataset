@@ -1,12 +1,10 @@
 ############
-# Pull raw pv satellite data from EUMetSat
+# Pull raw satellite data from EUMetSat
 #
 # 2021-09-28
 # Jacob Bieker
 #
-# The data is about 1MB for a month of data
 ############
-from datetime import datetime
 
 import fsspec
 import yaml
@@ -22,10 +20,6 @@ import re
 from datetime import datetime, timedelta
 
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
-from pathlib import Path
-from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
-from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files
-import logging
 import click
 
 # SatPy gives a UserWarning about Proj, which isn't actually used here, so can be

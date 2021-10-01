@@ -21,6 +21,7 @@ from typing import Optional, List, Union, Tuple
 import re
 from datetime import datetime, timedelta
 
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from pathlib import Path
 from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files
@@ -37,20 +38,6 @@ warnings.simplefilter("ignore", UserWarning)
 NATIVE_FILESIZE_MB = 102.210123
 RSS_ID = "EO:EUM:DAT:MSG:MSG15-RSS"
 CLOUD_ID = "EO:EUM:DAT:MSG:RSS-CLM"
-BANDS = (
-    "HRV",
-    "IR_016",
-    "IR_039",
-    "IR_087",
-    "IR_097",
-    "IR_108",
-    "IR_120",
-    "IR_134",
-    "VIS006",
-    "VIS008",
-    "WV_062",
-    "WV_073",
-)
 
 format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -166,7 +153,9 @@ def download_eumetsat_data(
             #    product_id=product_id,
             # )
         # Sanity check, able to open/right size
-        sanity_check_files(directory=download_directory, product_id=product_id)
+        sanity_check_files_and_move_to_directory(
+            directory=download_directory, product_id=product_id
+        )
         # Move to the correct directory
 
     # Sanity check each time range after downloaded
@@ -191,10 +180,10 @@ def load_key_secret(filename) -> Tuple[str, str]:
         return keys["key"], keys["secret"]
 
 
-def sanity_check_files(directory, product_id):
+def sanity_check_files_and_move_to_directory(directory, product_id):
     """
     Runs a sanity check for all the files of a given product_id in the directory
-    Deletes incomplete files
+    Deletes incomplete files, moves checked files to final location
 
     This does a sanity check by:
         Checking the filesize of RSS images
@@ -213,6 +202,11 @@ def sanity_check_files(directory, product_id):
     fs = fsspec.filesystem("file")  # TODO Update for other ones?
     new_files = fs.glob(os.path.join(directory, pattern))
 
+    date_func = (
+        eumetsat_native_filename_to_datetime
+        if product_id == RSS_ID
+        else eumetsat_cloud_name_to_datetime
+    )
     # Check all the right size
     satpy_reader = "seviri_l1b_native" if product_id == RSS_ID else "seviri_l2_grib"
 
@@ -223,14 +217,23 @@ def sanity_check_files(directory, product_id):
                 print("Wrong Size")
             filenames = {satpy_reader: [f]}
             scene = Scene(filenames=filenames)
-            scene.load(BANDS)
+            scene.load(SAT_VARIABLE_NAMES)
+            # Now that the file has been checked and can be open, move it to the final directory
+            base_name = f.split("/")[-1]
+            file_date = date_func(base_name)
+            if not fs.exists(os.path.join(directory, file_date.strftime(format="%Y/%m/%d"))):
+                fs.mkdir(os.path.join(directory, file_date.strftime(format="%Y/%m/%d")))
+            fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
     else:
         for f in new_files:
             filenames = {satpy_reader: [f]}
             print(filenames)
             scene = Scene(filenames=filenames)
-
             scene.load("cloud_mask")
+            file_date = date_func(f)
+            fs.move(
+                f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), f.split("/")[-1])
+            )
 
     return
 

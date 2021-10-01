@@ -133,9 +133,7 @@ def download_eumetsat_data(
         user_key, user_secret = load_key_secret(auth_filename)
 
     # Download the data
-    dm = eumetsat.DownloadManager(
-        user_key, user_secret, download_directory, download_directory, download_directory
-    )
+    dm = eumetsat.DownloadManager(user_key, user_secret, download_directory, download_directory)
 
     for product_id in [
         RSS_ID,
@@ -151,11 +149,11 @@ def download_eumetsat_data(
             print(format_dt_str(start_time))
             print(format_dt_str(end_time))
             # pass
-            # dm.download_date_range(
-            #    format_dt_str(start_time),
-            #    format_dt_str(end_time),
-            #    product_id=product_id,
-            # )
+            dm.download_date_range(
+                format_dt_str(start_time),
+                format_dt_str(end_time),
+                product_id=product_id,
+            )
         # Sanity check, able to open/right size and move to correct directory
         sanity_check_files_and_move_to_directory(
             directory=download_directory, product_id=product_id
@@ -265,7 +263,6 @@ def determine_datetimes_to_download_files(
     for day in day_split:
         day_string = day.strftime(format="%Y/%m/%d")
         rss_images = fs.glob(os.path.join(directory, day_string, pattern))
-        print(rss_images)
         if len(rss_images) > 0:
             missing_rss_timesteps = (
                 missing_rss_timesteps + get_missing_datetimes_from_list_of_files(rss_images)
@@ -290,12 +287,14 @@ def eumetsat_native_filename_to_datetime(filename: str):
     p = re.compile("^MSG[23]-SEVI-MSG15-0100-NA-(\d*)\.")
     title_match = p.match(filename)
     date_str = title_match.group(1)
-    return datetime.strptime(date_str, "%Y%m%d%H%M%S")
+    return datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(second=0) + timedelta(
+        minutes=1
+    )  # Line up with radar, etc
 
 
 def eumetsat_cloud_name_to_datetime(filename: str):
     date_str = filename.split("0100-0100-")[-1].split(".")[0]
-    return datetime.strptime(date_str, "%Y%m%d%H%M%S")
+    return datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(second=0)
 
 
 def get_basename(filename: str):
@@ -324,13 +323,12 @@ def get_missing_datetimes_from_list_of_files(
     five_minutes = timedelta(minutes=5)
     for i in range(len(filenames)):
         next_time = func(get_basename(filenames[i]))
-        time_difference = current_time - next_time
-        if time_difference > five_minutes:
+        time_difference = next_time - current_time
+        if abs(time_difference) > five_minutes:
             # Add breaks to list, only want the ones between, so add/subtract 5minutes
             # In the case its missing only a single timestep, start and end would be the same time
             missing_date_ranges.append((current_time + five_minutes, next_time - five_minutes))
         current_time = next_time
-    print(f"Missing Date Ranges: {missing_date_ranges}")
     return missing_date_ranges
 
 

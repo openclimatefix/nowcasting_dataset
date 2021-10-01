@@ -27,6 +27,12 @@ from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files
 import logging
 import click
 
+# SatPy gives a UserWarning about Proj, which isn't actually used here, so can be
+# safely ignored
+import warnings
+
+warnings.simplefilter("ignore", UserWarning)
+
 
 NATIVE_FILESIZE_MB = 102.210123
 RSS_ID = "EO:EUM:DAT:MSG:MSG15-RSS"

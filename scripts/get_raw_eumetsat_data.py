@@ -9,13 +9,12 @@
 from datetime import datetime
 
 import fsspec
-import pytz
 import yaml
 from satip import eumetsat
 import pandas as pd
 import os
-import requests
-import urllib
+import math
+from satpy import Scene
 
 from typing import Optional, List, Union, Tuple
 
@@ -32,6 +31,20 @@ import click
 NATIVE_FILESIZE_MB = 102.210123
 RSS_ID = "EO:EUM:DAT:MSG:MSG15-RSS"
 CLOUD_ID = "EO:EUM:DAT:MSG:RSS-CLM"
+BANDS = (
+    "HRV",
+    "IR_016",
+    "IR_039",
+    "IR_087",
+    "IR_097",
+    "IR_108",
+    "IR_120",
+    "IR_134",
+    "VIS006",
+    "VIS008",
+    "WV_062",
+    "WV_073",
+)
 
 format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -47,24 +60,27 @@ def validate_date(ctx, param, value):
 @click.option(
     "--download_directory",
     "--dir",
-    default="./",
+    default="/run/media/jacob/data/",
     help="Where to download the data to. Also where the script searches for previously downloaded data.",
 )
 @click.option(
     "--start_date",
     "--start",
+    default="2021-01-01",
     prompt="Starting date to download data, in format accepted by pd.to_datetime()",
     callback=validate_date,
 )
 @click.option(
     "--end_date",
     "--end",
+    default="2021-01-10",
     prompt="Ending date to download data, in format accepted by pd.to_datetime()",
     callback=validate_date,
 )
 @click.option(
     "--backfill",
     "-b",
+    default=False,
     prompt="Whether to download any missing data from the start date of the data on disk to the end date",
     is_flag=True,
 )
@@ -85,7 +101,9 @@ def validate_date(ctx, param, value):
     default="auth.yaml",
     help="The auth file containing the user key and access key for EUMETSAT access",
 )
-@click.option("--bandwidth_limit", "--bw_limit", prompt="Bandwidth limit, in MB/sec", type=float)
+@click.option(
+    "--bandwidth_limit", "--bw_limit", default=0.0, prompt="Bandwidth limit, in MB/sec", type=float
+)
 def download_eumetsat_data(
     download_directory,
     start_date: str,
@@ -122,21 +140,28 @@ def download_eumetsat_data(
         user_key, user_secret, download_directory, download_directory, download_directory
     )
 
-    for product_id in [RSS_ID, CLOUD_ID]:
+    for product_id in [
+        RSS_ID,
+        CLOUD_ID,
+    ]:
+        date_func = (
+            eumetsat_native_filename_to_datetime if RSS_ID else eumetsat_cloud_name_to_datetime
+        )
         times_to_use = determine_datetimes_to_download_files(
             download_directory, start_date, end_date, product_id=product_id
         )
         for start_time, end_time in times_to_use:
             print(format_dt_str(start_time))
             print(format_dt_str(end_time))
-            dm.download_date_range(
-                format_dt_str(start_time),
-                format_dt_str(end_time),
-                product_id=product_id,
-            )
-            # Sanity check, able to open/right size
-
-            # Move to the correct directory
+            # pass
+            # dm.download_date_range(
+            #    format_dt_str(start_time),
+            #    format_dt_str(end_time),
+            #    product_id=product_id,
+            # )
+        # Sanity check, able to open/right size
+        sanity_check_files(directory=download_directory, product_id=product_id)
+        # Move to the correct directory
 
     # Sanity check each time range after downloaded
 
@@ -158,6 +183,50 @@ def load_key_secret(filename) -> Tuple[str, str]:
     with fsspec.open(filename, mode="r") as f:
         keys = yaml.load(f, Loader=yaml.FullLoader)
         return keys["key"], keys["secret"]
+
+
+def sanity_check_files(directory, product_id):
+    """
+    Runs a sanity check for all the files of a given product_id in the directory
+    Deletes incomplete files
+
+    This does a sanity check by:
+        Checking the filesize of RSS images
+        Attempting to open them in SatPy
+
+    While loading the file should be somewhat slow, it ensures the file can be opened
+
+    Args:
+        directory: Directory where the native files were downloaded
+        product_id: The product ID of the files to check
+
+    Returns:
+        The number of incomplete files deleted
+    """
+    pattern = "*.nat" if product_id == RSS_ID else "*.grb"
+    fs = fsspec.filesystem("file")  # TODO Update for other ones?
+    new_files = fs.glob(os.path.join(directory, pattern))
+
+    # Check all the right size
+    satpy_reader = "seviri_l1b_native" if product_id == RSS_ID else "seviri_l2_grib"
+
+    if product_id == RSS_ID:
+        for f in new_files:
+            file_size = eumetsat.get_filesize_megabytes(f)
+            if not math.isclose(file_size, NATIVE_FILESIZE_MB, abs_tol=1):
+                print("Wrong Size")
+            filenames = {satpy_reader: [f]}
+            scene = Scene(filenames=filenames)
+            scene.load(BANDS)
+    else:
+        for f in new_files:
+            filenames = {satpy_reader: [f]}
+            print(filenames)
+            scene = Scene(filenames=filenames)
+
+            scene.load("cloud_mask")
+
+    return
 
 
 def determine_datetimes_to_download_files(
@@ -192,6 +261,7 @@ def determine_datetimes_to_download_files(
     for day in day_split:
         day_string = day.strftime(format="%Y/%m/%d")
         rss_images = fs.glob(os.path.join(directory, day_string, pattern))
+        print(rss_images)
         if len(rss_images) > 0:
             missing_rss_timesteps = (
                 missing_rss_timesteps + get_missing_datetimes_from_list_of_files(rss_images)
@@ -199,9 +269,10 @@ def determine_datetimes_to_download_files(
         else:
             # No files, so whole day should be included
             # Each one is at the start of the day, this then needs 1 minute before for the RSS image
+            # End 2 minutes before the end of the day, as that image would be for midnight, the next day
             missing_day = (
                 day - timedelta(minutes=1),
-                day + timedelta(hours=23, minutes=59, seconds=59),
+                day + timedelta(hours=23, minutes=58),
             )
             missing_rss_timesteps.append(missing_day)
 
@@ -236,6 +307,7 @@ def get_missing_datetimes_from_list_of_files(
     """
     # Sort in order from earliest to latest
     filenames = sorted(filenames)
+    print(filenames)
     is_rss = ".nat" in filenames[0]  # Which type of file it is
     func = eumetsat_native_filename_to_datetime if is_rss else eumetsat_cloud_name_to_datetime
     current_time = func(filenames[0])
@@ -251,7 +323,7 @@ def get_missing_datetimes_from_list_of_files(
             # In the case its missing only a single timestep, start and end would be the same time
             missing_date_ranges.append((current_time + five_minutes, next_time - five_minutes))
         current_time = next_time
-
+    print(f"Missing Date Ranges: {missing_date_ranges}")
     return missing_date_ranges
 
 

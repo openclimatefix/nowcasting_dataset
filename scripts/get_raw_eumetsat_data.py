@@ -95,7 +95,11 @@ def validate_date(ctx, param, value):
     help="The auth file containing the user key and access key for EUMETSAT access",
 )
 @click.option(
-    "--bandwidth_limit", "--bw_limit", default=0.0, prompt="Bandwidth limit, in MB/sec", type=float
+    "--bandwidth_limit",
+    "--bw_limit",
+    default=0.0,
+    prompt="Bandwidth limit, in MB/sec, currently ignored",
+    type=float,
 )
 def download_eumetsat_data(
     download_directory,
@@ -152,15 +156,10 @@ def download_eumetsat_data(
             #    format_dt_str(end_time),
             #    product_id=product_id,
             # )
-        # Sanity check, able to open/right size
+        # Sanity check, able to open/right size and move to correct directory
         sanity_check_files_and_move_to_directory(
             directory=download_directory, product_id=product_id
         )
-        # Move to the correct directory
-
-    # Sanity check each time range after downloaded
-
-    #
     pass
 
 
@@ -215,25 +214,21 @@ def sanity_check_files_and_move_to_directory(directory, product_id):
             file_size = eumetsat.get_filesize_megabytes(f)
             if not math.isclose(file_size, NATIVE_FILESIZE_MB, abs_tol=1):
                 print("Wrong Size")
-            filenames = {satpy_reader: [f]}
-            scene = Scene(filenames=filenames)
+            scene = Scene(filenames=[f], reader=satpy_reader)
             scene.load(SAT_VARIABLE_NAMES)
             # Now that the file has been checked and can be open, move it to the final directory
-            base_name = f.split("/")[-1]
+            base_name = get_basename(f)
             file_date = date_func(base_name)
             if not fs.exists(os.path.join(directory, file_date.strftime(format="%Y/%m/%d"))):
                 fs.mkdir(os.path.join(directory, file_date.strftime(format="%Y/%m/%d")))
             fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
     else:
         for f in new_files:
-            filenames = {satpy_reader: [f]}
-            print(filenames)
-            scene = Scene(filenames=filenames)
+            scene = Scene(filenames=[f], reader=satpy_reader)
             scene.load("cloud_mask")
-            file_date = date_func(f)
-            fs.move(
-                f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), f.split("/")[-1])
-            )
+            base_name = get_basename(f)
+            file_date = date_func(base_name)
+            fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
 
     return
 
@@ -303,6 +298,10 @@ def eumetsat_cloud_name_to_datetime(filename: str):
     return datetime.strptime(date_str, "%Y%m%d%H%M%S")
 
 
+def get_basename(filename: str):
+    return filename.split("/")[-1]
+
+
 def get_missing_datetimes_from_list_of_files(
     filenames: List[str],
 ) -> List[Tuple[datetime, datetime]]:
@@ -316,16 +315,15 @@ def get_missing_datetimes_from_list_of_files(
     """
     # Sort in order from earliest to latest
     filenames = sorted(filenames)
-    print(filenames)
     is_rss = ".nat" in filenames[0]  # Which type of file it is
     func = eumetsat_native_filename_to_datetime if is_rss else eumetsat_cloud_name_to_datetime
-    current_time = func(filenames[0])
+    current_time = func(get_basename(filenames[0]))
     # Start from first one and go through, adding date range between each one, as long as difference is
     # greater than or equal to 5min
     missing_date_ranges = []
     five_minutes = timedelta(minutes=5)
     for i in range(len(filenames)):
-        next_time = func(filenames[i])
+        next_time = func(get_basename(filenames[i]))
         time_difference = current_time - next_time
         if time_difference > five_minutes:
             # Add breaks to list, only want the ones between, so add/subtract 5minutes

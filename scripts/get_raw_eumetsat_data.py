@@ -116,16 +116,14 @@ def download_eumetsat_data(
      checking first to see if the requested files are already downloaded
 
     Args:
-        download_directory:
-        start_date:
-        end_date:
-        backfill:
-        bandwidth_limit:
-        user_key:
-        user_secret:
+        download_directory: Directory to download the files and store them
+        start_date: Start date, in a format accepted by pandas to_datetime()
+        end_date: End date, in a format accepted by pandas to_datetime()
+        backfill: Whether to backfill between the dates available on disk or not
+        bandwidth_limit: Bandwidth limit, currently unused
+        user_key: User key for the EUMETSAT API
+        user_secret: User secret for the EUMETSAT API
         auth_filename: Path to a file containing the user_secret and user_key
-
-    Returns:
 
     """
     # Get authentication
@@ -139,9 +137,6 @@ def download_eumetsat_data(
         RSS_ID,
         CLOUD_ID,
     ]:
-        date_func = (
-            eumetsat_native_filename_to_datetime if RSS_ID else eumetsat_cloud_name_to_datetime
-        )
         times_to_use = determine_datetimes_to_download_files(
             download_directory, start_date, end_date, product_id=product_id
         )
@@ -222,6 +217,7 @@ def sanity_check_files_and_move_to_directory(directory, product_id):
             fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
     else:
         for f in new_files:
+            # Fails to open for this
             scene = Scene(filenames=[f], reader=satpy_reader)
             scene.load("cloud_mask")
             base_name = get_basename(f)
@@ -287,9 +283,7 @@ def eumetsat_native_filename_to_datetime(filename: str):
     p = re.compile("^MSG[23]-SEVI-MSG15-0100-NA-(\d*)\.")
     title_match = p.match(filename)
     date_str = title_match.group(1)
-    return datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(second=0) + timedelta(
-        minutes=1
-    )  # Line up with radar, etc
+    return datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(second=0)
 
 
 def eumetsat_cloud_name_to_datetime(filename: str):
@@ -325,9 +319,9 @@ def get_missing_datetimes_from_list_of_files(
         next_time = func(get_basename(filenames[i]))
         time_difference = next_time - current_time
         if abs(time_difference) > five_minutes:
-            # Add breaks to list, only want the ones between, so add/subtract 5minutes
+            # Add breaks to list, only want the ones between, so add 5 minutes to the start
             # In the case its missing only a single timestep, start and end would be the same time
-            missing_date_ranges.append((current_time + five_minutes, next_time - five_minutes))
+            missing_date_ranges.append((current_time + five_minutes, next_time))
         current_time = next_time
     return missing_date_ranges
 

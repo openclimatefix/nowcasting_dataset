@@ -14,7 +14,7 @@ import os
 import math
 from satpy import Scene
 
-from typing import Optional, List, Union, Tuple
+from typing import Optional, List, Tuple
 
 import re
 from datetime import datetime, timedelta
@@ -30,6 +30,7 @@ warnings.simplefilter("ignore", UserWarning)
 
 
 NATIVE_FILESIZE_MB = 102.210123
+CLOUD_FILESIZE_MB = 3.445185
 RSS_ID = "EO:EUM:DAT:MSG:MSG15-RSS"
 CLOUD_ID = "EO:EUM:DAT:MSG:RSS-CLM"
 
@@ -213,13 +214,17 @@ def sanity_check_files_and_move_to_directory(directory, product_id):
             fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
     else:
         for f in new_files:
-            # Fails to open for this
-            # TODO sanity check fails for some reason, although it theoretically should load?
-            # scene = Scene(filenames=[f], reader=satpy_reader)
-            # scene.load("cloud_mask")
             base_name = get_basename(f)
             file_date = date_func(base_name)
-            fs.move(f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name))
+            file_size = eumetsat.get_filesize_megabytes(f)
+            if not math.isclose(file_size, CLOUD_FILESIZE_MB, abs_tol=1):
+                # Removes if not the right size
+                fs.rm(f)
+            else:
+                # Only move if the correct size
+                fs.move(
+                    f, os.path.join(directory, file_date.strftime(format="%Y/%m/%d"), base_name)
+                )
 
     return
 

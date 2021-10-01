@@ -314,6 +314,8 @@ def get_missing_datetimes_from_list_of_files(
     is_rss = ".nat" in filenames[0]  # Which type of file it is
     func = eumetsat_native_filename_to_datetime if is_rss else eumetsat_cloud_name_to_datetime
     current_time = func(get_basename(filenames[0]))
+    # Want it to be from the beginning to the end of the day, so set current time to start of day
+    current_time = current_time.replace(hour=0, minute=0, second=0)
     # Start from first one and go through, adding date range between each one, as long as difference is
     # greater than or equal to 5min
     missing_date_ranges = []
@@ -324,8 +326,13 @@ def get_missing_datetimes_from_list_of_files(
         if time_difference > five_minutes:
             # Add breaks to list, only want the ones between, so add 5 minutes to the start
             # In the case its missing only a single timestep, start and end would be the same time
-            missing_date_ranges.append((current_time + five_minutes, next_time))
+            missing_date_ranges.append((current_time, next_time))
         current_time = next_time
+
+    # Check the end of the day too, 2 minutes from midnight because of the RSS image at 23:59 is for the next day
+    end_day = current_time.replace(hour=23, minute=58)
+    if end_day - current_time > five_minutes:
+        missing_date_ranges.append((current_time, end_day))
     return missing_date_ranges
 
 

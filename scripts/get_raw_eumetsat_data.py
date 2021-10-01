@@ -318,7 +318,7 @@ def get_missing_datetimes_from_list_of_files(
     for i in range(len(filenames)):
         next_time = func(get_basename(filenames[i]))
         time_difference = next_time - current_time
-        if abs(time_difference) > five_minutes:
+        if time_difference > five_minutes:
             # Add breaks to list, only want the ones between, so add 5 minutes to the start
             # In the case its missing only a single timestep, start and end would be the same time
             missing_date_ranges.append((current_time + five_minutes, next_time))

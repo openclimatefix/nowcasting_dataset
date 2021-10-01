@@ -114,7 +114,7 @@ def download_eumetsat_data(
         download_directory: Directory to download the files and store them
         start_date: Start date, in a format accepted by pandas to_datetime()
         end_date: End date, in a format accepted by pandas to_datetime()
-        backfill: Whether to backfill between the dates available on disk or not
+        backfill: Whether to backfill between the beginning of EUMETSAT data and now, overrides start and end date
         bandwidth_limit: Bandwidth limit, currently unused
         user_key: User key for the EUMETSAT API
         user_secret: User secret for the EUMETSAT API
@@ -124,6 +124,13 @@ def download_eumetsat_data(
     # Get authentication
     if auth_filename is not None:
         user_key, user_secret = load_key_secret(auth_filename)
+
+    if backfill:
+        # Set to year before data started to ensure gets everything
+        # No downside to requesting an earlier time
+        start_date = format_dt_str("2009-01-01")
+        # Set to current date to get everything up until this script started
+        end_date = datetime.now(tz=None)
 
     # Download the data
     dm = eumetsat.DownloadManager(user_key, user_secret, download_directory, download_directory)

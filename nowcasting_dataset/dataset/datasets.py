@@ -288,6 +288,9 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             _LOG.debug(f"Opening {type(data_source).__name__}")
             data_source.open()
 
+        # fix for fsspecs
+        set_fsspec_for_multiprocess()
+
         self._per_worker_init_has_run = True
 
     def __iter__(self):

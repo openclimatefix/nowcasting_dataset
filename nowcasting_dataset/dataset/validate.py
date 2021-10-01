@@ -1,6 +1,4 @@
-"""
-A class to validate the prepare ml dataset
-"""
+""" A class to validate the prepare ml dataset """
 from typing import Union
 
 import numpy as np
@@ -22,14 +20,13 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_X_COORDS,
     PV_SYSTEM_Y_COORDS,
     PV_SYSTEM_ROW_NUMBER,
-    PV_AZIMUTH_ANGLE,
-    PV_ELEVATION_ANGLE,
+    SUN_AZIMUTH_ANGLE,
+    SUN_ELEVATION_ANGLE,
     DATETIME_FEATURE_NAMES,
     TOPOGRAPHIC_X_COORDS,
     TOPOGRAPHIC_DATA,
     TOPOGRAPHIC_Y_COORDS,
 )
-from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
 from nowcasting_dataset.dataset.example import Example
 
@@ -51,7 +48,6 @@ class ValidatorDataset:
             batches: Dataset that needs validating
             configuration: Configuration file
         """
-
         self.batches = batches
         self.configuration = configuration
 
@@ -102,7 +98,13 @@ class FakeDataset(torch.utils.data.Dataset):
     """Fake dataset."""
 
     def __init__(self, configuration: Configuration, length: int = 10):
+        """
+        Init
 
+        Args:
+            configuration: configuration object
+            length: length of dataset
+        """
         self.batch_size = configuration.process.batch_size
         self.seq_length_5 = (
             configuration.process.seq_len_5_minutes
@@ -117,13 +119,23 @@ class FakeDataset(torch.utils.data.Dataset):
         self.length = length
 
     def __len__(self):
+        """ Number of pieces of data """
         return self.length
 
     def per_worker_init(self, worker_id: int):
+        """ Not needed """
         pass
 
     def __getitem__(self, idx):
+        """
+        Get item, use for iter and next method
 
+        Args:
+            idx: batch index
+
+        Returns: Dictionary of random data
+
+        """
         x = {
             "sat_data": torch.randn(
                 self.batch_size,
@@ -216,6 +228,7 @@ def validate_example(
 ):
     """
     Validate the size and shape of the data
+
     Args:
         data: Typed dictionary of the data
         seq_len_30_minutes: the length of the sequence for 30 minutely data
@@ -228,7 +241,6 @@ def validate_example(
         n_gsp_per_example: the number gsp systems with nan padding
         batch: if this example class is a batch or not
     """
-
     n_gsp_id = data[GSP_ID].shape[-1]
     assert (
         n_gsp_id == n_gsp_per_example
@@ -275,7 +287,7 @@ def validate_example(
     assert data[PV_SYSTEM_Y_COORDS].shape[-1] == n_pv_systems_per_example
 
     if not batch:
-        # add an extract dimension so that its similar to batch data
+        # add an extra dimension so that it's similar to batch data
         data[PV_SYSTEM_ID] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
         data[PV_SYSTEM_ROW_NUMBER] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
 
@@ -299,10 +311,10 @@ def validate_example(
                 np.nanmin(data[PV_YIELD]) >= 0.0
             ), f"Maximum PV value is {np.nanmin(data[PV_YIELD])} but it should be <= 1"
 
-    if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_AZIMUTH_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
-    if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_ELEVATION_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
+    if SUN_AZIMUTH_ANGLE in data.keys():
+        assert data[SUN_AZIMUTH_ANGLE].shape[-1] == seq_len_5_minutes
+    if SUN_ELEVATION_ANGLE in data.keys():
+        assert data[SUN_ELEVATION_ANGLE].shape[-1] == seq_len_5_minutes
 
     assert data["sat_data"].shape[-4:] == (
         seq_len_5_minutes,
@@ -345,7 +357,6 @@ def validate_batch_from_configuration(data: Example, configuration: Configuratio
         configuration: confgiruation of the data
 
     """
-
     validate_example(
         data=data,
         seq_len_30_minutes=configuration.process.seq_len_30_minutes,

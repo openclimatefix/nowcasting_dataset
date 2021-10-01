@@ -1,14 +1,16 @@
+""" Satellite Data Source """
+import logging
+from concurrent import futures
+from dataclasses import dataclass, InitVar
+from numbers import Number
+from typing import Iterable, Optional, List
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.dataset.example import Example, to_numpy
-from nowcasting_dataset import utils
-from typing import Iterable, Optional, List
-from numbers import Number
-import numpy as np
-import xarray as xr
-import pandas as pd
-import logging
-from dataclasses import dataclass, InitVar
-from concurrent import futures
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -62,8 +64,9 @@ SAT_STD = xr.DataArray(
 @dataclass
 class SatelliteDataSource(ZarrDataSource):
     """
-    Args:
-        filename: Must start with 'gs://' if on GCP.
+    Satellite Data Source
+
+    filename: Must start with 'gs://' if on GCP.
     """
 
     filename: str = None
@@ -73,6 +76,7 @@ class SatelliteDataSource(ZarrDataSource):
     normalise: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """ Post Init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._cache = {}
         n_channels = len(self.channels)
@@ -84,10 +88,14 @@ class SatelliteDataSource(ZarrDataSource):
         )
 
     def open(self) -> None:
-        # We don't want to open_sat_data in __init__.
-        # If we did that, then we couldn't copy SatelliteDataSource
-        # instances into separate processes.  Instead,
-        # call open() _after_ creating separate processes.
+        """
+        Open Satellite data
+
+        We don't want to open_sat_data in __init__.
+        If we did that, then we couldn't copy SatelliteDataSource
+        instances into separate processes.  Instead,
+        call open() _after_ creating separate processes.
+        """
         self._data = self._open_data()
         self._data = self._data.sel(variable=list(self.channels))
 
@@ -100,6 +108,24 @@ class SatelliteDataSource(ZarrDataSource):
         x_locations: Iterable[Number],
         y_locations: Iterable[Number],
     ) -> List[Example]:
+        """
+        Get batch data
+
+        Load the first _n_timesteps_per_batch concurrently.  This
+        loads the timesteps from disk concurrently, and fills the
+        cache.  If we try loading all examples
+        concurrently, then SatelliteDataSource will try reading from
+        empty caches, and things are much slower!
+
+        Args:
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also include data
+                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            x_locations: x center batch locations
+            y_locations: y center batch locations
+
+        Returns: Batch data
+
+        """
         # Load the first _n_timesteps_per_batch concurrently.  This
         # loads the timesteps from disk concurrently, and fills the
         # cache.  If we try loading all examples
@@ -176,7 +202,6 @@ def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
     _LOG.debug("Opening satellite data: %s", filename)
-    utils.set_fsspec_for_multiprocess()
 
     # We load using chunks=None so xarray *doesn't* use Dask to
     # load the Zarr chunks from disk.  Using Dask to load the data

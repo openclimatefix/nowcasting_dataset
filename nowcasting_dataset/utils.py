@@ -1,26 +1,34 @@
+""" utils functions """
+import hashlib
 import logging
+from pathlib import Path
+from typing import List
+
+import fsspec.asyn
 import numpy as np
 import pandas as pd
+
 from nowcasting_dataset.consts import Array
-import fsspec.asyn
-from typing import List
-from pathlib import Path
-import hashlib
 from nowcasting_dataset.dataset.example import Example
 
 logger = logging.getLogger(__name__)
 
 
 def set_fsspec_for_multiprocess() -> None:
-    """Clear reference to the loop and thread.  This is necessary otherwise
+    """
+    Clear reference to the loop and thread.
+
+    This is necessary otherwise
     gcsfs hangs in the ML training loop.  Only required for fsspec >= 0.9.0
     See https://github.com/dask/gcsfs/issues/379#issuecomment-839929801
-    TODO: Try deleting this two lines to make sure this is still relevant."""
+    TODO: Try deleting this two lines to make sure this is still relevant.
+    """
     fsspec.asyn.iothread[0] = None
     fsspec.asyn.loop[0] = None
 
 
 def is_monotonically_increasing(a: Array) -> bool:
+    """ Check the array is monotonically increasing """
     # TODO: Can probably replace with pd.Index.is_monotonic_increasing()
     assert a is not None
     assert len(a) > 0
@@ -31,6 +39,7 @@ def is_monotonically_increasing(a: Array) -> bool:
 
 
 def is_unique(a: Array) -> bool:
+    """ Check array has unique values """
     # TODO: Can probably replace with pd.Index.is_unique()
     return len(a) == len(np.unique(a))
 
@@ -45,7 +54,8 @@ def scale_to_0_to_1(a: Array) -> Array:
 
 
 def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
-    """For every column in df, creates cols for sin and cos of that col.
+    """
+    For every column in df, creates cols for sin and cos of that col.
 
     Args:
       df: Input DataFrame.  The values must be in the range [0, 1].
@@ -56,7 +66,8 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
       A new DataFrame, with twice the number of columns as the input df.
       For each col in df, the output DataFrame will have a <col name>_sin
-      and a <col_name>_cos."""
+      and a <col_name>_cos.
+    """
     columns = []
     for col_name in df.columns:
         columns.append(f"{col_name}_sin")
@@ -96,6 +107,7 @@ def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
 
 
 def pad_nans(array, pad_width) -> np.ndarray:
+    """ Pad nans with nans"""
     array = array.astype(np.float32)
     return np.pad(array, pad_width, constant_values=np.NaN)
 
@@ -119,7 +131,7 @@ def pad_data(
         one_dimensional_arrays: list of data items that should be padded by one dimension
         two_dimensional_arrays: list of data tiems that should be padded in the third dimension (and more)
 
-    Returns:
+    Returns: Example data
 
     """
     # Pad (if necessary) so returned arrays are always of size

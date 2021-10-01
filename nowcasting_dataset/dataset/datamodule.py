@@ -1,18 +1,22 @@
-from typing import Union, Optional, Iterable, Dict, Callable
-from pathlib import Path
-import pandas as pd
-from copy import deepcopy
-import torch
+""" Data Modules """
 import logging
+import warnings
+from copy import deepcopy
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Union, Optional, Iterable, Dict, Callable
+
+import pandas as pd
+import torch
+
+from nowcasting_dataset import consts
 from nowcasting_dataset import data_sources
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
-from nowcasting_dataset import consts
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
-from dataclasses import dataclass
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
-import warnings
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -24,6 +28,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NowcastingDataModule(pl.LightningDataModule):
     """
+    Nowcasting Data Module, used to make batches
+
     Attributes (additional to the dataclass attributes):
       pv_data_source: PVDataSource
       sat_data_source: SatelliteDataSource
@@ -58,6 +64,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     )
     satellite_image_size_pixels: int = 128  #: Passed to Data Sources.
     topographic_filename: Optional[Union[str, Path]] = None
+    sun_filename: Optional[Union[str, Path]] = None
     nwp_image_size_pixels: int = 2  #: Passed to Data Sources.
     meters_per_pixel: int = 2000  #: Passed to Data Sources.
     convert_to_numpy: bool = True  #: Passed to Data Sources.
@@ -79,6 +86,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     skip_n_test_batches: int = 0  # number of test batches to skip
 
     def __post_init__(self):
+        """ Post Init """
         super().__init__()
 
         self.history_len_30_minutes = self.history_minutes // 30
@@ -97,7 +105,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             self.prefetch_factor = 2  # Set to default when not using multiprocessing.
 
     def prepare_data(self) -> None:
-        # Satellite data
+        """ Prepare all datasources """
         n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
 
         self.sat_data_source = data_sources.SatelliteDataSource(
@@ -179,6 +187,16 @@ class NowcastingDataModule(pl.LightningDataModule):
             )
 
             self.data_sources.append(self.topo_data_source)
+
+        # Sun data
+        if self.sun_filename is not None:
+            self.sun_data_source = SunDataSource(
+                filename=self.sun_filename,
+                history_minutes=self.history_minutes,
+                forecast_minutes=self.forecast_minutes,
+                convert_to_numpy=self.convert_to_numpy,
+            )
+            self.data_sources.append(self.sun_data_source)
 
         self.datetime_data_source = data_sources.DatetimeDataSource(
             history_minutes=self.history_minutes,
@@ -286,7 +304,6 @@ class NowcastingDataModule(pl.LightningDataModule):
 
     def _split_data(self):
         """Sets self.train_t0_datetimes and self.val_t0_datetimes."""
-
         logger.debug("Going to split data")
 
         self._check_has_prepared_data()
@@ -304,15 +321,19 @@ class NowcastingDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Train dataloader """
         return torch.utils.data.DataLoader(self.train_dataset, **self._common_dataloader_params())
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Validation dataloader """
         return torch.utils.data.DataLoader(self.val_dataset, **self._common_dataloader_params())
 
     def test_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Test dataloader """
         return torch.utils.data.DataLoader(self.test_dataset, **self._common_dataloader_params())
 
     def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
+        """ Get continours dataloader TODO this is not needed anymore?"""
         if self.contiguous_dataset is None:
             pv_data_source = deepcopy(self.pv_data_source)
             pv_data_source.random_pv_system_for_given_location = False
@@ -351,7 +372,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     def _get_datetimes(
         self, interpolate_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True
     ) -> pd.DatetimeIndex:
-        """Compute the datetime index.
+        """
+        Compute the datetime index.
 
         interpolate_for_30_minute_data: If True,
         1. all datetimes from source will be interpolated to 5 min intervals,
@@ -364,7 +386,8 @@ class NowcastingDataModule(pl.LightningDataModule):
         This deals with a mixture of data sources that have 5 mins and 30 min datatime.
 
         Returns the intersection of the datetime indicies of all the
-        data_sources, filtered by daylight hours."""
+        data_sources, filtered by daylight hours.
+        """
         logger.debug("Get the datetimes")
         self._check_has_prepared_data()
 

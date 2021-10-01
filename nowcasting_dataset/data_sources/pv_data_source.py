@@ -1,40 +1,41 @@
+""" PV Data Source """
+
+import datetime
+import functools
+import io
+import logging
+from dataclasses import dataclass
+from numbers import Number
+from pathlib import Path
+from typing import List, Tuple, Union, Optional
+
+import gcsfs
+import numpy as np
+import pandas as pd
+import torch
+import xarray as xr
+
+from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.consts import (
     PV_SYSTEM_ID,
     PV_SYSTEM_ROW_NUMBER,
     PV_SYSTEM_X_COORDS,
     PV_SYSTEM_Y_COORDS,
-    PV_AZIMUTH_ANGLE,
-    PV_ELEVATION_ANGLE,
     PV_YIELD,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     OBJECT_AT_CENTER,
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.square import get_bounding_box_mask
-from dataclasses import dataclass
-import pandas as pd
-import numpy as np
-import torch
-from tqdm import tqdm
-from numbers import Number
-from typing import List, Tuple, Union, Optional
-import datetime
-from pathlib import Path
-import io
-import gcsfs
-import xarray as xr
-import functools
-import logging
-import time
-from concurrent import futures
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class PVDataSource(ImageDataSource):
+    """ PV Data Source """
+
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
     start_dt: Optional[datetime.datetime] = None
@@ -48,16 +49,18 @@ class PVDataSource(ImageDataSource):
     get_center: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """ Post Init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()
 
     def load(self):
+        """
+        Load metadata and pv power
+        """
         self._load_metadata()
         self._load_pv_power()
-        if self.load_azimuth_and_elevation:
-            self._calculate_azimuth_and_elevation()
         self.pv_metadata, self.pv_power = align_pv_system_ids(self.pv_metadata, self.pv_power)
 
     def _load_metadata(self):
@@ -123,18 +126,10 @@ class PVDataSource(ImageDataSource):
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
 
-        if self.load_azimuth_and_elevation:
-            selected_pv_azimuth_angle = self.pv_azimuth.loc[start_dt:end_dt].dropna(
-                axis="columns", how="any"
-            )
-            selected_pv_elevation_angle = self.pv_elevation.loc[start_dt:end_dt].dropna(
-                axis="columns", how="any"
-            )
-        else:
-            selected_pv_azimuth_angle = None
-            selected_pv_elevation_angle = None
+        selected_pv_azimuth_angle = None
+        selected_pv_elevation_angle = None
 
-        return selected_pv_power, selected_pv_azimuth_angle, selected_pv_elevation_angle
+        return selected_pv_power
 
     def _get_central_pv_system_id(
         self,
@@ -180,9 +175,12 @@ class PVDataSource(ImageDataSource):
         y_meters_center: Number,
         pv_system_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
-        """Find the PV system IDs for all the PV systems within the geospatial
-        region of interest, defined by self.square."""
+        """
+        Find the PV system IDs. for all the PV systems within the geospatial
 
+        This is for all the PV systems within the geospatial
+        region of interest, defined by self.square.
+        """
         logger.debug(f"Getting PV example data for {x_meters_center} and {y_meters_center}")
 
         bounding_box = self._square.bounding_box_centered_on(
@@ -205,14 +203,21 @@ class PVDataSource(ImageDataSource):
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
+        """
+        Get Example data for PV data
 
+        Args:
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include data
+                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            x_meters_center: x center batch locations
+            y_meters_center: y center batch locations
+
+        Returns: Example data
+
+        """
         logger.debug("Getting PV example data")
 
-        (
-            selected_pv_power,
-            selected_pv_azimuth_angle,
-            selected_pv_elevation_angle,
-        ) = self._get_time_slice(t0_dt)
+        selected_pv_power = self._get_time_slice(t0_dt)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
             x_meters_center, y_meters_center, selected_pv_power.columns
         )
@@ -229,9 +234,6 @@ class PVDataSource(ImageDataSource):
         all_pv_system_ids = all_pv_system_ids[: self.n_pv_systems_per_example]
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
-        if self.load_azimuth_and_elevation:
-            selected_pv_azimuth_angle = selected_pv_azimuth_angle[all_pv_system_ids]
-            selected_pv_elevation_angle = selected_pv_elevation_angle[all_pv_system_ids]
 
         pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
@@ -249,10 +251,6 @@ class PVDataSource(ImageDataSource):
             pv_datetime_index=selected_pv_power.index,
         )
 
-        if self.load_azimuth_and_elevation:
-            example[PV_AZIMUTH_ANGLE] = selected_pv_azimuth_angle
-            example[PV_ELEVATION_ANGLE] = selected_pv_elevation_angle
-
         if self.get_center:
             example[OBJECT_AT_CENTER] = "pv"
 
@@ -267,9 +265,6 @@ class PVDataSource(ImageDataSource):
         ]
 
         pad_nans_variables = [PV_YIELD]
-        if self.load_azimuth_and_elevation:
-            pad_nans_variables.append(PV_AZIMUTH_ANGLE)
-            pad_nans_variables.append(PV_ELEVATION_ANGLE)
 
         example = utils.pad_data(
             data=example,
@@ -288,7 +283,6 @@ class PVDataSource(ImageDataSource):
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
             Locations are in OSGB coordinates.
         """
-
         # Set this up as a separate function, so we can cache the result!
         @functools.cache  # functools.cache requires Python >= 3.9
         def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Index:
@@ -319,74 +313,6 @@ class PVDataSource(ImageDataSource):
         """Returns a complete list of all available datetimes."""
         return self.pv_power.index
 
-    def _calculate_azimuth_and_elevation(self):
-        """
-        Calculate the azimuth and elevation angles for each datestamp, for each pv system.
-        """
-
-        logger.debug("Calculating azimuth and elevation angles")
-
-        self.pv_azimuth, self.pv_elevation = calculate_azimuth_and_elevation_all_pv_systems(
-            self.datetime_index().to_pydatetime(), self.pv_metadata
-        )
-
-
-def calculate_azimuth_and_elevation_all_pv_systems(
-    datestamps: List[datetime.datetime], pv_metadata: pd.DataFrame
-) -> (pd.Series, pd.Series):
-    """
-    Calculate the azimuth and elevation angles for each datestamp, for each pv system.
-    """
-
-    logger.debug(
-        f"Will be calculating for {len(datestamps)} datestamps and {len(pv_metadata)} pv systems"
-    )
-
-    # create array of index datetime, columns of system_id for both azimuth and elevation
-    pv_azimuth = []
-    pv_elevation = []
-
-    t = time.time()
-    # loop over all metadata and fine azimuth and elevation angles,
-    # not sure this is the best method to use, as currently this step takes ~2 minute for 745 pv systems,
-    # and 235 datestamps (~100,000 point). But this only needs to be done once.
-    with futures.ThreadPoolExecutor(max_workers=len(pv_metadata)) as executor:
-
-        logger.debug("Setting up jobs")
-
-        # Submit tasks to the executor.
-        future_azimuth_and_elevation_per_pv_system = []
-        for i in tqdm(range(len(pv_metadata))):
-            future_azimuth_and_elevation = executor.submit(
-                geospatial.calculate_azimuth_and_elevation_angle,
-                latitude=pv_metadata.iloc[i].latitude,
-                longitude=pv_metadata.iloc[i].longitude,
-                datestamps=datestamps,
-            )
-            future_azimuth_and_elevation_per_pv_system.append(
-                [future_azimuth_and_elevation, pv_metadata.iloc[i].name]
-            )
-
-        logger.debug(f"Getting results")
-
-        # Collect results from each thread.
-        for i in tqdm(range(len(future_azimuth_and_elevation_per_pv_system))):
-            future_azimuth_and_elevation, name = future_azimuth_and_elevation_per_pv_system[i]
-            azimuth_and_elevation = future_azimuth_and_elevation.result()
-
-            azimuth = azimuth_and_elevation.loc[:, "azimuth"].rename(name)
-            elevation = azimuth_and_elevation.loc[:, "elevation"].rename(name)
-
-            pv_azimuth.append(azimuth)
-            pv_elevation.append(elevation)
-
-    pv_azimuth = pd.concat(pv_azimuth, axis=1)
-    pv_elevation = pd.concat(pv_elevation, axis=1)
-
-    logger.debug(f"Calculated Azimuth and Elevation angles in {time.time() - t} seconds")
-
-    return pv_azimuth, pv_elevation
-
 
 def load_solar_pv_data_from_gcs(
     filename: Union[str, Path],
@@ -395,12 +321,16 @@ def load_solar_pv_data_from_gcs(
     from_gcs: bool = True,
 ) -> pd.DataFrame:
     """
-    Load solar pv data from gcs (althought there is an option to load from loca - for testing)
-    @param filename: filename of file to be loaded
-    @param start_dt: the start datetime, which to trim the data to
-    @param end_dt: the end datetime, which to trim the data to
-    @param from_gcs: option to laod from gcs, or form local file
-    @return: dataframe of pv data
+    Load solar pv data from gcs (although there is an option to load from local - for testing)
+
+    Args:
+        filename: filename of file to be loaded
+        start_dt: the start datetime, which to trim the data to
+        end_dt: the end datetime, which to trim the data to
+        from_gcs: option to laod from gcs, or form local file
+
+    Returns: Solar PV data
+
     """
     gcs = gcsfs.GCSFileSystem(access="read_only")
 

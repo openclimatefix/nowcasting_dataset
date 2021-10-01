@@ -1,5 +1,6 @@
 """
 This file has a few functions that are used to get GSP (Grid Supply Point) information from National Grid ESO.
+
 ESO - Electricity System Operator. General information can be found here
 - https://data.nationalgrideso.com/system/gis-boundaries-for-gb-grid-supply-points
 
@@ -12,9 +13,9 @@ Peter Dudfield
 """
 
 import json
+import logging
 import os
 import urllib
-import logging
 from typing import List, Optional
 from urllib.request import urlopen
 
@@ -22,7 +23,6 @@ import geopandas as gpd
 import pandas as pd
 
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +41,13 @@ rename_load_columns = {v: k for k, v in rename_save_columns.items()}
 def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
     """
     Get the metadata for the gsp, from ESO.
+
     Args:
         calculate_centroid: Load the shape file also, and calculate the Centroid
 
-    Returns:
+    Returns: Dataframe of ESO Metadata
 
     """
-
     logger.debug("Getting GSP shape file")
 
     # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
@@ -83,6 +83,7 @@ def get_gsp_shape_from_eso(
 ) -> gpd.GeoDataFrame:
     """
     Get the the gsp shape file from ESO (or a local file)
+
     Args:
         join_duplicates: If True, any RegionIDs which have multiple entries, will be joined together to give one entry
         load_local_file: Load from a local file, not from ESO
@@ -90,7 +91,6 @@ def get_gsp_shape_from_eso(
 
     Returns: Geo Pandas dataframe of GSP shape data
     """
-
     logger.debug("Loading GSP shape file")
 
     local_file = f"{os.path.dirname(os.path.realpath(__file__))}/gsp_shape"
@@ -155,12 +155,12 @@ def get_gsp_shape_from_eso(
             ].index
 
             # join geometries together
-            new_geometry = shape_gpd_no_duplicates.loc[index_other]["geometry"].union(
+            new_geometry = shape_gpd_no_duplicates.loc[index_other, "geometry"].union(
                 duplicate.geometry
             )
 
             # set new geometry
-            shape_gpd_no_duplicates.loc[index_other]["geometry"] = new_geometry
+            shape_gpd_no_duplicates.loc[index_other, "geometry"] = new_geometry
 
         shape_gpd = shape_gpd_no_duplicates
 
@@ -178,7 +178,6 @@ def get_list_of_gsp_ids(maximum_number_of_gsp: Optional[int] = None) -> List[int
     Returns:  list of gsp ids
 
     """
-
     # get a lit of gsp ids
     metadata = get_gsp_metadata_from_eso(calculate_centroid=False)
 

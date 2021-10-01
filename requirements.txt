@@ -1,3 +1,4 @@
+rioxarray
 numpy
 pandas
 geopandas

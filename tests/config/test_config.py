@@ -1,13 +1,15 @@
-from nowcasting_dataset.config.load import load_yaml_configuration, load_configuration_from_gcs
-from nowcasting_dataset.config.save import save_yaml_configuration
-from nowcasting_dataset.config.model import Configuration, set_git_commit
-import nowcasting_dataset
 import os
 import tempfile
-import pytest
-import moto
-import boto3
 from datetime import datetime
+
+import boto3
+import moto
+import pytest
+
+import nowcasting_dataset
+from nowcasting_dataset.config.load import load_yaml_configuration, load_configuration_from_gcs
+from nowcasting_dataset.config.model import Configuration, set_git_commit
+from nowcasting_dataset.config.save import save_yaml_configuration
 
 
 def test_default():

@@ -1,3 +1,4 @@
+""" Methods for splitting data into train, validation and test """
 from typing import List, Tuple
 
 import numpy as np
@@ -45,7 +46,6 @@ def split_method(
     Returns: train, validation and test datetimes
 
     """
-
     # find all the unique periods (dates, weeks, e.t.c)
     datetimes_period = pd.to_datetime(datetimes.to_period(freq).to_timestamp())
     unique_periods_in_dataset = datetimes_period.unique()

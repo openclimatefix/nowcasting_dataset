@@ -1,9 +1,11 @@
+""" Example Data Class """
+from numbers import Number
 from typing import TypedDict, List
+
+import numpy as np
 import pandas as pd
 
 from nowcasting_dataset.consts import *
-import numpy as np
-from numbers import Number
 
 
 class Example(TypedDict):
@@ -44,9 +46,9 @@ class Example(TypedDict):
     pv_yield: Array
 
     # PV azimuth and elevation angles i.e where the sun is.
-    #: shape = [batch_size, ] seq_length, n_pv_systems_per_example
-    pv_azimuth_angle: Array
-    pv_elevation_angle: Array
+    #: shape = [batch_size, ] seq_length
+    sun_azimuth_angle: Array
+    sun_elevation_angle: Array
 
     #: PV identification.
     #: shape = [batch_size, ] n_pv_systems_per_example
@@ -106,7 +108,6 @@ def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -
     Returns: Example object of the xarray data
 
     """
-
     batch = Example(
         sat_datetime_index=batch_xr.sat_time_coords,
         nwp_target_time=batch_xr.nwp_time_coords,
@@ -121,6 +122,9 @@ def xr_to_example(batch_xr: xr.core.dataset.Dataset, required_keys: List[str]) -
 
 
 def to_numpy(example: Example) -> Example:
+    """
+    Change items in Example to numpy objects
+    """
     for key, value in example.items():
         if isinstance(value, xr.DataArray):
             # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?

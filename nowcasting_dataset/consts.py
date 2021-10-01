@@ -1,8 +1,9 @@
+""" Constants that can be imported when needed """
+from pathlib import Path
 from typing import Union
+
 import numpy as np
 import xarray as xr
-from pathlib import Path
-
 
 # DEFAULT PATHS
 # TODO: These should be moved elsewhere!

@@ -1,8 +1,9 @@
 import numpy as np
-from nowcasting_dataset.dataset.datasets import NowcastingDataset
-from nowcasting_dataset.consts import GSP_DATETIME_INDEX
-import nowcasting_dataset.time as nd_time
 import pytest
+
+import nowcasting_dataset.time as nd_time
+from nowcasting_dataset.consts import GSP_DATETIME_INDEX
+from nowcasting_dataset.dataset.datasets import NowcastingDataset
 
 
 @pytest.fixture

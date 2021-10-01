@@ -1,14 +1,17 @@
-from numbers import Number
-import pandas as pd
-import numpy as np
-from nowcasting_dataset.dataset.example import Example, to_numpy
-from nowcasting_dataset import square
-import nowcasting_dataset.time as nd_time
-from dataclasses import dataclass, InitVar
-from typing import List, Tuple, Iterable
-import xarray as xr
+"""  General Data Source Class """
 import itertools
 import logging
+from dataclasses import dataclass, InitVar
+from numbers import Number
+from typing import List, Tuple, Iterable
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+import nowcasting_dataset.time as nd_time
+from nowcasting_dataset import square
+from nowcasting_dataset.dataset.example import Example, to_numpy
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,7 @@ class DataSource:
     convert_to_numpy: bool
 
     def __post_init__(self):
-
+        """ Post Init """
         self.sample_period_minutes = self._get_sample_period_minutes()
 
         self.history_len = self.history_minutes // self.sample_period_minutes
@@ -69,7 +72,9 @@ class DataSource:
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
     def _get_sample_period_minutes(self):
         """
-        This is the default sample period in minutes. This functions may be overwritten if
+        This is the default sample period in minutes.
+
+        This functions may be overwritten if
         the sample period of the data source is not 5 minutes
         """
         logging.debug(
@@ -96,8 +101,16 @@ class DataSource:
         y_locations: Iterable[Number],
     ) -> List[Example]:
         """
-        Returns:
-            List of Examples with data converted to Numpy data structures.
+        Get Batch Data
+
+        Args:
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also include data
+                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            x_locations: x center batch locations
+            y_locations: y center batch locations
+
+        Returns: Batch data
+
         """
         examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
@@ -148,14 +161,18 @@ class DataSource:
 @dataclass
 class ImageDataSource(DataSource):
     """
+    Image Data source
+
     Args:
       image_size_pixels: Size of the width and height of the image crop
-        returned by get_sample(). """
+        returned by get_sample().
+    """
 
     image_size_pixels: InitVar[int]
     meters_per_pixel: InitVar[int]
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """ Post Init """
         super().__post_init__()
         self._square = square.Square(
             size_pixels=image_size_pixels, meters_per_pixel=meters_per_pixel
@@ -165,6 +182,8 @@ class ImageDataSource(DataSource):
 @dataclass
 class ZarrDataSource(ImageDataSource):
     """
+    A General Zarr Data source
+
     Attributes:
       _data: xr.DataArray data, opened by open().
         x is left-to-right.
@@ -180,6 +199,7 @@ class ZarrDataSource(ImageDataSource):
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+        """ Post init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
         if self.n_timesteps_per_batch is None:
@@ -187,6 +207,7 @@ class ZarrDataSource(ImageDataSource):
 
     @property
     def data(self):
+        """ Data property """
         if self._data is None:
             raise RuntimeError("Please run `open()` before accessing data!")
         return self._data
@@ -194,6 +215,18 @@ class ZarrDataSource(ImageDataSource):
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Example:
+        """
+        Get Example data
+
+        Args:
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include data
+                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            x_meters_center: x center batch locations
+            y_meters_center: y center batch locations
+
+        Returns: Example Data
+
+        """
         selected_data = self._get_time_slice(t0_dt)
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
@@ -225,8 +258,8 @@ class ZarrDataSource(ImageDataSource):
         return self._put_data_into_example(selected_data)
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:
-        """Get 'corner' coordinates for a rectangle within the boundary of the
-        data.
+        """
+        Get 'corner' coordinates for a rectangle within the boundary of the data.
 
         Returns List of 2-tuples of the x and y coordinates of each corner,
         in OSGB projection.
@@ -247,10 +280,14 @@ class ZarrDataSource(ImageDataSource):
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     # (in addition to the DataSource methods that must be overridden)
     def open(self) -> None:
-        # We don't want to _open_data() in __init__.
-        # If we did that, then we couldn't copy ZarrDataSource
-        # instances into separate processes.  Instead,
-        # call open() _after_ creating separate processes.
+        """
+        Open the data
+
+        We don't want to _open_data() in __init__.
+        If we did that, then we couldn't copy ZarrDataSource
+        instances into separate processes.  Instead,
+        call open() _after_ creating separate processes.
+        """
         raise NotImplementedError()
 
     def _open_data(self) -> xr.DataArray:

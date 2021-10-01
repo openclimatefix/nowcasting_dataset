@@ -1,23 +1,23 @@
-import pandas as pd
+""" Dataset and functions"""
+import logging
+import os
+from concurrent import futures
+from dataclasses import dataclass
 from numbers import Number
 from typing import List, Tuple, Callable, Union, Optional
-from nowcasting_dataset import data_sources
-from dataclasses import dataclass
-from concurrent import futures
-import gcsfs
+
 import boto3
-import os
+import gcsfs
 import numpy as np
-import xarray as xr
-from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset.dataset import example
+import pandas as pd
 import torch
+import xarray as xr
 
-from nowcasting_dataset.config.model import Configuration
-
-from nowcasting_dataset.cloud.gcp import gcp_download_to_local
+from nowcasting_dataset import data_sources
+from nowcasting_dataset import utils as nd_utils
 from nowcasting_dataset.cloud.aws import aws_download_to_local
-
+from nowcasting_dataset.cloud.gcp import gcp_download_to_local
+from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     GSP_YIELD,
     GSP_DATETIME_INDEX,
@@ -32,12 +32,9 @@ from nowcasting_dataset.consts import (
     DATETIME_FEATURE_NAMES,
     DEFAULT_REQUIRED_KEYS,
     T0_DT,
-    TOPOGRAPHIC_DATA,
-    TOPOGRAPHIC_Y_COORDS,
-    TOPOGRAPHIC_X_COORDS,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
-import logging
+from nowcasting_dataset.dataset import example
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +86,9 @@ _LOG = logging.getLogger(__name__)
 
 
 class NetCDFDataset(torch.utils.data.Dataset):
-    """Loads data saved by the `prepare_ml_training_data.py` script.
+    """
+    Loads data saved by the `prepare_ml_training_data.py` script.
+
     Moved from predict_pv_yield
     """
 
@@ -105,6 +104,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         forecast_minutes: Optional[int] = None,
     ):
         """
+        Netcdf Dataset
 
         Args:
             n_batches: Number of batches available on disk.
@@ -117,8 +117,8 @@ class NetCDFDataset(torch.utils.data.Dataset):
             history_minutes: How many past minutes of data to use, if subsetting the batch
             forecast_minutes: How many future minutes of data to use, if reducing the amount of forecast time
             configuration: configuration object
+            cloud: which cloud is used, can be "gcp", "aws" or "local".
         """
-
         self.n_batches = n_batches
         self.src_path = src_path
         self.tmp_path = tmp_path
@@ -157,12 +157,14 @@ class NetCDFDataset(torch.utils.data.Dataset):
             os.mkdir(self.tmp_path)
 
     def per_worker_init(self, worker_id: int):
+        """ Function called by a worker """
         if self.cloud == "gcp":
             self.gcs = gcsfs.GCSFileSystem()
         elif self.cloud == "aws":
             self.s3_resource = boto3.resource("s3")
 
     def __len__(self):
+        """ Length of dataset """
         return self.n_batches
 
     def __getitem__(self, batch_idx: int) -> example.Example:
@@ -248,6 +250,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     batch_index: int = 0
 
     def __post_init__(self):
+        """ Post Init """
         super().__init__()
         self._per_worker_init_has_run = False
         self._n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
@@ -266,8 +269,11 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             _LOG.warning(f"Will be skipping {self.skip_batch_index}, is this correct?")
 
     def per_worker_init(self, worker_id: int) -> None:
-        """Called by worker_init_fn on each copy of NowcastingDataset after
-        the worker process has been spawned."""
+        """
+        Called by worker_init_fn on each copy of NowcastingDataset
+
+        This happens after the worker process has been spawned.
+        """
         # Each worker must have a different seed for its random number gen.
         # Otherwise all the workers will output exactly the same data!
         self.worker_id = worker_id
@@ -402,7 +408,6 @@ def subselect_data(
     Returns:
         Example with only data between [t0 - history_minutes, t0 + forecast_minutes] remaining
     """
-
     _LOG.debug(
         f"Select sub data with new historic minutes of {history_minutes} "
         f"and forecast minutes if {forecast_minutes}"

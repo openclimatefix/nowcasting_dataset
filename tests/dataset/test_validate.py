@@ -4,10 +4,6 @@ import torch
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.consts import (
-    SATELLITE_DATA,
-    NWP_DATA,
-)
 from nowcasting_dataset.dataset.datasets import worker_init_fn
 from nowcasting_dataset.dataset.validate import FakeDataset, ValidatorDataset
 

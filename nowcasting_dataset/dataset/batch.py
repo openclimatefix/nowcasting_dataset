@@ -1,9 +1,10 @@
-from typing import List, Optional, Union
+""" batch functions """
 import logging
+from pathlib import Path
+from typing import List, Optional
 
 import numpy as np
 import xarray as xr
-from pathlib import Path
 
 from nowcasting_dataset.consts import (
     GSP_ID,
@@ -17,7 +18,6 @@ from nowcasting_dataset.consts import (
     TOPOGRAPHIC_X_COORDS,
     TOPOGRAPHIC_Y_COORDS,
 )
-
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.utils import get_netcdf_filename
 
@@ -27,6 +27,7 @@ _LOG = logging.getLogger(__name__)
 def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
     """
     Write a batch to a locally file
+
     Args:
         batch: A batch of data
         batch_i: The number of the batch
@@ -196,8 +197,13 @@ def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
 def coord_to_range(
     da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
 ) -> xr.DataArray:
-    # TODO: Actually, I think this is over-complicated?  I think we can
-    # just strip off the 'coord' from the dimension.
+    """
+    TODO
+
+    TODO: Actually, I think this is over-complicated?  I think we can
+    just strip off the 'coord' from the dimension.
+
+    """
     coord = da[dim]
     da[dim] = np.arange(len(coord), dtype=dtype)
     if prefix is not None:

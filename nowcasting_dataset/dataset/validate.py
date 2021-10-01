@@ -1,6 +1,4 @@
-"""
-A class to validate the prepare ml dataset
-"""
+""" A class to validate the prepare ml dataset """
 from typing import Union
 
 import numpy as np
@@ -29,7 +27,6 @@ from nowcasting_dataset.consts import (
     TOPOGRAPHIC_DATA,
     TOPOGRAPHIC_Y_COORDS,
 )
-from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
 from nowcasting_dataset.dataset.example import Example
 
@@ -51,7 +48,6 @@ class ValidatorDataset:
             batches: Dataset that needs validating
             configuration: Configuration file
         """
-
         self.batches = batches
         self.configuration = configuration
 
@@ -102,7 +98,13 @@ class FakeDataset(torch.utils.data.Dataset):
     """Fake dataset."""
 
     def __init__(self, configuration: Configuration, length: int = 10):
+        """
+        Init
 
+        Args:
+            configuration: configuration object
+            length: length of dataset
+        """
         self.batch_size = configuration.process.batch_size
         self.seq_length_5 = (
             configuration.process.seq_len_5_minutes
@@ -117,13 +119,23 @@ class FakeDataset(torch.utils.data.Dataset):
         self.length = length
 
     def __len__(self):
+        """ Number of pieces of data """
         return self.length
 
     def per_worker_init(self, worker_id: int):
+        """ Not needed """
         pass
 
     def __getitem__(self, idx):
+        """
+        Get item, use for iter and next method
 
+        Args:
+            idx: batch index
+
+        Returns: Dictionary of random data
+
+        """
         x = {
             "sat_data": torch.randn(
                 self.batch_size,
@@ -216,6 +228,7 @@ def validate_example(
 ):
     """
     Validate the size and shape of the data
+
     Args:
         data: Typed dictionary of the data
         seq_len_30_minutes: the length of the sequence for 30 minutely data
@@ -228,7 +241,6 @@ def validate_example(
         n_gsp_per_example: the number gsp systems with nan padding
         batch: if this example class is a batch or not
     """
-
     n_gsp_id = data[GSP_ID].shape[-1]
     assert (
         n_gsp_id == n_gsp_per_example
@@ -345,7 +357,6 @@ def validate_batch_from_configuration(data: Example, configuration: Configuratio
         configuration: confgiruation of the data
 
     """
-
     validate_example(
         data=data,
         seq_len_30_minutes=configuration.process.seq_len_30_minutes,

@@ -1,3 +1,4 @@
+""" GCP general functions """
 import logging
 from pathlib import Path
 from typing import List, Union
@@ -34,14 +35,14 @@ def gcp_upload_and_delete_local_files(dst_path: str, local_path: Union[str, Path
 def gcp_download_to_local(
     remote_filename: str, local_filename: str, gcs: gcsfs.GCSFileSystem = None
 ):
-    """Download file from gcs.
+    """
+    Download file from gcs.
 
     Args:
         remote_filename: the gcs file name, should start with gs://
-        local_filename:
+        local_filename: the local filename
         gcs: gcsfs.GCSFileSystem connection, means a new one doesnt have to be made everytime.
     """
-
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
 
     if gcs is None:

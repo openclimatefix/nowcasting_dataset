@@ -1,10 +1,11 @@
-import pandas as pd
-import pyproj
+""" Geospatial functions """
+import datetime
 from numbers import Number
 from typing import Tuple
-import datetime
-import pvlib
 
+import pandas as pd
+import pvlib
+import pyproj
 
 # OSGB is also called "OSGB 1936 / British National Grid -- United
 # Kingdom Ordnance Survey".  OSGB is used in many UK electricity
@@ -21,27 +22,35 @@ WGS84_CRS = f"EPSG:{WGS84}"
 
 class Transformers:
     """
-    Class to store transformation from one Grid to another. Its good to make this only once, but need the
+    Class to store transformation from one Grid to another.
+
+    Its good to make this only once, but need the
     option of updating them, due to out of data grids.
     """
 
     def __init__(self):
-
+        """ Init """
         self._osgb_to_lat_lon = None
         self._lat_lon_to_osgb = None
         self.make_transformers()
 
     def make_transformers(self):
-        # Nice to only make these once, as it makes calling the functions below quicker
+        """
+        Make transformers
+
+         Nice to only make these once, as it makes calling the functions below quicker
+        """
         self._osgb_to_lat_lon = pyproj.Transformer.from_crs(crs_from=OSGB, crs_to=WGS84)
         self._lat_lon_to_osgb = pyproj.Transformer.from_crs(crs_from=WGS84, crs_to=OSGB)
 
     @property
     def osgb_to_lat_lon(self):
+        """ OSGB to lat-lon property """
         return self._osgb_to_lat_lon
 
     @property
     def lat_lon_to_osgb(self):
+        """ lat-lon to OSGB property """
         return self._lat_lon_to_osgb
 
 
@@ -50,10 +59,7 @@ transformers = Transformers()
 
 
 def download_grids():
-    """
-    The transformer grid sometimes need updating
-    """
-
+    """ The transformer grid sometimes need updating """
     pyproj.transformer.TransformerGroup(crs_from=OSGB, crs_to=WGS84).download_grids(verbose=True)
     pyproj.transformer.TransformerGroup(crs_from=WGS84, crs_to=OSGB).download_grids(verbose=True)
 
@@ -61,20 +67,29 @@ def download_grids():
 
 
 def osgb_to_lat_lon(x: Number, y: Number) -> Tuple[Number, Number]:
-    """Returns 2-tuple of latitude (north-south), longitude (east-west).
+    """
+    Change OSGB coordinates to lat, lon
 
     Args:
-      x, y: Location in Ordnance Survey GB 1936, also known as
-        British National Grid, coordinates.
+        x: osgb east-west
+        y: osgb north-south
+
+    Return: 2-tuple of latitude (north-south), longitude (east-west).
+
     """
     return transformers.osgb_to_lat_lon.transform(x, y)
 
 
 def lat_lon_to_osgb(lat: Number, lon: Number) -> Tuple[Number, Number]:
-    """Returns 2-tuple of x (east-west), y (north-south).
+    """
+    Change lat, lon to a OSGB coordinates
 
     Args:
-      lat, lon: Location is WGS84 coordinates.
+        lat: latitude
+        lon: longitude
+
+    Return: 2-tuple of x (east-west), y (north-south).
+
     """
     return transformers.lat_lon_to_osgb.transform(lat, lon)
 
@@ -96,7 +111,6 @@ def calculate_azimuth_and_elevation_angle(
     have been calculate.
 
     """
-
     # get the solor position
     solpos = pvlib.solarposition.get_solarposition(datestamps, latitude, longitude)
 

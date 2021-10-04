@@ -28,8 +28,10 @@ PV_SYSTEM_ID: str = "pv_system_id"
 PV_SYSTEM_ROW_NUMBER = "pv_system_row_number"
 PV_SYSTEM_X_COORDS = "pv_system_x_coords"
 PV_SYSTEM_Y_COORDS = "pv_system_y_coords"
-PV_AZIMUTH_ANGLE = "pv_azimuth_angle"
-PV_ELEVATION_ANGLE = "pv_elevation_angle"
+
+SUN_AZIMUTH_ANGLE = "sun_azimuth_angle"
+SUN_ELEVATION_ANGLE = "sun_elevation_angle"
+
 PV_YIELD = "pv_yield"
 PV_DATETIME_INDEX = "pv_datetime_index"
 DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE = 128

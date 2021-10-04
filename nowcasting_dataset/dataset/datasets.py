@@ -24,8 +24,8 @@ from nowcasting_dataset.consts import (
     SATELLITE_DATA,
     NWP_DATA,
     PV_YIELD,
-    PV_AZIMUTH_ANGLE,
-    PV_ELEVATION_ANGLE,
+    SUN_ELEVATION_ANGLE,
+    SUN_AZIMUTH_ANGLE,
     SATELLITE_DATETIME_INDEX,
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
@@ -35,6 +35,7 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.dataset import example
+from nowcasting_dataset.utils import set_fsspec_for_multiprocess
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,8 @@ class NetCDFDataset(torch.utils.data.Dataset):
         self.history_minutes = history_minutes
         self.forecast_minutes = forecast_minutes
         self.configuration = configuration
+
+        logger.info(f"Setting up NetCDFDataset for {src_path}")
 
         if self.forecast_minutes is None:
             self.forecast_minutes = configuration.process.forecast_minutes
@@ -285,6 +288,9 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             _LOG.debug(f"Opening {type(data_source).__name__}")
             data_source.open()
 
+        # fix for fsspecs
+        set_fsspec_for_multiprocess()
+
         self._per_worker_init_has_run = True
 
     def __iter__(self):
@@ -349,8 +355,12 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 def worker_init_fn(worker_id):
     """Configures each dataset worker process.
 
-    Just has one job!  To call NowcastingDataset.per_worker_init().
+    1. Get fsspec ready for multi process
+    2. To call NowcastingDataset.per_worker_init().
     """
+    # fix for fsspec when using multprocess
+    set_fsspec_for_multiprocess()
+
     # get_worker_info() returns information specific to each worker process.
     worker_info = torch.utils.data.get_worker_info()
     if worker_info is None:
@@ -479,14 +489,14 @@ def subselect_data(
     if PV_YIELD in required_keys and PV_DATETIME_INDEX in batch:
         batch = select_time_period(
             batch,
-            keys=[PV_DATETIME_INDEX, PV_YIELD, PV_AZIMUTH_ANGLE, PV_ELEVATION_ANGLE],
+            keys=[PV_DATETIME_INDEX, PV_YIELD, SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
             time_of_first_example=batch[PV_DATETIME_INDEX][0].data,
             start_time=start_time,
             end_time=end_time,
         )
         _LOG.debug(
             f"PV Datetime Shape: {batch[PV_DATETIME_INDEX].shape} PV Data Shape: {batch[PV_YIELD].shape}"
-            f" PV Azimuth Shape: {batch[PV_AZIMUTH_ANGLE].shape} PV Elevation Shape: {batch[PV_ELEVATION_ANGLE].shape}"
+            f" PV Azimuth Shape: {batch[SUN_ELEVATION_ANGLE].shape} PV Elevation Shape: {batch[SUN_AZIMUTH_ANGLE].shape}"
         )
 
     return batch

@@ -20,8 +20,8 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_X_COORDS,
     PV_SYSTEM_Y_COORDS,
     PV_SYSTEM_ROW_NUMBER,
-    PV_AZIMUTH_ANGLE,
-    PV_ELEVATION_ANGLE,
+    SUN_AZIMUTH_ANGLE,
+    SUN_ELEVATION_ANGLE,
     DATETIME_FEATURE_NAMES,
     TOPOGRAPHIC_X_COORDS,
     TOPOGRAPHIC_DATA,
@@ -311,10 +311,10 @@ def validate_example(
                 np.nanmin(data[PV_YIELD]) >= 0.0
             ), f"Maximum PV value is {np.nanmin(data[PV_YIELD])} but it should be <= 1"
 
-    if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_AZIMUTH_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
-    if PV_AZIMUTH_ANGLE in data.keys():
-        assert data[PV_ELEVATION_ANGLE].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
+    if SUN_AZIMUTH_ANGLE in data.keys():
+        assert data[SUN_AZIMUTH_ANGLE].shape[-1] == seq_len_5_minutes
+    if SUN_ELEVATION_ANGLE in data.keys():
+        assert data[SUN_ELEVATION_ANGLE].shape[-1] == seq_len_5_minutes
 
     assert data["sat_data"].shape[-4:] == (
         seq_len_5_minutes,

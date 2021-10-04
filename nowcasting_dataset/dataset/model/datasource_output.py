@@ -4,8 +4,6 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 
-from typing import List
-
 
 class DataSourceOutput(BaseModel):
     class Config:
@@ -56,6 +54,12 @@ class DataSourceOutput(BaseModel):
             items.append(c(**d))
 
         return items
+
+    def to_xr_dataset(self):
+        raise NotImplementedError
+
+    def from_xr_dataset(self):
+        raise NotImplementedError
 
 
 def to_numpy(value):

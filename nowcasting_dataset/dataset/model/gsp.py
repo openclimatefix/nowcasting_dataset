@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 import torch
 
-from nowcasting_dataset.dataset.model.datasource import DataSourceOutput
+from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array
 
 from nowcasting_dataset.consts import (
@@ -28,7 +28,7 @@ class GSP(DataSourceOutput):
 
     #: GSP identification.
     #: shape = [batch_size, ] n_pv_systems_per_example
-    gsp_id: Array = Field(..., description="gsp id fomr NG")
+    gsp_id: Array = Field(..., description="gsp id from NG")
 
     gsp_datetime_index: Array = Field(
         ...,

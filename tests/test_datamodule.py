@@ -179,7 +179,16 @@ def test_batch_to_batch_to_dataset():
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
+    print("pydantic")
+    import sys
+
+    print(sys.getsizeof(str(batch) / 10 ** 6))
+
     batch_xr = batch_to_dataset(batch=batch)
+
+    print("xr")
+    print(batch_xr.nbytes / 10 ** 6)
+
     assert type(batch_xr) == xr.Dataset
     assert GSP_DATETIME_INDEX in batch_xr
     assert pd.DataFrame(batch_xr[GSP_DATETIME_INDEX]).isnull().sum().sum() == 0
@@ -189,4 +198,18 @@ def test_batch_to_batch_to_dataset():
 
     batch0 = xr_to_example(batch_xr=batch_xr, required_keys=DEFAULT_REQUIRED_KEYS)
     batch0 = to_numpy(batch0)
+
+    print("dict")
+    print(sys.getsizeof(str(batch0)) / 10 ** 6)
+
+    import fsspec
+
+    with fsspec.open("test.txt", "w") as yaml_file:
+        yaml_file.write(str(batch0))
+
+    import os
+
+    b = os.path.getsize("test.txt")
+    print(f"{b / 10**6} size from file")
+
     validate_batch_from_configuration(data=batch0, configuration=config)

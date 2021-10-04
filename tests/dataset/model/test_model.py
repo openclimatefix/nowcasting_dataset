@@ -104,11 +104,34 @@ def test_model_split():
     assert type(data[0].gsp) == GSP
 
 
-def test_model_to_xr_dataset():
+def test_model_to_xr_dataset(configuration):
 
-    f = Batch.fake()
+    f = Batch.fake(configuration=configuration)
+
+    import sys
+
+    print("pydantic")
+    print(sys.getsizeof(str(f.dict())) / 10 ** 6)
+
+    f.change_type_to_numpy()
+    fd = f.dict()
+
+    import fsspec
+
+    with fsspec.open("test.txt", "w") as yaml_file:
+        yaml_file.write(str(fd))
+
+    import os
+
+    b = os.path.getsize("test.txt")
+
+    assert b / 10 ** 6 < 1
 
     f_xr = f.batch_to_dataset()
+
+    print("xr")
+    print(f_xr.nbytes / 10 ** 6)
+    assert 0
 
     assert type(f_xr) == xr.Dataset
 

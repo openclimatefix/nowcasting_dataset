@@ -49,10 +49,6 @@ class Batch(DataItem):
         "then this item stores one data item",
     )
 
-    def change_type_to_xr_data_array(self):
-        pass
-        # go other datasoruces and change them to xr data arrays
-
     def batch_to_dataset(self) -> xr.Dataset:
         """Change batch to xr.Dataset so it can be saved and compressed"""
         return batch_to_dataset(batch=self)

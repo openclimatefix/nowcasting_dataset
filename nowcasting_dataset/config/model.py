@@ -107,7 +107,7 @@ class Process(BaseModel):
     )
     history_minutes: int = Field(30, ge=0, description="how many historic minutes are used")
     satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
-    nwp_image_size_pixels: int = Field(2, description="the size of the nwp images")
+    nwp_image_size_pixels: int = Field(64, description="the size of the nwp images")
 
     sat_channels: tuple = Field(
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"

@@ -179,7 +179,7 @@ def test_batch_to_batch_to_dataset():
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    print("pydantic")
+    print("dict")
     import sys
 
     print(sys.getsizeof(str(batch) / 10 ** 6))

@@ -182,7 +182,7 @@ def test_batch_to_batch_to_dataset():
     print("dict")
     import sys
 
-    print(sys.getsizeof(str(batch) / 10 ** 6))
+    print(sys.getsizeof(str(batch)) / 10 ** 6)
 
     batch_xr = batch_to_dataset(batch=batch)
 

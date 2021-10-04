@@ -298,22 +298,17 @@ def determine_datetimes_to_download_files(
     return missing_rss_timesteps
 
 
-def eumetsat_native_filename_to_datetime(filename: str):
+def eumetsat_native_filename_to_datetime(filename: str) -> datetime:
     """Takes a file from the EUMETSAT API and returns
     the date and time part of the filename"""
-
-    p = re.compile("^MSG[23]-SEVI-MSG15-0100-NA-(\d*)\.")
-    title_match = p.match(filename)
-    date_str = title_match.group(1)
-    return datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(second=0)
+    return eumetsat.eumetsat_filename_to_datetime(filename).replace(second=0)
 
 
-def eumetsat_cloud_name_to_datetime(filename: str):
-    date_str = filename.split("0100-0100-")[-1].split(".")[0]
-    return datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(second=0)
+def eumetsat_cloud_name_to_datetime(filename: str) -> datetime:
+    return eumetsat.eumetsat_cloud_name_to_datetime(filename).replace(second=0)
 
 
-def get_basename(filename: str):
+def get_basename(filename: str) -> str:
     return filename.split("/")[-1]
 
 

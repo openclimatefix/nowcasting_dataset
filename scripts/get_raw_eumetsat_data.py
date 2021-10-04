@@ -54,14 +54,14 @@ def validate_date(ctx, param, value):
 @click.option(
     "--start_date",
     "--start",
-    default="2021-01-01",
+    default="2010-01-01",
     prompt="Starting date to download data, in format accepted by pd.to_datetime()",
     callback=validate_date,
 )
 @click.option(
     "--end_date",
     "--end",
-    default="2021-01-10",
+    default=datetime.now().strftime("%Y-%m-%d"),
     prompt="Ending date to download data, in format accepted by pd.to_datetime()",
     callback=validate_date,
 )
@@ -76,13 +76,13 @@ def validate_date(ctx, param, value):
     "--user_key",
     "--key",
     default=None,
-    help="The User Key for EUMETSAT access",
+    help="The User Key for EUMETSAT access. Alternatively, the user key can be set using an auth file.",
 )
 @click.option(
     "--user_secret",
     "--secret",
     default=None,
-    help="The User secret for EUMETSAT access",
+    help="The User secret for EUMETSAT access. Alternatively, the user secret can be set using an auth file.",
 )
 @click.option(
     "--auth_filename",
@@ -123,6 +123,8 @@ def download_eumetsat_data(
     """
     # Get authentication
     if auth_filename is not None:
+        if (user_key is not None) or (user_secret is not None):
+            raise RuntimeError("Please do not set BOTH auth_filename AND user_key or user_secret!")
         user_key, user_secret = load_key_secret(auth_filename)
 
     if backfill:

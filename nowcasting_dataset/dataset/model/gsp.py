@@ -4,11 +4,19 @@ import numpy as np
 import xarray as xr
 import torch
 
-from nowcasting_dataset.dataset.model.datasource import DataSource
+from nowcasting_dataset.dataset.model.datasource import DataSourceOutput
 from nowcasting_dataset.consts import Array
 
+from nowcasting_dataset.consts import (
+    GSP_ID,
+    GSP_YIELD,
+    GSP_X_COORDS,
+    GSP_Y_COORDS,
+    GSP_DATETIME_INDEX,
+)
 
-class GSP(DataSource):
+
+class GSP(DataSourceOutput):
 
     # Shape: [batch_size,] seq_length, width, height, channel
     gsp_yield: Array = Field(
@@ -48,17 +56,29 @@ class GSP(DataSource):
         """The equence length of the pv data"""
         return self.gsp_yield.shape[-2]
 
+    @validator("gsp_yield")
+    def gsp_yield_shape(cls, v, values):
+        if values["batch_size"] > 0:
+            assert len(v.shape) == 3
+        else:
+            assert len(v.shape) == 2
+        return v
+
     @validator("gsp_x_coords")
     def x_coordinates_shape(cls, v, values):
         assert v.shape[-1] == values["gsp_yield"].shape[-1]
+        return v
 
     @validator("gsp_y_coords")
     def y_coordinates_shape(cls, v, values):
         assert v.shape[-1] == values["gsp_yield"].shape[-1]
+        return v
 
     @staticmethod
     def fake(batch_size, seq_length_30, n_gsp_per_batch):
+
         return GSP(
+            batch_size=batch_size,
             gsp_yield=torch.randn(
                 batch_size,
                 seq_length_30,
@@ -71,3 +91,50 @@ class GSP(DataSource):
             gsp_x_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch))[0],
             gsp_y_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch), descending=True)[0],
         )
+
+    def to_xr_dataset(self, i):
+
+        assert self.batch_size == 0
+
+        example_dim = {"example": np.array([i], dtype=np.int32)}
+
+        # GSP
+        n_gsp = len(self.gsp_id)
+
+        one_dataset = xr.DataArray(self.gsp_yield, dims=["time_30", "gsp"], name="gsp_yield")
+        one_dataset = one_dataset.to_dataset(name="gsp_yield")
+        one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
+            self.gsp_datetime_index,
+            dims=["time_30"],
+            coords=[np.arange(len(self.gsp_datetime_index))],
+        )
+
+        # GSP
+        for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
+
+            var = self.__getattribute__(name)
+
+            one_dataset[name] = xr.DataArray(
+                var[None, :],
+                coords={
+                    **example_dim,
+                    **{"gsp": np.arange(n_gsp, dtype=np.int32)},
+                },
+                dims=["example", "gsp"],
+            )
+
+        return one_dataset
+
+    @staticmethod
+    def from_xr_dataset(xr_dataset):
+
+        gsp = GSP(
+            batch_size=xr_dataset["gsp_yield"].shape[0],
+            gsp_yield=xr_dataset[GSP_YIELD],
+            gsp_id=xr_dataset[GSP_ID],
+            gsp_datetime_index=xr_dataset[GSP_DATETIME_INDEX],
+            gsp_x_coords=xr_dataset[GSP_X_COORDS],
+            gsp_y_coords=xr_dataset[GSP_Y_COORDS],
+        )
+
+        return gsp

@@ -107,6 +107,7 @@ def test_model_split():
 def test_model_to_xr_dataset(configuration):
 
     f = Batch.fake(configuration=configuration)
+    f_xr = f.batch_to_dataset()
 
     import sys
 
@@ -127,11 +128,8 @@ def test_model_to_xr_dataset(configuration):
 
     assert b / 10 ** 6 < 1
 
-    f_xr = f.batch_to_dataset()
-
     print("xr")
     print(f_xr.nbytes / 10 ** 6)
-    assert 0
 
     assert type(f_xr) == xr.Dataset
 

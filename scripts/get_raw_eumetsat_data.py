@@ -31,7 +31,7 @@ def validate_date(ctx, param, value):
 @click.option(
     "--download_directory",
     "--dir",
-    default="/run/media/jacob/data/",
+    default="/storage/",
     help="Where to download the data to. Also where the script searches for previously downloaded data.",
 )
 @click.option(

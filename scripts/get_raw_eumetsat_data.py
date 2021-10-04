@@ -26,8 +26,6 @@ import click
 # safely ignored
 import warnings
 
-warnings.simplefilter("ignore", UserWarning)
-
 
 NATIVE_FILESIZE_MB = 102.210123
 CLOUD_FILESIZE_MB = 3.445185
@@ -217,8 +215,10 @@ def sanity_check_files_and_move_to_directory(directory, product_id):
                 file_size = eumetsat.get_filesize_megabytes(f)
                 if not math.isclose(file_size, NATIVE_FILESIZE_MB, abs_tol=1):
                     print("Wrong Size")
-                scene = Scene(filenames=[f], reader=satpy_reader)
-                scene.load(SAT_VARIABLE_NAMES)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    scene = Scene(filenames=[f], reader=satpy_reader)
+                    scene.load(SAT_VARIABLE_NAMES)
                 # Now that the file has been checked and can be open, move it to the final directory
                 base_name = get_basename(f)
                 file_date = date_func(base_name)

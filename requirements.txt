@@ -30,5 +30,4 @@ pre-commit
 s3fs
 fsspec
 pathy
-rioxarray
-satip>=2.0.0
+satip>=2.0.2

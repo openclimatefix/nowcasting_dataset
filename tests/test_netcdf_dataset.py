@@ -144,6 +144,11 @@ def test_get_dataloaders_gcp(configuration: Configuration):
     t = iter(train_dataset)
     data = next(t)
 
+    print(data["gsp_yield"].shape)
+    import sys
+
+    print(sys.getsizeof(str(data)) / 10 ** 6)
+
     # image
     z = data[SATELLITE_DATA][0][0][:, :, 0]
     _ = data[GSP_YIELD][0][:, 0]

@@ -101,13 +101,16 @@ class Satellite(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        if "sata_data" in xr_dataset.keys():
+        for key in xr_dataset.keys():
+            print(key)
+
+        if "sat_data" in xr_dataset.keys():
             return Satellite(
                 batch_size=xr_dataset["sat_data"].shape[0],
                 sat_data=xr_dataset["sat_data"],
-                sat_x_coords=xr_dataset["sat_x_coords"].values,
-                sat_y_coords=xr_dataset["sat_y_coords"].values,
-                sat_datetime_index=xr_dataset["sat_time_coords"].values,
+                sat_x_coords=xr_dataset["sat_x_coords"],
+                sat_y_coords=xr_dataset["sat_y_coords"],
+                sat_datetime_index=xr_dataset["sat_time_coords"],
                 sat_channel_names=xr_dataset["sat_data"].sat_variable.values,
             )
         else:

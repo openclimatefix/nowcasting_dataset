@@ -64,6 +64,7 @@ class DataSourceOutput(BaseModel):
 
     def select_time_period(
         self,
+        keys: List[str],
         time_of_first_example: pd.DatetimeIndex,
         start_time: xr.DataArray,
         end_time: xr.DataArray,
@@ -82,7 +83,7 @@ class DataSourceOutput(BaseModel):
             Example containing the subselected data
         """
         start_i, end_i = np.searchsorted(time_of_first_example, [start_time, end_time])
-        for key in self.dict().keys():
+        for key in keys:
             self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))
 
 

@@ -37,6 +37,7 @@ from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_N
 from nowcasting_dataset.dataset import example
 from nowcasting_dataset.utils import set_fsspec_for_multiprocess
 from nowcasting_dataset.dataset.model.model import Batch
+from nowcasting_dataset.dataset.model.datasource_output import to_numpy
 
 logger = logging.getLogger(__name__)
 
@@ -222,14 +223,14 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 sat_data = sat_data / SAT_STD
                 batch.satellite.sat_data = sat_data
 
-        if self.select_subset_data:
-            batch = subselect_data(
-                batch=batch,
-                required_keys=self.required_keys,
-                history_minutes=self.history_minutes,
-                forecast_minutes=self.forecast_minutes,
-                current_timestep_index=self.current_timestep_5_index,
-            )
+        # if self.select_subset_data:
+        #     batch = subselect_data(
+        #         batch=batch,
+        #         required_keys=self.required_keys,
+        #         history_minutes=self.history_minutes,
+        #         forecast_minutes=self.forecast_minutes,
+        #         current_timestep_index=self.current_timestep_5_index,
+        #     )
 
         batch.change_type_to_numpy()
 
@@ -454,8 +455,14 @@ def subselect_data(
 
     logger.debug(batch.satellite.sat_datetime_index[0])
 
+    start_time = to_numpy(start_time)
+    end_time = to_numpy(end_time)
+
     if batch.satellite is not None:
         batch.satellite.select_time_period(
+            keys=[
+                "sat_data",
+            ],
             time_of_first_example=batch.satellite.sat_datetime_index[0],
             start_time=start_time,
             end_time=end_time,

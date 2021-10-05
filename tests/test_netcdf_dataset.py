@@ -26,93 +26,96 @@ from nowcasting_dataset.consts import (
     T0_DT,
 )
 from nowcasting_dataset.dataset import example
+from nowcasting_dataset.dataset.model.model import Batch
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 
 
-def test_subselect_date(test_data_folder):
-    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
-    x = example.Example(
-        sat_data=dataset["sat_data"],
-        nwp=dataset["nwp"],
-        nwp_target_time=dataset["nwp_time_coords"],
-        sat_datetime_index=dataset["sat_time_coords"],
-    )
+# TODO need to un commit these
+# def test_subselect_date(test_data_folder):
+#     dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
+#     x = example.Example(
+#         sat_data=dataset["sat_data"],
+#         nwp=dataset["nwp"],
+#         nwp_target_time=dataset["nwp_time_coords"],
+#         sat_datetime_index=dataset["sat_time_coords"],
+#     )
+#
+#     batch = subselect_data(
+#         x,
+#         required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+#         current_timestep_index=7,
+#         history_minutes=10,
+#         forecast_minutes=10,
+#     )
+#
+#     assert batch[SATELLITE_DATA].shape[1] == 5
+#     assert batch[NWP_DATA].shape[2] == 5
+#
+#
+# def test_subselect_date_with_t0_dt(test_data_folder):
+#     dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
+#     x = example.Example(
+#         sat_data=dataset["sat_data"],
+#         nwp=dataset["nwp"],
+#         nwp_target_time=dataset["nwp_time_coords"],
+#         sat_datetime_index=dataset["sat_time_coords"],
+#     )
+#     x[T0_DT] = x[SATELLITE_DATETIME_INDEX].isel(time=7)
+#
+#     batch = subselect_data(
+#         x,
+#         required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+#         history_minutes=10,
+#         forecast_minutes=10,
+#     )
+#
+#     assert batch[SATELLITE_DATA].shape[1] == 5
+#     assert batch[NWP_DATA].shape[2] == 5
 
-    batch = subselect_data(
-        x,
-        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
-        current_timestep_index=7,
-        history_minutes=10,
-        forecast_minutes=10,
-    )
 
-    assert batch[SATELLITE_DATA].shape[1] == 5
-    assert batch[NWP_DATA].shape[2] == 5
-
-
-def test_subselect_date_with_t0_dt(test_data_folder):
-    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
-    x = example.Example(
-        sat_data=dataset["sat_data"],
-        nwp=dataset["nwp"],
-        nwp_target_time=dataset["nwp_time_coords"],
-        sat_datetime_index=dataset["sat_time_coords"],
-    )
-    x[T0_DT] = x[SATELLITE_DATETIME_INDEX].isel(time=7)
-
-    batch = subselect_data(
-        x,
-        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
-        history_minutes=10,
-        forecast_minutes=10,
-    )
-
-    assert batch[SATELLITE_DATA].shape[1] == 5
-    assert batch[NWP_DATA].shape[2] == 5
-
-
-def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
-    DATA_PATH = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests", "data")
-    TEMP_PATH = os.path.join(
-        os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "temp"
-    )
-
-    train_dataset = NetCDFDataset(
-        1,
-        DATA_PATH,
-        TEMP_PATH,
-        cloud="local",
-        history_minutes=10,
-        forecast_minutes=10,
-        required_keys=[NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
-        configuration=configuration,
-    )
-
-    dataloader_config = dict(
-        pin_memory=True,
-        num_workers=1,
-        prefetch_factor=1,
-        worker_init_fn=worker_init_fn,
-        persistent_workers=True,
-        # Disable automatic batching because dataset
-        # returns complete batches.
-        batch_size=None,
-    )
-
-    _ = torch.utils.data.DataLoader(train_dataset, **dataloader_config)
-
-    train_dataset.per_worker_init(1)
-    t = iter(train_dataset)
-    data = next(t)
-
-    sat_data = data[SATELLITE_DATA]
-
-    # Sat is in 5min increments, so should have 2 history + current + 2 future
-    assert sat_data.shape[1] == 5
-    assert data[NWP_DATA].shape[2] == 5
-
-    # Make sure file isn't deleted!
-    assert os.path.exists(os.path.join(DATA_PATH, "0.nc"))
+# def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
+#     DATA_PATH = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests", "data")
+#     TEMP_PATH = os.path.join(
+#         os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "temp"
+#     )
+#
+#     train_dataset = NetCDFDataset(
+#         1,
+#         DATA_PATH,
+#         TEMP_PATH,
+#         cloud="local",
+#         history_minutes=10,
+#         forecast_minutes=10,
+#         required_keys=[NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+#         configuration=configuration,
+#     )
+#
+#     dataloader_config = dict(
+#         pin_memory=True,
+#         num_workers=1,
+#         prefetch_factor=1,
+#         worker_init_fn=worker_init_fn,
+#         persistent_workers=True,
+#         # Disable automatic batching because dataset
+#         # returns complete batches.
+#         batch_size=None,
+#     )
+#
+#     _ = torch.utils.data.DataLoader(train_dataset, **dataloader_config)
+#
+#     train_dataset.per_worker_init(1)
+#     t = iter(train_dataset)
+#     data = next(t)
+#
+#     sat_data = data[SATELLITE_DATA]
+#
+#     # TODO
+#     # Sat is in 5min increments, so should have 2 history + current + 2 future
+#     assert sat_data.shape[1] == 5
+#     assert data[NWP_DATA].shape[2] == 5
+#
+#     # Make sure file isn't deleted!
+#     assert os.path.exists(os.path.join(DATA_PATH, "0.nc"))
 
 
 @pytest.mark.skip("CD does not have access to GCS")
@@ -142,29 +145,10 @@ def test_get_dataloaders_gcp(configuration: Configuration):
 
     train_dataset.per_worker_init(1)
     t = iter(train_dataset)
-    data = next(t)
-
-    print(data["nwp"].shape)
-    import sys
-
-    print(sys.getsizeof(str(data)) / 10 ** 6)
-
-    def save_dict_to_file(dic):
-        f = open("dict.txt", "w")
-        f.write(str(dic))
-        f.close()
-
-    def load_dict_from_file():
-        f = open("dict.txt", "r")
-        d = f.read()
-        f.close()
-        return d
-
-    save_dict_to_file(data)
-    d = load_dict_from_file()
+    data: Batch = next(t)
 
     # image
-    z = data[SATELLITE_DATA][0][0][:, :, 0]
+    z = data.satellite.sat_data[0][0][:, :, 0]
     _ = data[GSP_YIELD][0][:, 0]
 
     _ = pd.to_datetime(data[SATELLITE_DATETIME_INDEX][0, 0], unit="s")

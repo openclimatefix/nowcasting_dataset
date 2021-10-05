@@ -123,10 +123,10 @@ class PV(DataSourceOutput):
 
         # 1D
         for name in [
-            "pv_system_id",
-            "pv_system_row_number",
-            "pv_system_x_coords",
-            "pv_system_y_coords",
+            PV_SYSTEM_ID,
+            PV_SYSTEM_ROW_NUMBER,
+            PV_SYSTEM_X_COORDS,
+            PV_SYSTEM_Y_COORDS,
         ]:
             var = self.__getattribute__(name)
 

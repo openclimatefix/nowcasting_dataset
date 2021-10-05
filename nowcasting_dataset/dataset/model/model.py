@@ -156,10 +156,12 @@ class Batch(DataItem):
 
     def save_netcdf(self, batch_i: int, path: Path):
 
-        encoding = {name: {"compression": "lzf"} for name in self.data_vars}
+        batch_xr = self.batch_to_dataset()
+
+        encoding = {name: {"compression": "lzf"} for name in batch_xr.data_vars}
         filename = get_netcdf_filename(batch_i)
         local_filename = path / filename
-        self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+        batch_xr.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
     @staticmethod
     def load_netcdf(local_netcdf_filename: Path):

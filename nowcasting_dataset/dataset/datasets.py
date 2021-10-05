@@ -464,9 +464,8 @@ def subselect_data(
             end_time=end_time,
         )
 
-    time_of_first_example = to_numpy(pd.to_datetime(batch.nwp.nwp_target_time[0]))
-
     # Now for NWP, if used
+    time_of_first_example = to_numpy(pd.to_datetime(batch.nwp.nwp_target_time[0]))
     if batch.nwp is not None:
         batch.nwp.select_time_period(
             keys=[NWP_DATA, NWP_TARGET_TIME],
@@ -475,31 +474,36 @@ def subselect_data(
             end_time=end_time,
         )
 
-    # Now GSP, if used
-    if GSP_YIELD in required_keys and GSP_DATETIME_INDEX in batch:
-        batch = select_time_period(
-            batch,
+    # Now for GSP, if used
+    time_of_first_example = to_numpy(pd.to_datetime(batch.gsp.gsp_datetime_index[0]))
+    if batch.gsp is not None:
+        batch.gsp.select_time_period(
             keys=[GSP_DATETIME_INDEX, GSP_YIELD],
-            time_of_first_example=batch[GSP_DATETIME_INDEX][0].data,
+            time_of_first_example=time_of_first_example,
             start_time=start_time,
             end_time=end_time,
-        )
-        _LOG.debug(
-            f"GSP Datetime Shape: {batch[GSP_DATETIME_INDEX].shape} GSP Data Shape: {batch[GSP_YIELD].shape}"
         )
 
-    # Now PV systems, if used
-    if PV_YIELD in required_keys and PV_DATETIME_INDEX in batch:
-        batch = select_time_period(
-            batch,
-            keys=[PV_DATETIME_INDEX, PV_YIELD, SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
-            time_of_first_example=batch[PV_DATETIME_INDEX][0].data,
+    # Now for PV, if used
+    time_of_first_example = to_numpy(pd.to_datetime(batch.pv.pv_datetime_index[0]))
+    if batch.pv is not None:
+        batch.pv.select_time_period(
+            keys=[PV_DATETIME_INDEX, PV_YIELD],
+            time_of_first_example=time_of_first_example,
             start_time=start_time,
             end_time=end_time,
         )
-        _LOG.debug(
-            f"PV Datetime Shape: {batch[PV_DATETIME_INDEX].shape} PV Data Shape: {batch[PV_YIELD].shape}"
-            f" PV Azimuth Shape: {batch[SUN_ELEVATION_ANGLE].shape} PV Elevation Shape: {batch[SUN_AZIMUTH_ANGLE].shape}"
+
+    # Now for SUN, if used
+    if batch.sun is not None:
+        time_of_first_example = to_numpy(pd.to_datetime(batch.sun.sun_datetime_index[0]))
+        batch.sun.select_time_period(
+            keys=[SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
+            time_of_first_example=time_of_first_example,
+            start_time=start_time,
+            end_time=end_time,
         )
+
+    # DATETIME TODO
 
     return batch

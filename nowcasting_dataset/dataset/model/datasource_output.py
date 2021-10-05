@@ -88,7 +88,12 @@ class DataSourceOutput(BaseModel):
         """
         start_i, end_i = np.searchsorted(time_of_first_example, [start_time, end_time])
         for key in keys:
-            self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))
+            if "time" in self.__getattribute__(key).dims:
+                self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))
+            elif "time_30" in self.__getattribute__(key).dims:
+                self.__setattr__(
+                    key, self.__getattribute__(key).isel(time_30=slice(start_i, end_i))
+                )
 
             logger.debug(f"{self.__class__.__name__} {key}: {self.__getattribute__(key).shape}")
 

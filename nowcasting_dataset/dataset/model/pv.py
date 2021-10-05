@@ -15,6 +15,7 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_ID,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
+from nowcasting_dataset.time import make_time_vectors
 
 
 class PV(DataSourceOutput):
@@ -69,7 +70,13 @@ class PV(DataSourceOutput):
         return v
 
     @staticmethod
-    def fake(batch_size, seq_length_5, n_pv_systems_per_batch):
+    def fake(batch_size, seq_length_5, n_pv_systems_per_batch, time_5=None):
+
+        if time_5 is None:
+            _, time_5, _ = make_time_vectors(
+                batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
+            )
+
         return PV(
             batch_size=batch_size,
             pv_yield=torch.randn(
@@ -81,7 +88,7 @@ class PV(DataSourceOutput):
             pv_system_row_number=torch.sort(
                 torch.randint(1000, (batch_size, n_pv_systems_per_batch))
             )[0],
-            pv_datetime_index=torch.sort(torch.randn(batch_size, seq_length_5), descending=True)[0],
+            pv_datetime_index=time_5,
             pv_system_x_coords=torch.sort(torch.randn((batch_size, n_pv_systems_per_batch)))[0],
             pv_system_y_coords=torch.sort(
                 torch.randn(batch_size, n_pv_systems_per_batch), descending=True

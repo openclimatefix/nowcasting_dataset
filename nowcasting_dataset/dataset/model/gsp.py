@@ -15,6 +15,7 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
     DEFAULT_N_GSP_PER_EXAMPLE,
 )
+from nowcasting_dataset.time import make_time_vectors
 
 
 class GSP(DataSourceOutput):
@@ -76,7 +77,12 @@ class GSP(DataSourceOutput):
         return v
 
     @staticmethod
-    def fake(batch_size, seq_length_30, n_gsp_per_batch):
+    def fake(batch_size, seq_length_30, n_gsp_per_batch, time_30=None):
+
+        if time_30 is None:
+            _, _, time_30 = make_time_vectors(
+                batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=seq_length_30
+            )
 
         return GSP(
             batch_size=batch_size,
@@ -86,9 +92,7 @@ class GSP(DataSourceOutput):
                 n_gsp_per_batch,
             ),
             gsp_id=torch.sort(torch.randint(340, (batch_size, n_gsp_per_batch)))[0],
-            gsp_datetime_index=torch.sort(torch.randn(batch_size, seq_length_30), descending=True)[
-                0
-            ],
+            gsp_datetime_index=time_30,
             gsp_x_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch))[0],
             gsp_y_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch), descending=True)[0],
         )

@@ -143,12 +143,14 @@ class Batch(DataItem):
                 batch_size=process.batch_size,
                 seq_length_5=process.seq_len_5_minutes,
                 n_pv_systems_per_batch=128,
+                time_5=time_5,
             ),
             sun=Sun.fake(batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes),
             gsp=GSP.fake(
                 batch_size=process.batch_size,
                 seq_length_30=process.seq_len_30_minutes,
                 n_gsp_per_batch=32,
+                time_30=time_30,
             ),
             nwp=NWP.fake(
                 batch_size=process.batch_size,

@@ -7,6 +7,7 @@ import torch
 from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
 from nowcasting_dataset.dataset.batch import coord_to_range
+from nowcasting_dataset.time import make_time_vectors
 
 
 class Sun(DataSourceOutput):
@@ -33,7 +34,13 @@ class Sun(DataSourceOutput):
         return v
 
     @staticmethod
-    def fake(batch_size, seq_length_5):
+    def fake(batch_size, seq_length_5, time_5=None):
+
+        if time_5 is None:
+            _, time_5, _ = make_time_vectors(
+                batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
+            )
+
         return Sun(
             batch_size=batch_size,
             sun_azimuth_angle=torch.randn(
@@ -44,9 +51,7 @@ class Sun(DataSourceOutput):
                 batch_size,
                 seq_length_5,
             ),
-            sun_datetime_index=torch.sort(torch.randn(batch_size, seq_length_5), descending=True)[
-                0
-            ],
+            sun_datetime_index=time_5,
         )
 
     def to_xr_dataset(self):
@@ -67,6 +72,14 @@ class Sun(DataSourceOutput):
             ds = coord_to_range(ds, "time", prefix=None)
             individual_datasets.append(ds)
 
+        data = xr.DataArray(
+            self.sun_datetime_index,
+            dims=["time"],
+            coords=[np.arange(len(self.sun_datetime_index))],
+        )
+        ds = data.to_dataset(name="sun_datetime_index")
+        individual_datasets.append(ds)
+
         return xr.merge(individual_datasets)
 
     @staticmethod
@@ -77,7 +90,7 @@ class Sun(DataSourceOutput):
                 batch_size=xr_dataset[SUN_AZIMUTH_ANGLE].shape[0],
                 sun_azimuth_angle=xr_dataset[SUN_AZIMUTH_ANGLE],
                 sun_elevation_angle=xr_dataset[SUN_ELEVATION_ANGLE],
-                sun_datetime_index=xr_dataset[SUN_AZIMUTH_ANGLE].time,
+                sun_datetime_index=xr_dataset["sun_datetime_index"],
             )
         else:
             return None

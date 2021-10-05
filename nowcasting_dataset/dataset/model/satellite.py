@@ -73,17 +73,20 @@ class Satellite(DataSourceOutput):
 
     def to_xr_dataset(self):
 
-        data = xr.DataArray(
-            self.sat_data,
-            coords={
-                "time": self.sat_datetime_index,
-                "x": self.sat_x_coords,
-                "y": self.sat_y_coords,
-                "variable": self.sat_channel_names,  # assuem all channels are the same
-            },
-        )
+        if type(self.sat_data) != xr.DataArray:
+            self.sat_data = xr.DataArray(
+                self.sat_data,
+                coords={
+                    "time": self.sat_datetime_index,
+                    "x": self.sat_x_coords,
+                    "y": self.sat_y_coords,
+                    "variable": self.sat_channel_names,  # assuem all channels are the same
+                },
+            )
 
-        ds = data.to_dataset(name="sat")
+        ds = self.sat_data.to_dataset(name="sat")
+        ds["sat"] = ds["sat"].astype(np.int16)
+        ds = ds.round(2)
 
         for dim in ["time", "x", "y"]:
             ds = coord_to_range(ds, dim, prefix="sat")

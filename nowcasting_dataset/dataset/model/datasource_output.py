@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 import pandas as pd
 import xarray as xr
 import numpy as np
+from typing import List
 
 
 class DataSourceOutput(BaseModel):
@@ -37,7 +38,10 @@ class DataSourceOutput(BaseModel):
                 batch.batch_size = len(data)
             else:
 
+                print(k)
+
                 one_variable_in_batch = [d.__getattribute__(k) for d in data]
+                print([d.shape for d in one_variable_in_batch])
 
                 batch.__setattr__(k, np.stack(one_variable_in_batch, axis=0))
 
@@ -79,3 +83,43 @@ def to_numpy(value):
         value = value.numpy()
 
     return value
+
+
+def pad_nans(array, pad_width) -> np.ndarray:
+    """ Pad nans with nans"""
+    array = array.astype(np.float32)
+    return np.pad(array, pad_width, constant_values=np.NaN)
+
+
+def pad_data(
+    data: DataSourceOutput,
+    pad_size: int,
+    one_dimensional_arrays: List[str],
+    two_dimensional_arrays: List[str],
+):
+    """
+    Pad (if necessary) so returned arrays are always of size
+
+    data has two types of arrays in it, one dimensional arrays and two dimensional arrays
+    the one dimensional arrays are padded in that dimension
+    the two dimensional arrays are padded in the second dimension
+
+    Args:
+        data: typed dictionary of data objects
+        pad_size: the maount that should be padded
+        one_dimensional_arrays: list of data items that should be padded by one dimension
+        two_dimensional_arrays: list of data tiems that should be padded in the third dimension (and more)
+
+    Returns: Example data
+
+    """
+    # Pad (if necessary) so returned arrays are always of size
+    pad_shape = (0, pad_size)  # (before, after)
+
+    for name in one_dimensional_arrays:
+        data.__setattr__(name, pad_nans(data.__getattribute__(name), pad_width=pad_shape))
+
+    for variable in two_dimensional_arrays:
+        data.__setattr__(
+            variable, pad_nans(data.__getattribute__(variable), pad_width=((0, 0), pad_shape))
+        )  # (axis0, axis1)

@@ -10,8 +10,8 @@ from rasterio.warp import Resampling
 
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.geospatial import OSGB
+from nowcasting_dataset.dataset.model.topographic import Topographic
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
@@ -62,7 +62,7 @@ class TopographicDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
+    ) -> Topographic:
         """
         Get a single example
 
@@ -109,7 +109,7 @@ class TopographicDataSource(ImageDataSource):
 
         return self._put_data_into_example(selected_data)
 
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
+    def _put_data_into_example(self, selected_data: xr.DataArray) -> Topographic:
         """
         Insert the data and coordinates into an Example
 
@@ -119,7 +119,7 @@ class TopographicDataSource(ImageDataSource):
         Returns:
             Example containing the Topographic data
         """
-        return Example(
+        return Topographic(
             topo_data=selected_data,
             topo_x_coords=selected_data.x,
             topo_y_coords=selected_data.y,

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import Union
+from typing import Union, List
 import numpy as np
 import xarray as xr
 import torch
@@ -16,6 +16,7 @@ class General(DataSourceOutput):
     t0_dt: Array  #: Shape: [batch_size,]
     x_meters_center: Array
     y_meters_center: Array
+    object_at_center: Union[List[List[str]], List[str], str, np.ndarray, xr.DataArray]
 
     @staticmethod
     def fake(batch_size):
@@ -30,12 +31,13 @@ class General(DataSourceOutput):
             y_meters_center=torch.randn(
                 batch_size,
             ),
+            object_at_center=np.array(["GSP"] * batch_size),
         )
 
     def to_xr_dataset(self, i):
 
         individual_datasets = []
-        for name in ["t0_dt", "x_meters_center", "y_meters_center"]:
+        for name in ["t0_dt", "x_meters_center", "y_meters_center", "object_at_center"]:
 
             var = self.__getattribute__(name)
 
@@ -56,4 +58,5 @@ class General(DataSourceOutput):
             t0_dt=xr_dataset["t0_dt"],
             x_meters_center=xr_dataset["x_meters_center"],
             y_meters_center=xr_dataset["y_meters_center"],
+            object_at_center=xr_dataset["object_at_center"],
         )

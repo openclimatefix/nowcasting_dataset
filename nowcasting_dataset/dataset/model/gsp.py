@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 import torch
 
-from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
+from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput, pad_data
 from nowcasting_dataset.consts import Array
 
 from nowcasting_dataset.consts import (
@@ -13,6 +13,7 @@ from nowcasting_dataset.consts import (
     GSP_X_COORDS,
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
+    DEFAULT_N_GSP_PER_EXAMPLE,
 )
 
 
@@ -90,6 +91,16 @@ class GSP(DataSourceOutput):
             ],
             gsp_x_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch))[0],
             gsp_y_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch), descending=True)[0],
+        )
+
+    def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
+
+        pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]
+        return pad_data(
+            data=self,
+            one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
+            two_dimensional_arrays=[GSP_YIELD],
+            pad_size=pad_size,
         )
 
     def to_xr_dataset(self, i):

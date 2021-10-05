@@ -7,7 +7,7 @@ import pandas as pd
 
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.dataset.example import Example
+from nowcasting_dataset.dataset.model.datetime import Datetime
 
 
 @dataclass
@@ -20,7 +20,7 @@ class DatetimeDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
+    ) -> Datetime:
         """
         Get example data
 

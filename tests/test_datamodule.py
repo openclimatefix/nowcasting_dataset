@@ -11,7 +11,7 @@ import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.consts import GSP_DATETIME_INDEX, DEFAULT_REQUIRED_KEYS
 from nowcasting_dataset.dataset import datamodule
-from nowcasting_dataset.dataset.batch import batch_to_dataset
+from nowcasting_dataset.dataset.batch import batch_to_dataset, fix_dtypes
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.dataset.example import (
@@ -185,6 +185,7 @@ def test_batch_to_batch_to_dataset():
     print(sys.getsizeof(str(batch)) / 10 ** 6)
 
     batch_xr = batch_to_dataset(batch=batch)
+    batch_xr = fix_dtypes(batch_xr)
 
     print("xr")
     print(batch_xr.nbytes / 10 ** 6)

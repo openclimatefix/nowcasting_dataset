@@ -26,10 +26,8 @@ def test_get_example(test_data_folder):
 
     example = sun_data_source.get_example(t0_dt=start_dt, x_meters_center=x, y_meters_center=y)
 
-    assert SUN_ELEVATION_ANGLE in example.keys()
-    assert SUN_AZIMUTH_ANGLE in example.keys()
-    assert len(example[SUN_ELEVATION_ANGLE]) == 19
-    assert len(example[SUN_AZIMUTH_ANGLE]) == 19
+    assert len(example.sun_elevation_angle) == 19
+    assert len(example.sun_azimuth_angle) == 19
 
 
 def test_get_example_different_year(test_data_folder):
@@ -45,7 +43,5 @@ def test_get_example_different_year(test_data_folder):
 
     example = sun_data_source.get_example(t0_dt=start_dt, x_meters_center=x, y_meters_center=y)
 
-    assert SUN_ELEVATION_ANGLE in example.keys()
-    assert SUN_AZIMUTH_ANGLE in example.keys()
-    assert len(example[SUN_ELEVATION_ANGLE]) == 19
-    assert len(example[SUN_AZIMUTH_ANGLE]) == 19
+    assert len(example.sun_elevation_angle) == 19
+    assert len(example.sun_azimuth_angle) == 19

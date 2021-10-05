@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 import torch
 
-from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
+from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput, pad_data
 from nowcasting_dataset.consts import (
     Array,
     PV_YIELD,
@@ -13,6 +13,7 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_X_COORDS,
     PV_SYSTEM_ROW_NUMBER,
     PV_SYSTEM_ID,
+    DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
 
 
@@ -85,6 +86,28 @@ class PV(DataSourceOutput):
             pv_system_y_coords=torch.sort(
                 torch.randn(batch_size, n_pv_systems_per_batch), descending=True
             )[0],
+        )
+
+    def pad(self, n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE):
+
+        pad_size = n_pv_systems_per_example - self.pv_yield.shape[-1]
+        # Pad (if necessary) so returned arrays are always of size
+        pad_shape = (0, pad_size)  # (before, after)
+
+        one_dimensional_arrays = [
+            PV_SYSTEM_ID,
+            PV_SYSTEM_ROW_NUMBER,
+            PV_SYSTEM_X_COORDS,
+            PV_SYSTEM_Y_COORDS,
+        ]
+
+        pad_nans_variables = [PV_YIELD]
+
+        pad_data(
+            data=self,
+            pad_size=pad_size,
+            one_dimensional_arrays=one_dimensional_arrays,
+            two_dimensional_arrays=pad_nans_variables,
         )
 
     def to_xr_dataset(self, i):

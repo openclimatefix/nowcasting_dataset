@@ -144,10 +144,24 @@ def test_get_dataloaders_gcp(configuration: Configuration):
     t = iter(train_dataset)
     data = next(t)
 
-    print(data["gsp_yield"].shape)
+    print(data["nwp"].shape)
     import sys
 
     print(sys.getsizeof(str(data)) / 10 ** 6)
+
+    def save_dict_to_file(dic):
+        f = open("dict.txt", "w")
+        f.write(str(dic))
+        f.close()
+
+    def load_dict_from_file():
+        f = open("dict.txt", "r")
+        d = f.read()
+        f.close()
+        return d
+
+    save_dict_to_file(data)
+    d = load_dict_from_file()
 
     # image
     z = data[SATELLITE_DATA][0][0][:, :, 0]

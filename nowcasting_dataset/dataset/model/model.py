@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
 import xarray as xr
+from pathlib import Path
 
 import nowcasting_dataset.dataset.batch
 from nowcasting_dataset.dataset.model.satellite import Satellite
@@ -13,6 +14,7 @@ from nowcasting_dataset.dataset.model.datetime import Datetime
 from nowcasting_dataset.dataset.model.general import General
 
 from nowcasting_dataset.config.model import Configuration
+from nowcasting_dataset.utils import get_netcdf_filename
 
 
 class DataItem(BaseModel):
@@ -51,6 +53,7 @@ class Batch(DataItem):
 
     def batch_to_dataset(self) -> xr.Dataset:
         """Change batch to xr.Dataset so it can be saved and compressed"""
+
         return batch_to_dataset(batch=self)
 
     @staticmethod
@@ -148,15 +151,21 @@ class Batch(DataItem):
             ),
         )
 
+    def save_netcdf(self, batch_i: int, path: Path):
 
-def join_data_to_batch(data=List[DataItem]) -> Batch:
-    """Join several single data items together to make a Batch"""
-    pass
+        encoding = {name: {"compression": "lzf"} for name in self.data_vars}
+        filename = get_netcdf_filename(batch_i)
+        local_filename = path / filename
+        self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
-    batch_size = 0
+    @staticmethod
+    def load_netcdf(local_netcdf_filename: Path):
+
+        netcdf_batch = xr.load_dataset(local_netcdf_filename)
+
+        return Batch.load_batch_from_dataset(netcdf_batch)
 
 
-from nowcasting_dataset.consts import *
 from nowcasting_dataset.dataset.batch import *
 
 

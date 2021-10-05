@@ -24,10 +24,10 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
-from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
 from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
+from nowcasting_dataset.dataset.model.gsp import GSP
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ class GSPDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
+    ) -> GSP:
         """
         Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
 
@@ -206,30 +206,18 @@ class GSPDataSource(ImageDataSource):
         gsp_y_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_y
 
         # Save data into the Example dict...
-        example = Example(
-            t0_dt=t0_dt,
-            gsp_id=all_gsp_ids,
-            gsp_yield=selected_gsp_power,
-            x_meters_center=x_meters_center,
-            y_meters_center=y_meters_center,
-            gsp_x_coords=gsp_x_coords,
-            gsp_y_coords=gsp_y_coords,
-            gsp_datetime_index=selected_gsp_power.index,
+
+        gsp = GSP(
+            gsp_id=all_gsp_ids.values,
+            gsp_yield=selected_gsp_power.values,
+            gsp_x_coords=gsp_x_coords.values,
+            gsp_y_coords=gsp_y_coords.values,
+            gsp_datetime_index=selected_gsp_power.index.values,
         )
 
-        if self.get_center:
-            example[OBJECT_AT_CENTER] = "gsp"
+        gsp.pad()
 
-        # Pad (if necessary) so returned arrays are always of size n_gsp_per_example.
-        pad_size = self.n_gsp_per_example - len(all_gsp_ids)
-        example = pad_data(
-            data=example,
-            one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
-            two_dimensional_arrays=[GSP_YIELD],
-            pad_size=pad_size,
-        )
-
-        return example
+        return gsp
 
     def _get_central_gsp_id(
         self,

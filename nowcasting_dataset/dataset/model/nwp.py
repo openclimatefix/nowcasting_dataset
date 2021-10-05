@@ -116,19 +116,22 @@ class NWP(DataSourceOutput):
 
     def to_xr_dataset(self):
 
-        data = xr.DataArray(
-            self.nwp,
-            dims=["variable", "target_time", "x", "y"],
-            coords={
-                "variable": self.nwp_channel_names,
-                "target_time": self.nwp_target_time,
-                "init_time": self.nwp_init_time,
-                "x": self.nwp_x_coords,
-                "y": self.nwp_y_coords,
-            },
-        )
+        if type(self.nwp) != xr.DataArray:
+            self.nwp = xr.DataArray(
+                self.nwp,
+                dims=["variable", "target_time", "x", "y"],
+                coords={
+                    "variable": self.nwp_channel_names,
+                    "target_time": self.nwp_target_time,
+                    "init_time": self.nwp_init_time,
+                    "x": self.nwp_x_coords,
+                    "y": self.nwp_y_coords,
+                },
+            )
 
-        ds = data.to_dataset(name="nwp")
+        ds = self.nwp.to_dataset(name="nwp")
+        ds["nwp"] = ds["nwp"].astype(np.float32)
+        ds = ds.round(2)
 
         ds = ds.rename({"target_time": "time"})
         for dim in ["time", "x", "y"]:

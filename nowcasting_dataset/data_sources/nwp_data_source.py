@@ -11,7 +11,8 @@ import xarray as xr
 
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.dataset.example import Example, to_numpy
+from nowcasting_dataset.dataset.model.nwp import NWP
+from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
 
 _LOG = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ class NWPDataSource(ZarrDataSource):
         t0_datetimes: pd.DatetimeIndex,
         x_locations: Iterable[Number],
         y_locations: Iterable[Number],
-    ) -> List[Example]:
+    ) -> List[NWP]:
         """
         Get batch data
 
@@ -177,21 +178,25 @@ class NWPDataSource(ZarrDataSource):
             t0_dt = t0_datetimes[i]
             selected_data = self._post_process_example(selected_data, t0_dt)
 
-            example = self._put_data_into_example(selected_data)
+            output: DataSourceOutput = self._put_data_into_example(selected_data)
             if self.convert_to_numpy:
-                example = to_numpy(example)
-            examples.append(example)
-        return examples
+                output = output.to_numpy()
+            examples.append(output)
+
+        return DataSourceOutput.join(examples)
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)
 
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
-        return Example(
+    def _put_data_into_example(self, selected_data: xr.DataArray) -> NWP:
+
+        return NWP(
             nwp=selected_data,
             nwp_x_coords=selected_data.x,
             nwp_y_coords=selected_data.y,
             nwp_target_time=selected_data.target_time,
+            nwp_init_time=selected_data.init_time,
+            nwp_channel_names=self.channels,  # TODO perhaps could get this from selected data instead
         )
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:

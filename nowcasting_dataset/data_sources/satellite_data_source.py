@@ -10,7 +10,8 @@ import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.dataset.example import Example, to_numpy
+from nowcasting_dataset.dataset.model.satellite import Satellite
+from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -107,7 +108,7 @@ class SatelliteDataSource(ZarrDataSource):
         t0_datetimes: pd.DatetimeIndex,
         x_locations: Iterable[Number],
         y_locations: Iterable[Number],
-    ) -> List[Example]:
+    ) -> Satellite:
         """
         Get batch data
 
@@ -150,17 +151,21 @@ class SatelliteDataSource(ZarrDataSource):
             example = self.get_example(t0_datetime, x_location, y_location)
             examples.append(example)
 
-        if self.convert_to_numpy:
-            examples = [to_numpy(example) for example in examples]
-        self._cache = {}
-        return examples
+        output = DataSourceOutput.join(examples)
 
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
-        return Example(
+        if self.convert_to_numpy:
+            output = output.to_numpy()
+        self._cache = {}
+
+        return output
+
+    def _put_data_into_example(self, selected_data: xr.DataArray) -> Satellite:
+        return Satellite(
             sat_data=selected_data,
             sat_x_coords=selected_data.x,
             sat_y_coords=selected_data.y,
             sat_datetime_index=selected_data.time,
+            sat_channel_names=self.channels,
         )
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:

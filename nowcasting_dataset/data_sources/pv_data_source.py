@@ -26,8 +26,8 @@ from nowcasting_dataset.consts import (
     OBJECT_AT_CENTER,
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.square import get_bounding_box_mask
+from nowcasting_dataset.dataset.model.pv import PV
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +202,7 @@ class PVDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
+    ) -> PV:
         """
         Get Example data for PV data
 
@@ -238,42 +238,21 @@ class PVDataSource(ImageDataSource):
         pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
-        # Save data into the Example dict...
-        example = Example(
-            t0_dt=t0_dt,
-            pv_system_id=all_pv_system_ids,
+
+        # Save data into the PV object...
+
+        pv = PV(
+            pv_system_id=all_pv_system_ids.values,
             pv_system_row_number=pv_system_row_number,
-            pv_yield=selected_pv_power,
-            x_meters_center=x_meters_center,
-            y_meters_center=y_meters_center,
-            pv_system_x_coords=pv_system_x_coords,
-            pv_system_y_coords=pv_system_y_coords,
-            pv_datetime_index=selected_pv_power.index,
+            pv_yield=selected_pv_power.values,
+            pv_system_x_coords=pv_system_x_coords.values,
+            pv_system_y_coords=pv_system_y_coords.values,
+            pv_datetime_index=selected_pv_power.index.values,
         )
 
-        if self.get_center:
-            example[OBJECT_AT_CENTER] = "pv"
+        pv.pad()
 
-        # Pad (if necessary) so returned arrays are always of size n_pv_systems_per_example.
-        pad_size = self.n_pv_systems_per_example - len(all_pv_system_ids)
-
-        one_dimensional_arrays = [
-            PV_SYSTEM_ID,
-            PV_SYSTEM_ROW_NUMBER,
-            PV_SYSTEM_X_COORDS,
-            PV_SYSTEM_Y_COORDS,
-        ]
-
-        pad_nans_variables = [PV_YIELD]
-
-        example = utils.pad_data(
-            data=example,
-            one_dimensional_arrays=one_dimensional_arrays,
-            two_dimensional_arrays=pad_nans_variables,
-            pad_size=pad_size,
-        )
-
-        return example
+        return pv
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

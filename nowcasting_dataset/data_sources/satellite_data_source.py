@@ -154,7 +154,7 @@ class SatelliteDataSource(ZarrDataSource):
         output = DataSourceOutput.join(examples)
 
         if self.convert_to_numpy:
-            output = output.to_numpy()
+            output.to_numpy()
         self._cache = {}
 
         return output

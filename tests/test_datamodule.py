@@ -19,6 +19,7 @@ from nowcasting_dataset.dataset.example import (
 )
 from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.dataset.validate import validate_example, validate_batch_from_configuration
+from nowcasting_dataset.dataset.model.model import Batch
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -116,26 +117,28 @@ def test_data_module(config_filename):
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    assert len(batch) == config.process.batch_size
+    assert batch["batch_size"] == config.process.batch_size
 
-    for key in list(Example.__annotations__.keys()):
-        assert key in batch[0].keys()
+    _ = Batch(**batch)
 
-    seq_len_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
-    seq_len_5_minutes = (
-        19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
-    )
+    # for key in list(Example.__annotations__.keys()):
+    #     assert key in batch[0].keys()
+    #
+    # seq_len_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
+    # seq_len_5_minutes = (
+    #     19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
+    # )
 
-    for x in batch:
-        validate_example(
-            data=x,
-            n_nwp_channels=len(config.process.nwp_channels),
-            nwp_image_size=config.process.nwp_image_size_pixels,
-            n_sat_channels=len(config.process.sat_channels),
-            sat_image_size=config.process.satellite_image_size_pixels,
-            seq_len_30_minutes=seq_len_30_minutes,
-            seq_len_5_minutes=seq_len_5_minutes,
-        )
+    # for x in batch:
+    #     validate_example(
+    #         data=x,
+    #         n_nwp_channels=len(config.process.nwp_channels),
+    #         nwp_image_size=config.process.nwp_image_size_pixels,
+    #         n_sat_channels=len(config.process.sat_channels),
+    #         sat_image_size=config.process.satellite_image_size_pixels,
+    #         seq_len_30_minutes=seq_len_30_minutes,
+    #         seq_len_5_minutes=seq_len_5_minutes,
+    #     )
 
 
 def test_batch_to_batch_to_dataset():
@@ -155,6 +158,7 @@ def test_batch_to_batch_to_dataset():
         nwp_base_path=config.input_data.nwp_zarr_path,
         gsp_filename=config.input_data.gsp_zarr_path,
         topographic_filename=config.input_data.topographic_filename,
+        sun_filename=config.input_data.sun_zarr_path,
         pin_memory=True,  #: Passed to DataLoader.
         num_workers=0,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
@@ -179,38 +183,11 @@ def test_batch_to_batch_to_dataset():
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    print("dict")
-    import sys
+    batch = Batch(**batch)
 
-    print(sys.getsizeof(str(batch)) / 10 ** 6)
-
-    batch_xr = batch_to_dataset(batch=batch)
-    batch_xr = fix_dtypes(batch_xr)
-
-    print("xr")
-    print(batch_xr.nbytes / 10 ** 6)
+    batch_xr = batch.batch_to_dataset()
 
     assert type(batch_xr) == xr.Dataset
-    assert GSP_DATETIME_INDEX in batch_xr
-    assert pd.DataFrame(batch_xr[GSP_DATETIME_INDEX]).isnull().sum().sum() == 0
+    assert pd.DataFrame(batch_xr.gsp_datetime_index).isnull().sum().sum() == 0
 
-    # validate batch
-    from nowcasting_dataset.dataset.example import to_numpy
-
-    batch0 = xr_to_example(batch_xr=batch_xr, required_keys=DEFAULT_REQUIRED_KEYS)
-    batch0 = to_numpy(batch0)
-
-    print("dict")
-    print(sys.getsizeof(str(batch0)) / 10 ** 6)
-
-    import fsspec
-
-    with fsspec.open("test.txt", "w") as yaml_file:
-        yaml_file.write(str(batch0))
-
-    import os
-
-    b = os.path.getsize("test.txt")
-    print(f"{b / 10**6} size from file")
-
-    validate_batch_from_configuration(data=batch0, configuration=config)
+    _ = Batch.load_batch_from_dataset(batch_xr)

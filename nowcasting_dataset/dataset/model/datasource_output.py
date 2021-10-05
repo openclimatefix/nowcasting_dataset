@@ -38,10 +38,7 @@ class DataSourceOutput(BaseModel):
                 batch.batch_size = len(data)
             else:
 
-                print(k)
-
                 one_variable_in_batch = [d.__getattribute__(k) for d in data]
-                print([d.shape for d in one_variable_in_batch])
 
                 batch.__setattr__(k, np.stack(one_variable_in_batch, axis=0))
 

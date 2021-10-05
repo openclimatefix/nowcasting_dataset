@@ -126,7 +126,7 @@ class NWPDataSource(ZarrDataSource):
         t0_datetimes: pd.DatetimeIndex,
         x_locations: Iterable[Number],
         y_locations: Iterable[Number],
-    ) -> List[NWP]:
+    ) -> NWP:
         """
         Get batch data
 
@@ -180,7 +180,7 @@ class NWPDataSource(ZarrDataSource):
 
             output: DataSourceOutput = self._put_data_into_example(selected_data)
             if self.convert_to_numpy:
-                output = output.to_numpy()
+                output.to_numpy()
             examples.append(output)
 
         return DataSourceOutput.join(examples)
@@ -195,7 +195,7 @@ class NWPDataSource(ZarrDataSource):
             nwp_x_coords=selected_data.x,
             nwp_y_coords=selected_data.y,
             nwp_target_time=selected_data.target_time,
-            nwp_init_time=selected_data.init_time,
+            nwp_init_time=np.array(selected_data.init_time.data),
             nwp_channel_names=self.channels,  # TODO perhaps could get this from selected data instead
         )
 

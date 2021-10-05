@@ -50,6 +50,12 @@ def test_nwp():
     s = NWP.fake(batch_size=4, seq_length_5=13, nwp_image_size_pixels=64, number_nwp_channels=8)
 
 
+def test_nwp_split():
+
+    s = NWP.fake(batch_size=4, seq_length_5=13, nwp_image_size_pixels=64, number_nwp_channels=8)
+    s = s.split()
+
+
 def test_pv():
 
     s = PV.fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=128)
@@ -108,28 +114,6 @@ def test_model_to_xr_dataset(configuration):
 
     f = Batch.fake(configuration=configuration)
     f_xr = f.batch_to_dataset()
-
-    import sys
-
-    print("pydantic")
-    print(sys.getsizeof(str(f.dict())) / 10 ** 6)
-
-    f.change_type_to_numpy()
-    fd = f.dict()
-
-    import fsspec
-
-    with fsspec.open("test.txt", "w") as yaml_file:
-        yaml_file.write(str(fd))
-
-    import os
-
-    b = os.path.getsize("test.txt")
-
-    assert b / 10 ** 6 < 1
-
-    print("xr")
-    print(f_xr.nbytes / 10 ** 6)
 
     assert type(f_xr) == xr.Dataset
 

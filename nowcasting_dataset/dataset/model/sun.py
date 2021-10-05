@@ -27,6 +27,11 @@ class Sun(DataSourceOutput):
         assert v.shape[-1] == values["sun_azimuth_angle"].shape[-1]
         return v
 
+    @validator("sun_datetime_index")
+    def sun_datetime_index_shape(cls, v, values):
+        assert v.shape[-1] == values["sun_azimuth_angle"].shape[-1]
+        return v
+
     @staticmethod
     def fake(batch_size, seq_length_5):
         return Sun(

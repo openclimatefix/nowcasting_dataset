@@ -225,15 +225,15 @@ def test_required_keys_gcp(configuration: Configuration):
         os.path.join(DATA_PATH, "train"),
         os.path.join(TEMP_PATH, "train"),
         cloud="gcp",
-        required_keys=[
-            NWP_DATA,
-            NWP_X_COORDS,
-            NWP_Y_COORDS,
-            SATELLITE_DATA,
-            SATELLITE_X_COORDS,
-            SATELLITE_Y_COORDS,
-            GSP_DATETIME_INDEX,
-        ],
+        # required_keys=[
+        #     NWP_DATA,
+        #     NWP_X_COORDS,
+        #     NWP_Y_COORDS,
+        #     SATELLITE_DATA,
+        #     SATELLITE_X_COORDS,
+        #     SATELLITE_Y_COORDS,
+        #     GSP_DATETIME_INDEX,
+        # ],
         configuration=configuration,
     )
 

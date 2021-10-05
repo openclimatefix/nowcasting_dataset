@@ -69,7 +69,7 @@ class SunDataSource(DataSource):
         sun = Sun(
             sun_azimuth_angle=azimuth.values,
             sun_elevation_angle=elevation.values,
-            sun_datetime_index=self.azimuth.index.values,
+            sun_datetime_index=azimuth.index.values,
         )
 
         return sun

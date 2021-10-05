@@ -13,9 +13,9 @@ from nowcasting_dataset.dataset.batch import coord_to_range
 
 class General(DataSourceOutput):
 
-    t0_dt: Array  #: Shape: [batch_size,]
-    x_meters_center: Array
-    y_meters_center: Array
+    t0_dt: Union[xr.DataArray, np.ndarray, torch.Tensor, int]  #: Shape: [batch_size,]
+    x_meters_center: Union[xr.DataArray, np.ndarray, torch.Tensor, int]
+    y_meters_center: Union[xr.DataArray, np.ndarray, torch.Tensor, int]
     object_at_center: Union[List[List[str]], List[str], str, np.ndarray, xr.DataArray]
 
     @staticmethod

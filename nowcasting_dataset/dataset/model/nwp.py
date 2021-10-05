@@ -43,7 +43,9 @@ class NWP(DataSourceOutput):
         "passed into the ML model.",
     )
 
-    nwp_init_time: Array = Field(..., description="The time when the nwp forecast was made")
+    nwp_init_time: Union[xr.DataArray, np.ndarray, torch.Tensor, int] = Field(
+        ..., description="The time when the nwp forecast was made"
+    )
 
     nwp_channel_names: Union[List[List[str]], List[str], np.ndarray] = Field(
         ..., description="List of the nwp channels"

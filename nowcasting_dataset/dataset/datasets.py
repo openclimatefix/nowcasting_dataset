@@ -36,6 +36,7 @@ from nowcasting_dataset.consts import (
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.dataset import example
 from nowcasting_dataset.utils import set_fsspec_for_multiprocess
+from nowcasting_dataset.dataset.model.model import Batch
 
 logger = logging.getLogger(__name__)
 
@@ -312,12 +313,13 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = self._get_t0_datetimes_for_batch()
         x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)
 
-        examples = None
+        examples = {}
         n_threads = len(self.data_sources)
         with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
             # Submit tasks to the executor.
             future_examples_per_source = []
             for data_source in self.data_sources:
+
                 future_examples = executor.submit(
                     data_source.get_batch,
                     t0_datetimes=t0_datetimes,
@@ -329,13 +331,17 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             # Collect results from each thread.
             for future_examples in future_examples_per_source:
                 examples_from_source = future_examples.result()
-                if examples is None:
-                    examples = examples_from_source
-                else:
-                    for i in range(self.batch_size):
-                        examples[i].update(examples_from_source[i])
 
-        return self.collate_fn(examples)
+                # print(type(examples_from_source))
+                name = type(examples_from_source).__name__.lower()
+                examples[name] = examples_from_source.dict()
+
+        examples["batch_size"] = len(t0_datetimes)
+
+        b = Batch(**examples)
+
+        # return as  dictionary because .... # TODO
+        return b.dict()
 
     def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
         # Pick random datetimes.

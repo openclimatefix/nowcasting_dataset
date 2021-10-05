@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 import xarray as xr
 from pathlib import Path
 
@@ -20,13 +20,13 @@ from nowcasting_dataset.utils import get_netcdf_filename
 class DataItem(BaseModel):
 
     general: General
-    satellite: Satellite
-    topographic: Topographic
-    pv: PV
-    sun: Sun
-    gsp: GSP
-    nwp: NWP
-    datetime: Datetime
+    satellite: Optional[Satellite]
+    topographic: Optional[Topographic]
+    pv: Optional[PV]
+    sun: Optional[Sun]
+    gsp: Optional[GSP]
+    nwp: Optional[NWP]
+    datetime: Optional[Datetime]
 
     def change_type_to_numpy(self):
 
@@ -92,6 +92,9 @@ class Batch(DataItem):
         gsp_data = self.gsp.split()
         nwp_data = self.nwp.split()
         datetime_data = self.datetime.split()
+
+        print(self.general.t0_dt)
+        print(type(self.general.t0_dt))
         general_data = self.general.split()
 
         data_items = []

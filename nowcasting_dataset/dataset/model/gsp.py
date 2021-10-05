@@ -139,13 +139,14 @@ class GSP(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        gsp = GSP(
-            batch_size=xr_dataset["gsp_yield"].shape[0],
-            gsp_yield=xr_dataset[GSP_YIELD],
-            gsp_id=xr_dataset[GSP_ID],
-            gsp_datetime_index=xr_dataset[GSP_DATETIME_INDEX],
-            gsp_x_coords=xr_dataset[GSP_X_COORDS],
-            gsp_y_coords=xr_dataset[GSP_Y_COORDS],
-        )
-
-        return gsp
+        if "gsp_yield" in xr_dataset.keys():
+            return GSP(
+                batch_size=xr_dataset["gsp_yield"].shape[0],
+                gsp_yield=xr_dataset[GSP_YIELD],
+                gsp_id=xr_dataset[GSP_ID],
+                gsp_datetime_index=xr_dataset[GSP_DATETIME_INDEX],
+                gsp_x_coords=xr_dataset[GSP_X_COORDS],
+                gsp_y_coords=xr_dataset[GSP_Y_COORDS],
+            )
+        else:
+            return None

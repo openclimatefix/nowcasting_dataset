@@ -85,11 +85,14 @@ class Datetime(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        return Datetime(
-            batch_size=xr_dataset["hour_of_day_sin"].shape[0],
-            hour_of_day_sin=xr_dataset["hour_of_day_sin"],
-            hour_of_day_cos=xr_dataset["hour_of_day_cos"],
-            day_of_year_sin=xr_dataset["day_of_year_sin"],
-            day_of_year_cos=xr_dataset["day_of_year_cos"],
-            datetime_index=xr_dataset["hour_of_day_sin"].time,
-        )
+        if "hour_of_day_sin" in xr_dataset.keys():
+            return Datetime(
+                batch_size=xr_dataset["hour_of_day_sin"].shape[0],
+                hour_of_day_sin=xr_dataset["hour_of_day_sin"],
+                hour_of_day_cos=xr_dataset["hour_of_day_cos"],
+                day_of_year_sin=xr_dataset["day_of_year_sin"],
+                day_of_year_cos=xr_dataset["day_of_year_cos"],
+                datetime_index=xr_dataset["hour_of_day_sin"].time,
+            )
+        else:
+            return None

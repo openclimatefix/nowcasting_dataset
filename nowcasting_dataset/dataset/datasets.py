@@ -171,7 +171,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         """ Length of dataset """
         return self.n_batches
 
-    def __getitem__(self, batch_idx: int) -> example.Example:
+    def __getitem__(self, batch_idx: int) -> Batch:
         """Returns a whole batch at once.
 
         Args:
@@ -231,7 +231,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 current_timestep_index=self.current_timestep_5_index,
             )
 
-        batch = example.to_numpy(batch)
+        batch.change_type_to_numpy()
 
         return batch
 
@@ -407,12 +407,12 @@ def select_time_period(
 
 
 def subselect_data(
-    batch: example.Example,
+    batch: Batch,
     required_keys: Union[Tuple[str], List[str]],
     history_minutes: int,
     forecast_minutes: int,
     current_timestep_index: Optional[int] = None,
-) -> example.Example:
+) -> Batch:
     """
     Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
 
@@ -437,12 +437,8 @@ def subselect_data(
     )
 
     # t0_dt or if not available use a different datetime index
-    if T0_DT in batch.keys():
-        current_time_of_first_batch = batch[T0_DT][0]
-    else:
-        current_time_of_first_batch = batch[date_time_index_to_use].isel(
-            time=current_timestep_index
-        )[0]
+    batch.general.to_numpy()
+    current_time_of_first_batch = pd.to_datetime(batch.general.t0_dt[0], unit="s")
 
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
@@ -452,18 +448,22 @@ def subselect_data(
         f"{history_minutes} minute 30 second"
     )
     end_time = current_time_of_first_batch + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
-    used_datetime_features = [k for k in DATETIME_FEATURE_NAMES if k in required_keys]
-    if SATELLITE_DATA in required_keys:
-        batch = select_time_period(
-            batch,
-            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX] + used_datetime_features,
-            time_of_first_example=batch[SATELLITE_DATETIME_INDEX][0].data,
+
+    logger.debug(f"New start time for first batch is {start_time}")
+    logger.debug(f"New end time for first batch is {end_time}")
+
+    logger.debug(batch.satellite.sat_datetime_index[0])
+
+    if batch.satellite is not None:
+        batch.satellite.select_time_period(
+            time_of_first_example=batch.satellite.sat_datetime_index[0],
             start_time=start_time,
             end_time=end_time,
         )
-        _LOG.debug(
-            f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
-        )
+
+        # _LOG.debug(
+        #     f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
+        # )
 
     # Now for NWP, if used
     if NWP_DATA in required_keys:

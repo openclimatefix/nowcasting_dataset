@@ -84,8 +84,8 @@ class Satellite(DataSourceOutput):
                 },
             )
 
-        ds = self.sat_data.to_dataset(name="sat")
-        ds["sat"] = ds["sat"].astype(np.int16)
+        ds = self.sat_data.to_dataset(name="sat_data")
+        ds["sat_data"] = ds["sat_data"].astype(np.int16)
         ds = ds.round(2)
 
         for dim in ["time", "x", "y"]:
@@ -101,11 +101,14 @@ class Satellite(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        return Satellite(
-            batch_size=xr_dataset["sat"].shape[0],
-            sat_data=xr_dataset["sat"],
-            sat_x_coords=xr_dataset["sat"].sat_x,
-            sat_y_coords=xr_dataset["sat"].sat_y,
-            sat_datetime_index=xr_dataset["sat"].time,
-            sat_channel_names=xr_dataset["sat"].sat_variable.values,
-        )
+        if "sata_data" in xr_dataset.keys():
+            return Satellite(
+                batch_size=xr_dataset["sat_data"].shape[0],
+                sat_data=xr_dataset["sat_data"],
+                sat_x_coords=xr_dataset["sat_x_coords"].values,
+                sat_y_coords=xr_dataset["sat_y_coords"].values,
+                sat_datetime_index=xr_dataset["sat_time_coords"].values,
+                sat_channel_names=xr_dataset["sat_data"].sat_variable.values,
+            )
+        else:
+            return None

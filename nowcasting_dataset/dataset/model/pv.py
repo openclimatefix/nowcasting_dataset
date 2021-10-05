@@ -144,12 +144,15 @@ class PV(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        return PV(
-            batch_size=xr_dataset[PV_YIELD].shape[0],
-            pv_yield=xr_dataset[PV_YIELD],
-            pv_system_id=xr_dataset[PV_SYSTEM_ID],
-            pv_system_row_number=xr_dataset[PV_SYSTEM_ROW_NUMBER],
-            pv_datetime_index=xr_dataset[PV_YIELD].time,
-            pv_system_x_coords=xr_dataset[PV_SYSTEM_X_COORDS],
-            pv_system_y_coords=xr_dataset[PV_SYSTEM_Y_COORDS],
-        )
+        if PV_YIELD in xr_dataset.keys():
+            return PV(
+                batch_size=xr_dataset[PV_YIELD].shape[0],
+                pv_yield=xr_dataset[PV_YIELD],
+                pv_system_id=xr_dataset[PV_SYSTEM_ID],
+                pv_system_row_number=xr_dataset[PV_SYSTEM_ROW_NUMBER],
+                pv_datetime_index=xr_dataset[PV_YIELD].time,
+                pv_system_x_coords=xr_dataset[PV_SYSTEM_X_COORDS],
+                pv_system_y_coords=xr_dataset[PV_SYSTEM_Y_COORDS],
+            )
+        else:
+            return None

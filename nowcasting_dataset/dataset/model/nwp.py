@@ -149,12 +149,15 @@ class NWP(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        return NWP(
-            batch_size=xr_dataset[NWP_DATA].shape[0],
-            nwp=xr_dataset[NWP_DATA],
-            nwp_channel_names=xr_dataset[NWP_DATA].nwp_variable.values,
-            nwp_init_time=xr_dataset[NWP_DATA].init_time,
-            nwp_target_time=xr_dataset[NWP_DATA].time,
-            nwp_x_coords=xr_dataset[NWP_DATA].nwp_x,
-            nwp_y_coords=xr_dataset[NWP_DATA].nwp_y,
-        )
+        if NWP_DATA in xr_dataset.keys():
+            return NWP(
+                batch_size=xr_dataset[NWP_DATA].shape[0],
+                nwp=xr_dataset[NWP_DATA],
+                nwp_channel_names=xr_dataset[NWP_DATA].nwp_variable.values,
+                nwp_init_time=xr_dataset[NWP_DATA].init_time,
+                nwp_target_time=xr_dataset[NWP_DATA].time,
+                nwp_x_coords=xr_dataset[NWP_DATA].nwp_x,
+                nwp_y_coords=xr_dataset[NWP_DATA].nwp_y,
+            )
+        else:
+            return None

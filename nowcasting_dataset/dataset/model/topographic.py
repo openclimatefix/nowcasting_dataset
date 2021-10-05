@@ -88,9 +88,12 @@ class Topographic(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        return Topographic(
-            batch_size=xr_dataset[TOPOGRAPHIC_DATA].shape[0],
-            topo_data=xr_dataset[TOPOGRAPHIC_DATA],
-            topo_x_coords=xr_dataset[TOPOGRAPHIC_DATA].topo_x,
-            topo_y_coords=xr_dataset[TOPOGRAPHIC_DATA].topo_y,
-        )
+        if TOPOGRAPHIC_DATA in xr_dataset.keys():
+            return Topographic(
+                batch_size=xr_dataset[TOPOGRAPHIC_DATA].shape[0],
+                topo_data=xr_dataset[TOPOGRAPHIC_DATA],
+                topo_x_coords=xr_dataset[TOPOGRAPHIC_DATA].topo_x,
+                topo_y_coords=xr_dataset[TOPOGRAPHIC_DATA].topo_y,
+            )
+        else:
+            return None

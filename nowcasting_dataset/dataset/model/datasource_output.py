@@ -62,6 +62,29 @@ class DataSourceOutput(BaseModel):
     def from_xr_dataset(self):
         raise NotImplementedError
 
+    def select_time_period(
+        self,
+        time_of_first_example: pd.DatetimeIndex,
+        start_time: xr.DataArray,
+        end_time: xr.DataArray,
+    ):
+        """
+        Selects a subset of data between the indicies of [start, end] for each key in keys
+
+        Args:
+            batch: Example containing the data
+            keys: Keys in batch to use
+            time_of_first_example: Datetime of the current time in the first example of the batch
+            start_time: Start time DataArray
+            end_time: End time DataArray
+
+        Returns:
+            Example containing the subselected data
+        """
+        start_i, end_i = np.searchsorted(time_of_first_example, [start_time, end_time])
+        for key in self.dict().keys():
+            self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))
+
 
 def to_numpy(value):
     if isinstance(value, xr.DataArray):

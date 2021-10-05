@@ -72,9 +72,12 @@ class Sun(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
 
-        return Sun(
-            batch_size=xr_dataset[SUN_AZIMUTH_ANGLE].shape[0],
-            sun_azimuth_angle=xr_dataset[SUN_AZIMUTH_ANGLE],
-            sun_elevation_angle=xr_dataset[SUN_ELEVATION_ANGLE],
-            sun_datetime_index=xr_dataset[SUN_AZIMUTH_ANGLE].time,
-        )
+        if SUN_AZIMUTH_ANGLE in xr_dataset.keys():
+            return Sun(
+                batch_size=xr_dataset[SUN_AZIMUTH_ANGLE].shape[0],
+                sun_azimuth_angle=xr_dataset[SUN_AZIMUTH_ANGLE],
+                sun_elevation_angle=xr_dataset[SUN_ELEVATION_ANGLE],
+                sun_datetime_index=xr_dataset[SUN_AZIMUTH_ANGLE].time,
+            )
+        else:
+            return None

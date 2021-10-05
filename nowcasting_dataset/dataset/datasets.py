@@ -206,19 +206,21 @@ class NetCDFDataset(torch.utils.data.Dataset):
         else:
             local_netcdf_filename = remote_netcdf_filename
 
-        netcdf_batch = xr.load_dataset(local_netcdf_filename)
+        batch = Batch.load_netcdf(local_netcdf_filename)
+        # netcdf_batch = xr.load_dataset(local_netcdf_filename)
         if self.cloud != "local":
             os.remove(local_netcdf_filename)
 
-        batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
+        # batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
 
+        # Todo this may should be done when the data is created
         if SATELLITE_DATA in self.required_keys:
-            sat_data = batch[SATELLITE_DATA]
+            sat_data = batch.satellite.sat_data
             if sat_data.dtype == np.int16:
                 sat_data = sat_data.astype(np.float32)
                 sat_data = sat_data - SAT_MEAN
-                sat_data /= SAT_STD
-                batch[SATELLITE_DATA] = sat_data
+                sat_data = sat_data / SAT_STD
+                batch.satellite.sat_data = sat_data
 
         if self.select_subset_data:
             batch = subselect_data(

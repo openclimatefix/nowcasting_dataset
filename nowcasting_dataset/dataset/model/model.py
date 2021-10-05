@@ -1,6 +1,8 @@
+import pandas as pd
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import xarray as xr
+import random
 from pathlib import Path
 
 import nowcasting_dataset.dataset.batch
@@ -15,6 +17,7 @@ from nowcasting_dataset.dataset.model.general import General
 
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.utils import get_netcdf_filename
+from nowcasting_dataset.time import make_time_vectors
 
 
 class DataItem(BaseModel):
@@ -92,9 +95,6 @@ class Batch(DataItem):
         gsp_data = self.gsp.split()
         nwp_data = self.nwp.split()
         datetime_data = self.datetime.split()
-
-        print(self.general.t0_dt)
-        print(type(self.general.t0_dt))
         general_data = self.general.split()
 
         data_items = []
@@ -119,14 +119,21 @@ class Batch(DataItem):
 
         process = configuration.process
 
+        t0_dt, time_5, time_30 = make_time_vectors(
+            batch_size=process.batch_size,
+            seq_len_5_minutes=process.seq_len_5_minutes,
+            seq_len_30_minutes=process.seq_len_30_minutes,
+        )
+
         return Batch(
             batch_size=process.batch_size,
-            general=General.fake(batch_size=process.batch_size),
+            general=General.fake(batch_size=process.batch_size, t0_dt=t0_dt),
             satellite=Satellite.fake(
                 process.batch_size,
                 process.seq_len_5_minutes,
                 process.satellite_image_size_pixels,
                 len(process.nwp_channels),
+                time_5=time_5,
             ),
             topographic=Topographic.fake(
                 batch_size=process.batch_size,
@@ -148,6 +155,7 @@ class Batch(DataItem):
                 seq_length_5=process.seq_len_5_minutes,
                 nwp_image_size_pixels=process.nwp_image_size_pixels,
                 number_nwp_channels=len(process.nwp_channels),
+                time_5=time_5,
             ),
             datetime=Datetime.fake(
                 batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes

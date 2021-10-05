@@ -14,6 +14,7 @@ from nowcasting_dataset.consts import (
     NWP_TARGET_TIME,
 )
 from nowcasting_dataset.dataset.batch import coord_to_range
+from nowcasting_dataset.time import make_time_vectors
 
 
 class NWP(DataSourceOutput):
@@ -77,7 +78,13 @@ class NWP(DataSourceOutput):
         return v
 
     @staticmethod
-    def fake(batch_size, seq_length_5, nwp_image_size_pixels, number_nwp_channels):
+    def fake(batch_size, seq_length_5, nwp_image_size_pixels, number_nwp_channels, time_5=None):
+
+        if time_5 is None:
+            _, time_5, _ = make_time_vectors(
+                batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
+            )
+
         return NWP(
             batch_size=batch_size,
             nwp=torch.randn(
@@ -91,7 +98,7 @@ class NWP(DataSourceOutput):
             nwp_y_coords=torch.sort(
                 torch.randn(batch_size, nwp_image_size_pixels), descending=True
             )[0],
-            nwp_target_time=torch.sort(torch.randn(batch_size, seq_length_5))[0],
+            nwp_target_time=time_5,
             nwp_init_time=torch.sort(
                 torch.randn(
                     batch_size,
@@ -155,7 +162,7 @@ class NWP(DataSourceOutput):
                 nwp=xr_dataset[NWP_DATA],
                 nwp_channel_names=xr_dataset[NWP_DATA].nwp_variable.values,
                 nwp_init_time=xr_dataset[NWP_DATA].init_time,
-                nwp_target_time=xr_dataset[NWP_DATA].time,
+                nwp_target_time=xr_dataset["nwp_time_coords"],
                 nwp_x_coords=xr_dataset[NWP_DATA].nwp_x,
                 nwp_y_coords=xr_dataset[NWP_DATA].nwp_y,
             )

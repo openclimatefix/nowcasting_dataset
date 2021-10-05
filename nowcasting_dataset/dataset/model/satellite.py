@@ -7,6 +7,7 @@ import torch
 from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, SAT_VARIABLE_NAMES
 from nowcasting_dataset.dataset.batch import coord_to_range
+from nowcasting_dataset.time import make_time_vectors
 
 
 class Satellite(DataSourceOutput):
@@ -48,7 +49,18 @@ class Satellite(DataSourceOutput):
         return v
 
     @staticmethod
-    def fake(batch_size=32, seq_length_5=19, satellite_image_size_pixels=64, number_sat_channels=7):
+    def fake(
+        batch_size=32,
+        seq_length_5=19,
+        satellite_image_size_pixels=64,
+        number_sat_channels=7,
+        time_5=None,
+    ):
+
+        if time_5 is None:
+            _, time_5, _ = make_time_vectors(
+                batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
+            )
 
         s = Satellite(
             batch_size=batch_size,
@@ -63,7 +75,7 @@ class Satellite(DataSourceOutput):
             sat_y_coords=torch.sort(
                 torch.randn(batch_size, satellite_image_size_pixels), descending=True
             )[0],
-            sat_datetime_index=torch.sort(torch.randn(batch_size, seq_length_5))[0],
+            sat_datetime_index=time_5,
             sat_channel_names=[
                 SAT_VARIABLE_NAMES[0:number_sat_channels] for _ in range(batch_size)
             ],
@@ -100,9 +112,6 @@ class Satellite(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
-        for key in xr_dataset.keys():
-            print(key)
 
         if "sat_data" in xr_dataset.keys():
             return Satellite(

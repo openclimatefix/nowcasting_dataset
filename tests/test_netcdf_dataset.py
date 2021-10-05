@@ -30,28 +30,27 @@ from nowcasting_dataset.dataset.model.model import Batch
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 
 
+def test_subselect_date(test_data_folder):
+
+    # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
+    x = Batch.fake()
+    x = x.batch_to_dataset()
+    x = Batch.load_batch_from_dataset(x)
+
+    batch = subselect_data(
+        x,
+        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+        current_timestep_index=7,
+        history_minutes=10,
+        forecast_minutes=10,
+    )
+
+    assert batch.satellite.sat_data.shape[1] == 5
+    assert batch.nwp.nwp.shape[2] == 5
+
+
+#
 # TODO need to un commit these
-# def test_subselect_date(test_data_folder):
-#     dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
-#     x = example.Example(
-#         sat_data=dataset["sat_data"],
-#         nwp=dataset["nwp"],
-#         nwp_target_time=dataset["nwp_time_coords"],
-#         sat_datetime_index=dataset["sat_time_coords"],
-#     )
-#
-#     batch = subselect_data(
-#         x,
-#         required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
-#         current_timestep_index=7,
-#         history_minutes=10,
-#         forecast_minutes=10,
-#     )
-#
-#     assert batch[SATELLITE_DATA].shape[1] == 5
-#     assert batch[NWP_DATA].shape[2] == 5
-#
-#
 # def test_subselect_date_with_t0_dt(test_data_folder):
 #     dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
 #     x = example.Example(

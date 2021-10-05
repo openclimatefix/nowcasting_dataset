@@ -1,9 +1,13 @@
-import torch
 from pydantic import BaseModel, Field
 import pandas as pd
 import xarray as xr
 import numpy as np
 from typing import List
+import logging
+
+from nowcasting_dataset.utils import to_numpy
+
+logger = logging.getLogger(__name__)
 
 
 class DataSourceOutput(BaseModel):
@@ -86,24 +90,7 @@ class DataSourceOutput(BaseModel):
         for key in keys:
             self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))
 
-
-def to_numpy(value):
-    if isinstance(value, xr.DataArray):
-        # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
-        value = value.data
-
-    if isinstance(value, (pd.Series, pd.DataFrame)):
-        value = value.values
-    elif isinstance(value, pd.DatetimeIndex):
-        value = value.values.astype("datetime64[s]").astype(np.int32)
-    elif isinstance(value, pd.Timestamp):
-        value = np.int32(value.timestamp())
-    elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
-        value = value.astype("datetime64[s]").astype(np.int32)
-    elif isinstance(value, torch.Tensor):
-        value = value.numpy()
-
-    return value
+            logger.debug(f"{self.__class__.__name__} {key}: {self.__getattribute__(key).shape}")
 
 
 def pad_nans(array, pad_width) -> np.ndarray:

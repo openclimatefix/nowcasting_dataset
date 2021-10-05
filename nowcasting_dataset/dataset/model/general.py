@@ -7,6 +7,7 @@ import torch
 from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
 from nowcasting_dataset.dataset.batch import coord_to_range
+from nowcasting_dataset.time import make_time_vectors
 
 # seems to be a pandas dataseries
 
@@ -19,12 +20,16 @@ class General(DataSourceOutput):
     object_at_center: Union[List[List[str]], List[str], str, np.ndarray, xr.DataArray]
 
     @staticmethod
-    def fake(batch_size):
+    def fake(batch_size, t0_dt=None):
+
+        if t0_dt is None:
+            t0_dt, _, _ = make_time_vectors(
+                batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=0
+            )
+
         return General(
             batch_size=batch_size,
-            t0_dt=torch.randn(
-                batch_size,
-            ),
+            t0_dt=t0_dt,
             x_meters_center=torch.randn(
                 batch_size,
             ),

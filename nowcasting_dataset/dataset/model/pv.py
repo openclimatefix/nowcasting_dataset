@@ -121,6 +121,12 @@ class PV(DataSourceOutput):
         one_dataset = one_dataset.to_dataset(name="pv_yield")
         n_pv_systems = len(self.pv_system_id)
 
+        one_dataset[PV_DATETIME_INDEX] = xr.DataArray(
+            self.pv_datetime_index,
+            dims=["time_30"],
+            coords=[np.arange(len(self.pv_datetime_index))],
+        )
+
         # 1D
         for name in [
             PV_SYSTEM_ID,
@@ -150,7 +156,7 @@ class PV(DataSourceOutput):
                 pv_yield=xr_dataset[PV_YIELD],
                 pv_system_id=xr_dataset[PV_SYSTEM_ID],
                 pv_system_row_number=xr_dataset[PV_SYSTEM_ROW_NUMBER],
-                pv_datetime_index=xr_dataset[PV_YIELD].time,
+                pv_datetime_index=xr_dataset[PV_DATETIME_INDEX],
                 pv_system_x_coords=xr_dataset[PV_SYSTEM_X_COORDS],
                 pv_system_y_coords=xr_dataset[PV_SYSTEM_Y_COORDS],
             )

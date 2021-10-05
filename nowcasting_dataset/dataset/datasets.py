@@ -35,9 +35,8 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.dataset import example
-from nowcasting_dataset.utils import set_fsspec_for_multiprocess
+from nowcasting_dataset.utils import set_fsspec_for_multiprocess, to_numpy
 from nowcasting_dataset.dataset.model.model import Batch
-from nowcasting_dataset.dataset.model.datasource_output import to_numpy
 
 logger = logging.getLogger(__name__)
 
@@ -223,14 +222,14 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 sat_data = sat_data / SAT_STD
                 batch.satellite.sat_data = sat_data
 
-        # if self.select_subset_data:
-        #     batch = subselect_data(
-        #         batch=batch,
-        #         required_keys=self.required_keys,
-        #         history_minutes=self.history_minutes,
-        #         forecast_minutes=self.forecast_minutes,
-        #         current_timestep_index=self.current_timestep_5_index,
-        #     )
+        if self.select_subset_data:
+            batch = subselect_data(
+                batch=batch,
+                required_keys=self.required_keys,
+                history_minutes=self.history_minutes,
+                forecast_minutes=self.forecast_minutes,
+                current_timestep_index=self.current_timestep_5_index,
+            )
 
         batch.change_type_to_numpy()
 
@@ -439,7 +438,7 @@ def subselect_data(
 
     # t0_dt or if not available use a different datetime index
     batch.general.to_numpy()
-    current_time_of_first_batch = pd.to_datetime(batch.general.t0_dt[0], unit="s")
+    current_time_of_first_batch = pd.to_datetime(batch.general.t0_dt[0])
 
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
@@ -453,38 +452,27 @@ def subselect_data(
     logger.debug(f"New start time for first batch is {start_time}")
     logger.debug(f"New end time for first batch is {end_time}")
 
-    logger.debug(batch.satellite.sat_datetime_index[0])
-
     start_time = to_numpy(start_time)
     end_time = to_numpy(end_time)
+    time_of_first_example = to_numpy(pd.to_datetime(batch.satellite.sat_datetime_index[0]))
 
     if batch.satellite is not None:
         batch.satellite.select_time_period(
-            keys=[
-                "sat_data",
-            ],
-            time_of_first_example=batch.satellite.sat_datetime_index[0],
+            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+            time_of_first_example=time_of_first_example,
             start_time=start_time,
             end_time=end_time,
         )
 
-        # _LOG.debug(
-        #     f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
-        # )
+    time_of_first_example = to_numpy(pd.to_datetime(batch.nwp.nwp_target_time[0]))
 
     # Now for NWP, if used
-    if NWP_DATA in required_keys:
-        batch = select_time_period(
-            batch,
-            keys=[NWP_DATA, NWP_TARGET_TIME] + used_datetime_features
-            if SATELLITE_DATA not in required_keys
-            else [NWP_DATA, NWP_TARGET_TIME],
-            time_of_first_example=batch[NWP_TARGET_TIME][0].data,
+    if batch.nwp is not None:
+        batch.nwp.select_time_period(
+            keys=[NWP_DATA, NWP_TARGET_TIME],
+            time_of_first_example=time_of_first_example,
             start_time=start_time,
             end_time=end_time,
-        )
-        _LOG.debug(
-            f"NWP Datetime Shape: {batch[NWP_TARGET_TIME].shape} NWP Data Shape: {batch[NWP_DATA].shape}"
         )
 
     # Now GSP, if used

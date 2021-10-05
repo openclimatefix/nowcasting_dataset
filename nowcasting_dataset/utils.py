@@ -7,6 +7,8 @@ from typing import List
 import fsspec.asyn
 import numpy as np
 import pandas as pd
+import torch
+import xarray as xr
 
 from nowcasting_dataset.consts import Array
 from nowcasting_dataset.dataset.example import Example
@@ -144,3 +146,22 @@ def pad_data(
         data[variable] = pad_nans(data[variable], pad_width=((0, 0), pad_shape))  # (axis0, axis1)
 
     return data
+
+
+def to_numpy(value):
+    if isinstance(value, xr.DataArray):
+        # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
+        value = value.data
+
+    if isinstance(value, (pd.Series, pd.DataFrame)):
+        value = value.values
+    elif isinstance(value, pd.DatetimeIndex):
+        value = value.values.astype("datetime64[s]").astype(np.int32)
+    elif isinstance(value, pd.Timestamp):
+        value = np.int32(value.timestamp())
+    elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
+        value = value.astype("datetime64[s]").astype(np.int32)
+    elif isinstance(value, torch.Tensor):
+        value = value.numpy()
+
+    return value

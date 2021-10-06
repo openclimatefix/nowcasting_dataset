@@ -13,6 +13,10 @@ from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.geospatial import OSGB
 
+import tempfile
+import fsspec
+import gcsfs
+
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
 # out = rasterio.open(out_fp)
@@ -50,9 +54,9 @@ class TopographicDataSource(ImageDataSource):
             image_size_pixels,
             image_size_pixels,
         )
-        self._data = rioxarray.open_rasterio(
-            filename=self.filename, parse_coordinates=True, masked=True
-        )
+
+        self._data = open_topographic_data(filename=self.filename)
+
         self._data = self._data.fillna(0)  # Set nodata values to 0 (mostly should be ocean)
         # Add CRS for later, topo maps are assumed to be in OSGB
         self._data.attrs["crs"] = OSGB
@@ -144,3 +148,33 @@ class TopographicDataSource(ImageDataSource):
         # Shrink extra dims
         selected_data = selected_data.squeeze()
         return selected_data
+
+
+def open_topographic_data(filename):
+    """
+    Open topographic data file
+
+    If from GCS, then download first to temp file, and then load it in
+
+    Args:
+        filename: location fo filer
+
+    Returns: topographic data
+
+    """
+    # check file exists
+    filesystem = fsspec.open(filename).fs
+    if not filesystem.exists(filename):
+        raise RuntimeError(f"{filename} does not exist!")
+
+    with tempfile.NamedTemporaryFile() as temp_file:
+        fs = fsspec.open(filename).fs
+        if type(fs) == gcsfs.GCSFileSystem:
+            fs.get_file(filename, temp_file.name)
+            filename = temp_file.name
+        else:
+            filename = filename
+
+        data = rioxarray.open_rasterio(filename=filename, parse_coordinates=True, masked=True)
+
+    return data

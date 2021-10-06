@@ -47,6 +47,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     assert np.min(topo_data) >= -1.0
 
 
+@pytest.mark.skip("CD does not have access to GCS")
 def test_get_example_gcs():
 
     filename = "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif"
@@ -62,4 +63,4 @@ def test_get_example_gcs():
         history_minutes=10,
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
-    example = topo_source.get_example(t0_dt=t0_dt, x_meters_center=0, y_meters_center=0)
+    _ = topo_source.get_example(t0_dt=t0_dt, x_meters_center=0, y_meters_center=0)

@@ -14,10 +14,6 @@ from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
 
-import tempfile
-import fsspec
-import gcsfs
-
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
 # out = rasterio.open(out_fp)

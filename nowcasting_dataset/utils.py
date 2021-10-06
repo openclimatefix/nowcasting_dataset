@@ -162,9 +162,9 @@ class OpenData:
         self.temp_file = tempfile.NamedTemporaryFile()
 
     def __enter__(self):
-        """Return filename,
+        """Return filename
 
-        1. if from gcs, download the file to temporary file, and reutnr the temporary file name
+        1. if from gcs, download the file to temporary file, and return the temporary file name
         2. if local, return local file name
         """
         fs = fsspec.open(self.file_name).fs

@@ -34,7 +34,7 @@ def test_gsp_join():
 
     s = GSP.fake(batch_size=2, seq_length_30=13, n_gsp_per_batch=32).split()
 
-    s: GSP = GSP.join(s)
+    s: GSP = GSP.create_batch_from_examples(s)
 
     assert s.batch_size == 2
     assert len(s.gsp_yield.shape) == 3

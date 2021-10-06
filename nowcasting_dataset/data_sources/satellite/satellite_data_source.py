@@ -151,7 +151,7 @@ class SatelliteDataSource(ZarrDataSource):
             example = self.get_example(t0_datetime, x_location, y_location)
             examples.append(example)
 
-        output = DataSourceOutput.join(examples)
+        output = DataSourceOutput.create_batch_from_examples(examples)
 
         if self.convert_to_numpy:
             output.to_numpy()

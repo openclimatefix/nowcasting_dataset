@@ -183,7 +183,7 @@ class NWPDataSource(ZarrDataSource):
                 output.to_numpy()
             examples.append(output)
 
-        return DataSourceOutput.join(examples)
+        return DataSourceOutput.create_batch_from_examples(examples)
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)

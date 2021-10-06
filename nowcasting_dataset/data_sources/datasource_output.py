@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 class DataSourceOutput(BaseModel):
     """General Data Source output pydantic class.
 
-    Data source output classes should build of this class
+    Data source output classes should inherit from this class
     """
 
     class Config:
-        """ Allowed classed i.e. tensor.Tensor"""
+        """ Allowed classes e.g. tensor.Tensor"""
 
         # TODO maybe there is a better way to do this
         arbitrary_types_allowed = True
@@ -37,16 +37,20 @@ class DataSourceOutput(BaseModel):
 
     def to_xr_data_array(self):
         """ Change to xr DataArray"""
-        pass
+        raise NotImplementedError()
 
     @staticmethod
-    def join(data):
-        """ Join a list of data source items to a batch. """
+    def create_batch_from_examples(data):
+        """
+        Join a list of data source items to a batch.
+
+        Note that this only works for numpy objects, so objects are changed into numpy
+        """
         _ = [d.to_numpy() for d in data]
 
         # use the first item in the list, and then update each item
         batch = data[0]
-        for k, v in batch.dict().items():
+        for k in batch.dict().items():
 
             # set batch size to the list of the items
             if k == "batch_size":
@@ -65,13 +69,13 @@ class DataSourceOutput(BaseModel):
 
         Returns: List of single data source items
         """
-        c = self.__class__
+        cls = self.__class__
 
         items = []
         for batch_idx in range(self.batch_size):
             d = {k: v[batch_idx] for k, v in self.dict().items() if k != "batch_size"}
             d["batch_size"] = 0
-            items.append(c(**d))
+            items.append(cls(**d))
 
         return items
 
@@ -94,9 +98,8 @@ class DataSourceOutput(BaseModel):
         Selects a subset of data between the indicies of [start, end] for each key in keys
 
         Args:
-            batch: Example containing the data
             keys: Keys in batch to use
-            time_of_first_example: Datetime of the current time in the first example of the batch
+            time_of_first_example: DatetimeIndex of the current time (t0) in the first example of the batch
             start_time: Start time DataArray
             end_time: End time DataArray
 

@@ -121,7 +121,7 @@ class DataSource:
                 output.to_numpy()
             data.append(output)
 
-        return DataSourceOutput.join(data)
+        return DataSourceOutput.create_batch_from_examples(data)
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

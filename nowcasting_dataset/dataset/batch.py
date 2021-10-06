@@ -69,12 +69,12 @@ class Example(BaseModel):
 
     def change_type_to_numpy(self):
         """Change data to numpy"""
-
         for data_source in self.data_sources:
             data_source.to_numpy()
 
     @property
     def data_sources(self):
+        """ The different data sources """
         return [
             self.satellite,
             self.topographic,

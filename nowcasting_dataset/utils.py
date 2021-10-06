@@ -7,6 +7,8 @@ from typing import List
 import fsspec.asyn
 import numpy as np
 import pandas as pd
+import tempfile
+import gcsfs
 
 from nowcasting_dataset.consts import Array
 from nowcasting_dataset.dataset.example import Example
@@ -144,3 +146,36 @@ def pad_data(
         data[variable] = pad_nans(data[variable], pad_width=((0, 0), pad_shape))  # (axis0, axis1)
 
     return data
+
+
+class OpenData:
+    """ General method to open a file, but if from GCS, the file is downloaded to a temp file first """
+
+    def __init__(self, file_name):
+        """ Check file is there, and create temporary file """
+        self.file_name = file_name
+
+        filesystem = fsspec.open(file_name).fs
+        if not filesystem.exists(file_name):
+            raise RuntimeError(f"{file_name} does not exist!")
+
+        self.temp_file = tempfile.NamedTemporaryFile()
+
+    def __enter__(self):
+        """Return filename
+
+        1. if from gcs, download the file to temporary file, and return the temporary file name
+        2. if local, return local file name
+        """
+        fs = fsspec.open(self.file_name).fs
+        if type(fs) == gcsfs.GCSFileSystem:
+            fs.get_file(self.file_name, self.temp_file.name)
+            filename = self.temp_file.name
+        else:
+            filename = self.file_name
+
+        return filename
+
+    def __exit__(self, type, value, traceback):
+        """ Close temporary file """
+        self.temp_file.close()

@@ -12,6 +12,7 @@ from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.geospatial import OSGB
+from nowcasting_dataset.utils import OpenData
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
@@ -50,9 +51,12 @@ class TopographicDataSource(ImageDataSource):
             image_size_pixels,
             image_size_pixels,
         )
-        self._data = rioxarray.open_rasterio(
-            filename=self.filename, parse_coordinates=True, masked=True
-        )
+
+        with OpenData(file_name=self.filename) as filename:
+            self._data = rioxarray.open_rasterio(
+                filename=filename, parse_coordinates=True, masked=True
+            )
+
         self._data = self._data.fillna(0)  # Set nodata values to 0 (mostly should be ocean)
         # Add CRS for later, topo maps are assumed to be in OSGB
         self._data.attrs["crs"] = OSGB

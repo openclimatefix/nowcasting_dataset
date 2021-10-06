@@ -45,3 +45,23 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     # Check normalization works
     assert np.max(topo_data) <= 1.0
     assert np.min(topo_data) >= -1.0
+
+
+@pytest.mark.skip("CD does not have access to GCS")
+def test_get_example_gcs():
+    """ Note this test takes ~5 seconds as the topo data has to be downloaded locally """
+
+    filename = "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif"
+
+    size = 2000  # meters
+    topo_source = TopographicDataSource(
+        filename=filename,
+        image_size_pixels=128,
+        meters_per_pixel=size,
+        normalize=True,
+        convert_to_numpy=True,
+        forecast_minutes=300,
+        history_minutes=10,
+    )
+    t0_dt = pd.Timestamp("2019-01-01T13:00")
+    _ = topo_source.get_example(t0_dt=t0_dt, x_meters_center=0, y_meters_center=0)

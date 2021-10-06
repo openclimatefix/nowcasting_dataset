@@ -64,7 +64,7 @@ class Datetime(DataSourceOutput):
             datetime_index=torch.sort(torch.randn(batch_size, seq_length_5), descending=True)[0],
         )
 
-    def to_xr_dataset(self):
+    def to_xr_dataset(self, _):
         """ Make a xr dataset """
         individual_datasets = []
         for name in DATETIME_FEATURE_NAMES:

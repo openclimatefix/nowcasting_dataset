@@ -57,7 +57,7 @@ class Sun(DataSourceOutput):
             sun_datetime_index=time_5,
         )
 
-    def to_xr_dataset(self):
+    def to_xr_dataset(self, _):
         """ Make a xr dataset """
         individual_datasets = []
         for name in [SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE]:

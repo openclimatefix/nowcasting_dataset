@@ -124,7 +124,7 @@ class NWP(DataSourceOutput):
             },
         )
 
-    def to_xr_dataset(self):
+    def to_xr_dataset(self, _):
         """ Make a xr dataset """
         if type(self.nwp) != xr.DataArray:
             self.to_xr_data_array()

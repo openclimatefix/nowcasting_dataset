@@ -56,7 +56,7 @@ _LOG = logging.getLogger(__name__)
 
 
 class Example(BaseModel):
-    """ Single Data item """
+    """Single Data item"""
 
     general: General
     satellite: Optional[Satellite]
@@ -68,17 +68,23 @@ class Example(BaseModel):
     datetime: Optional[Datetime]
 
     def change_type_to_numpy(self):
-        """ Change data to numpy """
-        self.satellite.to_numpy()
-        self.topographic.to_numpy()
-        self.pv.to_numpy()
-        self.sun.to_numpy()
-        self.gsp.to_numpy()
-        self.nwp.to_numpy()
-        self.datetime.to_numpy()
-        self.general.to_numpy()
+        """Change data to numpy"""
 
-        # other datasources
+        for data_source in self.data_sources:
+            data_source.to_numpy()
+
+    @property
+    def data_sources(self):
+        return [
+            self.satellite,
+            self.topographic,
+            self.pv,
+            self.sun,
+            self.gsp,
+            self.nwp,
+            self.datetime,
+            self.general,
+        ]
 
 
 class Batch(Example):
@@ -129,7 +135,7 @@ class Batch(Example):
         )
 
     def split(self) -> List[Example]:
-        """ Split batch into list of data items """
+        """Split batch into list of data items"""
         satellite_data = self.satellite.split()
         topographic_data = self.topographic.split()
         pv_data = self.pv.split()
@@ -158,7 +164,7 @@ class Batch(Example):
 
     @staticmethod
     def fake(configuration: Configuration = Configuration()):
-        """ Create fake batch """
+        """Create fake batch"""
         process = configuration.process
 
         t0_dt, time_5, time_30 = make_time_vectors(
@@ -224,7 +230,7 @@ class Batch(Example):
 
     @staticmethod
     def load_netcdf(local_netcdf_filename: Path):
-        """ Load batch from netcdf file """
+        """Load batch from netcdf file"""
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
 
         return Batch.load_batch_from_dataset(netcdf_batch)
@@ -243,14 +249,8 @@ def batch_to_dataset(batch: Batch) -> xr.Dataset:
 
         individual_datasets = []
 
-        individual_datasets.append(example.satellite.to_xr_dataset())
-        individual_datasets.append(example.nwp.to_xr_dataset())
-        individual_datasets.append(example.datetime.to_xr_dataset())
-        individual_datasets.append(example.topographic.to_xr_dataset())
-        individual_datasets.append(example.sun.to_xr_dataset())
-        individual_datasets.append(example.pv.to_xr_dataset(i))
-        individual_datasets.append(example.gsp.to_xr_dataset(i))
-        individual_datasets.append(example.general.to_xr_dataset(i))
+        for data_source in example.data_sources:
+            individual_datasets.append(data_source.to_xr_dataset(i))
 
         # Merge
         merged_ds = xr.merge(individual_datasets)

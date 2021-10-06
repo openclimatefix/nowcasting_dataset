@@ -87,7 +87,7 @@ class Satellite(DataSourceOutput):
 
         return s
 
-    def to_xr_dataset(self):
+    def to_xr_dataset(self, _):
         """ Make a xr dataset """
         if type(self.sat_data) != xr.DataArray:
             self.sat_data = xr.DataArray(

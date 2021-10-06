@@ -69,7 +69,7 @@ class Topographic(DataSourceOutput):
             )[0],
         )
 
-    def to_xr_dataset(self):
+    def to_xr_dataset(self, _):
         """ Make a xr dataset """
         data = xr.DataArray(
             self.topo_data,

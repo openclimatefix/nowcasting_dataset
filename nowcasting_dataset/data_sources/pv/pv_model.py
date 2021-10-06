@@ -100,6 +100,9 @@ class PV(DataSourceOutput):
 
     def pad(self, n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE):
         """Pad data out"""
+
+        assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
+
         pad_size = n_pv_systems_per_example - self.pv_yield.shape[-1]
         # Pad (if necessary) so returned arrays are always of size
         pad_shape = (0, pad_size)  # (before, after)

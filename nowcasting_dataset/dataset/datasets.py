@@ -407,8 +407,20 @@ def subselect_data(
         SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME
     )
 
-    # t0_dt or if not available use a different datetime index
-    current_time_of_first_batch = pd.to_datetime(batch.general.t0_dt[0].values)
+    if current_timestep_index is None:
+        # t0_dt or if not available use a different datetime index
+        current_time_of_first_batch = batch.general.t0_dt[0].values
+    else:
+        if SATELLITE_DATA in required_keys:
+            current_time_of_first_batch = batch.satellite.sat_datetime_index[
+                0, current_timestep_index
+            ].values
+        else:
+            current_time_of_first_batch = batch.satellite.sat_datetime_index[
+                0, current_timestep_index
+            ].values
+
+    current_time_of_first_batch = pd.to_datetime(current_time_of_first_batch)
 
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
@@ -424,9 +436,9 @@ def subselect_data(
 
     start_time = to_numpy(start_time)
     end_time = to_numpy(end_time)
-    time_of_first_example = to_numpy(pd.to_datetime(batch.satellite.sat_datetime_index[0]))
 
     if batch.satellite is not None:
+        time_of_first_example = to_numpy(pd.to_datetime(batch.satellite.sat_datetime_index[0]))
         batch.satellite.select_time_period(
             keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
             time_of_first_example=time_of_first_example,
@@ -435,8 +447,8 @@ def subselect_data(
         )
 
     # Now for NWP, if used
-    time_of_first_example = to_numpy(pd.to_datetime(batch.nwp.nwp_target_time[0]))
     if batch.nwp is not None:
+        time_of_first_example = to_numpy(pd.to_datetime(batch.nwp.nwp_target_time[0]))
         batch.nwp.select_time_period(
             keys=[NWP_DATA, NWP_TARGET_TIME],
             time_of_first_example=time_of_first_example,
@@ -445,8 +457,8 @@ def subselect_data(
         )
 
     # Now for GSP, if used
-    time_of_first_example = to_numpy(pd.to_datetime(batch.gsp.gsp_datetime_index[0]))
     if batch.gsp is not None:
+        time_of_first_example = to_numpy(pd.to_datetime(batch.gsp.gsp_datetime_index[0]))
         batch.gsp.select_time_period(
             keys=[GSP_DATETIME_INDEX, GSP_YIELD],
             time_of_first_example=time_of_first_example,
@@ -455,8 +467,8 @@ def subselect_data(
         )
 
     # Now for PV, if used
-    time_of_first_example = to_numpy(pd.to_datetime(batch.pv.pv_datetime_index[0]))
     if batch.pv is not None:
+        time_of_first_example = to_numpy(pd.to_datetime(batch.pv.pv_datetime_index[0]))
         batch.pv.select_time_period(
             keys=[PV_DATETIME_INDEX, PV_YIELD],
             time_of_first_example=time_of_first_example,

@@ -51,6 +51,24 @@ def test_subselect_date(test_data_folder):
     assert batch.nwp.nwp.shape[2] == 5
 
 
+def test_subselect_date_with_to_dt(test_data_folder):
+
+    # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
+    x = Batch.fake()
+    x = x.batch_to_dataset()
+    x = Batch.load_batch_from_dataset(x)
+
+    batch = subselect_data(
+        x,
+        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
+        history_minutes=10,
+        forecast_minutes=10,
+    )
+
+    assert batch.satellite.sat_data.shape[1] == 5
+    assert batch.nwp.nwp.shape[2] == 5
+
+
 def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
     DATA_PATH = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests", "data")
     TEMP_PATH = os.path.join(

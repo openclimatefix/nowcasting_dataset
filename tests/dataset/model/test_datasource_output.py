@@ -20,6 +20,15 @@ def test_gsp():
     s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
 
 
+def test_gsp_pad():
+
+    s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=7).split()[0]
+    s.to_numpy()
+    s.pad(n_gsp_per_example=32)
+
+    assert s.gsp_yield.shape == (13, 32)
+
+
 def test_gsp_split():
 
     s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
@@ -57,6 +66,15 @@ def test_nwp_split():
 def test_pv():
 
     s = PV.fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=128)
+
+
+def test_nwp_pad():
+
+    s = PV.fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=37).split()[0]
+    s.to_numpy()
+    s.pad(n_pv_systems_per_example=128)
+
+    assert s.pv_yield.shape == (13, 128)
 
 
 def test_satellite():

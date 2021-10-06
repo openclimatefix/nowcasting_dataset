@@ -36,7 +36,7 @@ def test_subselect_date(test_data_folder):
 
     # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
     x = Batch.fake()
-    x = nowcasting_dataset.dataset.batch.batch_to_dataset()
+    x = x.batch_to_dataset()
     x = Batch.load_batch_from_dataset(x)
 
     batch = subselect_data(

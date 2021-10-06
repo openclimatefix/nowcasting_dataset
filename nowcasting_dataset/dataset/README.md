@@ -4,7 +4,8 @@ This folder contains the following files
 
 ## batch.py
 
-Functions used to 'play with' batch data, where "batch data" is a List of Example objects; i.e. `List[Example]`.
+'Batch' pydantic class, to hold batch data in.
+
 
 ## datamodule.py
 
@@ -23,12 +24,6 @@ NetCDFDataset - torch.utils.data.Dataset: Use for loading pre-made batches
 NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
 
 
-## example.py
-
-Main thing in here is a Typed Dictionary. This is used to store one element of data use for one step in the ML models.
-There is also a validation function. See this file for documentation about exactly what data is available in each ML
-training Example.
-
-## validatey.py
+## validate.py
 
 Contains a class that can validate the prepare ml dataset

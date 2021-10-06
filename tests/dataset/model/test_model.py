@@ -1,84 +1,60 @@
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
-from nowcasting_dataset.data_sources.sun.sun_model import Sun
-from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 
 
-def test_datetime():
+from nowcasting_dataset.dataset.batch import Batch
 
-    s = Datetime.fake(
-        batch_size=4,
-        seq_length_5=13,
-    )
+import xarray as xr
 
 
-def test_gsp():
+def test_model():
 
-    s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
-
-
-def test_gsp_split():
-
-    s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
-    split = s.split()
-
-    assert len(split) == 4
-    assert type(split[0]) == GSP
-    assert (split[0].gsp_yield == s.gsp_yield[0]).all()
+    _ = Batch.fake()
 
 
-def test_gsp_join():
+def test_model_to_numpy():
 
-    s = GSP.fake(batch_size=2, seq_length_30=13, n_gsp_per_batch=32).split()
+    f = Batch.fake()
 
-    s: GSP = GSP.create_batch_from_examples(s)
+    f.change_type_to_numpy()
 
-    assert s.batch_size == 2
-    assert len(s.gsp_yield.shape) == 3
-    assert s.gsp_yield.shape[0] == 2
-    assert s.gsp_yield.shape[1] == 13
-    assert s.gsp_yield.shape[2] == 32
+    assert type(f.gsp) == GSP
 
 
-def test_nwp():
+def test_model_split():
 
-    s = NWP.fake(batch_size=4, seq_length_5=13, nwp_image_size_pixels=64, number_nwp_channels=8)
+    f = Batch.fake()
 
+    data = f.split()
 
-def test_nwp_split():
-
-    s = NWP.fake(batch_size=4, seq_length_5=13, nwp_image_size_pixels=64, number_nwp_channels=8)
-    s = s.split()
-
-
-def test_pv():
-
-    s = PV.fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=128)
+    assert len(data) == f.batch_size
+    assert type(data[0].gsp) == GSP
 
 
-def test_satellite():
+def test_model_to_xr_dataset(configuration):
 
-    s = Satellite.fake(
-        batch_size=4, seq_length_5=13, satellite_image_size_pixels=64, number_sat_channels=7
-    )
+    f = Batch.fake(configuration=configuration)
+    f_xr = f.batch_to_dataset()
 
-    assert s.sat_x_coords is not None
-
-
-def test_sun():
-
-    s = Sun.fake(
-        batch_size=4,
-        seq_length_5=13,
-    )
+    assert type(f_xr) == xr.Dataset
 
 
-def test_topo():
+def test_model_from_xr_dataset():
 
-    s = Topographic.fake(
-        batch_size=4,
-        satellite_image_size_pixels=64,
-    )
+    f = Batch.fake()
+
+    f_xr = f.batch_to_dataset()
+
+    _ = Batch.load_batch_from_dataset(xr_dataset=f_xr)
+
+
+# def test_model_from_xr_dataset_to_numpy():
+#
+#     f = Batch.fake()
+#
+#     f_xr = f.batch_to_dataset()
+#     fs = Batch.load_batch_from_dataset(xr_dataset=f_xr)
+#
+#     # check they are the same
+#     fs.change_type_to_numpy()
+#     f.gsp.to_numpy()
+#     assert f.gsp.gsp_yield == fs.gsp.gsp_yield

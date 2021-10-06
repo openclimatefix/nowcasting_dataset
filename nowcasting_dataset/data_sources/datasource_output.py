@@ -50,7 +50,7 @@ class DataSourceOutput(BaseModel):
 
         # use the first item in the list, and then update each item
         batch = data[0]
-        for k in batch.dict().items():
+        for k in batch.dict().keys():
 
             # set batch size to the list of the items
             if k == "batch_size":

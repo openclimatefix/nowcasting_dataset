@@ -55,7 +55,7 @@ _LOG = logging.getLogger(__name__)
 #     return concat_ds
 
 
-class DataItem(BaseModel):
+class Example(BaseModel):
     """ Single Data item """
 
     general: General
@@ -81,7 +81,7 @@ class DataItem(BaseModel):
         # other datasources
 
 
-class Batch(DataItem):
+class Batch(Example):
     """
     Batch data object.
 
@@ -128,7 +128,7 @@ class Batch(DataItem):
             general=general,
         )
 
-    def split(self) -> List[DataItem]:
+    def split(self) -> List[Example]:
         """ Split batch into list of data items """
         satellite_data = self.satellite.split()
         topographic_data = self.topographic.split()
@@ -142,7 +142,7 @@ class Batch(DataItem):
         data_items = []
         for batch_idx in range(self.batch_size):
             data_items.append(
-                DataItem(
+                Example(
                     general=general_data[batch_idx],
                     satellite=satellite_data[batch_idx],
                     topographic=topographic_data[batch_idx],

@@ -408,8 +408,7 @@ def subselect_data(
     )
 
     # t0_dt or if not available use a different datetime index
-    batch.general.to_numpy()
-    current_time_of_first_batch = pd.to_datetime(batch.general.t0_dt[0])
+    current_time_of_first_batch = pd.to_datetime(batch.general.t0_dt[0].values)
 
     # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
     # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them

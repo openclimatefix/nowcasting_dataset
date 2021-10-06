@@ -3,7 +3,8 @@ This folder contains the code for the different data sources.
 # Data Sources
 - datetime: datetime information like 'hour_of_day'
 - general: metadata for the batch like t0_dt
-- gsp: Grid Supply Point data from Sheffield Solar
+- gsp: Grid Supply Point data from Sheffield Solar (e.g. the estimated total solar PV power generation for each
+GSP region, and the geospatial shape of each GSP region).
 - nwp: Numerical Weather predictions from UK Met Office
 - pv: PV output data from pvoutput.org
 - satellite: satellite data from ...

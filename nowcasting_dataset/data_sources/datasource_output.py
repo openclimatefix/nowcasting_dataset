@@ -1,4 +1,5 @@
 """ General Data Source output pydantic class. """
+from __future__ import annotations
 from pydantic import BaseModel, Field
 import pandas as pd
 import xarray as xr
@@ -63,7 +64,7 @@ class DataSourceOutput(BaseModel):
 
         return batch
 
-    def split(self):
+    def split(self) -> List[DataSourceOutput]:
         """
         Split the datasource from a batch to a list of items
 

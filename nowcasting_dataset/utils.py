@@ -14,8 +14,6 @@ import gcsfs
 
 from nowcasting_dataset.consts import Array
 
-# from nowcasting_dataset.dataset.example import Example
-
 logger = logging.getLogger(__name__)
 
 

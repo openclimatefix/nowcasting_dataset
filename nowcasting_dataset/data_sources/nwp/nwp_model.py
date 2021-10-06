@@ -110,6 +110,10 @@ class NWP(DataSourceOutput):
             ],
         )
 
+    def get_datetime_index(self):
+        """ Get the datetime index of this data """
+        return self.nwp_target_time
+
     def to_xr_data_array(self):
         """ Change to data_array"""
         self.nwp = xr.DataArray(

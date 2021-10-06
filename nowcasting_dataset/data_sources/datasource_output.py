@@ -88,37 +88,68 @@ class DataSourceOutput(BaseModel):
         """ Load from xr dataset. Each data source needs to defined this """
         raise NotImplementedError
 
+    def get_datetime_index(self):
+        """ Datetime index for the data """
+        pass
+
     def select_time_period(
         self,
         keys: List[str],
-        time_of_first_example: pd.DatetimeIndex,
-        start_time_of_first_example: xr.DataArray,
-        end_time_of_first_example: xr.DataArray,
+        history_minutes: int,
+        forecast_minutes: int,
+        t0_dt_of_first_example: pd.DatetimeIndex,
     ):
         """
         Selects a subset of data between the indicies of [start, end] for each key in keys
 
         Args:
             keys: Keys in batch to use
-            time_of_first_example: DatetimeIndex of the current time (t0) in the first example of the batch
-            start_time_of_first_example: Start time DataArray
-            end_time_of_first_example: End time DataArray
+            t0_dt_of_first_example: DatetimeIndex of the current time (t0) in the first example of the batch
+            history_minutes: How many minutes of history to use
+            forecast_minutes: How many minutes of future data to use for forecasting
 
         Returns:
             Example containing the subselected data
         """
-        start_i, end_i = np.searchsorted(
-            time_of_first_example, [start_time_of_first_example, end_time_of_first_example]
+        logger.debug(
+            f"Taking a sub-selection of the batch data based on a history minutes of {history_minutes} "
+            f"and forecast minutes of {forecast_minutes}"
         )
-        for key in keys:
-            if "time" in self.__getattribute__(key).dims:
-                self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))
-            elif "time_30" in self.__getattribute__(key).dims:
-                self.__setattr__(
-                    key, self.__getattribute__(key).isel(time_30=slice(start_i, end_i))
-                )
 
-            logger.debug(f"{self.__class__.__name__} {key}: {self.__getattribute__(key).shape}")
+        start_time_of_first_batch = t0_dt_of_first_example - pd.to_timedelta(
+            f"{history_minutes} minute 30 second"
+        )
+        end_time_of_first_example = t0_dt_of_first_example + pd.to_timedelta(
+            f"{forecast_minutes} minute 30 second"
+        )
+
+        logger.debug(f"New start time for first batch is {start_time_of_first_batch}")
+        logger.debug(f"New end time for first batch is {end_time_of_first_example}")
+
+        start_time_of_first_example = to_numpy(start_time_of_first_batch)
+        end_time_of_first_example = to_numpy(end_time_of_first_example)
+
+        if self.get_datetime_index() is not None:
+
+            time_of_first_example = to_numpy(pd.to_datetime(self.get_datetime_index()[0]))
+
+            # find the start and end index, that we will then use to slice the data
+            start_i, end_i = np.searchsorted(
+                time_of_first_example, [start_time_of_first_example, end_time_of_first_example]
+            )
+
+            # slice all the data
+            for key in keys:
+                if "time" in self.__getattribute__(key).dims:
+                    self.__setattr__(
+                        key, self.__getattribute__(key).isel(time=slice(start_i, end_i))
+                    )
+                elif "time_30" in self.__getattribute__(key).dims:
+                    self.__setattr__(
+                        key, self.__getattribute__(key).isel(time_30=slice(start_i, end_i))
+                    )
+
+                logger.debug(f"{self.__class__.__name__} {key}: {self.__getattribute__(key).shape}")
 
 
 def pad_nans(array, pad_width) -> np.ndarray:

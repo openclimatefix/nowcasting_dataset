@@ -87,6 +87,10 @@ class Satellite(DataSourceOutput):
 
         return s
 
+    def get_datetime_index(self):
+        """ Get the datetime index of this data """
+        return self.sat_datetime_index
+
     def to_xr_dataset(self, _):
         """ Make a xr dataset """
         if type(self.sat_data) != xr.DataArray:

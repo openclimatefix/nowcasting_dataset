@@ -402,88 +402,66 @@ def subselect_data(
         f"and forecast minutes if {forecast_minutes}"
     )
 
-    # We are subsetting the data
-    date_time_index_to_use = (
-        SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME
-    )
-
+    # We are subsetting the data, so we need to select the t0_dt, i.e the time now for eahc Example.
+    # We infact only need this from the first example in each batch
     if current_timestep_index is None:
         # t0_dt or if not available use a different datetime index
-        current_time_of_first_batch = batch.general.t0_dt[0].values
+        t0_dt_of_first_example = batch.general.t0_dt[0].values
     else:
         if SATELLITE_DATA in required_keys:
-            current_time_of_first_batch = batch.satellite.sat_datetime_index[
+            t0_dt_of_first_example = batch.satellite.sat_datetime_index[
                 0, current_timestep_index
             ].values
         else:
-            current_time_of_first_batch = batch.satellite.sat_datetime_index[
+            t0_dt_of_first_example = batch.satellite.sat_datetime_index[
                 0, current_timestep_index
             ].values
 
-    current_time_of_first_batch = pd.to_datetime(current_time_of_first_batch)
-
-    # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
-    # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
-    # The extra 30 seconds is added to ensure that the first and last timestep are always contained
-    # within the [start_time, end_time] range
-    start_time = current_time_of_first_batch - pd.to_timedelta(
-        f"{history_minutes} minute 30 second"
-    )
-    end_time = current_time_of_first_batch + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
-
-    logger.debug(f"New start time for first batch is {start_time}")
-    logger.debug(f"New end time for first batch is {end_time}")
-
-    start_time = to_numpy(start_time)
-    end_time = to_numpy(end_time)
+    # make this a datetime object
+    t0_dt_of_first_example = pd.to_datetime(t0_dt_of_first_example)
 
     if batch.satellite is not None:
-        time_of_first_example = to_numpy(pd.to_datetime(batch.satellite.sat_datetime_index[0]))
         batch.satellite.select_time_period(
             keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
-            time_of_first_example=time_of_first_example,
-            start_time_of_first_example=start_time,
-            end_time_of_first_example=end_time,
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
 
     # Now for NWP, if used
     if batch.nwp is not None:
-        time_of_first_example = to_numpy(pd.to_datetime(batch.nwp.nwp_target_time[0]))
         batch.nwp.select_time_period(
             keys=[NWP_DATA, NWP_TARGET_TIME],
-            time_of_first_example=time_of_first_example,
-            start_time_of_first_example=start_time,
-            end_time_of_first_example=end_time,
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
-
+    #
     # Now for GSP, if used
     if batch.gsp is not None:
-        time_of_first_example = to_numpy(pd.to_datetime(batch.gsp.gsp_datetime_index[0]))
         batch.gsp.select_time_period(
             keys=[GSP_DATETIME_INDEX, GSP_YIELD],
-            time_of_first_example=time_of_first_example,
-            start_time_of_first_example=start_time,
-            end_time_of_first_example=end_time,
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
 
     # Now for PV, if used
     if batch.pv is not None:
-        time_of_first_example = to_numpy(pd.to_datetime(batch.pv.pv_datetime_index[0]))
         batch.pv.select_time_period(
             keys=[PV_DATETIME_INDEX, PV_YIELD],
-            time_of_first_example=time_of_first_example,
-            start_time_of_first_example=start_time,
-            end_time_of_first_example=end_time,
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
 
     # Now for SUN, if used
     if batch.sun is not None:
-        time_of_first_example = to_numpy(pd.to_datetime(batch.sun.sun_datetime_index[0]))
         batch.sun.select_time_period(
             keys=[SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
-            time_of_first_example=time_of_first_example,
-            start_time_of_first_example=start_time,
-            end_time_of_first_example=end_time,
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
 
     # DATETIME TODO

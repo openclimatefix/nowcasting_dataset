@@ -120,6 +120,10 @@ class PV(DataSourceOutput):
             two_dimensional_arrays=[PV_YIELD],
         )
 
+    def get_datetime_index(self):
+        """ Get the datetime index of this data """
+        return self.pv_datetime_index
+
     def to_xr_dataset(self, i):
         """ Make a xr dataset """
         assert self.batch_size == 0

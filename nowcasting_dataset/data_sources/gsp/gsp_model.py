@@ -113,6 +113,10 @@ class GSP(DataSourceOutput):
             pad_size=pad_size,
         )
 
+    def get_datetime_index(self):
+        """ Get the datetime index of this data """
+        return self.gsp_datetime_index
+
     def to_xr_dataset(self, i):
         """ Make a xr dataset """
         assert self.batch_size == 0

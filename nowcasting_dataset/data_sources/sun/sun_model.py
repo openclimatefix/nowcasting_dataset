@@ -57,6 +57,10 @@ class Sun(DataSourceOutput):
             sun_datetime_index=time_5,
         )
 
+    def get_datetime_index(self):
+        """ Get the datetime index of this data """
+        return self.sun_datetime_index
+
     def to_xr_dataset(self, _):
         """ Make a xr dataset """
         individual_datasets = []

@@ -1,6 +1,7 @@
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from datetime import datetime
-from nowcasting_dataset.dataset.example import Example
+
+# from nowcasting_dataset.dataset.example import Example
 from nowcasting_dataset.consts import SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE
 import pandas as pd
 

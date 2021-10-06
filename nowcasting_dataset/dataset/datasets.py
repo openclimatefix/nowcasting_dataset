@@ -379,31 +379,31 @@ def worker_init_fn(worker_id):
         dataset_obj.per_worker_init(worker_info.id)
 
 
-def select_time_period(
-    batch: example.Example,
-    keys: List[str],
-    time_of_first_example: pd.DatetimeIndex,
-    start_time: xr.DataArray,
-    end_time: xr.DataArray,
-) -> example.Example:
-    """
-    Selects a subset of data between the indicies of [start, end] for each key in keys
-
-    Args:
-        batch: Example containing the data
-        keys: Keys in batch to use
-        time_of_first_example: Datetime of the current time in the first example of the batch
-        start_time: Start time DataArray
-        end_time: End time DataArray
-
-    Returns:
-        Example containing the subselected data
-    """
-    start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
-    for key in keys:
-        batch[key] = batch[key].isel(time=slice(start_i, end_i))
-
-    return batch
+# def select_time_period(
+#     batch: example.Example,
+#     keys: List[str],
+#     time_of_first_example: pd.DatetimeIndex,
+#     start_time: xr.DataArray,
+#     end_time: xr.DataArray,
+# ) -> example.Example:
+#     """
+#     Selects a subset of data between the indicies of [start, end] for each key in keys
+#
+#     Args:
+#         batch: Example containing the data
+#         keys: Keys in batch to use
+#         time_of_first_example: Datetime of the current time in the first example of the batch
+#         start_time: Start time DataArray
+#         end_time: End time DataArray
+#
+#     Returns:
+#         Example containing the subselected data
+#     """
+#     start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
+#     for key in keys:
+#         batch[key] = batch[key].isel(time=slice(start_i, end_i))
+#
+#     return batch
 
 
 def subselect_data(

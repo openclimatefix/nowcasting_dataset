@@ -49,6 +49,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
 
 @pytest.mark.skip("CD does not have access to GCS")
 def test_get_example_gcs():
+    """ Note this test takes ~5 seconds as the topo data has to be downloaded locally """
 
     filename = "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif"
 

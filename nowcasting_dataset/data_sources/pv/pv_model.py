@@ -131,7 +131,7 @@ class PV(DataSourceOutput):
 
         one_dataset[PV_DATETIME_INDEX] = xr.DataArray(
             self.pv_datetime_index,
-            dims=["time_30"],
+            dims=["time"],
             coords=[np.arange(len(self.pv_datetime_index))],
         )
 

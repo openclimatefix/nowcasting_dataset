@@ -103,7 +103,6 @@ class GSP(DataSourceOutput):
 
     def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
         """ Pad out data """
-
         assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
 
         pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]

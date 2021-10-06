@@ -92,8 +92,8 @@ class DataSourceOutput(BaseModel):
         self,
         keys: List[str],
         time_of_first_example: pd.DatetimeIndex,
-        start_time: xr.DataArray,
-        end_time: xr.DataArray,
+        start_time_of_first_example: xr.DataArray,
+        end_time_of_first_example: xr.DataArray,
     ):
         """
         Selects a subset of data between the indicies of [start, end] for each key in keys
@@ -101,13 +101,15 @@ class DataSourceOutput(BaseModel):
         Args:
             keys: Keys in batch to use
             time_of_first_example: DatetimeIndex of the current time (t0) in the first example of the batch
-            start_time: Start time DataArray
-            end_time: End time DataArray
+            start_time_of_first_example: Start time DataArray
+            end_time_of_first_example: End time DataArray
 
         Returns:
             Example containing the subselected data
         """
-        start_i, end_i = np.searchsorted(time_of_first_example, [start_time, end_time])
+        start_i, end_i = np.searchsorted(
+            time_of_first_example, [start_time_of_first_example, end_time_of_first_example]
+        )
         for key in keys:
             if "time" in self.__getattribute__(key).dims:
                 self.__setattr__(key, self.__getattribute__(key).isel(time=slice(start_i, end_i)))

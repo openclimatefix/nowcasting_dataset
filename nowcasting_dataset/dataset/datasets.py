@@ -442,8 +442,8 @@ def subselect_data(
         batch.satellite.select_time_period(
             keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
             time_of_first_example=time_of_first_example,
-            start_time=start_time,
-            end_time=end_time,
+            start_time_of_first_example=start_time,
+            end_time_of_first_example=end_time,
         )
 
     # Now for NWP, if used
@@ -452,8 +452,8 @@ def subselect_data(
         batch.nwp.select_time_period(
             keys=[NWP_DATA, NWP_TARGET_TIME],
             time_of_first_example=time_of_first_example,
-            start_time=start_time,
-            end_time=end_time,
+            start_time_of_first_example=start_time,
+            end_time_of_first_example=end_time,
         )
 
     # Now for GSP, if used
@@ -462,8 +462,8 @@ def subselect_data(
         batch.gsp.select_time_period(
             keys=[GSP_DATETIME_INDEX, GSP_YIELD],
             time_of_first_example=time_of_first_example,
-            start_time=start_time,
-            end_time=end_time,
+            start_time_of_first_example=start_time,
+            end_time_of_first_example=end_time,
         )
 
     # Now for PV, if used
@@ -472,8 +472,8 @@ def subselect_data(
         batch.pv.select_time_period(
             keys=[PV_DATETIME_INDEX, PV_YIELD],
             time_of_first_example=time_of_first_example,
-            start_time=start_time,
-            end_time=end_time,
+            start_time_of_first_example=start_time,
+            end_time_of_first_example=end_time,
         )
 
     # Now for SUN, if used
@@ -482,8 +482,8 @@ def subselect_data(
         batch.sun.select_time_period(
             keys=[SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
             time_of_first_example=time_of_first_example,
-            start_time=start_time,
-            end_time=end_time,
+            start_time_of_first_example=start_time,
+            end_time_of_first_example=end_time,
         )
 
     # DATETIME TODO

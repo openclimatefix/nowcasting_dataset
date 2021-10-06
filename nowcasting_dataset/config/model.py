@@ -7,8 +7,8 @@ from pathy import Pathy
 from pydantic import BaseModel, Field
 from pydantic import validator
 
-from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 
 
 class General(BaseModel):

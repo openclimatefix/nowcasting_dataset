@@ -30,7 +30,7 @@ from nowcasting_dataset.consts import (
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
 
 # from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset.dataset.model.model import Batch
+from nowcasting_dataset.dataset.batch import Batch
 
 
 class ValidatorDataset:

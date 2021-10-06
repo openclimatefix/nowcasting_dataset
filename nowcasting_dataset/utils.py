@@ -2,7 +2,7 @@
 import hashlib
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import fsspec.asyn
 import numpy as np
@@ -166,3 +166,20 @@ def to_numpy(value):
         value = value.numpy()
 
     return value
+
+
+def coord_to_range(
+    da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
+) -> xr.DataArray:
+    """
+    TODO
+
+    TODO: Actually, I think this is over-complicated?  I think we can
+    just strip off the 'coord' from the dimension.
+
+    """
+    coord = da[dim]
+    da[dim] = np.arange(len(coord), dtype=dtype)
+    if prefix is not None:
+        da[f"{prefix}_{dim}_coords"] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
+    return da

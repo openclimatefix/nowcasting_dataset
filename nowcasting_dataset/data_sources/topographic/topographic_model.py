@@ -1,15 +1,13 @@
-from pydantic import BaseModel, Field, validator
-from typing import Union
-import numpy as np
+from pydantic import Field, validator
 import xarray as xr
 import torch
-from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array
 
 from nowcasting_dataset.consts import (
     TOPOGRAPHIC_DATA,
 )
-from nowcasting_dataset.dataset.batch import coord_to_range
+from nowcasting_dataset.utils import coord_to_range
 
 
 class Topographic(DataSourceOutput):

@@ -15,12 +15,7 @@ import torch
 import xarray as xr
 
 from nowcasting_dataset.consts import (
-    GSP_ID,
-    GSP_YIELD,
-    GSP_X_COORDS,
-    GSP_Y_COORDS,
     DEFAULT_N_GSP_PER_EXAMPLE,
-    OBJECT_AT_CENTER,
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
@@ -29,7 +24,7 @@ from nowcasting_dataset.square import get_bounding_box_mask
 
 # from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
 from nowcasting_dataset.utils import scale_to_0_to_1
-from nowcasting_dataset.dataset.model.gsp import GSP
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 
 logger = logging.getLogger(__name__)
 

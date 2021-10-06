@@ -10,6 +10,7 @@ import torch
 import xarray as xr
 
 import nowcasting_dataset
+import nowcasting_dataset.dataset.batch
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     SATELLITE_X_COORDS,
@@ -27,7 +28,7 @@ from nowcasting_dataset.consts import (
 )
 
 # from nowcasting_dataset.dataset import example
-from nowcasting_dataset.dataset.model.model import Batch
+from nowcasting_dataset.dataset.batch import Batch
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 
 
@@ -35,7 +36,7 @@ def test_subselect_date(test_data_folder):
 
     # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
     x = Batch.fake()
-    x = x.batch_to_dataset()
+    x = nowcasting_dataset.dataset.batch.batch_to_dataset()
     x = Batch.load_batch_from_dataset(x)
 
     batch = subselect_data(

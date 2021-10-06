@@ -6,7 +6,7 @@ import numcodecs
 import gcsfs
 import rechunker
 import zarr
-from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
 import os
 import numpy as np
 

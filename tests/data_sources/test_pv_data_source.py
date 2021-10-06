@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.pv_data_source import (
+from nowcasting_dataset.data_sources.pv.pv_data_source import (
     PVDataSource,
     drop_pv_systems_which_produce_overnight,
 )

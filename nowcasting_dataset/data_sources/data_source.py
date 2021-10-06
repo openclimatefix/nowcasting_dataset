@@ -11,7 +11,7 @@ import xarray as xr
 
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset import square
-from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 

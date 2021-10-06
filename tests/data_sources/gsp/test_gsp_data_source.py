@@ -1,13 +1,9 @@
 import os
 from datetime import datetime
 
-import pandas as pd
-
 import nowcasting_dataset
-from nowcasting_dataset.consts import T0_DT
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
-from nowcasting_dataset.dataset.model.gsp import GSP
 
 
 def test_gsp_pv_data_source_init():

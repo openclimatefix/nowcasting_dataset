@@ -3,15 +3,15 @@ import logging
 from concurrent import futures
 from dataclasses import dataclass, InitVar
 from numbers import Number
-from typing import Iterable, Optional, List
+from typing import Iterable, Optional
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.dataset.model.satellite import Satellite
-from nowcasting_dataset.dataset.model.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 _LOG = logging.getLogger("nowcasting_dataset")
 

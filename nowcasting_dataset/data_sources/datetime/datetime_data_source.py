@@ -7,7 +7,7 @@ import pandas as pd
 
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.dataset.model.datetime import Datetime
+from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 
 
 @dataclass

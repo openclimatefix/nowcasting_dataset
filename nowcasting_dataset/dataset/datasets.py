@@ -29,15 +29,12 @@ from nowcasting_dataset.consts import (
     SATELLITE_DATETIME_INDEX,
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
-    DATETIME_FEATURE_NAMES,
     DEFAULT_REQUIRED_KEYS,
-    T0_DT,
 )
-from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
 
-# from nowcasting_dataset.dataset import example
 from nowcasting_dataset.utils import set_fsspec_for_multiprocess, to_numpy
-from nowcasting_dataset.dataset.model.model import Batch
+from nowcasting_dataset.dataset.batch import Batch
 
 logger = logging.getLogger(__name__)
 

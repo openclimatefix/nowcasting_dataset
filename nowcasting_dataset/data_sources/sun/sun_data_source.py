@@ -10,7 +10,7 @@ from datetime import datetime
 
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 
-from nowcasting_dataset.dataset.model.sun import Sun
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
 
 
 @dataclass

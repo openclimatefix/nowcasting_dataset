@@ -9,7 +9,7 @@ import pvlib
 import random
 
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.dataset.model.datetime import Datetime
+from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 
 logger = logging.getLogger(__name__)
 

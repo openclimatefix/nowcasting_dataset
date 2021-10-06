@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from nowcasting_dataset.data_sources.satellite_data_source import SatelliteDataSource
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 
 s = SatelliteDataSource(
     filename="gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/"

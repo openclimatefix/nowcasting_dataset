@@ -1,12 +1,10 @@
-from nowcasting_dataset.dataset.model.model import Batch, batch_to_dataset
-from nowcasting_dataset.dataset.model.datetime import Datetime
-from nowcasting_dataset.dataset.model.gsp import GSP
-from nowcasting_dataset.dataset.model.pv import PV
-from nowcasting_dataset.dataset.model.nwp import NWP
-from nowcasting_dataset.dataset.model.satellite import Satellite
-from nowcasting_dataset.dataset.model.sun import Sun
-from nowcasting_dataset.dataset.model.topographic import Topographic
-import xarray as xr
+from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 
 
 def test_datetime():

@@ -6,9 +6,8 @@ from typing import List, Tuple
 import pandas as pd
 import numpy as np
 
-from nowcasting_dataset import time as nd_time
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.dataset.model.general import General
+from nowcasting_dataset.data_sources.general.general_model import General
 from nowcasting_dataset.utils import to_numpy
 
 

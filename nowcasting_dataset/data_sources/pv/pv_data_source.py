@@ -17,17 +17,11 @@ import xarray as xr
 
 from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.consts import (
-    PV_SYSTEM_ID,
-    PV_SYSTEM_ROW_NUMBER,
-    PV_SYSTEM_X_COORDS,
-    PV_SYSTEM_Y_COORDS,
-    PV_YIELD,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-    OBJECT_AT_CENTER,
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.square import get_bounding_box_mask
-from nowcasting_dataset.dataset.model.pv import PV
+from nowcasting_dataset.data_sources.pv.pv_model import PV
 
 logger = logging.getLogger(__name__)
 

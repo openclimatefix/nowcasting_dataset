@@ -112,16 +112,16 @@ class DataSource:
         Returns: Batch data
 
         """
-        data = []
+        examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
             output: DataSourceOutput = self.get_example(t0_datetime, x_location, y_location)
 
             if self.convert_to_numpy:
                 output.to_numpy()
-            data.append(output)
+            examples.append(output)
 
-        return DataSourceOutput.create_batch_from_examples(data)
+        return DataSourceOutput.create_batch_from_examples(examples)
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

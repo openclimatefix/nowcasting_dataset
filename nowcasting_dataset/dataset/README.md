@@ -4,7 +4,7 @@ This folder contains the following files
 
 ## batch.py
 
-'Batch' pydantic class, to hold batch data in.
+'Batch' pydantic class, to hold batch data in. An 'Example' is one item in the batch.
 
 ## datamodule.py
 

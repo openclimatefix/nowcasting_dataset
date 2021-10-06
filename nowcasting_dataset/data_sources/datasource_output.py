@@ -27,7 +27,7 @@ class DataSourceOutput(BaseModel):
         0,
         ge=0,
         description="The size of this batch. If the batch size is 0, "
-        "then this item stores one data item",
+        "then this item stores one data item i.e Example",
     )
 
     def to_numpy(self):

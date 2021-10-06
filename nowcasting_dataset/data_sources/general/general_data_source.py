@@ -35,7 +35,6 @@ class GeneralDataSource(DataSource):
         Returns: batch data of datetime features
 
         """
-
         return General(
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),

@@ -1,3 +1,4 @@
+""" Model for Topogrpahic features """
 from pydantic import Field, validator
 import xarray as xr
 import torch
@@ -11,6 +12,9 @@ from nowcasting_dataset.utils import coord_to_range
 
 
 class Topographic(DataSourceOutput):
+    """
+    Topographic/elevation map features.
+    """
 
     # Shape: [batch_size,] width, height
     topo_data: Array = Field(
@@ -39,16 +43,19 @@ class Topographic(DataSourceOutput):
 
     @validator("topo_x_coords")
     def x_coordinates_shape(cls, v, values):
+        """ Validate 'topo_x_coords' """
         assert v.shape[-1] == values["topo_data"].shape[-2]
         return v
 
     @validator("topo_y_coords")
     def y_coordinates_shape(cls, v, values):
+        """ Validate 'topo_y_coords' """
         assert v.shape[-1] == values["topo_data"].shape[-1]
         return v
 
     @staticmethod
     def fake(batch_size, satellite_image_size_pixels):
+        """ Create fake data """
         return Topographic(
             batch_size=batch_size,
             topo_data=torch.randn(
@@ -63,7 +70,7 @@ class Topographic(DataSourceOutput):
         )
 
     def to_xr_dataset(self):
-
+        """ Make a xr dataset """
         data = xr.DataArray(
             self.topo_data,
             coords={
@@ -85,7 +92,7 @@ class Topographic(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if TOPOGRAPHIC_DATA in xr_dataset.keys():
             return Topographic(
                 batch_size=xr_dataset[TOPOGRAPHIC_DATA].shape[0],

@@ -1,3 +1,4 @@
+""" Model for output of datetime data """
 from pydantic import validator
 import xarray as xr
 import torch
@@ -7,10 +8,8 @@ from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
 from nowcasting_dataset.utils import coord_to_range
 
 
-# seems to be a pandas dataseries
-
-
 class Datetime(DataSourceOutput):
+    """ Model for output of datetime data """
 
     hour_of_day_sin: Array  #: Shape: [batch_size,] seq_length
     hour_of_day_cos: Array
@@ -25,21 +24,25 @@ class Datetime(DataSourceOutput):
 
     @validator("hour_of_day_cos")
     def v_hour_of_day_cos(cls, v, values):
+        """ Validate 'hour_of_day_cos' """
         assert v.shape[-1] == values["hour_of_day_sin"].shape[-1]
         return v
 
     @validator("day_of_year_sin")
     def v_day_of_year_sin(cls, v, values):
+        """ Validate 'day_of_year_sin' """
         assert v.shape[-1] == values["hour_of_day_sin"].shape[-1]
         return v
 
     @validator("day_of_year_cos")
     def v_day_of_year_cos(cls, v, values):
+        """ Validate 'day_of_year_cos' """
         assert v.shape[-1] == values["hour_of_day_sin"].shape[-1]
         return v
 
     @staticmethod
     def fake(batch_size, seq_length_5):
+        """ Make a xr dataset """
         return Datetime(
             batch_size=batch_size,
             hour_of_day_sin=torch.randn(
@@ -62,7 +65,7 @@ class Datetime(DataSourceOutput):
         )
 
     def to_xr_dataset(self):
-
+        """ Make a xr dataset """
         individual_datasets = []
         for name in DATETIME_FEATURE_NAMES:
 
@@ -83,7 +86,7 @@ class Datetime(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if "hour_of_day_sin" in xr_dataset.keys():
             return Datetime(
                 batch_size=xr_dataset["hour_of_day_sin"].shape[0],

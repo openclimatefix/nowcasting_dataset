@@ -1,3 +1,4 @@
+""" Model for Sun features """
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
@@ -10,6 +11,7 @@ from nowcasting_dataset.time import make_time_vectors
 
 
 class Sun(DataSourceOutput):
+    """ Model for Sun features """
 
     sun_azimuth_angle: Array = Field(
         ...,
@@ -24,17 +26,19 @@ class Sun(DataSourceOutput):
 
     @validator("sun_elevation_angle")
     def elevation_shape(cls, v, values):
+        """ Validate 'sun_elevation_angle' """
         assert v.shape[-1] == values["sun_azimuth_angle"].shape[-1]
         return v
 
     @validator("sun_datetime_index")
     def sun_datetime_index_shape(cls, v, values):
+        """ Validate 'sun_datetime_index' """
         assert v.shape[-1] == values["sun_azimuth_angle"].shape[-1]
         return v
 
     @staticmethod
     def fake(batch_size, seq_length_5, time_5=None):
-
+        """ Create fake data """
         if time_5 is None:
             _, time_5, _ = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
@@ -54,7 +58,7 @@ class Sun(DataSourceOutput):
         )
 
     def to_xr_dataset(self):
-
+        """ Make a xr dataset """
         individual_datasets = []
         for name in [SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE]:
 
@@ -83,7 +87,7 @@ class Sun(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if SUN_AZIMUTH_ANGLE in xr_dataset.keys():
             return Sun(
                 batch_size=xr_dataset[SUN_AZIMUTH_ANGLE].shape[0],

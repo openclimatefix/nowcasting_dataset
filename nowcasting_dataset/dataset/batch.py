@@ -73,6 +73,7 @@ _LOG = logging.getLogger(__name__)
 
 
 class DataItem(BaseModel):
+    """ Single Data item """
 
     general: General
     satellite: Optional[Satellite]
@@ -84,7 +85,7 @@ class DataItem(BaseModel):
     datetime: Optional[Datetime]
 
     def change_type_to_numpy(self):
-
+        """ Change data to numpy """
         self.satellite.to_numpy()
         self.topographic.to_numpy()
         self.pv.to_numpy()
@@ -98,6 +99,14 @@ class DataItem(BaseModel):
 
 
 class Batch(DataItem):
+    """
+    Batch data object.
+
+    Contains the following data sources
+    - gsp, satellite, topogrpahic, sun, pv, nwp and datetime.
+    Also contains general metadata of the class
+
+    """
 
     batch_size: int = Field(
         ...,
@@ -108,13 +117,11 @@ class Batch(DataItem):
 
     def batch_to_dataset(self) -> xr.Dataset:
         """Change batch to xr.Dataset so it can be saved and compressed"""
-
         return batch_to_dataset(batch=self)
 
     @staticmethod
     def load_batch_from_dataset(xr_dataset: xr.Dataset):
         """Change xr.Datatset to Batch object"""
-
         gsp = GSP.from_xr_dataset(xr_dataset=xr_dataset)
         satellite = Satellite.from_xr_dataset(xr_dataset=xr_dataset)
         topographic = Topographic.from_xr_dataset(xr_dataset=xr_dataset)
@@ -139,7 +146,7 @@ class Batch(DataItem):
         )
 
     def split(self) -> List[DataItem]:
-
+        """ Split batch into list of data items """
         satellite_data = self.satellite.split()
         topographic_data = self.topographic.split()
         pv_data = self.pv.split()
@@ -168,7 +175,7 @@ class Batch(DataItem):
 
     @staticmethod
     def fake(configuration: Configuration = Configuration()):
-
+        """ Create fake batch """
         process = configuration.process
 
         t0_dt, time_5, time_30 = make_time_vectors(
@@ -217,7 +224,14 @@ class Batch(DataItem):
         )
 
     def save_netcdf(self, batch_i: int, path: Path):
+        """
+        Save batch to netcdf file
 
+        Args:
+            batch_i: the batch id, used to make the filename
+            path: the path where it will be saved. This can be local or in the cloud.
+
+        """
         batch_xr = self.batch_to_dataset()
 
         encoding = {name: {"compression": "lzf"} for name in batch_xr.data_vars}
@@ -227,7 +241,7 @@ class Batch(DataItem):
 
     @staticmethod
     def load_netcdf(local_netcdf_filename: Path):
-
+        """ Load batch from netcdf file """
         netcdf_batch = xr.load_dataset(local_netcdf_filename)
 
         return Batch.load_batch_from_dataset(netcdf_batch)

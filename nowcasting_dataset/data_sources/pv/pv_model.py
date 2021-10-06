@@ -1,3 +1,4 @@
+""" Model for output of PV data """
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
@@ -18,6 +19,7 @@ from nowcasting_dataset.time import make_time_vectors
 
 
 class PV(DataSourceOutput):
+    """ Model for output of PV data """
 
     # Shape: [batch_size,] seq_length, width, height, channel
     pv_yield: Array = Field(
@@ -60,17 +62,19 @@ class PV(DataSourceOutput):
 
     @validator("pv_system_x_coords")
     def x_coordinates_shape(cls, v, values):
+        """ Validate 'pv_system_x_coords' """
         assert v.shape[-1] == values["pv_yield"].shape[-1]
         return v
 
     @validator("pv_system_y_coords")
     def y_coordinates_shape(cls, v, values):
+        """ Validate 'pv_system_y_coords' """
         assert v.shape[-1] == values["pv_yield"].shape[-1]
         return v
 
     @staticmethod
     def fake(batch_size, seq_length_5, n_pv_systems_per_batch, time_5=None):
-
+        """ Create fake data """
         if time_5 is None:
             _, time_5, _ = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
@@ -95,7 +99,7 @@ class PV(DataSourceOutput):
         )
 
     def pad(self, n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE):
-
+        """Pad data out"""
         pad_size = n_pv_systems_per_example - self.pv_yield.shape[-1]
         # Pad (if necessary) so returned arrays are always of size
         pad_shape = (0, pad_size)  # (before, after)
@@ -107,17 +111,15 @@ class PV(DataSourceOutput):
             PV_SYSTEM_Y_COORDS,
         ]
 
-        pad_nans_variables = [PV_YIELD]
-
         pad_data(
             data=self,
             pad_size=pad_size,
             one_dimensional_arrays=one_dimensional_arrays,
-            two_dimensional_arrays=pad_nans_variables,
+            two_dimensional_arrays=[PV_YIELD],
         )
 
     def to_xr_dataset(self, i):
-
+        """ Make a xr dataset """
         assert self.batch_size == 0
 
         example_dim = {"example": np.array([i], dtype=np.int32)}
@@ -155,7 +157,7 @@ class PV(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if PV_YIELD in xr_dataset.keys():
             return PV(
                 batch_size=xr_dataset[PV_YIELD].shape[0],

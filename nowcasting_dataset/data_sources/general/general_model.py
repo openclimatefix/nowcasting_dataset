@@ -1,3 +1,4 @@
+""" Model for output of general/metadata data, useful for a batch """
 from typing import Union, List
 import numpy as np
 import xarray as xr
@@ -10,7 +11,9 @@ from nowcasting_dataset.time import make_time_vectors
 
 
 class General(DataSourceOutput):
+    """ Model for output of general/metadata data """
 
+    # TODO add descriptions
     t0_dt: Union[xr.DataArray, np.ndarray, torch.Tensor, int]  #: Shape: [batch_size,]
     x_meters_center: Union[xr.DataArray, np.ndarray, torch.Tensor, int]
     y_meters_center: Union[xr.DataArray, np.ndarray, torch.Tensor, int]
@@ -18,7 +21,7 @@ class General(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, t0_dt=None):
-
+        """ Make a xr dataset """
         if t0_dt is None:
             t0_dt, _, _ = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=0
@@ -37,7 +40,7 @@ class General(DataSourceOutput):
         )
 
     def to_xr_dataset(self, i):
-
+        """ Make a xr dataset """
         individual_datasets = []
         for name in ["t0_dt", "x_meters_center", "y_meters_center", "object_at_center"]:
 
@@ -54,7 +57,7 @@ class General(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         return General(
             batch_size=xr_dataset["t0_dt"].shape[0],
             t0_dt=xr_dataset["t0_dt"],

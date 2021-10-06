@@ -1,3 +1,4 @@
+""" Model for output of satellite data """
 from pydantic import Field, validator
 from typing import Union, List
 import numpy as np
@@ -11,6 +12,7 @@ from nowcasting_dataset.time import make_time_vectors
 
 
 class Satellite(DataSourceOutput):
+    """ Model for output of satellite data """
 
     # Shape: [batch_size,] seq_length, width, height, channel
     sat_data: Array = Field(
@@ -40,11 +42,13 @@ class Satellite(DataSourceOutput):
 
     @validator("sat_x_coords")
     def x_coordinates_shape(cls, v, values):
+        """ Validate 'sat_y_coords' """
         assert v.shape[-1] == values["sat_data"].shape[-3]
         return v
 
     @validator("sat_y_coords")
     def y_coordinates_shape(cls, v, values):
+        """ Validate 'sat_y_coords' """
         assert v.shape[-1] == values["sat_data"].shape[-2]
         return v
 
@@ -56,7 +60,7 @@ class Satellite(DataSourceOutput):
         number_sat_channels=7,
         time_5=None,
     ):
-
+        """ Create fake data """
         if time_5 is None:
             _, time_5, _ = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
@@ -84,7 +88,7 @@ class Satellite(DataSourceOutput):
         return s
 
     def to_xr_dataset(self):
-
+        """ Make a xr dataset """
         if type(self.sat_data) != xr.DataArray:
             self.sat_data = xr.DataArray(
                 self.sat_data,
@@ -112,7 +116,7 @@ class Satellite(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if "sat_data" in xr_dataset.keys():
             return Satellite(
                 batch_size=xr_dataset["sat_data"].shape[0],

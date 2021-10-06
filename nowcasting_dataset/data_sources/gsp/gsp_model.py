@@ -1,3 +1,4 @@
+""" Model for output of GSP data """
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
@@ -18,6 +19,7 @@ from nowcasting_dataset.time import make_time_vectors
 
 
 class GSP(DataSourceOutput):
+    """ Model for output of GSP data """
 
     # Shape: [batch_size,] seq_length, width, height, channel
     gsp_yield: Array = Field(
@@ -59,6 +61,7 @@ class GSP(DataSourceOutput):
 
     @validator("gsp_yield")
     def gsp_yield_shape(cls, v, values):
+        """ Validate 'gsp_yield' """
         if values["batch_size"] > 0:
             assert len(v.shape) == 3
         else:
@@ -67,17 +70,19 @@ class GSP(DataSourceOutput):
 
     @validator("gsp_x_coords")
     def x_coordinates_shape(cls, v, values):
+        """ Validate 'gsp_x_coords' """
         assert v.shape[-1] == values["gsp_yield"].shape[-1]
         return v
 
     @validator("gsp_y_coords")
     def y_coordinates_shape(cls, v, values):
+        """ Validate 'gsp_y_coords' """
         assert v.shape[-1] == values["gsp_yield"].shape[-1]
         return v
 
     @staticmethod
     def fake(batch_size, seq_length_30, n_gsp_per_batch, time_30=None):
-
+        """ Make a xr dataset """
         if time_30 is None:
             _, _, time_30 = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=seq_length_30
@@ -97,7 +102,7 @@ class GSP(DataSourceOutput):
         )
 
     def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
-
+        """ Pad out data """
         pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]
         return pad_data(
             data=self,
@@ -107,7 +112,7 @@ class GSP(DataSourceOutput):
         )
 
     def to_xr_dataset(self, i):
-
+        """ Make a xr dataset """
         assert self.batch_size == 0
 
         example_dim = {"example": np.array([i], dtype=np.int32)}
@@ -141,7 +146,7 @@ class GSP(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if "gsp_yield" in xr_dataset.keys():
             return GSP(
                 batch_size=xr_dataset["gsp_yield"].shape[0],

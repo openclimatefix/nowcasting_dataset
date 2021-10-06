@@ -91,7 +91,6 @@ class ValidatorDataset:
         Returns: list of days that the batch has data for
 
         """
-
         if type(batch.general.t0_dt) == torch.Tensor:
             batch.general.t0_dt = batch.general.t0_dt.detach().numpy()
 
@@ -132,7 +131,6 @@ class FakeDataset(torch.utils.data.Dataset):
         Returns: Dictionary of random data
 
         """
-
         x = Batch.fake(configuration=self.configuration)
         x.change_type_to_numpy()
 

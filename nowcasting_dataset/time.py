@@ -234,7 +234,24 @@ def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.Datet
 
 
 def make_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
+    """
+    Make random time vectors
 
+    1. t0_Dt, Get random datetimes from 2019
+    2. Exapnd t0_Dt to make 5 and 30 mins sequences
+
+    Args:
+        batch_size: the batch size
+        seq_len_5_minutes: the length of the sequence in 5 mins deltas
+        seq_len_30_minutes: the length of the sequence in 30 mins deltas
+
+    Returns:
+        - t0_dt: [batch_size] random init datetimes
+        - time_5: [batch_size, seq_len_5_minutes] random sequence of datetimes, with 5 mins detls.
+        t0_dt is in the middle of the sequence
+        - time_30: [batch_size, seq_len_30_minutes] random sequence of datetimes, with 30 mins detls.
+        t0_dt is in the middle of the sequence
+    """
     delta_5 = pd.Timedelta(minutes=5)
     delta_30 = pd.Timedelta(minutes=30)
 

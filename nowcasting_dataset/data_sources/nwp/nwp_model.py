@@ -1,3 +1,4 @@
+""" Model for output of NWP data """
 from pydantic import Field, validator
 from typing import Union, List
 import numpy as np
@@ -15,6 +16,7 @@ from nowcasting_dataset.time import make_time_vectors
 
 
 class NWP(DataSourceOutput):
+    """ Model for output of NWP data """
 
     # Shape: [batch_size,] seq_length, width, height, channel
     nwp: Array = Field(
@@ -66,17 +68,19 @@ class NWP(DataSourceOutput):
 
     @validator("nwp_x_coords")
     def x_coordinates_shape(cls, v, values):
+        """ Validate 'nwp_x_coords' """
         assert v.shape[-1] == values["nwp"].shape[-2]
         return v
 
     @validator("nwp_y_coords")
     def y_coordinates_shape(cls, v, values):
+        """ Validate 'nwp_y_coords' """
         assert v.shape[-1] == values["nwp"].shape[-1]
         return v
 
     @staticmethod
     def fake(batch_size, seq_length_5, nwp_image_size_pixels, number_nwp_channels, time_5=None):
-
+        """ Create fake data """
         if time_5 is None:
             _, time_5, _ = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
@@ -107,7 +111,7 @@ class NWP(DataSourceOutput):
         )
 
     def to_xr_data_array(self):
-
+        """ Change to data_array"""
         self.nwp = xr.DataArray(
             self.nwp,
             dims=["variable", "target_time", "x", "y"],
@@ -121,19 +125,9 @@ class NWP(DataSourceOutput):
         )
 
     def to_xr_dataset(self):
-
+        """ Make a xr dataset """
         if type(self.nwp) != xr.DataArray:
-            self.nwp = xr.DataArray(
-                self.nwp,
-                dims=["variable", "target_time", "x", "y"],
-                coords={
-                    "variable": self.nwp_channel_names,
-                    "target_time": self.nwp_target_time,
-                    "init_time": self.nwp_init_time,
-                    "x": self.nwp_x_coords,
-                    "y": self.nwp_y_coords,
-                },
-            )
+            self.to_xr_data_array()
 
         ds = self.nwp.to_dataset(name="nwp")
         ds["nwp"] = ds["nwp"].astype(np.float32)
@@ -152,7 +146,7 @@ class NWP(DataSourceOutput):
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
-
+        """ Change xr dataset to model. If data does not exist, then return None """
         if NWP_DATA in xr_dataset.keys():
             return NWP(
                 batch_size=xr_dataset[NWP_DATA].shape[0],

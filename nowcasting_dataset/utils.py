@@ -116,6 +116,7 @@ def pad_nans(array, pad_width) -> np.ndarray:
 
 
 def to_numpy(value):
+    """ Change generic data to numpy"""
     if isinstance(value, xr.DataArray):
         # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
         value = value.data

@@ -1,3 +1,4 @@
+""" General Data Source output pydantic class. """
 from pydantic import BaseModel, Field
 import pandas as pd
 import xarray as xr
@@ -11,7 +12,15 @@ logger = logging.getLogger(__name__)
 
 
 class DataSourceOutput(BaseModel):
+    """General Data Source output pydantic class.
+
+    Data source output classes should build of this class
+    """
+
     class Config:
+        """ Allowed classed i.e. tensor.Tensor"""
+
+        # TODO maybe there is a better way to do this
         arbitrary_types_allowed = True
 
     batch_size: int = Field(
@@ -23,33 +32,39 @@ class DataSourceOutput(BaseModel):
 
     def to_numpy(self):
         """Change to numpy"""
-
         for k, v in self.dict().items():
             self.__setattr__(k, to_numpy(v))
 
     def to_xr_data_array(self):
+        """ Change to xr DataArray"""
         pass
 
     @staticmethod
     def join(data):
-
+        """ Join a list of data source items to a batch. """
         _ = [d.to_numpy() for d in data]
 
+        # use the first item in the list, and then update each item
         batch = data[0]
         for k, v in batch.dict().items():
 
+            # set batch size to the list of the items
             if k == "batch_size":
                 batch.batch_size = len(data)
             else:
 
-                one_variable_in_batch = [d.__getattribute__(k) for d in data]
-
-                batch.__setattr__(k, np.stack(one_variable_in_batch, axis=0))
+                # get list of one variable from the list of data items.
+                one_variable_list = [d.__getattribute__(k) for d in data]
+                batch.__setattr__(k, np.stack(one_variable_list, axis=0))
 
         return batch
 
     def split(self):
+        """
+        Split the datasource from a batch to a list of items
 
+        Returns: List of single data source items
+        """
         c = self.__class__
 
         items = []
@@ -61,9 +76,11 @@ class DataSourceOutput(BaseModel):
         return items
 
     def to_xr_dataset(self):
+        """ Make a xr dataset. Each data source needs to defined this """
         raise NotImplementedError
 
     def from_xr_dataset(self):
+        """ Load from xr dataset. Each data source needs to defined this """
         raise NotImplementedError
 
     def select_time_period(

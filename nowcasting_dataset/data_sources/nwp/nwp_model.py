@@ -63,7 +63,7 @@ class NWP(DataSourceOutput):
 
     @property
     def sequence_length(self):
-        """The equence length of the pv data"""
+        """The sequence length of the pv data"""
         return self.nwp.shape[-3]
 
     @validator("nwp_x_coords")

@@ -57,7 +57,7 @@ class PV(DataSourceOutput):
 
     @property
     def sequence_length(self):
-        """The equence length of the pv data"""
+        """The sequence length of the pv data"""
         return self.pv_yield.shape[-2]
 
     @validator("pv_system_x_coords")

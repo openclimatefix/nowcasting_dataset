@@ -19,7 +19,7 @@ class Datetime(DataSourceOutput):
 
     @property
     def sequence_length(self):
-        """The equence length of the pv data"""
+        """The sequence length of the pv data"""
         return self.hour_of_day_sin.shape[-1]
 
     @validator("hour_of_day_cos")

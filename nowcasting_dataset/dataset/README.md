@@ -6,7 +6,6 @@ This folder contains the following files
 
 'Batch' pydantic class, to hold batch data in.
 
-
 ## datamodule.py
 
 Contains a class NowcastingDataModule - pl.LightningDataModule

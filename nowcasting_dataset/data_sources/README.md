@@ -29,7 +29,7 @@ General pydantic model of output of the data source. Contains the following meth
 - from_xr_dataset: loads from a xr dataset
 - select_time_period: subselect data, depending on a time period
 
-# General Data Source folder
+# <X> Data Source folder
 
 Roughly each of the data source folders follows this pattern
 - A class which is how to load the data source, how to select for batches e.t.c. This is built from 'data_source.py',

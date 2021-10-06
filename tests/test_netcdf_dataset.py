@@ -25,7 +25,8 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
     T0_DT,
 )
-from nowcasting_dataset.dataset import example
+
+# from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.model.model import Batch
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 

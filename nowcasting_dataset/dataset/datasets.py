@@ -34,7 +34,8 @@ from nowcasting_dataset.consts import (
     T0_DT,
 )
 from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
-from nowcasting_dataset.dataset import example
+
+# from nowcasting_dataset.dataset import example
 from nowcasting_dataset.utils import set_fsspec_for_multiprocess, to_numpy
 from nowcasting_dataset.dataset.model.model import Batch
 
@@ -377,33 +378,6 @@ def worker_init_fn(worker_id):
         # The NowcastingDataset copy in this worker process.
         dataset_obj = worker_info.dataset
         dataset_obj.per_worker_init(worker_info.id)
-
-
-# def select_time_period(
-#     batch: example.Example,
-#     keys: List[str],
-#     time_of_first_example: pd.DatetimeIndex,
-#     start_time: xr.DataArray,
-#     end_time: xr.DataArray,
-# ) -> example.Example:
-#     """
-#     Selects a subset of data between the indicies of [start, end] for each key in keys
-#
-#     Args:
-#         batch: Example containing the data
-#         keys: Keys in batch to use
-#         time_of_first_example: Datetime of the current time in the first example of the batch
-#         start_time: Start time DataArray
-#         end_time: End time DataArray
-#
-#     Returns:
-#         Example containing the subselected data
-#     """
-#     start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
-#     for key in keys:
-#         batch[key] = batch[key].isel(time=slice(start_i, end_i))
-#
-#     return batch
 
 
 def subselect_data(

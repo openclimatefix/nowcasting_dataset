@@ -35,7 +35,6 @@ class MetadataDataSource(DataSource):
         Returns: batch data of datetime features
 
         """
-
         if self.object_at_center == "GSP":
             object_at_center_label = 1
         elif self.object_at_center == "PV":

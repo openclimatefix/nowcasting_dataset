@@ -133,10 +133,14 @@ def split_by_dates(
     """
     Split datetimes into train, validation and test by two specific datetime splits
 
+    Note that the 'train_validation_datetime_split' should be less than the 'validation_test_datetime_split'
+
     Args:
         datetimes: list of datetimes
-        train_validation_datetime_split: the datetime between the train and validation datasets
-        validation_test_datetime_split: the datetime between the validation and test datasets
+        train_validation_datetime_split: the datetime which will split the train and validation datetimes.
+        For example if this is '2021-01-01' then the train datetimes will end by '2021-01-01' and the
+        validation datetimes will start at '2021-01-01'.
+        validation_test_datetime_split: the datetime which will split the validation and test datetimes
 
     Returns: train, validation and test datetimes
 

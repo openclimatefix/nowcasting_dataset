@@ -117,7 +117,7 @@ def split_data(
     elif method in [SplitMethod.DAY_RANDOM_TEST_YEAR, SplitMethod.DAY_RANDOM_TEST_DATE]:
         if method == SplitMethod.DAY_RANDOM_TEST_YEAR:
             # This method splits
-            # 1. test set to be in on year, using 'train_test_validation_specific'
+            # 1. test set to be in one year, using 'train_test_validation_specific'
             # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
             #
             # This allows us to create a test set for 2021, and train and validation for random days not in 2021
@@ -146,7 +146,7 @@ def split_data(
                 validation_test_datetime_split=train_validation_test_datetime_split[1],
             )
 
-        # join train and validation together
+        # join train and validation together, so they can then be split by random day.
         train_and_validation_datetimes = train_datetimes.append(validation_datetimes)
 
         # set split ratio to only be on train and validation

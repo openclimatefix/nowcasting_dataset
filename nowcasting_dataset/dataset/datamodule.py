@@ -332,24 +332,6 @@ class NowcastingDataModule(pl.LightningDataModule):
         """ Test dataloader """
         return torch.utils.data.DataLoader(self.test_dataset, **self._common_dataloader_params())
 
-    def contiguous_dataloader(self) -> torch.utils.data.DataLoader:
-        """ Get continours dataloader TODO this is not needed anymore?"""
-        if self.contiguous_dataset is None:
-            pv_data_source = deepcopy(self.pv_data_source)
-            pv_data_source.random_pv_system_for_given_location = False
-            data_sources = [pv_data_source, self.sat_data_source]
-            self.contiguous_dataset = datasets.ContiguousNowcastingDataset(
-                t0_datetimes=self.val_t0_datetimes,
-                data_sources=data_sources,
-                n_batches_per_epoch_per_worker=(self._n_batches_per_epoch_per_worker(32)),
-                **self._common_dataset_params(),
-            )
-            if self.num_workers == 0:
-                self.contiguous_dataset.per_worker_init(worker_id=0)
-        return torch.utils.data.DataLoader(
-            self.contiguous_dataset, **self._common_dataloader_params()
-        )
-
     def _common_dataset_params(self) -> Dict:
         return dict(
             batch_size=self.batch_size,

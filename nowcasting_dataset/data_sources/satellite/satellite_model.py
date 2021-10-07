@@ -3,7 +3,6 @@ from pydantic import Field, validator
 from typing import Union, List
 import numpy as np
 import xarray as xr
-import torch
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, SAT_VARIABLE_NAMES
@@ -68,17 +67,19 @@ class Satellite(DataSourceOutput):
 
         s = Satellite(
             batch_size=batch_size,
-            sat_data=torch.randn(
+            sat_data=np.random.randn(
                 batch_size,
                 seq_length_5,
                 satellite_image_size_pixels,
                 satellite_image_size_pixels,
                 number_sat_channels,
             ),
-            sat_x_coords=torch.sort(torch.randn(batch_size, satellite_image_size_pixels))[0],
-            sat_y_coords=torch.sort(
-                torch.randn(batch_size, satellite_image_size_pixels), descending=True
-            )[0],
+            sat_x_coords=np.sort(np.random.randn(batch_size, satellite_image_size_pixels)),
+            sat_y_coords=np.sort(np.random.randn(batch_size, satellite_image_size_pixels))[
+                :, ::-1
+            ].copy()
+            # copy is needed as torch doesnt not support negative strides
+            ,
             sat_datetime_index=time_5,
             sat_channel_names=[
                 SAT_VARIABLE_NAMES[0:number_sat_channels] for _ in range(batch_size)

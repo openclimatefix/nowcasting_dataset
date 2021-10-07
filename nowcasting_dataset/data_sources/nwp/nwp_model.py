@@ -88,23 +88,24 @@ class NWP(DataSourceOutput):
 
         return NWP(
             batch_size=batch_size,
-            nwp=torch.randn(
+            nwp=np.random.randn(
                 batch_size,
                 number_nwp_channels,
                 seq_length_5,
                 nwp_image_size_pixels,
                 nwp_image_size_pixels,
             ),
-            nwp_x_coords=torch.sort(torch.randn(batch_size, nwp_image_size_pixels))[0],
-            nwp_y_coords=torch.sort(
-                torch.randn(batch_size, nwp_image_size_pixels), descending=True
-            )[0],
+            nwp_x_coords=np.sort(np.random.randn(batch_size, nwp_image_size_pixels)),
+            nwp_y_coords=np.sort(np.random.randn(batch_size, nwp_image_size_pixels))[
+                :, ::-1
+            ].copy(),
+            # copy is needed as torch doesnt not support negative strides
             nwp_target_time=time_5,
-            nwp_init_time=torch.sort(
-                torch.randn(
+            nwp_init_time=np.sort(
+                np.random.randn(
                     batch_size,
                 )
-            )[0],
+            ),
             nwp_channel_names=[
                 NWP_VARIABLE_NAMES[0:number_nwp_channels] for _ in range(batch_size)
             ],

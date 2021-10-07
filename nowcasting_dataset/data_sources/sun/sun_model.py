@@ -2,7 +2,6 @@
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
-import torch
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
@@ -46,11 +45,11 @@ class Sun(DataSourceOutput):
 
         return Sun(
             batch_size=batch_size,
-            sun_azimuth_angle=torch.randn(
+            sun_azimuth_angle=np.random.randn(
                 batch_size,
                 seq_length_5,
             ),
-            sun_elevation_angle=torch.randn(
+            sun_elevation_angle=np.random.randn(
                 batch_size,
                 seq_length_5,
             ),

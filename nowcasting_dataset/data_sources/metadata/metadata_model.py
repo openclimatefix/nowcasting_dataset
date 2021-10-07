@@ -37,10 +37,10 @@ class Metadata(DataSourceOutput):
         return Metadata(
             batch_size=batch_size,
             t0_dt=t0_dt,
-            x_meters_center=torch.randn(
+            x_meters_center=np.random.randn(
                 batch_size,
             ),
-            y_meters_center=torch.randn(
+            y_meters_center=np.random.randn(
                 batch_size,
             ),
             object_at_center_label=np.array([1] * batch_size),

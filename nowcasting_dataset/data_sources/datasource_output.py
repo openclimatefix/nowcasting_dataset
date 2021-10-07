@@ -102,14 +102,14 @@ class DataSourceOutput(BaseModel):
         """
         Selects a subset of data between the indicies of [start, end] for each key in keys
 
+        Note that class is edited so nothing is returned.
+
         Args:
             keys: Keys in batch to use
             t0_dt_of_first_example: DatetimeIndex of the current time (t0) in the first example of the batch
             history_minutes: How many minutes of history to use
             forecast_minutes: How many minutes of future data to use for forecasting
 
-        Returns:
-            Example containing the subselected data
         """
         logger.debug(
             f"Taking a sub-selection of the batch data based on a history minutes of {history_minutes} "
@@ -171,13 +171,13 @@ def pad_data(
     the one dimensional arrays are padded in that dimension
     the two dimensional arrays are padded in the second dimension
 
+    Note that class is edited so nothing is returned.
+
     Args:
         data: typed dictionary of data objects
         pad_size: the maount that should be padded
         one_dimensional_arrays: list of data items that should be padded by one dimension
         two_dimensional_arrays: list of data tiems that should be padded in the third dimension (and more)
-
-    Returns: Example data
 
     """
     # Pad (if necessary) so returned arrays are always of size

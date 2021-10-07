@@ -1,8 +1,7 @@
 """ Model for output of datetime data """
 from pydantic import validator
 import xarray as xr
-import torch
-
+import numpy as np
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
 from nowcasting_dataset.utils import coord_to_range
@@ -45,23 +44,24 @@ class Datetime(DataSourceOutput):
         """ Make a fake Datetime object """
         return Datetime(
             batch_size=batch_size,
-            hour_of_day_sin=torch.randn(
+            hour_of_day_sin=np.random.randn(
                 batch_size,
                 seq_length_5,
             ),
-            hour_of_day_cos=torch.randn(
+            hour_of_day_cos=np.random.randn(
                 batch_size,
                 seq_length_5,
             ),
-            day_of_year_sin=torch.randn(
+            day_of_year_sin=np.random.randn(
                 batch_size,
                 seq_length_5,
             ),
-            day_of_year_cos=torch.randn(
+            day_of_year_cos=np.random.randn(
                 batch_size,
                 seq_length_5,
             ),
-            datetime_index=torch.sort(torch.randn(batch_size, seq_length_5), descending=True)[0],
+            datetime_index=np.sort(np.random.randn(batch_size, seq_length_5))[:, ::-1].copy(),
+            # copy is needed as torch doesnt not support negative strides
         )
 
     def to_xr_dataset(self, _):

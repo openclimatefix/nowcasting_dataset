@@ -1,5 +1,5 @@
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-
+import numpy as np
 
 from nowcasting_dataset.dataset.batch import Batch, GSP
 from nowcasting_dataset.dataset.validate import FakeDataset
@@ -60,8 +60,8 @@ def test_model_from_xr_dataset_to_numpy():
     fs.change_type_to_numpy()
     f.gsp.to_numpy()
     assert f.gsp.gsp_yield.shape == fs.gsp.gsp_yield.shape
-    assert (f.gsp.gsp_yield[0] == fs.gsp.gsp_yield[0]).all()
-    assert (f.gsp.gsp_yield == fs.gsp.gsp_yield).all()
+    assert (f.gsp.gsp_yield[0].astype(np.float32) == fs.gsp.gsp_yield[0]).all()
+    assert (f.gsp.gsp_yield.astype(np.float32) == fs.gsp.gsp_yield).all()
 
 
 def test_fake_dataset():

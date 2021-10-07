@@ -82,20 +82,20 @@ class PV(DataSourceOutput):
 
         return PV(
             batch_size=batch_size,
-            pv_yield=torch.randn(
+            pv_yield=np.random.randn(
                 batch_size,
                 seq_length_5,
                 n_pv_systems_per_batch,
             ),
-            pv_system_id=torch.sort(torch.randint(10000, (batch_size, n_pv_systems_per_batch)))[0],
-            pv_system_row_number=torch.sort(
-                torch.randint(1000, (batch_size, n_pv_systems_per_batch))
-            )[0],
+            pv_system_id=np.sort(np.random.randint(0, 10000, (batch_size, n_pv_systems_per_batch))),
+            pv_system_row_number=np.sort(
+                np.random.randint(0, 1000, (batch_size, n_pv_systems_per_batch))
+            ),
             pv_datetime_index=time_5,
-            pv_system_x_coords=torch.sort(torch.randn((batch_size, n_pv_systems_per_batch)))[0],
-            pv_system_y_coords=torch.sort(
-                torch.randn(batch_size, n_pv_systems_per_batch), descending=True
-            )[0],
+            pv_system_x_coords=np.sort(np.random.randn(batch_size, n_pv_systems_per_batch)),
+            pv_system_y_coords=np.sort(np.random.randn(batch_size, n_pv_systems_per_batch))[
+                :, ::-1
+            ].copy(),  # copy is needed as torch doesnt not support negative strides
         )
 
     def pad(self, n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE):

@@ -2,7 +2,6 @@
 from pydantic import Field, validator
 import xarray as xr
 import numpy as np
-import torch
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array
 
@@ -19,7 +18,7 @@ class Topographic(DataSourceOutput):
     topo_data: Array = Field(
         ...,
         description="Elevation map of the area covered by the satellite data. "
-        "Shape: [batch_size,] seq_length, width, height",
+        "Shape: [batch_size], width, height",
     )
     topo_x_coords: Array = Field(
         ...,
@@ -57,15 +56,16 @@ class Topographic(DataSourceOutput):
         """ Create fake data """
         return Topographic(
             batch_size=batch_size,
-            topo_data=torch.randn(
+            topo_data=np.random.randn(
                 batch_size,
                 satellite_image_size_pixels,
                 satellite_image_size_pixels,
             ),
-            topo_x_coords=torch.sort(torch.randn(batch_size, satellite_image_size_pixels))[0],
-            topo_y_coords=torch.sort(
-                torch.randn(batch_size, satellite_image_size_pixels), descending=True
-            )[0],
+            topo_x_coords=np.sort(np.random.randn(batch_size, satellite_image_size_pixels)),
+            topo_y_coords=np.sort(np.random.randn(batch_size, satellite_image_size_pixels))[
+                :, ::-1
+            ].copy(),
+            # copy is needed as torch doesnt not support negative strides
         )
 
     def to_xr_dataset(self, _):

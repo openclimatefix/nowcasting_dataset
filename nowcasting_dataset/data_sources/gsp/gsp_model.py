@@ -2,7 +2,6 @@
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
-import torch
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput, pad_data
 from nowcasting_dataset.consts import Array
@@ -90,16 +89,17 @@ class GSP(DataSourceOutput):
 
         return GSP(
             batch_size=batch_size,
-            gsp_yield=torch.randn(
+            gsp_yield=np.random.randn(
                 batch_size,
                 seq_length_30,
                 n_gsp_per_batch,
             ),
-            gsp_id=torch.sort(torch.randint(340, (batch_size, n_gsp_per_batch)))[0],
+            gsp_id=np.sort(np.random.randint(0, 340, (batch_size, n_gsp_per_batch))),
             gsp_datetime_index=time_30,
-            gsp_x_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch))[0],
-            gsp_y_coords=torch.sort(torch.randn(batch_size, n_gsp_per_batch), descending=True)[0],
+            gsp_x_coords=np.sort(np.random.randn(batch_size, n_gsp_per_batch)),
+            gsp_y_coords=np.sort(np.random.randn(batch_size, n_gsp_per_batch))[:, ::-1].copy(),
         )
+        # copy is needed as torch doesnt not support negative strides
 
     def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
         """ Pad out data """

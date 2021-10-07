@@ -87,9 +87,9 @@ def test_split_day_random():
     validation_df = pd.DatetimeIndex(validation)
     test_df = pd.DatetimeIndex(test)
 
-    train_validation_overlap = [t for t in train_df if t in validation_df]
-    train_test_overlap = [t for t in train_df if t in test_df]
-    validation_test_overlap = [t for t in validation_df if t in test_df]
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
 
     assert len(train_validation_overlap) == 0
     assert len(train_test_overlap) == 0
@@ -116,9 +116,9 @@ def test_split_year():
     validation_df = pd.DatetimeIndex(validation)
     test_df = pd.DatetimeIndex(test)
 
-    train_validation_overlap = [t for t in train_df if t in validation_df]
-    train_test_overlap = [t for t in train_df if t in test_df]
-    validation_test_overlap = [t for t in validation_df if t in test_df]
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
 
     assert len(train_validation_overlap) == 0
     assert len(train_test_overlap) == 0
@@ -154,9 +154,9 @@ def test_split_day_specific():
     validation_df = pd.DatetimeIndex(validation)
     test_df = pd.DatetimeIndex(test)
 
-    train_validation_overlap = [t for t in train_df if t in validation_df]
-    train_test_overlap = [t for t in train_df if t in test_df]
-    validation_test_overlap = [t for t in validation_df if t in test_df]
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
 
     assert len(train_validation_overlap) == 0
     assert len(train_test_overlap) == 0
@@ -215,9 +215,9 @@ def test_split_week_random():
     validation_df = pd.DatetimeIndex(validation)
     test_df = pd.DatetimeIndex(test)
 
-    train_validation_overlap = [t for t in train_df if t in validation_df]
-    train_test_overlap = [t for t in train_df if t in test_df]
-    validation_test_overlap = [t for t in validation_df if t in test_df]
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
 
     assert len(train_validation_overlap) == 0
     assert len(train_test_overlap) == 0
@@ -228,3 +228,101 @@ def test_split_week_random():
     week = train[0].week
     for t in train[0:3]:
         assert t.week == week
+
+
+def test_split_random_day_test_specific():
+
+    datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
+
+    train, validation, test = split_data(
+        datetimes=datetimes, method=SplitMethod.DAY_RANDOM_TEST_YEAR
+    )
+
+    assert len(train) == 274  # 75% of days of 2020
+    assert len(validation) == 92  # 25% of days of 2020
+    assert len(test) == 365  # % of days in 2021
+
+    train_df = pd.DatetimeIndex(train)
+    validation_df = pd.DatetimeIndex(validation)
+    test_df = pd.DatetimeIndex(test)
+
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
+
+    assert len(train_validation_overlap) == 0
+    assert len(train_test_overlap) == 0
+    assert len(validation_test_overlap) == 0
+
+    # check all train and validation are in 2020
+    assert (train_df.year == 2020).sum() == len(train_df)
+    assert (validation_df.year == 2020).sum() == len(validation_df)
+    assert (test.year == 2021).sum() == len(test)
+
+
+def test_split_date():
+
+    datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
+    train_validation_test_datetime_split = [pd.Timestamp("2020-07-01"), pd.Timestamp("2021-01-01")]
+
+    train, validation, test = split_data(
+        datetimes=datetimes,
+        method=SplitMethod.DATE,
+        train_validation_test_datetime_split=train_validation_test_datetime_split,
+    )
+
+    assert len(train) == 182  # first half of 2020
+    assert len(validation) == 184  # second half of 2020
+    assert len(test) == 366  # all of days in 2021
+
+    train_df = pd.DatetimeIndex(train)
+    validation_df = pd.DatetimeIndex(validation)
+    test_df = pd.DatetimeIndex(test)
+
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
+
+    assert len(train_validation_overlap) == 0
+    assert len(train_test_overlap) == 0
+    assert len(validation_test_overlap) == 0
+
+    # check datetimes are in the correct sections
+    assert (train_df < pd.Timestamp("2020-07-01")).sum() == len(train_df)
+    assert (
+        (validation_df >= pd.Timestamp("2020-07-01")) & (validation_df < pd.Timestamp("2021-01-01"))
+    ).sum() == len(validation_df)
+    assert (test >= pd.Timestamp("2021-01-01")).sum() == len(test)
+
+
+def test_split_day_random_test_date():
+
+    datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
+    train_validation_test_datetime_split = [pd.Timestamp("2020-07-01"), pd.Timestamp("2021-07-01")]
+
+    train, validation, test = split_data(
+        datetimes=datetimes,
+        method=SplitMethod.DAY_RANDOM_TEST_DATE,
+        train_validation_test_datetime_split=train_validation_test_datetime_split,
+    )
+
+    assert len(train) == 410  # 75% of days of 2020 and half of 2021 (~365*1.5*0.75)
+    assert len(validation) == 137  # 25% of days of 2020 and half of 2021 (~365*1.5*0.25)
+    assert len(test) == 185  # and second half of 2021 of days in 2021
+
+    train_df = pd.DatetimeIndex(train)
+    validation_df = pd.DatetimeIndex(validation)
+    test_df = pd.DatetimeIndex(test)
+
+    train_validation_overlap = train_df.join(validation_df, how="inner")
+    train_test_overlap = train_df.join(test_df, how="inner")
+    validation_test_overlap = validation_df.join(test_df, how="inner")
+
+    assert len(train_validation_overlap) == 0
+    assert len(train_test_overlap) == 0
+    assert len(validation_test_overlap) == 0
+
+    # check datetimes are in the correct sections
+    assert (train_df < pd.Timestamp("2021-07-01")).sum() == len(train_df)
+    assert (validation_df < pd.Timestamp("2021-07-01")).sum() == len(validation_df)
+    assert (test >= pd.Timestamp("2021-07-01")).sum() == len(test)

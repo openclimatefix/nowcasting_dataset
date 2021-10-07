@@ -123,3 +123,35 @@ def split_method(
     test = datetimes[datetimes_period.isin(test_periods)]
 
     return train, validation, test
+
+
+def split_by_dates(
+    datetimes: pd.DatetimeIndex,
+    train_validation_datetime_split: pd.Timestamp,
+    validation_test_datetime_split: pd.Timestamp,
+) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
+    """
+    Split datetimes into train, validation and test by two specific datetime splits
+
+    Note that the 'train_validation_datetime_split' should be less than the 'validation_test_datetime_split'
+
+    Args:
+        datetimes: list of datetimes
+        train_validation_datetime_split: the datetime which will split the train and validation datetimes.
+        For example if this is '2021-01-01' then the train datetimes will end by '2021-01-01' and the
+        validation datetimes will start at '2021-01-01'.
+        validation_test_datetime_split: the datetime which will split the validation and test datetimes
+
+    Returns: train, validation and test datetimes
+
+    """
+    assert train_validation_datetime_split <= validation_test_datetime_split
+
+    train = datetimes[datetimes < train_validation_datetime_split]
+    validation = datetimes[
+        (datetimes >= train_validation_datetime_split)
+        & (datetimes < validation_test_datetime_split)
+    ]
+    test = datetimes[datetimes >= validation_test_datetime_split]
+
+    return train, validation, test

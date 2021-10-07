@@ -15,6 +15,9 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_GSP_PER_EXAMPLE,
 )
 from nowcasting_dataset.time import make_random_time_vectors
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class GSP(DataSourceOutput):
@@ -40,11 +43,13 @@ class GSP(DataSourceOutput):
     gsp_x_coords: Array = Field(
         ...,
         description="The x (OSGB geo-spatial) coordinates of the gsp. "
+        "This is in fact the x centroid of the GSP region"
         "Shape: [batch_size,] n_gsp_per_example",
     )
     gsp_y_coords: Array = Field(
         ...,
         description="The y (OSGB geo-spatial) coordinates of the gsp. "
+        "This are in fact the y centroid of the GSP region"
         "Shape: [batch_size,] n_gsp_per_example",
     )
 
@@ -120,12 +125,13 @@ class GSP(DataSourceOutput):
             pad_size=pad_size,
         )
 
-    def get_datetime_index(self):
+    def get_datetime_index(self) -> Array:
         """ Get the datetime index of this data """
         return self.gsp_datetime_index
 
     def to_xr_dataset(self, i):
         """ Make a xr dataset """
+        logger.debug(f"Making xr dataset for batch {i}")
         assert self.batch_size == 0
 
         example_dim = {"example": np.array([i], dtype=np.int32)}

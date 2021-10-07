@@ -1,9 +1,7 @@
 """ Model for output of PV data """
-import pandas as pd
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
-import torch
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput, pad_data
 from nowcasting_dataset.consts import (
@@ -17,6 +15,9 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
 from nowcasting_dataset.time import make_random_time_vectors
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PV(DataSourceOutput):
@@ -134,6 +135,7 @@ class PV(DataSourceOutput):
 
     def to_xr_dataset(self, i):
         """ Make a xr dataset """
+        logger.debug(f"Making xr dataset for batch {i}")
         assert self.batch_size == 0
 
         example_dim = {"example": np.array([i], dtype=np.int32)}

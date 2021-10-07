@@ -2,11 +2,14 @@
 from pydantic import Field, validator
 import xarray as xr
 import numpy as np
+import logging
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array
 
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA, TOPOGRAPHIC_X_COORDS, TOPOGRAPHIC_Y_COORDS
 from nowcasting_dataset.utils import coord_to_range
+
+logger = logging.getLogger(__name__)
 
 
 class Topographic(DataSourceOutput):
@@ -68,8 +71,9 @@ class Topographic(DataSourceOutput):
             # copy is needed as torch doesnt not support negative strides
         )
 
-    def to_xr_dataset(self, _):
+    def to_xr_dataset(self, i):
         """ Make a xr dataset """
+        logger.debug(f"Making xr dataset for batch {i}")
         data = xr.DataArray(
             self.topo_data,
             coords={

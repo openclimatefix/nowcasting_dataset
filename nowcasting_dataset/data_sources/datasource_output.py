@@ -80,7 +80,7 @@ class DataSourceOutput(BaseModel):
 
         return items
 
-    def to_xr_dataset(self, _):
+    def to_xr_dataset(self, **kwargs):
         """ Make a xr dataset. Each data source needs to define this """
         raise NotImplementedError
 

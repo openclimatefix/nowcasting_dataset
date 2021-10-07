@@ -13,6 +13,9 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.utils import coord_to_range
 from nowcasting_dataset.time import make_random_time_vectors
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class NWP(DataSourceOutput):
@@ -129,8 +132,9 @@ class NWP(DataSourceOutput):
             },
         )
 
-    def to_xr_dataset(self, _):
+    def to_xr_dataset(self, i):
         """ Make a xr dataset """
+        logger.debug(f"Making xr dataset for batch {i}")
         if type(self.nwp) != xr.DataArray:
             self.to_xr_data_array()
 

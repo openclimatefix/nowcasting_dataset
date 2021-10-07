@@ -107,39 +107,6 @@ def split_data(
             train_test_validation_specific=train_test_validation_specific,
         )
 
-    elif method == SplitMethod.DAY_RANDOM_TEST_YEAR:
-        # This method splits
-        # 1. test set to be in on year, using 'train_test_validation_specific'
-        # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
-        #
-        # This allows us to create a test set for 2021, and train and validation for random days not in 2021
-
-        # create test set
-        train_datetimes, validation_datetimes, test_datetimes = split_method(
-            datetimes=datetimes,
-            train_test_validation_split=train_test_validation_split,
-            method="specific",
-            freq="Y",
-            seed=seed,
-            train_test_validation_specific=train_test_validation_specific,
-        )
-
-        # join train and validation together
-        train_and_validation_datetimes = train_datetimes.append(validation_datetimes)
-
-        # set split ratio to only be on train and validation
-        train_validation_split = list(train_test_validation_split)
-        train_validation_split[2] = 0
-        train_validation_split = tuple(train_validation_split)
-
-        # get train and validation methods
-        train_datetimes, validation_datetimes, _ = split_method(
-            datetimes=train_and_validation_datetimes,
-            train_test_validation_split=train_validation_split,
-            method="random",
-            seed=seed,
-        )
-
     elif method == SplitMethod.DATE:
         train_datetimes, validation_datetimes, test_datetimes = split_by_dates(
             datetimes=datetimes,
@@ -147,20 +114,37 @@ def split_data(
             validation_test_datetime_split=train_validation_test_datetime_split[1],
         )
 
-    elif method == SplitMethod.DAY_RANDOM_TEST_DATE:
-        # This method splits
-        # 1. test set from one date onwards
-        # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
-        #
-        # This allows us to create a test set from a specfic date e.g. 2020-07-01, and train and validation
-        # for random days before that date
+    elif method in [SplitMethod.DAY_RANDOM_TEST_YEAR, SplitMethod.DAY_RANDOM_TEST_DATE]:
+        if method == SplitMethod.DAY_RANDOM_TEST_YEAR:
+            # This method splits
+            # 1. test set to be in on year, using 'train_test_validation_specific'
+            # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
+            #
+            # This allows us to create a test set for 2021, and train and validation for random days not in 2021
 
-        # create test set
-        train_datetimes, validation_datetimes, test_datetimes = split_by_dates(
-            datetimes=datetimes,
-            train_validation_datetime_split=train_validation_test_datetime_split[0],
-            validation_test_datetime_split=train_validation_test_datetime_split[1],
-        )
+            # create test set
+            train_datetimes, validation_datetimes, test_datetimes = split_method(
+                datetimes=datetimes,
+                train_test_validation_split=train_test_validation_split,
+                method="specific",
+                freq="Y",
+                seed=seed,
+                train_test_validation_specific=train_test_validation_specific,
+            )
+        elif method == SplitMethod.DAY_RANDOM_TEST_DATE:
+            # This method splits
+            # 1. test set from one date onwards
+            # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
+            #
+            # This allows us to create a test set from a specfic date e.g. 2020-07-01, and train and validation
+            # for random days before that date
+
+            # create test set
+            train_datetimes, validation_datetimes, test_datetimes = split_by_dates(
+                datetimes=datetimes,
+                train_validation_datetime_split=train_validation_test_datetime_split[0],
+                validation_test_datetime_split=train_validation_test_datetime_split[1],
+            )
 
         # join train and validation together
         train_and_validation_datetimes = train_datetimes.append(validation_datetimes)

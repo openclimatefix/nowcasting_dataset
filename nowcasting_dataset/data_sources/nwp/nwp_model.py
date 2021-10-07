@@ -63,7 +63,7 @@ class NWP(DataSourceOutput):
 
     @property
     def sequence_length(self):
-        """The sequence length of the NWP timeseries""
+        """The sequence length of the NWP timeseries"""
         return self.nwp.shape[-3]
 
     @validator("nwp_x_coords")

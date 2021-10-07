@@ -35,11 +35,19 @@ class MetadataDataSource(DataSource):
         Returns: batch data of datetime features
 
         """
+
+        if self.object_at_center == "GSP":
+            object_at_center_label = 1
+        elif self.object_at_center == "PV":
+            object_at_center_label = 2
+        else:
+            object_at_center_label = 0
+
         return Metadata(
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),
             y_meters_center=np.array(y_meters_center),
-            object_at_center=self.object_at_center,
+            object_at_center=object_at_center_label,
         )
 
     def get_locations_for_batch(

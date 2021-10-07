@@ -25,6 +25,7 @@ class SplitMethod(Enum):
     WEEK_RANDOM = "week_random"
     YEAR_SPECIFIC = "year_specific"
     SAME = "same"
+    DAY_RANDOM_TEST_YEAR = "day_random_test_year"
 
 
 def split_data(
@@ -101,6 +102,35 @@ def split_data(
             seed=seed,
             train_test_validation_specific=train_test_validation_specific,
         )
+
+    elif method == SplitMethod.DAY_RANDOM_TEST_YEAR:
+
+        # create test set
+        train_datetimes, validation_datetimes, test_datetimes = split_method(
+            datetimes=datetimes,
+            train_test_validation_split=train_test_validation_split,
+            method="specific",
+            freq="Y",
+            seed=seed,
+            train_test_validation_specific=train_test_validation_specific,
+        )
+
+        # join train and validation together
+        train_and_validation_datetimes = train_datetimes.append(validation_datetimes)
+
+        # set split ratio to only be on train and validation
+        train_validation_split = list(train_test_validation_split)
+        train_validation_split[2] = 0
+        train_validation_split = tuple(train_validation_split)
+
+        # get train and validation methods
+        train_datetimes, validation_datetimes, _ = split_method(
+            datetimes=train_and_validation_datetimes,
+            train_test_validation_split=train_validation_split,
+            method="random",
+            seed=seed,
+        )
+
     else:
         raise ValueError(f"{method} for splitting day is not implemented")
 

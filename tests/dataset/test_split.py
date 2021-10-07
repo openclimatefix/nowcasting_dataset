@@ -228,3 +228,33 @@ def test_split_week_random():
     week = train[0].week
     for t in train[0:3]:
         assert t.week == week
+
+
+def test_split_random_day_test_specifc():
+
+    datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
+
+    train, validation, test = split_data(
+        datetimes=datetimes, method=SplitMethod.DAY_RANDOM_TEST_YEAR
+    )
+
+    assert len(train) == 274  # 75% of days of 2020
+    assert len(validation) == 92  # 25% of days of 2020
+    assert len(test) == 365  # % of days in 2021
+
+    train_df = pd.DatetimeIndex(train)
+    validation_df = pd.DatetimeIndex(validation)
+    test_df = pd.DatetimeIndex(test)
+
+    train_validation_overlap = [t for t in train_df if t in validation_df]
+    train_test_overlap = [t for t in train_df if t in test_df]
+    validation_test_overlap = [t for t in validation_df if t in test_df]
+
+    assert len(train_validation_overlap) == 0
+    assert len(train_test_overlap) == 0
+    assert len(validation_test_overlap) == 0
+
+    # check all train and validation are in 2020
+    assert (train_df.year == 2020).sum() == len(train_df)
+    assert (validation_df.year == 2020).sum() == len(validation_df)
+    assert (test.year == 2021).sum() == len(test)

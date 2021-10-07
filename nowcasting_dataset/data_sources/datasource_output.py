@@ -4,8 +4,9 @@ from pydantic import BaseModel, Field
 import pandas as pd
 import xarray as xr
 import numpy as np
-from typing import List
+from typing import List, Union
 import logging
+from datetime import datetime
 
 from nowcasting_dataset.utils import to_numpy
 
@@ -97,7 +98,7 @@ class DataSourceOutput(BaseModel):
         keys: List[str],
         history_minutes: int,
         forecast_minutes: int,
-        t0_dt_of_first_example: pd.DatetimeIndex,
+        t0_dt_of_first_example: Union[datetime, pd.Timestamp],
     ):
         """
         Selects a subset of data between the indicies of [start, end] for each key in keys
@@ -106,7 +107,7 @@ class DataSourceOutput(BaseModel):
 
         Args:
             keys: Keys in batch to use
-            t0_dt_of_first_example: DatetimeIndex of the current time (t0) in the first example of the batch
+            t0_dt_of_first_example: datetime of the current time (t0) in the first example of the batch
             history_minutes: How many minutes of history to use
             forecast_minutes: How many minutes of future data to use for forecasting
 

@@ -105,7 +105,7 @@ class Satellite(DataSourceOutput):
                     "time": self.sat_datetime_index,
                     "x": self.sat_x_coords,
                     "y": self.sat_y_coords,
-                    "variable": self.sat_channel_names,  # assuem all channels are the same
+                    "variable": self.sat_channel_names,  # assume all channels are the same
                 },
             )
 

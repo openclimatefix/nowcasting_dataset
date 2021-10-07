@@ -14,7 +14,7 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
     DEFAULT_N_GSP_PER_EXAMPLE,
 )
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 
 
 class GSP(DataSourceOutput):
@@ -83,7 +83,7 @@ class GSP(DataSourceOutput):
     def fake(batch_size, seq_length_30, n_gsp_per_batch, time_30=None):
         """ Make a fake GSP object """
         if time_30 is None:
-            _, _, time_30 = make_time_vectors(
+            _, _, time_30 = make_random_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=seq_length_30
             )
 
@@ -102,11 +102,18 @@ class GSP(DataSourceOutput):
         # copy is needed as torch doesnt not support negative strides
 
     def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
-        """ Pad out data """
+        """
+        Pad out data
+
+        Args:
+            n_gsp_per_example: The number of gsp's there are per example.
+
+        Note that nothing is returned as the changes are made inplace.
+        """
         assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
 
         pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]
-        return pad_data(
+        pad_data(
             data=self,
             one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
             two_dimensional_arrays=[GSP_YIELD],

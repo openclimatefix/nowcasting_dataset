@@ -6,7 +6,7 @@ import torch
 from pydantic import validator, Field
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 
 # seems to be a pandas dataseries
 
@@ -30,7 +30,7 @@ class Metadata(DataSourceOutput):
     def fake(batch_size, t0_dt=None):
         """Make a xr dataset"""
         if t0_dt is None:
-            t0_dt, _, _ = make_time_vectors(
+            t0_dt, _, _ = make_random_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=0
             )
 

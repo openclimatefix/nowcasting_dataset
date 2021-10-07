@@ -26,7 +26,7 @@ class Topographic(DataSourceOutput):
     )
     topo_y_coords: Array = Field(
         ...,
-        description="The y (OSGB geo-spatial) coordinates of the topographic images. Shape: [batch_size,] width",
+        description="The y (OSGB geo-spatial) coordinates of the topographic images. Shape: [batch_size,] height",
     )
 
     @property

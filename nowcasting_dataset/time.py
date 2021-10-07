@@ -233,7 +233,7 @@ def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.Datet
     return index_with_gaps.dropna().index
 
 
-def make_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
+def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
     """
     Make random time vectors
 

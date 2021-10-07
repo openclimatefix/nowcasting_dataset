@@ -6,7 +6,7 @@ import xarray as xr
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
 from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 
 
 class Sun(DataSourceOutput):
@@ -25,13 +25,22 @@ class Sun(DataSourceOutput):
 
     @validator("sun_elevation_angle")
     def elevation_shape(cls, v, values):
-        """ Validate 'sun_elevation_angle' """
-        assert v.shape[-1] == values["sun_azimuth_angle"].shape[-1]
+        """
+        Validate 'sun_elevation_angle'.
+
+        This is done by change shape is the same as the "sun_azimuth_angle"
+        """
+        assert v.shape == values["sun_azimuth_angle"].shape
         return v
 
     @validator("sun_datetime_index")
     def sun_datetime_index_shape(cls, v, values):
-        """ Validate 'sun_datetime_index' """
+        """
+        Validate 'sun_datetime_index'.
+
+        This is done by checking last dimension is the same as the last dim of 'sun_azimuth_angle'
+        i.e the time dimension
+        """
         assert v.shape[-1] == values["sun_azimuth_angle"].shape[-1]
         return v
 
@@ -39,7 +48,7 @@ class Sun(DataSourceOutput):
     def fake(batch_size, seq_length_5, time_5=None):
         """ Create fake data """
         if time_5 is None:
-            _, time_5, _ = make_time_vectors(
+            _, time_5, _ = make_random_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
             )
 

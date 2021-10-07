@@ -16,7 +16,7 @@ from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ class Batch(Example):
         """Create fake batch"""
         process = configuration.process
 
-        t0_dt, time_5, time_30 = make_time_vectors(
+        t0_dt, time_5, time_30 = make_random_time_vectors(
             batch_size=process.batch_size,
             seq_len_5_minutes=process.seq_len_5_minutes,
             seq_len_30_minutes=process.seq_len_30_minutes,

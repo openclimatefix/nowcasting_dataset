@@ -7,7 +7,7 @@ import xarray as xr
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array, SAT_VARIABLE_NAMES
 from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 
 
 class Satellite(DataSourceOutput):
@@ -61,7 +61,7 @@ class Satellite(DataSourceOutput):
     ):
         """ Create fake data """
         if time_5 is None:
-            _, time_5, _ = make_time_vectors(
+            _, time_5, _ = make_random_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
             )
 
@@ -88,7 +88,7 @@ class Satellite(DataSourceOutput):
 
         return s
 
-    def get_datetime_index(self):
+    def get_datetime_index(self) -> Array:
         """ Get the datetime index of this data """
         return self.sat_datetime_index
 

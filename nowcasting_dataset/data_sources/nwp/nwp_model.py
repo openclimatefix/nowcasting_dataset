@@ -12,7 +12,7 @@ from nowcasting_dataset.consts import (
     NWP_DATA,
 )
 from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 
 
 class NWP(DataSourceOutput):
@@ -28,12 +28,12 @@ class NWP(DataSourceOutput):
     nwp_x_coords: Array = Field(
         ...,
         description="The x (OSGB geo-spatial) coordinates of the NWP data. "
-        "Shape: [batch_size,] n_pv_systems_per_example",
+        "Shape: [batch_size,] width",
     )
     nwp_y_coords: Array = Field(
         ...,
         description="The y (OSGB geo-spatial) coordinates of the NWP data. "
-        "Shape: [batch_size,] n_pv_systems_per_example",
+        "Shape: [batch_size,] height",
     )
 
     nwp_target_time: Array = Field(
@@ -82,7 +82,7 @@ class NWP(DataSourceOutput):
     def fake(batch_size, seq_length_5, nwp_image_size_pixels, number_nwp_channels, time_5=None):
         """ Create fake data """
         if time_5 is None:
-            _, time_5, _ = make_time_vectors(
+            _, time_5, _ = make_random_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
             )
 
@@ -111,7 +111,7 @@ class NWP(DataSourceOutput):
             ],
         )
 
-    def get_datetime_index(self):
+    def get_datetime_index(self) -> Array:
         """ Get the datetime index of this data """
         return self.nwp_target_time
 

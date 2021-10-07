@@ -1,4 +1,5 @@
 """ Model for output of PV data """
+import pandas as pd
 from pydantic import Field, validator
 import numpy as np
 import xarray as xr
@@ -15,7 +16,7 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_ID,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
-from nowcasting_dataset.time import make_time_vectors
+from nowcasting_dataset.time import make_random_time_vectors
 
 
 class PV(DataSourceOutput):
@@ -76,7 +77,7 @@ class PV(DataSourceOutput):
     def fake(batch_size, seq_length_5, n_pv_systems_per_batch, time_5=None):
         """ Create fake data """
         if time_5 is None:
-            _, time_5, _ = make_time_vectors(
+            _, time_5, _ = make_random_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
             )
 
@@ -99,7 +100,14 @@ class PV(DataSourceOutput):
         )
 
     def pad(self, n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE):
-        """Pad data out"""
+        """
+        Pad out data
+
+        Args:
+            n_pv_systems_per_example: The number of pv systems there are per example.
+
+        Note that nothing is returned as the changes are made inplace.
+        """
         assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
 
         pad_size = n_pv_systems_per_example - self.pv_yield.shape[-1]
@@ -120,7 +128,7 @@ class PV(DataSourceOutput):
             two_dimensional_arrays=[PV_YIELD],
         )
 
-    def get_datetime_index(self):
+    def get_datetime_index(self) -> Array:
         """ Get the datetime index of this data """
         return self.pv_datetime_index
 

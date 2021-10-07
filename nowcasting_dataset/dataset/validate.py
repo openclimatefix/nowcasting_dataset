@@ -67,7 +67,7 @@ class ValidatorDataset:
         for batch_idx, batch in enumerate(self.batches):
             logger.info(f"Validating batch {batch_idx}")
 
-            # change dict to Batch
+            # change dict to Batch, this does some validation
             if type(batch) == dict:
                 batch = Batch(**batch)
 

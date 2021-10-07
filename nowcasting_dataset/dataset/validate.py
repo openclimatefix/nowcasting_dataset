@@ -91,10 +91,10 @@ class ValidatorDataset:
         Returns: list of days that the batch has data for
 
         """
-        if type(batch.general.t0_dt) == torch.Tensor:
-            batch.general.t0_dt = batch.general.t0_dt.detach().numpy()
+        if type(batch.metadata.t0_dt) == torch.Tensor:
+            batch.metadata.t0_dt = batch.metadata.t0_dt.detach().numpy()
 
-        all_datetimes_from_batch = pd.to_datetime(batch.general.t0_dt.reshape(-1), unit="s")
+        all_datetimes_from_batch = pd.to_datetime(batch.metadata.t0_dt.reshape(-1), unit="s")
         return pd.DatetimeIndex(all_datetimes_from_batch.date).unique()
 
 

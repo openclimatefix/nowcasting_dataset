@@ -10,7 +10,7 @@ from nowcasting_dataset.time import make_time_vectors
 # seems to be a pandas dataseries
 
 
-class General(DataSourceOutput):
+class Metadata(DataSourceOutput):
     """ Model for output of general/metadata data """
 
     # TODO add descriptions
@@ -27,7 +27,7 @@ class General(DataSourceOutput):
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=0
             )
 
-        return General(
+        return Metadata(
             batch_size=batch_size,
             t0_dt=t0_dt,
             x_meters_center=torch.randn(
@@ -58,7 +58,7 @@ class General(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
-        return General(
+        return Metadata(
             batch_size=xr_dataset["t0_dt"].shape[0],
             t0_dt=xr_dataset["t0_dt"],
             x_meters_center=xr_dataset["x_meters_center"],

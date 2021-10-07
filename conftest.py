@@ -9,7 +9,7 @@ from nowcasting_dataset import consts
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.data_sources import SatelliteDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.general.general_data_source import GeneralDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 
 pytest.IMAGE_SIZE_PIXELS = 128
 
@@ -54,7 +54,7 @@ def sat_data_source(sat_filename: Path):
 @pytest.fixture
 def general_data_source():
 
-    return GeneralDataSource(
+    return MetadataDataSource(
         history_minutes=0, forecast_minutes=5, object_at_center="GSP", convert_to_numpy=True
     )
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from nowcasting_dataset.config.model import Configuration
 
 from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
-from nowcasting_dataset.data_sources.general.general_model import General
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
@@ -25,7 +25,7 @@ _LOG = logging.getLogger(__name__)
 class Example(BaseModel):
     """Single Data item"""
 
-    general: General
+    metadata: Metadata
     satellite: Optional[Satellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
@@ -51,7 +51,7 @@ class Example(BaseModel):
             self.gsp,
             self.nwp,
             self.datetime,
-            self.general,
+            self.metadata,
         ]
 
 
@@ -61,7 +61,7 @@ class Batch(Example):
 
     Contains the following data sources
     - gsp, satellite, topogrpahic, sun, pv, nwp and datetime.
-    Also contains general metadata of the class
+    Also contains metadata of the class
 
     """
 
@@ -88,7 +88,7 @@ class Batch(Example):
             cls = Example.__fields__[data_source_name].type_
             data_sources_dict[data_source_name] = cls.from_xr_dataset(xr_dataset=xr_dataset)
 
-        data_sources_dict["batch_size"] = data_sources_dict["general"].batch_size
+        data_sources_dict["batch_size"] = data_sources_dict["metadata"].batch_size
 
         return Batch(**data_sources_dict)
 
@@ -122,7 +122,7 @@ class Batch(Example):
 
         return Batch(
             batch_size=process.batch_size,
-            general=General.fake(batch_size=process.batch_size, t0_dt=t0_dt),
+            metadata=Metadata.fake(batch_size=process.batch_size, t0_dt=t0_dt),
             satellite=Satellite.fake(
                 process.batch_size,
                 process.seq_len_5_minutes,

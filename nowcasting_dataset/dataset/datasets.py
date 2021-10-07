@@ -406,7 +406,7 @@ def subselect_data(
     # We infact only need this from the first example in each batch
     if current_timestep_index is None:
         # t0_dt or if not available use a different datetime index
-        t0_dt_of_first_example = batch.general.t0_dt[0].values
+        t0_dt_of_first_example = batch.metadata.t0_dt[0].values
     else:
         if SATELLITE_DATA in required_keys:
             t0_dt_of_first_example = batch.satellite.sat_datetime_index[

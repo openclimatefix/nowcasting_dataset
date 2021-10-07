@@ -1,7 +1,7 @@
 This folder contains the code for the different data sources.
 
 # Data Sources
-- general: metadata for the batch like t0_dt, x_meters_center ....
+- metadata: metadata for the batch like t0_dt, x_meters_center ....
 - datetime: datetime information like 'hour_of_day'
 - gsp: Grid Supply Point data from Sheffield Solar (e.g. the estimated total solar PV power generation for each
 GSP region, and the geospatial shape of each GSP region).

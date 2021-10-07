@@ -7,12 +7,12 @@ import pandas as pd
 import numpy as np
 
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.data_sources.general.general_model import General
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.utils import to_numpy
 
 
 @dataclass
-class GeneralDataSource(DataSource):
+class MetadataDataSource(DataSource):
     """Add metadata to the batch"""
 
     object_at_center: str = "GSP"
@@ -23,7 +23,7 @@ class GeneralDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> General:
+    ) -> Metadata:
         """
         Get example data
 
@@ -35,7 +35,7 @@ class GeneralDataSource(DataSource):
         Returns: batch data of datetime features
 
         """
-        return General(
+        return Metadata(
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),
             y_meters_center=np.array(y_meters_center),

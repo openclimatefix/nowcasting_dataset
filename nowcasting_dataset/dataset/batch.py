@@ -1,7 +1,7 @@
 """ batch functions """
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import xarray as xr
 from pydantic import BaseModel, Field
@@ -111,54 +111,33 @@ class Batch(Example):
     @staticmethod
     def load_batch_from_dataset(xr_dataset: xr.Dataset):
         """Change xr.Datatset to Batch object"""
-        gsp = GSP.from_xr_dataset(xr_dataset=xr_dataset)
-        satellite = Satellite.from_xr_dataset(xr_dataset=xr_dataset)
-        topographic = Topographic.from_xr_dataset(xr_dataset=xr_dataset)
-        sun = Sun.from_xr_dataset(xr_dataset=xr_dataset)
-        pv = PV.from_xr_dataset(xr_dataset=xr_dataset)
-        nwp = NWP.from_xr_dataset(xr_dataset=xr_dataset)
-        datetime = Datetime.from_xr_dataset(xr_dataset=xr_dataset)
-        general = General.from_xr_dataset(xr_dataset=xr_dataset)
+        # get a list of data sources
+        data_sources_names = Example.__fields__.keys()
 
-        batch_size = general.batch_size
+        # collect data sources
+        data_sources_dict = {}
+        for data_source_name in data_sources_names:
+            cls = Example.__fields__[data_source_name].type_
+            data_sources_dict[data_source_name] = cls.from_xr_dataset(xr_dataset=xr_dataset)
 
-        return Batch(
-            batch_size=batch_size,
-            gsp=gsp,
-            satellite=satellite,
-            topographic=topographic,
-            sun=sun,
-            pv=pv,
-            nwp=nwp,
-            datetime=datetime,
-            general=general,
-        )
+        data_sources_dict["batch_size"] = data_sources_dict["general"].batch_size
+
+        return Batch(**data_sources_dict)
 
     def split(self) -> List[Example]:
         """Split batch into list of data items"""
-        satellite_data = self.satellite.split()
-        topographic_data = self.topographic.split()
-        pv_data = self.pv.split()
-        sun_data = self.sun.split()
-        gsp_data = self.gsp.split()
-        nwp_data = self.nwp.split()
-        datetime_data = self.datetime.split()
-        general_data = self.general.split()
+        # collect split data
+        split_data_dict = {}
+        for data_source in self.data_sources:
+            if data_source is not None:
+                cls = data_source.__class__.__name__.lower()
+                split_data_dict[cls] = data_source.split()
 
+        # make in to Example objects
         data_items = []
         for batch_idx in range(self.batch_size):
-            data_items.append(
-                Example(
-                    general=general_data[batch_idx],
-                    satellite=satellite_data[batch_idx],
-                    topographic=topographic_data[batch_idx],
-                    pv=pv_data[batch_idx],
-                    sun=sun_data[batch_idx],
-                    gsp=gsp_data[batch_idx],
-                    nwp=nwp_data[batch_idx],
-                    datetime=datetime_data[batch_idx],
-                )
-            )
+            split_data_one_example_dict = {k: v[batch_idx] for k, v in split_data_dict.items()}
+            data_items.append(Example(**split_data_one_example_dict))
 
         return data_items
 
@@ -250,7 +229,8 @@ def batch_to_dataset(batch: Batch) -> xr.Dataset:
         individual_datasets = []
 
         for data_source in example.data_sources:
-            individual_datasets.append(data_source.to_xr_dataset(i))
+            if data_source is not None:
+                individual_datasets.append(data_source.to_xr_dataset(i))
 
         # Merge
         merged_ds = xr.merge(individual_datasets)
@@ -259,7 +239,7 @@ def batch_to_dataset(batch: Batch) -> xr.Dataset:
     return xr.concat(datasets, dim="example")
 
 
-def write_batch_locally(batch: Batch, batch_i: int, path: Path):
+def write_batch_locally(batch: Union[Batch, dict], batch_i: int, path: Path):
     """
     Write a batch to a locally file
 
@@ -268,6 +248,9 @@ def write_batch_locally(batch: Batch, batch_i: int, path: Path):
         batch_i: The number of the batch
         path: The directory to write the batch into.
     """
+    if type(batch):
+        batch = Batch(**batch)
+
     dataset = batch.batch_to_dataset()
     encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
     filename = get_netcdf_filename(batch_i)

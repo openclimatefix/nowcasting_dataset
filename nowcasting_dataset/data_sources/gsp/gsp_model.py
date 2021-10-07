@@ -148,6 +148,11 @@ class GSP(DataSourceOutput):
                 dims=["example", "gsp"],
             )
 
+        one_dataset[GSP_YIELD] = one_dataset[GSP_YIELD].astype(np.float32)
+        one_dataset[GSP_ID] = one_dataset[GSP_ID].astype(np.float32)
+        one_dataset[GSP_X_COORDS] = one_dataset[GSP_X_COORDS].astype(np.float32)
+        one_dataset[GSP_Y_COORDS] = one_dataset[GSP_Y_COORDS].astype(np.float32)
+
         return one_dataset
 
     @staticmethod

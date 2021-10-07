@@ -1,13 +1,12 @@
 """ Model for Topogrpahic features """
 from pydantic import Field, validator
 import xarray as xr
+import numpy as np
 import torch
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.consts import Array
 
-from nowcasting_dataset.consts import (
-    TOPOGRAPHIC_DATA,
-)
+from nowcasting_dataset.consts import TOPOGRAPHIC_DATA, TOPOGRAPHIC_X_COORDS, TOPOGRAPHIC_Y_COORDS
 from nowcasting_dataset.utils import coord_to_range
 
 
@@ -88,6 +87,11 @@ class Topographic(DataSourceOutput):
                 "y": f"topo_y",
             }
         )
+
+        ds[TOPOGRAPHIC_DATA] = ds[TOPOGRAPHIC_DATA].astype(np.float32)
+        ds[TOPOGRAPHIC_X_COORDS] = ds[TOPOGRAPHIC_X_COORDS].astype(np.float32)
+        ds[TOPOGRAPHIC_Y_COORDS] = ds[TOPOGRAPHIC_Y_COORDS].astype(np.float32)
+
         return ds
 
     @staticmethod

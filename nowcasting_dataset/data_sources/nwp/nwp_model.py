@@ -140,13 +140,18 @@ class NWP(DataSourceOutput):
         ds = ds.rename({"target_time": "time"})
         for dim in ["time", "x", "y"]:
             ds = coord_to_range(ds, dim, prefix="nwp")
-        return ds.rename(
+        ds = ds.rename(
             {
                 "variable": f"nwp_variable",
                 "x": "nwp_x",
                 "y": "nwp_y",
             }
         )
+
+        ds["nwp_x_coords"] = ds["nwp_x_coords"].astype(np.float32)
+        ds["nwp_y_coords"] = ds["nwp_y_coords"].astype(np.float32)
+
+        return ds
 
     @staticmethod
     def from_xr_dataset(xr_dataset):

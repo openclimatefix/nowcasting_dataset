@@ -110,13 +110,18 @@ class Satellite(DataSourceOutput):
 
         for dim in ["time", "x", "y"]:
             ds = coord_to_range(ds, dim, prefix="sat")
-        return ds.rename(
+        df = ds.rename(
             {
                 "variable": f"sat_variable",
                 "x": f"sat_x",
                 "y": f"sat_y",
             }
         )
+
+        ds["sat_x_coords"] = ds["sat_x_coords"].astype(np.int32)
+        ds["sat_y_coords"] = ds["sat_y_coords"].astype(np.int32)
+
+        return df
 
     @staticmethod
     def from_xr_dataset(xr_dataset):

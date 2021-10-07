@@ -159,6 +159,11 @@ class PV(DataSourceOutput):
                 dims=["example", "pv_system"],
             )
 
+        one_dataset["pv_system_id"] = one_dataset["pv_system_id"].astype(np.float32)
+        one_dataset["pv_system_row_number"] = one_dataset["pv_system_row_number"].astype(np.float32)
+        one_dataset["pv_system_x_coords"] = one_dataset["pv_system_x_coords"].astype(np.float32)
+        one_dataset["pv_system_y_coords"] = one_dataset["pv_system_y_coords"].astype(np.float32)
+
         return one_dataset
 
     @staticmethod

@@ -1,7 +1,10 @@
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 
 
-from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.dataset.batch import Batch, GSP
+from nowcasting_dataset.dataset.validate import FakeDataset
+import torch
+from nowcasting_dataset.config.model import Configuration
 
 import xarray as xr
 
@@ -59,3 +62,13 @@ def test_model_from_xr_dataset_to_numpy():
     assert f.gsp.gsp_yield.shape == fs.gsp.gsp_yield.shape
     assert (f.gsp.gsp_yield[0] == fs.gsp.gsp_yield[0]).all()
     assert (f.gsp.gsp_yield == fs.gsp.gsp_yield).all()
+
+
+def test_fake_dataset():
+    train = torch.utils.data.DataLoader(FakeDataset(configuration=Configuration()), batch_size=None)
+    i = iter(train)
+    x = next(i)
+
+    x = Batch(**x)
+    # IT WORKS
+    assert type(x.satellite.sat_data) == torch.Tensor

@@ -27,12 +27,12 @@ class NWP(DataSourceOutput):
 
     nwp_x_coords: Array = Field(
         ...,
-        description="The x (OSGB geo-spatial) coordinates of the pv systems. "
+        description="The x (OSGB geo-spatial) coordinates of the NWP data. "
         "Shape: [batch_size,] n_pv_systems_per_example",
     )
     nwp_y_coords: Array = Field(
         ...,
-        description="The y (OSGB geo-spatial) coordinates of the pv systems. "
+        description="The y (OSGB geo-spatial) coordinates of the NWP data. "
         "Shape: [batch_size,] n_pv_systems_per_example",
     )
 
@@ -40,7 +40,7 @@ class NWP(DataSourceOutput):
         ...,
         description="Time index of nwp data at 5 minutes past the hour {0, 5, ..., 55}. "
         "Datetimes become Unix epochs (UTC) represented as int64 just before being"
-        "passed into the ML model.",
+        "passed into the ML model.  The 'target time' is the time the NWP is _about_.",
     )
 
     nwp_init_time: Union[xr.DataArray, np.ndarray, torch.Tensor, int] = Field(
@@ -63,7 +63,7 @@ class NWP(DataSourceOutput):
 
     @property
     def sequence_length(self):
-        """The sequence length of the pv data"""
+        """The sequence length of the NWP timeseries""
         return self.nwp.shape[-3]
 
     @validator("nwp_x_coords")
@@ -115,7 +115,7 @@ class NWP(DataSourceOutput):
         return self.nwp_target_time
 
     def to_xr_data_array(self):
-        """ Change to data_array"""
+        """ Change to data_array.  Sets the nwp field in-place."""
         self.nwp = xr.DataArray(
             self.nwp,
             dims=["variable", "target_time", "x", "y"],

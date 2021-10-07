@@ -81,11 +81,11 @@ class DataSourceOutput(BaseModel):
         return items
 
     def to_xr_dataset(self, _):
-        """ Make a xr dataset. Each data source needs to defined this """
+        """ Make a xr dataset. Each data source needs to define this """
         raise NotImplementedError
 
     def from_xr_dataset(self):
-        """ Load from xr dataset. Each data source needs to defined this """
+        """ Load from xr dataset. Each data source needs to define this """
         raise NotImplementedError
 
     def get_datetime_index(self):

@@ -51,12 +51,12 @@ class GSP(DataSourceOutput):
 
     @property
     def number_of_gsp(self):
-        """The number of pv systems"""
+        """The number of Grid Supply Points in this example"""
         return self.gsp_yield.shape[-1]
 
     @property
     def sequence_length(self):
-        """The sequence length of the pv data"""
+        """The sequence length of the GSP PV power timeseries data"""
         return self.gsp_yield.shape[-2]
 
     @validator("gsp_yield")
@@ -82,7 +82,7 @@ class GSP(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, seq_length_30, n_gsp_per_batch, time_30=None):
-        """ Make a xr dataset """
+        """ Make a fake GSP object """
         if time_30 is None:
             _, _, time_30 = make_time_vectors(
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=seq_length_30

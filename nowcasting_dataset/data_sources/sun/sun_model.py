@@ -20,7 +20,7 @@ class Sun(DataSourceOutput):
 
     sun_elevation_angle: Array = Field(
         ...,
-        description="PV azimuth angles i.e where the sun is. " "Shape: [batch_size,] seq_length",
+        description="PV elevation angles i.e where the sun is. " "Shape: [batch_size,] seq_length",
     )
     sun_datetime_index: Array
 

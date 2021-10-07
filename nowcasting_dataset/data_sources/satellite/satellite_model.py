@@ -25,7 +25,7 @@ class Satellite(DataSourceOutput):
     )
     sat_y_coords: Array = Field(
         ...,
-        description="The y (OSGB geo-spatial) coordinates of the satellite images. Shape: [batch_size,] width",
+        description="The y (OSGB geo-spatial) coordinates of the satellite images. Shape: [batch_size,] height",
     )
 
     sat_datetime_index: Array = Field(
@@ -42,7 +42,7 @@ class Satellite(DataSourceOutput):
 
     @validator("sat_x_coords")
     def x_coordinates_shape(cls, v, values):
-        """ Validate 'sat_y_coords' """
+        """ Validate 'sat_x_coords' """
         assert v.shape[-1] == values["sat_data"].shape[-3]
         return v
 
@@ -110,7 +110,7 @@ class Satellite(DataSourceOutput):
 
         for dim in ["time", "x", "y"]:
             ds = coord_to_range(ds, dim, prefix="sat")
-        df = ds.rename(
+        ds = ds.rename(
             {
                 "variable": f"sat_variable",
                 "x": f"sat_x",
@@ -121,7 +121,7 @@ class Satellite(DataSourceOutput):
         ds["sat_x_coords"] = ds["sat_x_coords"].astype(np.int32)
         ds["sat_y_coords"] = ds["sat_y_coords"].astype(np.int32)
 
-        return df
+        return ds
 
     @staticmethod
     def from_xr_dataset(xr_dataset):

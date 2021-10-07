@@ -52,9 +52,9 @@ class MetadataDataSource(DataSource):
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
-        """This method is not needed for GeneralDataSource"""
+        """This method is not needed for MetadataDataSource"""
         raise NotImplementedError()
 
     def datetime_index(self) -> pd.DatetimeIndex:
-        """This method is not needed for GeneralDataSource"""
+        """This method is not needed for MetadataDataSource"""
         raise NotImplementedError()

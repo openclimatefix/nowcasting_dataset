@@ -42,7 +42,7 @@ class Datetime(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, seq_length_5):
-        """ Make a xr dataset """
+        """ Make a fake Datetime object """
         return Datetime(
             batch_size=batch_size,
             hour_of_day_sin=torch.randn(

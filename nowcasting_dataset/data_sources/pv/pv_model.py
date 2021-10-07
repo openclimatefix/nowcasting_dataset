@@ -31,7 +31,7 @@ class PV(DataSourceOutput):
 
     #: PV identification.
     #: shape = [batch_size, ] n_pv_systems_per_example
-    pv_system_id: Array = Field(..., description="pv id fomr pvoutpu.org? TODO")
+    pv_system_id: Array = Field(..., description="PV system ID, e.g. from PVoutput.org")
     pv_system_row_number: Array = Field(..., description="pv row number, made by OCF  TODO")
 
     pv_datetime_index: Array = Field(

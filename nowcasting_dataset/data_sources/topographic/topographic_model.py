@@ -32,7 +32,7 @@ class Topographic(DataSourceOutput):
 
     @property
     def height(self):
-        """ The width of the topographic image """
+        """ The height of the topographic image """
         return self.topo_data.shape[-1]
 
     @property

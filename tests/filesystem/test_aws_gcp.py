@@ -46,6 +46,7 @@ def test_aws_upload_and_delete_local_files(prefix):
         delete_all_files_in_temp_path(dst_path)
 
 
+@pytest.mark.skip("CI does not have access to AWS ro GCP")
 @pytest.mark.parametrize("prefix", ["s3", "gs"])
 def test_upload_one_file(prefix):
 
@@ -71,6 +72,7 @@ def test_upload_one_file(prefix):
         delete_all_files_in_temp_path(dst_path)
 
 
+@pytest.mark.skip("CI does not have access to AWS ro GCP")
 @pytest.mark.parametrize("prefix", ["s3", "gs"])
 def test_download_file(prefix):
 

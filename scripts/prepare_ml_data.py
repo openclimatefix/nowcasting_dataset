@@ -12,9 +12,7 @@ LOCAL_TEMP_PATH when this script starts up.
 Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548 PV systems, for about 1 year
 
 """
-import nowcasting_dataset.filesystem.utils
 from nowcasting_dataset.filesystem import utils
-from nowcasting_dataset.filesystem import local
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
@@ -193,7 +191,7 @@ def main():
 
     check_directories_exist()
     if UPLOAD_EVERY_N_BATCHES > 0:
-        nowcasting_dataset.cloud.utils.delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
+        utils.delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 
     datamodule = get_data_module()
 

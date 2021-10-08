@@ -6,47 +6,45 @@ from pathlib import Path
 import fsspec
 import gcsfs
 
-from nowcasting_dataset.cloud.aws import aws_upload_and_delete_local_files, upload_one_file
-from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files, gcp_download_to_local
+# from nowcasting_dataset.cloud.aws import upload_one_file
+from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path, get_all_filenames_in_path
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
 
-def upload_and_delete_local_files(dst_path: str, local_path: Path, cloud: str = "gcp"):
+def upload_and_delete_local_files(dst_path: str, local_path: Path):
     """
     Upload and delete local files to either AWS or GCP
     """
-    assert cloud in ["gcp", "aws"]
 
-    if cloud == "gcp":
-        gcp_upload_and_delete_local_files(dst_path=dst_path, local_path=local_path)
-    else:
-        aws_upload_and_delete_local_files(aws_path=dst_path, local_path=local_path)
+    _LOG.info("Uploading!")
+    filesystem = fsspec.open(dst_path).fs
+    filesystem.put(str(local_path), dst_path, recursive=True)
+    delete_all_files_in_temp_path(local_path)
 
 
-def gcp_to_aws(gcp_filename: str, gcs: gcsfs.GCSFileSystem, aws_filename: str, aws_bucket: str):
-    """
-    Download a file from gcp and upload it to aws
-
-    Args:
-        gcp_filename: the gcp file name
-        gcs: the gcs file system (so it doesnt have to be made more than once)
-        aws_filename: the aws filename and path
-        aws_bucket: the aws bucket
-
-    """
-    # create temp file
-    with tempfile.NamedTemporaryFile() as fp:
-        local_filename = fp.name
-        print(local_filename)
-
-        # download from gcp
-        gcp_download_to_local(remote_filename=gcp_filename, gcs=gcs, local_filename=local_filename)
-
-        # upload to aws
-        upload_one_file(
-            remote_filename=aws_filename, bucket=aws_bucket, local_filename=local_filename
-        )
+# def gcp_to_aws(gcp_filename: str, gcs: gcsfs.GCSFileSystem, aws_filename: str, aws_bucket: str):
+#     """
+#     Download a file from gcp and upload it to aws
+#
+#     Args:
+#         gcp_filename: the gcp file name
+#         gcs: the gcs file system (so it doesnt have to be made more than once)
+#         aws_filename: the aws filename and path
+#         aws_bucket: the aws bucket
+#
+#     """
+#     # create temp file
+#     with tempfile.NamedTemporaryFile() as fp:
+#         local_filename = fp.name
+#
+#         # download from gcp
+#         gcp_download_to_local(remote_filename=gcp_filename, gcs=gcs, local_filename=local_filename)
+#
+#         # upload to aws
+#         upload_one_file(
+#             remote_filename=aws_filename, bucket=aws_bucket, local_filename=local_filename
+#         )
 
 
 def get_maximum_batch_id(path: str):
@@ -60,8 +58,7 @@ def get_maximum_batch_id(path: str):
     """
     _LOG.debug(f"Looking for maximum batch id in {path}")
 
-    filesystem = fsspec.open(path).fs
-    filenames = filesystem.ls(path)
+    filenames = get_all_filenames_in_path(path=path)
 
     # just take filename
     filenames = [filename.split("/")[-1] for filename in filenames]

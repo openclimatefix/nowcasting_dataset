@@ -15,7 +15,7 @@ import xarray as xr
 
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset.cloud.local import download_to_local
+from nowcasting_dataset.filesystem.utils import download_to_local
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     GSP_YIELD,

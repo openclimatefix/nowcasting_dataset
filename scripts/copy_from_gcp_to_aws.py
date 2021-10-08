@@ -1,8 +1,8 @@
 ## copy a folder from gcp to aws
 from pathlib import Path
-from nowcasting_dataset.cloud.gcp import get_all_filenames_in_path
-from nowcasting_dataset.cloud.aws import get_all_filenames_in_path_aws
-from nowcasting_dataset.cloud.utils import gcp_to_aws
+from nowcasting_dataset.filesystem.gcp import get_all_filenames_in_path
+from nowcasting_dataset.filesystem.aws import get_all_filenames_in_path_aws
+from nowcasting_dataset.filesystem.utils import gcp_to_aws
 import gcsfs
 import os
 import logging

@@ -15,8 +15,8 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
 from pathlib import Path
-from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
-from nowcasting_dataset.cloud.gcp import gcp_upload_and_delete_local_files
+from nowcasting_dataset.filesystem.utils import delete_all_files_in_temp_path
+from nowcasting_dataset.filesystem.gcp import gcp_upload_and_delete_local_files
 import logging
 
 logging.basicConfig()

@@ -1,17 +1,62 @@
-""" Functions for local files """
+""" General utils functions """
 import logging
-import fsspec
 from pathlib import Path
 from typing import Union, List
 
-_LOG = logging.getLogger(__name__)
+import fsspec
+
+
+_LOG = logging.getLogger("nowcasting_dataset")
+
+
+def upload_and_delete_local_files(dst_path: str, local_path: Path):
+    """
+    Upload and delete local files to either AWS or GCP
+    """
+    _LOG.info("Uploading!")
+    filesystem = fsspec.open(dst_path).fs
+    filesystem.put(str(local_path), dst_path, recursive=True)
+    delete_all_files_in_temp_path(local_path)
+
+
+def get_maximum_batch_id(path: str):
+    """
+    Get the last batch ID. Works with GCS, AWS, and local.
+
+    Args:
+        path: the path folder to look in.  Begin with 'gs://' for GCS.
+
+    Returns: the maximum batch id of data in `path`.
+    """
+    _LOG.debug(f"Looking for maximum batch id in {path}")
+
+    filenames = get_all_filenames_in_path(path=path)
+
+    # just take filename
+    filenames = [filename.split("/")[-1] for filename in filenames]
+
+    # remove suffix
+    filenames = [filename.split(".")[0] for filename in filenames]
+
+    # change to integer
+    batch_indexes = [int(filename) for filename in filenames if len(filename) > 0]
+
+    # if there is no files, return None
+    if len(batch_indexes) == 0:
+        _LOG.debug(f"Did not find any files in {path}")
+        return None
+
+    # get the maximum batch id
+    maximum_batch_id = max(batch_indexes)
+    _LOG.debug(f"Found maximum of batch it of {maximum_batch_id} in {path}")
+
+    return maximum_batch_id
 
 
 def delete_all_files_in_temp_path(path: Union[Path, str]):
     """
     Delete all the files in a temporary path
     """
-
     filesystem = fsspec.open(path).fs
     filenames = get_all_filenames_in_path(path=path)
 
@@ -23,7 +68,6 @@ def delete_all_files_in_temp_path(path: Union[Path, str]):
 
 def check_path_exists(path: Union[str, Path]):
     """Raises a RuntimeError if `path` does not exist in the local filesystem."""
-
     filesystem = fsspec.open(path).fs
     if not filesystem.exists(path):
         raise RuntimeError(f"{path} does not exist!")
@@ -47,7 +91,7 @@ def get_all_filenames_in_path(path: Union[str, Path]) -> List[str]:
     Get all the files names from one folder in gcp
 
     Args:
-        remote_path: the path that we should look in
+        path: the path that we should look in
 
     Returns: a list of files names represented as strings.
     """

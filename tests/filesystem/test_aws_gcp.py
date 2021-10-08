@@ -5,14 +5,16 @@ from pathlib import Path
 from datetime import datetime
 import pytest
 
-from nowcasting_dataset.cloud.local import download_to_local, upload_one_file
-from nowcasting_dataset.cloud.utils import (
+from nowcasting_dataset.filesystem.utils import (
     upload_and_delete_local_files,
     get_all_filenames_in_path,
     delete_all_files_in_temp_path,
+    download_to_local,
+    upload_one_file,
 )
 
 
+@pytest.mark.skip("CI does not have access to AWS ro GCP")
 @pytest.mark.parametrize("prefix", ["s3", "gs"])
 def test_aws_upload_and_delete_local_files(prefix):
 

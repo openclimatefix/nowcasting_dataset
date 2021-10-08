@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import Union
+from typing import Union, List
 import numpy as np
 import xarray as xr
 import torch
@@ -11,7 +11,7 @@ Array = Union[xr.DataArray, np.ndarray, torch.Tensor]
 
 class Satellite(BaseModel):
     # Shape: [batch_size,] seq_length, width, height, channel
-    image_data: Array = Field(
+    image_data: xr.DataArray = Field(
         ...,
         description="Satellites images. Shape: [batch_size,] seq_length, width, height, channel",
     )
@@ -19,104 +19,81 @@ class Satellite(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+    @validator("image_data")
+    def v_image_data(cls, v):
+        print("validating image data")
+        return v
+
 
 class Batch(BaseModel):
 
-    batch_size: int = Field(
-        ...,
-        g=0,
-        description="The size of this batch. If the batch size is 0, "
-        "then this item stores one data item",
-    )
-
+    batch_size: int = 0
     satellite: Satellite
 
-
-class FakeDataset(torch.utils.data.Dataset):
-    """Fake dataset."""
-
-    def __init__(self, configuration: Configuration = Configuration(), length: int = 10):
-        """
-        Init
-
-        Args:
-            configuration: configuration object
-            length: length of dataset
-        """
-        self.batch_size = configuration.process.batch_size
-        self.seq_length_5 = (
-            configuration.process.seq_len_5_minutes
-        )  # the sequence data in 5 minute steps
-        self.seq_length_30 = (
-            configuration.process.seq_len_30_minutes
-        )  # the sequence data in 30 minute steps
-        self.satellite_image_size_pixels = configuration.process.satellite_image_size_pixels
-        self.nwp_image_size_pixels = configuration.process.nwp_image_size_pixels
-        self.number_sat_channels = len(configuration.process.sat_channels)
-        self.number_nwp_channels = len(configuration.process.nwp_channels)
-        self.length = length
-
-    def __len__(self):
-        """Number of pieces of data"""
-        return self.length
-
-    def per_worker_init(self, worker_id: int):
-        """Not needed"""
-        pass
-
-    def __getitem__(self, idx):
-        """
-        Get item, use for iter and next method
-
-        Args:
-            idx: batch index
-
-        Returns: Dictionary of random data
-
-        """
-
-        r = np.random.randn(
-            # self.batch_size,
-            self.seq_length_5,
-            self.satellite_image_size_pixels,
-            self.satellite_image_size_pixels,
-            # self.number_sat_channels,
-        )
-
-        time = np.sort(np.random.randn(self.seq_length_5))
-
-        x_coords = np.sort(np.random.randn(self.satellite_image_size_pixels))
-        y_coords = np.sort(np.random.randn(self.satellite_image_size_pixels))[::-1].copy()
-
-        sat_xr = xr.DataArray(
-            data=r,
-            dims=["time", "x", "y"],
-            coords=dict(
-                # batch=range(0,self.batch_size),
-                x=list(x_coords),
-                y=list(y_coords),
-                time=list(time),
-                # channels=range(0,self.number_sat_channels)
-            ),
-            attrs=dict(
-                description="Ambient temperature.",
-                units="degC",
-            ),
-            name="sata_data",
-        )
-
-        sat = Satellite(image_data=sat_xr)
-
-        batch = Batch(satellite=sat, batch_size=self.batch_size)
-
-        # Note need to return as nested dict
-        return batch.dict()
+    @validator("batch_size")
+    def v_image_data(cls, v):
+        print("validating batch size")
+        return v
 
 
-train = torch.utils.data.DataLoader(FakeDataset())
-i = iter(train)
-x = next(i)
-# error, cant do this for xr.DattaArray's
+s = Satellite(image_data=xr.DataArray())
+s_dict = s.dict()
 
-x = Batch(**x)
-assert type(x.satellite.image_data) == torch.Tensor
+x = Satellite(**s_dict)
+x = Satellite.construct(Satellite.__fields_set__, **s_dict)
+
+
+batch = Batch(batch_size=5, satellite=s)
+
+b_dict = batch.dict()
+
+x = Batch(**b_dict)
+x = Batch.construct(Batch.__fields_set__, **b_dict)
+
+
+# class Satellite(BaseModel):
+#
+#     image_data: xr.DataArray
+#
+#     # validate
+#
+#     def to_dataset(self):
+#         pass
+#
+#     def from_dateset(self):
+#         pass
+#
+#     def to_numpy(self) -> SatelliteNumpy:
+#         pass
+#
+#
+# class SatelliteNumpy(BaseModel):
+#
+#     image_data: np.ndarray
+#     x: np.ndarray
+#     # more
+#
+#
+# class Example(BaseModel):
+#
+#     satelllite: Satellite
+#     # more
+#
+#
+# class Batch(BaseModel):
+#
+#     batch_size: int = 0
+#     examples: List[Example]
+#
+#     def to/from_netcdf():
+#         pass
+#
+#
+# class BatchNumpy(BaseModel):
+#
+#     batch_size: int = 0
+#     satellite: SatellliteNumpy
+#     # more
+#
+#     def from_batch(self) -> BatchNumpy:
+#         """ change to Batch numpy structure """

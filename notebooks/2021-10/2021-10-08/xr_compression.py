@@ -48,7 +48,7 @@ def sat_data_array_to_dataset(sat_xr):
 
     for dim in ["time", "x", "y"]:
         # This does seem like the right way to do it
-        # https: // ecco - v4 - python - tutorial.readthedocs.io / ECCO_v4_Saving_Datasets_and_DataArrays_to_NetCDF.html
+        # https://ecco-v4-python-tutorial.readthedocs.io/ECCO_v4_Saving_Datasets_and_DataArrays_to_NetCDF.html
         ds = coord_to_range(ds, dim, prefix="sat")
     ds = ds.rename(
         {

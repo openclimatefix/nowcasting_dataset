@@ -5,21 +5,9 @@ from typing import List, Union
 
 import gcsfs
 
-from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_path
+from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 
 _LOG = logging.getLogger(__name__)
-
-
-def check_path_exists(path: Union[str, Path]):
-    """
-    Check that the path exists in GCS.
-
-    Args:
-        path: the path in GCS that is checked
-    """
-    gcs = gcsfs.GCSFileSystem()
-    if not gcs.exists(path):
-        raise RuntimeError(f"{path} does not exist!")
 
 
 def gcp_upload_and_delete_local_files(dst_path: str, local_path: Union[str, Path]):
@@ -29,7 +17,7 @@ def gcp_upload_and_delete_local_files(dst_path: str, local_path: Union[str, Path
     _LOG.info("Uploading to GCS!")
     gcs = gcsfs.GCSFileSystem()
     gcs.put(str(local_path), dst_path, recursive=True)
-    delete_all_files_and_folder_in_temp_path(local_path)
+    delete_all_files_in_temp_path(local_path)
 
 
 def gcp_download_to_local(

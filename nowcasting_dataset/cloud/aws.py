@@ -6,7 +6,7 @@ from typing import List
 
 import boto3
 
-from nowcasting_dataset.cloud.local import delete_all_files_and_folder_in_temp_path
+from nowcasting_dataset.cloud.local import delete_all_files_in_temp_path
 
 _LOG = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def aws_upload_and_delete_local_files(
                 bucket.put_object(Key=key, Body=data)
 
     # delete files in local path
-    delete_all_files_and_folder_in_temp_path(local_path)
+    delete_all_files_in_temp_path(local_path)
 
 
 def aws_download_to_local(

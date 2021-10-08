@@ -20,6 +20,7 @@ import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_yaml_configuration
 from nowcasting_dataset.config.model import set_git_commit
+from nowcasting_dataset.cloud.local import check_path_exists
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.batch import write_batch_locally
@@ -84,12 +85,6 @@ CLOUD = config.general.cloud  # either gcp or aws
 torch.multiprocessing.set_sharing_strategy("file_system")
 
 np.random.seed(config.process.seed)
-
-
-def check_path_exists(path: Union[Pathy, str]):
-    filesystem = fsspec.open(path).fs
-    if not filesystem.exists(path):
-        raise RuntimeError(f"{path} does not exist!")
 
 
 def check_directories_exist():

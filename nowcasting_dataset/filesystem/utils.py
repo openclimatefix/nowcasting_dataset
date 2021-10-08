@@ -11,7 +11,7 @@ _LOG = logging.getLogger("nowcasting_dataset")
 
 def upload_and_delete_local_files(dst_path: str, local_path: Path):
     """
-    Upload and delete local files to either AWS or GCP
+    Upload an entire folder and delete local files to either AWS or GCP
     """
     _LOG.info("Uploading!")
     filesystem = fsspec.open(dst_path).fs
@@ -24,7 +24,7 @@ def get_maximum_batch_id(path: str):
     Get the last batch ID. Works with GCS, AWS, and local.
 
     Args:
-        path: the path folder to look in.  Begin with 'gs://' for GCS.
+        path: the path folder to look in.  Begin with 'gs://' for GCS. Begin with 's3://' for AWS S3.
 
     Returns: the maximum batch id of data in `path`.
     """
@@ -106,7 +106,6 @@ def download_to_local(remote_filename: str, local_filename: str):
     Args:
         remote_filename: the file name, should start with gs:// or s3://
         local_filename: the local filename
-        gcs: gcsfs.GCSFileSystem connection, means a new one doesnt have to be made everytime.
     """
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
 
@@ -119,10 +118,10 @@ def upload_one_file(
     local_filename: str,
 ):
     """
-    Upload one file to s3
+    Upload one file to aws or gcp
 
     Args:
-        remote_filename: the aws key name
+        remote_filename: the aws/gcp key name
         local_filename: the local file name
 
     """

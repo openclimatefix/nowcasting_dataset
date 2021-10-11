@@ -117,7 +117,9 @@ class DataSourceOutput(BaseModel):
 
         # make folder
         folder = os.path.join(path, name)
-        make_folder(path=folder)
+        if batch_i == 0:
+            # only need to make the folder once, or check that there folder is there once
+            make_folder(path=folder)
 
         # make file
         local_filename = os.path.join(folder, filename)

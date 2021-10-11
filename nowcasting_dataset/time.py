@@ -6,9 +6,10 @@ from typing import Iterable, Tuple, List
 import numpy as np
 import pandas as pd
 import pvlib
+import random
 
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.dataset.example import Example
+from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def select_daylight_datetimes(
 
 
 def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
-    """ Get intersections of datetime indexes """
+    """Get intersections of datetime indexes"""
     assert len(indexes) > 0
     intersection = indexes[0]
     for index in indexes[1:]:
@@ -143,7 +144,7 @@ def get_t0_datetimes(
 
 
 def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
-    """ Change timesteps to a time duration """
+    """Change timesteps to a time duration"""
     assert n_timesteps >= 0
     return pd.Timedelta(n_timesteps * minute_delta, unit="minutes")
 
@@ -164,7 +165,7 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     return pd.DataFrame(features, index=index).astype(np.float32)
 
 
-def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
+def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
     """
     Make datetime features with sin and cos
 
@@ -178,10 +179,14 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Example:
     dt_features["hour_of_day"] /= 24
     dt_features["day_of_year"] /= 365
     dt_features = utils.sin_and_cos(dt_features)
-    example = Example()
+
+    datetime_dict = {}
     for col_name, series in dt_features.iteritems():
-        example[col_name] = series
-    return example
+        datetime_dict[col_name] = series.values
+
+    datetime_dict["datetime_index"] = series.index.values
+
+    return Datetime(**datetime_dict)
 
 
 def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -226,3 +231,43 @@ def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.Datet
 
     # drop nans and take index
     return index_with_gaps.dropna().index
+
+
+def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
+    """
+    Make random time vectors
+
+    1. t0_dt, Get random datetimes from 2019
+    2. Exapnd t0_dt to make 5 and 30 mins sequences
+
+    Args:
+        batch_size: the batch size
+        seq_len_5_minutes: the length of the sequence in 5 mins deltas
+        seq_len_30_minutes: the length of the sequence in 30 mins deltas
+
+    Returns:
+        - t0_dt: [batch_size] random init datetimes
+        - time_5: [batch_size, seq_len_5_minutes] random sequence of datetimes, with 5 mins deltas.
+        t0_dt is in the middle of the sequence
+        - time_30: [batch_size, seq_len_30_minutes] random sequence of datetimes, with 30 mins deltas.
+        t0_dt is in the middle of the sequence
+    """
+    delta_5 = pd.Timedelta(minutes=5)
+    delta_30 = pd.Timedelta(minutes=30)
+
+    data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
+    t0_dt = pd.Series(random.choices(data_range, k=batch_size))
+    time_5 = (
+        pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_len_5_minutes)])
+        - int(seq_len_5_minutes / 2) * delta_5
+    )
+    time_30 = (
+        pd.DataFrame([t0_dt + i * delta_30 for i in range(seq_len_30_minutes)])
+        - int(seq_len_30_minutes / 2) * delta_5
+    )
+
+    t0_dt = utils.to_numpy(t0_dt)
+    time_5 = utils.to_numpy(time_5.T)
+    time_30 = utils.to_numpy(time_30.T)
+
+    return t0_dt, time_5, time_30

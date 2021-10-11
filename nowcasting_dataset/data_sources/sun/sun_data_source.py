@@ -1,21 +1,16 @@
 """ Loading Raw data """
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset import time as nd_time
 from dataclasses import dataclass
 import pandas as pd
 from numbers import Number
 from typing import List, Tuple, Union, Optional
 from pathlib import Path
 import numpy as np
-import io
-import gcsfs
-import xarray as xr
-from nowcasting_dataset.geospatial import osgb_to_lat_lon
 from datetime import datetime
-from nowcasting_dataset.consts import SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
 
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
+
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
 
 
 @dataclass
@@ -33,7 +28,7 @@ class SunDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
+    ) -> Sun:
         """
         Get example data from t0_dt and x and y xoordinates
 
@@ -71,11 +66,13 @@ class SunDataSource(DataSource):
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 
-        example = Example()
-        example[SUN_AZIMUTH_ANGLE] = azimuth.values
-        example[SUN_ELEVATION_ANGLE] = elevation.values
+        sun = Sun(
+            sun_azimuth_angle=azimuth.values,
+            sun_elevation_angle=elevation.values,
+            sun_datetime_index=azimuth.index.values,
+        )
 
-        return example
+        return sun
 
     def _load(self):
 

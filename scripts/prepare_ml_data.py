@@ -22,8 +22,8 @@ from nowcasting_dataset.filesystem.utils import check_path_exists
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.batch import write_batch_locally
-from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
 from pathy import Pathy
 from pathlib import Path
 import fsspec

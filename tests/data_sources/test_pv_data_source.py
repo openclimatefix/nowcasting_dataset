@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.pv_data_source import (
+from nowcasting_dataset.data_sources.pv.pv_data_source import (
     PVDataSource,
     drop_pv_systems_which_produce_overnight,
 )
@@ -40,12 +40,11 @@ def test_get_example_and_batch():
     example = pv_data_source.get_example(
         pv_data_source.pv_power.index[0], x_locations[0], y_locations[0]
     )
-    assert "pv_yield" in example.keys()
 
     batch = pv_data_source.get_batch(
-        pv_data_source.pv_power.index[0:5], x_locations[0:10], y_locations[0:10]
+        pv_data_source.pv_power.index[6:11], x_locations[0:10], y_locations[0:10]
     )
-    assert len(batch) == 5
+    assert batch.batch_size == 5
 
 
 def test_drop_pv_systems_which_produce_overnight():

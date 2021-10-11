@@ -9,7 +9,7 @@ input_data:
   gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v1/pv_gsp.zarr
   topographic_filename: gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif
 output_data:
-  filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v6/
+  filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/
 process:
   local_temp_path: ~/temp/
   seed: 1234

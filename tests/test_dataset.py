@@ -7,20 +7,20 @@ from nowcasting_dataset.dataset.datasets import NowcastingDataset
 
 
 @pytest.fixture
-def dataset(sat_data_source):
+def dataset(sat_data_source, general_data_source):
     all_datetimes = sat_data_source.datetime_index()
     t0_datetimes = nd_time.get_t0_datetimes(datetimes=all_datetimes, total_seq_len=2, history_len=0)
     return NowcastingDataset(
         batch_size=8,
         n_batches_per_epoch_per_worker=64,
         n_samples_per_timestep=2,
-        data_sources=[sat_data_source],
+        data_sources=[sat_data_source, general_data_source],
         t0_datetimes=t0_datetimes,
     )
 
 
 @pytest.fixture
-def dataset_gsp(gsp_data_source):
+def dataset_gsp(gsp_data_source, general_data_source):
     all_datetimes = gsp_data_source.datetime_index()
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=all_datetimes,
@@ -34,7 +34,7 @@ def dataset_gsp(gsp_data_source):
         batch_size=8,
         n_batches_per_epoch_per_worker=64,
         n_samples_per_timestep=2,
-        data_sources=[gsp_data_source],
+        data_sources=[gsp_data_source, general_data_source],
         t0_datetimes=t0_datetimes,
     )
 
@@ -55,8 +55,8 @@ def test_get_batch(dataset: NowcastingDataset):
     dataset.per_worker_init(worker_id=1)
     example = dataset._get_batch()
     assert isinstance(example, dict)
-    assert "sat_data" in example
-    assert example["sat_data"].shape == (
+    assert "satellite" in example
+    assert example["satellite"]["sat_data"].shape == (
         8,
         2,
         pytest.IMAGE_SIZE_PIXELS,
@@ -70,4 +70,4 @@ def test_get_batch_gsp(dataset_gsp: NowcastingDataset):
     example = dataset_gsp._get_batch()
     assert isinstance(example, dict)
 
-    assert GSP_DATETIME_INDEX in example.keys()
+    assert "gsp" in example.keys()

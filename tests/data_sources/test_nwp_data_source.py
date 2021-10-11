@@ -1,7 +1,7 @@
 import os
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.nwp_data_source import NWPDataSource
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
 
 
 def test_nwp_data_source_init():
@@ -59,8 +59,8 @@ def test_nwp_data_source_batch():
 
     t0_datetimes = nwp._data.init_time[2:10].values
     x = nwp._data.x[0:4].values
-    y = nwp._data.x[0:4].values
+    y = nwp._data.y[0:4].values
 
     batch = nwp.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
 
-    assert len(batch) == 4
+    assert batch.batch_size == 4

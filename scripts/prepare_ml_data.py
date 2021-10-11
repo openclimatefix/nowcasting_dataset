@@ -12,14 +12,13 @@ LOCAL_TEMP_PATH when this script starts up.
 Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548 PV systems, for about 1 year
 
 """
-
-from nowcasting_dataset.cloud import utils
-from nowcasting_dataset.cloud import local
+from nowcasting_dataset.filesystem import utils
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.save import save_yaml_configuration
 from nowcasting_dataset.config.model import set_git_commit
+from nowcasting_dataset.filesystem.utils import check_path_exists
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.batch import write_batch_locally
@@ -84,12 +83,6 @@ CLOUD = config.general.cloud  # either gcp or aws
 torch.multiprocessing.set_sharing_strategy("file_system")
 
 np.random.seed(config.process.seed)
-
-
-def check_path_exists(path: Union[Pathy, str]):
-    filesystem = fsspec.open(path).fs
-    if not filesystem.exists(path):
-        raise RuntimeError(f"{path} does not exist!")
 
 
 def check_directories_exist():
@@ -198,7 +191,7 @@ def main():
 
     check_directories_exist()
     if UPLOAD_EVERY_N_BATCHES > 0:
-        local.delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
+        utils.delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 
     datamodule = get_data_module()
 

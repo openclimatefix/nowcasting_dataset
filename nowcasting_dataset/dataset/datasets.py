@@ -15,8 +15,7 @@ import xarray as xr
 
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset.cloud.aws import aws_download_to_local
-from nowcasting_dataset.cloud.gcp import gcp_download_to_local
+from nowcasting_dataset.filesystem.utils import download_to_local
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     GSP_YIELD,
@@ -189,17 +188,10 @@ class NetCDFDataset(torch.utils.data.Dataset):
         remote_netcdf_filename = os.path.join(self.src_path, netcdf_filename)
         local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
 
-        if self.cloud == "gcp":
-            gcp_download_to_local(
+        if self.cloud in ["gcp", "aws"]:
+            download_to_local(
                 remote_filename=remote_netcdf_filename,
                 local_filename=local_netcdf_filename,
-                gcs=self.gcs,
-            )
-        elif self.cloud == "aws":
-            aws_download_to_local(
-                remote_filename=remote_netcdf_filename,
-                local_filename=local_netcdf_filename,
-                s3_resource=self.s3_resource,
             )
         else:
             local_netcdf_filename = remote_netcdf_filename

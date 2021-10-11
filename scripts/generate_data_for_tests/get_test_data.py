@@ -148,4 +148,4 @@ c.process.nwp_channels = c.process.nwp_channels[0:1]
 c.process.sat_channels = c.process.sat_channels[0:1]
 
 f = Batch.fake(configuration=c)
-f.save_netcdf(batch_i=0, path=Path(f"{local_path}/tests/data"))
+f.save_netcdf(batch_i=0, path=Path(f"{local_path}/tests/data/batch"))

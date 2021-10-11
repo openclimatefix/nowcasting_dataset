@@ -1,5 +1,6 @@
 """ Functions for local files """
 import glob
+import fsspec
 import logging
 import os
 import shutil
@@ -36,3 +37,9 @@ def check_path_exists(path: Union[str, Path]):
     path = Path(path)
     if not path.exists():
         raise RuntimeError(f"{path} does not exist!")
+
+
+def make_folder(path: Union[str, Path]):
+    """ Make folder """
+    filesystem = fsspec.open(path).fs
+    filesystem.mkdir(path)

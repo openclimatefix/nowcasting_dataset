@@ -32,6 +32,10 @@ class DataSourceOutput(BaseModel):
         "then this item stores one data item i.e Example",
     )
 
+    def __name__(self) -> str:
+        """ Get the name of the class """
+        return self.__class__.__name__.lower()
+
     def to_numpy(self):
         """Change to numpy"""
         for k, v in self.dict().items():

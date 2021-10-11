@@ -36,8 +36,8 @@ def test_subselect_date(test_data_folder):
 
     # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
     x = Batch.fake()
-    x = x.batch_to_dataset()
-    x = Batch.load_batch_from_dataset(x)
+    x = x.batch_to_dict_dataset()
+    x = Batch.load_batch_from_dict_dataset(x)
 
     batch = subselect_data(
         x,
@@ -55,8 +55,8 @@ def test_subselect_date_with_to_dt(test_data_folder):
 
     # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
     x = Batch.fake()
-    x = x.batch_to_dataset()
-    x = Batch.load_batch_from_dataset(x)
+    x = x.batch_to_dict_dataset()
+    x = Batch.load_batch_from_dict_dataset(x)
 
     batch = subselect_data(
         x,
@@ -70,9 +70,11 @@ def test_subselect_date_with_to_dt(test_data_folder):
 
 
 def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
-    DATA_PATH = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests", "data")
+    DATA_PATH = os.path.join(
+        os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "batch"
+    )
     TEMP_PATH = os.path.join(
-        os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "temp"
+        os.path.dirname(nowcasting_dataset.__file__), "../tests", "data", "batch", "temp"
     )
 
     train_dataset = NetCDFDataset(
@@ -111,7 +113,7 @@ def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
     assert data.nwp.nwp.shape[2] == 5
 
     # Make sure file isn't deleted!
-    assert os.path.exists(os.path.join(DATA_PATH, "0.nc"))
+    assert os.path.exists(os.path.join(DATA_PATH, "metadata/0.nc"))
 
 
 @pytest.mark.skip("CD does not have access to GCS")

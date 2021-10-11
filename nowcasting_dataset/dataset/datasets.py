@@ -185,18 +185,20 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 "batch_idx must be in the range" f" [0, {self.n_batches}), not {batch_idx}!"
             )
         netcdf_filename = nd_utils.get_netcdf_filename(batch_idx)
-        remote_netcdf_filename = os.path.join(self.src_path, netcdf_filename)
-        local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
+        # remote_netcdf_folder = os.path.join(self.src_path, netcdf_filename)
+        # local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
 
         if self.cloud in ["gcp", "aws"]:
+            # TODO check this works for mulitple files
             download_to_local(
-                remote_filename=remote_netcdf_filename,
-                local_filename=local_netcdf_filename,
+                remote_filename=self.src_path,
+                local_filename=self.tmp_path,
             )
+            local_netcdf_folder = self.tmp_path
         else:
-            local_netcdf_filename = remote_netcdf_filename
+            local_netcdf_folder = self.src_path
 
-        batch = Batch.load_netcdf(local_netcdf_filename)
+        batch = Batch.load_netcdf(local_netcdf_folder, batch_idx=batch_idx)
         # netcdf_batch = xr.load_dataset(local_netcdf_filename)
         if self.cloud != "local":
             os.remove(local_netcdf_filename)

@@ -45,7 +45,8 @@ conda activate nowcasting_dataset
 pip install -e .
 ```
 
-Note you can install the [pytorch](https://github.com/pytorch/pytorch) using
+Note you can install the [pytorch](https://github.com/pytorch/pytorch)
+and [pytorch_lightning](https://github.com/PyTorchLightning/pytorch-lightning) using
 ```shell
 pip install -e .[torch]
 ```

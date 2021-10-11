@@ -5,6 +5,7 @@ from nowcasting_dataset.filesystem.utils import (
     download_to_local,
     upload_one_file,
 )
+import tempfile
 import gcsfs
 import os
 import logging
@@ -40,8 +41,10 @@ def one_file(filename):
     if file_index > 18000:
         print(filename)
 
-        download_to_local(remote_filename=filename, local_filename="temp.nc")
-        upload_one_file(remote_filename=aws_filename, local_filename="temp.nc")
+        with tempfile.NamedTemporaryFile(suffix=".tif") as t:
+            name = t.name
+            download_to_local(remote_filename=filename, local_filename=name)
+            upload_one_file(remote_filename=aws_filename, local_filename=name)
 
 
 # loop over files

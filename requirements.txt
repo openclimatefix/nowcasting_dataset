@@ -8,8 +8,6 @@ xarray
 ipykernel
 h5netcdf
 gcsfs
-torch
-pytorch-lightning
 dask
 pvlib
 pyproj

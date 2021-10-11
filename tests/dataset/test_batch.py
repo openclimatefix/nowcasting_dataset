@@ -1,5 +1,6 @@
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 import numpy as np
+import tempfile
 from pathlib import Path
 
 from nowcasting_dataset.dataset.batch import Batch, GSP
@@ -50,6 +51,12 @@ def test_model_from_xr_dataset():
     f_xr = f.batch_to_dict_dataset()
 
     _ = Batch.load_batch_from_dict_dataset(xr_dataset=f_xr)
+
+
+def test_model_save_to_netcdf(test_data_folder):
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        Batch.fake().save_netcdf(path=dirpath, batch_i=0)
 
 
 def test_model_from_test_data(test_data_folder):

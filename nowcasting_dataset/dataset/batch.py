@@ -173,18 +173,19 @@ class Batch(Example):
             path: the path where it will be saved. This can be local or in the cloud.
 
         """
-        batch_xr = self.batch_to_dataset()
+        batch_xr = self.batch_to_dict_dataset()
 
         filename = get_netcdf_filename(batch_i)
 
         for k, v in batch_xr.items():
-            local_filename = path / k / filename
 
             # make folder
-            folder = path / k
+            folder = os.path.join(path, k)
             make_folder(path=folder)
 
             # make file
+            local_filename = os.path.join(folder, filename)
+
             encoding = {name: {"compression": "lzf"} for name in v.data_vars}
             v.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 

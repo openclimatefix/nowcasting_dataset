@@ -15,6 +15,7 @@ from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.dataset import datasets
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 
@@ -204,6 +205,15 @@ class NowcastingDataModule(pl.LightningDataModule):
             convert_to_numpy=self.convert_to_numpy,
         )
         self.data_sources.append(self.datetime_data_source)
+
+        self.data_sources.append(
+            MetadataDataSource(
+                history_minutes=self.history_minutes,
+                forecast_minutes=self.forecast_minutes,
+                convert_to_numpy=self.convert_to_numpy,
+                object_at_center="GSP",
+            )
+        )
 
     def setup(self, stage="fit"):
         """Split data, etc.

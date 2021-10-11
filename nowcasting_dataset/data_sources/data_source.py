@@ -11,7 +11,7 @@ import xarray as xr
 
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset import square
-from nowcasting_dataset.dataset.example import Example, to_numpy
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class DataSource:
         t0_datetimes: pd.DatetimeIndex,
         x_locations: Iterable[Number],
         y_locations: Iterable[Number],
-    ) -> List[Example]:
+    ) -> DataSourceOutput:
         """
         Get Batch Data
 
@@ -115,12 +115,13 @@ class DataSource:
         examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
-            example = self.get_example(t0_datetime, x_location, y_location)
-            if self.convert_to_numpy:
-                example = to_numpy(example)
-            examples.append(example)
+            output: DataSourceOutput = self.get_example(t0_datetime, x_location, y_location)
 
-        return examples
+            if self.convert_to_numpy:
+                output.to_numpy()
+            examples.append(output)
+
+        return DataSourceOutput.create_batch_from_examples(examples)
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
@@ -153,7 +154,7 @@ class DataSource:
         t0_dt: pd.Timestamp,  #: Datetime of "now": The most recent obs.
         x_meters_center: Number,  #: Centre, in OSGB coordinates.
         y_meters_center: Number,  #: Centre, in OSGB coordinates.
-    ) -> Example:
+    ) -> DataSourceOutput:
         """Must be overridden by child classes."""
         raise NotImplementedError()
 
@@ -214,7 +215,7 @@ class ZarrDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Example:
+    ) -> DataSourceOutput:
         """
         Get Example data
 
@@ -293,5 +294,5 @@ class ZarrDataSource(ImageDataSource):
     def _open_data(self) -> xr.DataArray:
         raise NotImplementedError()
 
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> Example:
+    def _put_data_into_example(self, selected_data: xr.DataArray) -> DataSourceOutput:
         raise NotImplementedError()

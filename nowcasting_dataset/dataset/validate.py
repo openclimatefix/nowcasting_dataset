@@ -28,7 +28,9 @@ from nowcasting_dataset.consts import (
     TOPOGRAPHIC_Y_COORDS,
 )
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
-from nowcasting_dataset.dataset.example import Example
+
+# from nowcasting_dataset.dataset.example import Example
+from nowcasting_dataset.dataset.batch import Batch
 
 
 class ValidatorDataset:
@@ -65,6 +67,10 @@ class ValidatorDataset:
         for batch_idx, batch in enumerate(self.batches):
             logger.info(f"Validating batch {batch_idx}")
 
+            # change dict to Batch, this does some validation
+            if type(batch) == dict:
+                batch = Batch(**batch)
+
             all_day_from_batch_unique = self.validate_and_get_day_datetimes_for_one_batch(
                 batch=batch
             )
@@ -75,7 +81,7 @@ class ValidatorDataset:
 
         self.day_datetimes = day_datetimes
 
-    def validate_and_get_day_datetimes_for_one_batch(self, batch):
+    def validate_and_get_day_datetimes_for_one_batch(self, batch: Batch):
         """
         For one batch, validate, and return the day datetimes in that batch
 
@@ -85,12 +91,10 @@ class ValidatorDataset:
         Returns: list of days that the batch has data for
 
         """
-        validate_batch_from_configuration(batch, configuration=self.configuration)
+        if type(batch.metadata.t0_dt) == torch.Tensor:
+            batch.metadata.t0_dt = batch.metadata.t0_dt.detach().numpy()
 
-        if type(batch[GSP_DATETIME_INDEX]) == torch.Tensor:
-            batch[GSP_DATETIME_INDEX] = batch[GSP_DATETIME_INDEX].detach().numpy()
-
-        all_datetimes_from_batch = pd.to_datetime(batch[GSP_DATETIME_INDEX].reshape(-1), unit="s")
+        all_datetimes_from_batch = pd.to_datetime(batch.metadata.t0_dt.reshape(-1), unit="s")
         return pd.DatetimeIndex(all_datetimes_from_batch.date).unique()
 
 
@@ -105,18 +109,9 @@ class FakeDataset(torch.utils.data.Dataset):
             configuration: configuration object
             length: length of dataset
         """
-        self.batch_size = configuration.process.batch_size
-        self.seq_length_5 = (
-            configuration.process.seq_len_5_minutes
-        )  # the sequence data in 5 minute steps
-        self.seq_length_30 = (
-            configuration.process.seq_len_30_minutes
-        )  # the sequence data in 30 minute steps
-        self.satellite_image_size_pixels = configuration.process.satellite_image_size_pixels
-        self.nwp_image_size_pixels = configuration.process.nwp_image_size_pixels
-        self.number_sat_channels = len(configuration.process.sat_channels)
         self.number_nwp_channels = len(configuration.process.nwp_channels)
         self.length = length
+        self.configuration = configuration
 
     def __len__(self):
         """ Number of pieces of data """
@@ -136,236 +131,7 @@ class FakeDataset(torch.utils.data.Dataset):
         Returns: Dictionary of random data
 
         """
-        x = {
-            "sat_data": torch.randn(
-                self.batch_size,
-                self.seq_length_5,
-                self.satellite_image_size_pixels,
-                self.satellite_image_size_pixels,
-                self.number_sat_channels,
-            ),
-            "pv_yield": torch.randn(
-                self.batch_size, self.seq_length_5, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
-            ),
-            "pv_system_id": torch.randint(940, (self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)),
-            "pv_system_x_coords": torch.randn(self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE),
-            "pv_system_y_coords": torch.randn(self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE),
-            "pv_system_row_number": torch.randint(
-                940, (self.batch_size, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)
-            ),
-            "nwp": torch.randn(
-                self.batch_size,
-                self.number_nwp_channels,
-                self.seq_length_5,
-                self.nwp_image_size_pixels,
-                self.nwp_image_size_pixels,
-            ),
-            "hour_of_day_sin": torch.randn(self.batch_size, self.seq_length_5),
-            "hour_of_day_cos": torch.randn(self.batch_size, self.seq_length_5),
-            "day_of_year_sin": torch.randn(self.batch_size, self.seq_length_5),
-            "day_of_year_cos": torch.randn(self.batch_size, self.seq_length_5),
-            "gsp_yield": torch.randn(
-                self.batch_size, self.seq_length_30, DEFAULT_N_GSP_PER_EXAMPLE
-            ),
-            "gsp_id": torch.randint(340, (self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE)),
-            "topo_data": torch.randn(
-                self.batch_size, self.satellite_image_size_pixels, self.satellite_image_size_pixels
-            ),
-        }
+        x = Batch.fake(configuration=self.configuration)
+        x.change_type_to_numpy()
 
-        # add a nan
-        x["pv_yield"][0, 0, :] = float("nan")
-
-        # add fake x and y coords, and make sure they are sorted
-        x["sat_x_coords"], _ = torch.sort(
-            torch.randn(self.batch_size, self.satellite_image_size_pixels)
-        )
-        x["sat_y_coords"], _ = torch.sort(
-            torch.randn(self.batch_size, self.satellite_image_size_pixels), descending=True
-        )
-        x["gsp_x_coords"], _ = torch.sort(torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE))
-        x["gsp_y_coords"], _ = torch.sort(
-            torch.randn(self.batch_size, DEFAULT_N_GSP_PER_EXAMPLE), descending=True
-        )
-        x["topo_x_coords"], _ = torch.sort(
-            torch.randn(self.batch_size, self.satellite_image_size_pixels)
-        )
-        x["topo_y_coords"], _ = torch.sort(
-            torch.randn(self.batch_size, self.satellite_image_size_pixels), descending=True
-        )
-
-        x["nwp_x_coords"], _ = torch.sort(torch.randn(self.batch_size, self.nwp_image_size_pixels))
-        x["nwp_y_coords"], _ = torch.sort(
-            torch.randn(self.batch_size, self.nwp_image_size_pixels), descending=True
-        )
-
-        # add sorted (fake) time series
-        x["sat_datetime_index"], _ = torch.sort(torch.randn(self.batch_size, self.seq_length_5))
-        x["nwp_target_time"], _ = torch.sort(torch.randn(self.batch_size, self.seq_length_5))
-        x["gsp_datetime_index"], _ = torch.sort(torch.randn(self.batch_size, self.seq_length_30))
-
-        x["x_meters_center"], _ = torch.sort(torch.randn(self.batch_size))
-        x["y_meters_center"], _ = torch.sort(torch.randn(self.batch_size))
-
-        # clip yield values from 0 to 1
-        x["pv_yield"] = torch.clip(x["pv_yield"], min=0, max=1)
-        x["gsp_yield"] = torch.clip(x["gsp_yield"], min=0, max=1)
-
-        return x
-
-
-def validate_example(
-    data: Example,
-    seq_len_30_minutes: int,
-    seq_len_5_minutes: int,
-    sat_image_size: int = 64,
-    n_sat_channels: int = 1,
-    nwp_image_size: int = 0,
-    n_nwp_channels: int = 1,
-    n_pv_systems_per_example: int = DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-    n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE,
-    batch: bool = False,
-):
-    """
-    Validate the size and shape of the data
-
-    Args:
-        data: Typed dictionary of the data
-        seq_len_30_minutes: the length of the sequence for 30 minutely data
-        seq_len_5_minutes: the length of the sequence for 5 minutely data
-        sat_image_size: the satellite image size
-        n_sat_channels: the number of satellite channgles
-        nwp_image_size: the nwp image size
-        n_nwp_channels: the number of nwp channels
-        n_pv_systems_per_example: the number pv systems with nan padding
-        n_gsp_per_example: the number gsp systems with nan padding
-        batch: if this example class is a batch or not
-    """
-    n_gsp_id = data[GSP_ID].shape[-1]
-    assert (
-        n_gsp_id == n_gsp_per_example
-    ), f"gsp_is is len {n_gsp_id}, but should be {n_gsp_per_example}"
-    assert data[GSP_YIELD].shape[-2:] == (
-        seq_len_30_minutes,
-        n_gsp_id,
-    ), f"gsp_yield is size {data[GSP_YIELD].shape}, but should be {(seq_len_30_minutes, n_gsp_id)}"
-    assert data[GSP_X_COORDS].shape[-1] == n_gsp_id
-    assert data[GSP_Y_COORDS].shape[-1] == n_gsp_id
-    assert data[GSP_DATETIME_INDEX].shape[-1] == seq_len_30_minutes
-
-    # check the GSP data is between 0 and 1
-    assert (
-        np.nanmax(data[GSP_YIELD]) <= 1.0
-    ), f"Maximum GSP value is {np.nanmax(data[GSP_YIELD])} but it should be <= 1"
-    assert (
-        np.nanmin(data[GSP_YIELD]) >= 0.0
-    ), f"Maximum GSP value is {np.nanmin(data[GSP_YIELD])} but it should be >= 0"
-
-    if OBJECT_AT_CENTER in data.keys():
-        assert data[OBJECT_AT_CENTER] == "gsp"
-
-    if not batch:
-        # add an extract dimension so that its similar to batch data
-        data["x_meters_center"] = np.expand_dims(data["x_meters_center"], axis=0)
-        data["y_meters_center"] = np.expand_dims(data["y_meters_center"], axis=0)
-
-    # loop over batch
-    for d in data["x_meters_center"]:
-        assert type(d) in [
-            np.float64,
-            torch.Tensor,
-        ], f"x_meters_center should be np.float64 but is {type(d)}"
-    for d in data["y_meters_center"]:
-        assert type(d) in [
-            np.float64,
-            torch.Tensor,
-        ], f"y_meters_center should be np.float64 but is {type(d)}"
-
-    assert data[PV_SYSTEM_ID].shape[-1] == n_pv_systems_per_example
-    assert data[PV_YIELD].shape[-2:] == (seq_len_5_minutes, n_pv_systems_per_example)
-    assert data[PV_SYSTEM_X_COORDS].shape[-1] == n_pv_systems_per_example
-    assert data[PV_SYSTEM_Y_COORDS].shape[-1] == n_pv_systems_per_example
-
-    if not batch:
-        # add an extra dimension so that it's similar to batch data
-        data[PV_SYSTEM_ID] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
-        data[PV_SYSTEM_ROW_NUMBER] = np.expand_dims(data[PV_SYSTEM_ID], axis=0)
-
-    # loop over batch
-    for i in range(len(data[PV_SYSTEM_ID])):
-        n_pv_systems = (data[PV_SYSTEM_ID][i, ~np.isnan(data[PV_SYSTEM_ID][i])]).shape[-1]
-        n_pv_syetem_row_numbers = (
-            data[PV_SYSTEM_ROW_NUMBER][i, ~np.isnan(data[PV_SYSTEM_ROW_NUMBER][i])]
-        ).shape[-1]
-        assert n_pv_syetem_row_numbers == n_pv_systems, (
-            f"Number of PV systems ({n_pv_systems}) does not match the "
-            f"pv systems row numbers ({n_pv_syetem_row_numbers})"
-        )
-
-        if n_pv_systems > 0:
-            # check the PV data is between 0 and 1
-            assert (
-                np.nanmax(data[PV_YIELD]) <= 1.0
-            ), f"Maximum PV value is {np.nanmax(data[PV_YIELD])} but it should be <= 1"
-            assert (
-                np.nanmin(data[PV_YIELD]) >= 0.0
-            ), f"Maximum PV value is {np.nanmin(data[PV_YIELD])} but it should be <= 1"
-
-    if SUN_AZIMUTH_ANGLE in data.keys():
-        assert data[SUN_AZIMUTH_ANGLE].shape[-1] == seq_len_5_minutes
-    if SUN_ELEVATION_ANGLE in data.keys():
-        assert data[SUN_ELEVATION_ANGLE].shape[-1] == seq_len_5_minutes
-
-    assert data["sat_data"].shape[-4:] == (
-        seq_len_5_minutes,
-        sat_image_size,
-        sat_image_size,
-        n_sat_channels,
-    )
-    assert data["sat_x_coords"].shape[-1] == sat_image_size
-    assert data["sat_y_coords"].shape[-1] == sat_image_size
-    assert data["sat_datetime_index"].shape[-1] == seq_len_5_minutes
-
-    assert data[TOPOGRAPHIC_DATA].shape[-2:] == (sat_image_size, sat_image_size)
-    assert data[TOPOGRAPHIC_Y_COORDS].shape[-1] == sat_image_size
-    assert data[TOPOGRAPHIC_X_COORDS].shape[-1] == sat_image_size
-
-    nwp_correct_shape = (
-        n_nwp_channels,
-        seq_len_5_minutes,
-        nwp_image_size,
-        nwp_image_size,
-    )
-    nwp_shape = data["nwp"].shape[-4:]
-    assert (
-        nwp_shape == nwp_correct_shape
-    ), f"NWP shape should be ({nwp_correct_shape}), but instead it is {nwp_shape}"
-    assert data["nwp_x_coords"].shape[-1] == nwp_image_size
-    assert data["nwp_y_coords"].shape[-1] == nwp_image_size
-    assert data["nwp_target_time"].shape[-1] == seq_len_5_minutes
-
-    for feature in DATETIME_FEATURE_NAMES:
-        assert data[feature].shape[-1] == seq_len_5_minutes
-
-
-def validate_batch_from_configuration(data: Example, configuration: Configuration):
-    """
-    Validate data using a configuration
-
-    Args:
-        data: batch of data
-        configuration: confgiruation of the data
-
-    """
-    validate_example(
-        data=data,
-        seq_len_30_minutes=configuration.process.seq_len_30_minutes,
-        seq_len_5_minutes=configuration.process.seq_len_5_minutes,
-        sat_image_size=configuration.process.satellite_image_size_pixels,
-        n_sat_channels=len(configuration.process.sat_channels),
-        nwp_image_size=configuration.process.nwp_image_size_pixels,
-        n_nwp_channels=len(configuration.process.nwp_channels),
-        n_pv_systems_per_example=DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-        n_gsp_per_example=DEFAULT_N_GSP_PER_EXAMPLE,
-        batch=True,
-    )
+        return x.dict()

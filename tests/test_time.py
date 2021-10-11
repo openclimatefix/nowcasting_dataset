@@ -66,15 +66,12 @@ def test_timesteps_to_duration():
 def test_datetime_features_in_example():
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="h")
     example = nd_time.datetime_features_in_example(index)
-    assert len(example["hour_of_day_sin"]) == len(index)
+    assert len(example.hour_of_day_sin) == len(index)
     for col_name in ["hour_of_day_sin", "hour_of_day_cos"]:
-        assert col_name in example
         np.testing.assert_array_almost_equal(
-            example[col_name], np.tile(example[col_name][:24], reps=6)
+            example.__getattribute__(col_name),
+            np.tile(example.__getattribute__(col_name)[:24], reps=6),
         )
-
-    assert "day_of_year_sin" in example
-    assert "day_of_year_cos" in example
 
 
 @pytest.mark.parametrize("history_length", [2, 3, 12])

@@ -29,13 +29,12 @@ from nowcasting_dataset.consts import (
     SATELLITE_DATETIME_INDEX,
     NWP_TARGET_TIME,
     PV_DATETIME_INDEX,
-    DATETIME_FEATURE_NAMES,
     DEFAULT_REQUIRED_KEYS,
-    T0_DT,
 )
-from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
-from nowcasting_dataset.dataset import example
-from nowcasting_dataset.utils import set_fsspec_for_multiprocess
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
+
+from nowcasting_dataset.utils import set_fsspec_for_multiprocess, to_numpy
+from nowcasting_dataset.dataset.batch import Batch
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +169,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         """ Length of dataset """
         return self.n_batches
 
-    def __getitem__(self, batch_idx: int) -> example.Example:
+    def __getitem__(self, batch_idx: int) -> Batch:
         """Returns a whole batch at once.
 
         Args:
@@ -205,19 +204,21 @@ class NetCDFDataset(torch.utils.data.Dataset):
         else:
             local_netcdf_filename = remote_netcdf_filename
 
-        netcdf_batch = xr.load_dataset(local_netcdf_filename)
+        batch = Batch.load_netcdf(local_netcdf_filename)
+        # netcdf_batch = xr.load_dataset(local_netcdf_filename)
         if self.cloud != "local":
             os.remove(local_netcdf_filename)
 
-        batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
+        # batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
 
+        # Todo this may should be done when the data is created
         if SATELLITE_DATA in self.required_keys:
-            sat_data = batch[SATELLITE_DATA]
+            sat_data = batch.satellite.sat_data
             if sat_data.dtype == np.int16:
                 sat_data = sat_data.astype(np.float32)
                 sat_data = sat_data - SAT_MEAN
-                sat_data /= SAT_STD
-                batch[SATELLITE_DATA] = sat_data
+                sat_data = sat_data / SAT_STD
+                batch.satellite.sat_data = sat_data
 
         if self.select_subset_data:
             batch = subselect_data(
@@ -228,7 +229,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
                 current_timestep_index=self.current_timestep_5_index,
             )
 
-        batch = example.to_numpy(batch)
+        batch.change_type_to_numpy()
 
         return batch
 
@@ -312,12 +313,13 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = self._get_t0_datetimes_for_batch()
         x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)
 
-        examples = None
+        examples = {}
         n_threads = len(self.data_sources)
         with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
             # Submit tasks to the executor.
             future_examples_per_source = []
             for data_source in self.data_sources:
+
                 future_examples = executor.submit(
                     data_source.get_batch,
                     t0_datetimes=t0_datetimes,
@@ -329,13 +331,17 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             # Collect results from each thread.
             for future_examples in future_examples_per_source:
                 examples_from_source = future_examples.result()
-                if examples is None:
-                    examples = examples_from_source
-                else:
-                    for i in range(self.batch_size):
-                        examples[i].update(examples_from_source[i])
 
-        return self.collate_fn(examples)
+                # print(type(examples_from_source))
+                name = type(examples_from_source).__name__.lower()
+                examples[name] = examples_from_source.dict()
+
+        examples["batch_size"] = len(t0_datetimes)
+
+        b = Batch(**examples)
+
+        # return as  dictionary because .... # TODO
+        return b.dict()
 
     def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
         # Pick random datetimes.
@@ -371,40 +377,13 @@ def worker_init_fn(worker_id):
         dataset_obj.per_worker_init(worker_info.id)
 
 
-def select_time_period(
-    batch: example.Example,
-    keys: List[str],
-    time_of_first_example: pd.DatetimeIndex,
-    start_time: xr.DataArray,
-    end_time: xr.DataArray,
-) -> example.Example:
-    """
-    Selects a subset of data between the indicies of [start, end] for each key in keys
-
-    Args:
-        batch: Example containing the data
-        keys: Keys in batch to use
-        time_of_first_example: Datetime of the current time in the first example of the batch
-        start_time: Start time DataArray
-        end_time: End time DataArray
-
-    Returns:
-        Example containing the subselected data
-    """
-    start_i, end_i = np.searchsorted(time_of_first_example, [start_time.data, end_time.data])
-    for key in keys:
-        batch[key] = batch[key].isel(time=slice(start_i, end_i))
-
-    return batch
-
-
 def subselect_data(
-    batch: example.Example,
+    batch: Batch,
     required_keys: Union[Tuple[str], List[str]],
     history_minutes: int,
     forecast_minutes: int,
     current_timestep_index: Optional[int] = None,
-) -> example.Example:
+) -> Batch:
     """
     Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
 
@@ -423,80 +402,68 @@ def subselect_data(
         f"and forecast minutes if {forecast_minutes}"
     )
 
-    # We are subsetting the data
-    date_time_index_to_use = (
-        SATELLITE_DATETIME_INDEX if SATELLITE_DATA in required_keys else NWP_TARGET_TIME
-    )
-
-    # t0_dt or if not available use a different datetime index
-    if T0_DT in batch.keys():
-        current_time_of_first_batch = batch[T0_DT][0]
+    # We are subsetting the data, so we need to select the t0_dt, i.e the time now for eahc Example.
+    # We infact only need this from the first example in each batch
+    if current_timestep_index is None:
+        # t0_dt or if not available use a different datetime index
+        t0_dt_of_first_example = batch.metadata.t0_dt[0].values
     else:
-        current_time_of_first_batch = batch[date_time_index_to_use].isel(
-            time=current_timestep_index
-        )[0]
+        if SATELLITE_DATA in required_keys:
+            t0_dt_of_first_example = batch.satellite.sat_datetime_index[
+                0, current_timestep_index
+            ].values
+        else:
+            t0_dt_of_first_example = batch.satellite.sat_datetime_index[
+                0, current_timestep_index
+            ].values
 
-    # Datetimes are in seconds, so just need to convert minutes to second + 30sec buffer
-    # Only need to do it for the first example in the batch, as masking indicies should be the same for all of them
-    # The extra 30 seconds is added to ensure that the first and last timestep are always contained
-    # within the [start_time, end_time] range
-    start_time = current_time_of_first_batch - pd.to_timedelta(
-        f"{history_minutes} minute 30 second"
-    )
-    end_time = current_time_of_first_batch + pd.to_timedelta(f"{forecast_minutes} minute 30 second")
-    used_datetime_features = [k for k in DATETIME_FEATURE_NAMES if k in required_keys]
-    if SATELLITE_DATA in required_keys:
-        batch = select_time_period(
-            batch,
-            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX] + used_datetime_features,
-            time_of_first_example=batch[SATELLITE_DATETIME_INDEX][0].data,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        _LOG.debug(
-            f"Sat Datetime Shape: {batch[SATELLITE_DATETIME_INDEX].shape} Sat Data Shape: {batch[SATELLITE_DATA].shape}"
+    # make this a datetime object
+    t0_dt_of_first_example = pd.to_datetime(t0_dt_of_first_example)
+
+    if batch.satellite is not None:
+        batch.satellite.select_time_period(
+            keys=[SATELLITE_DATA, SATELLITE_DATETIME_INDEX],
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
 
     # Now for NWP, if used
-    if NWP_DATA in required_keys:
-        batch = select_time_period(
-            batch,
-            keys=[NWP_DATA, NWP_TARGET_TIME] + used_datetime_features
-            if SATELLITE_DATA not in required_keys
-            else [NWP_DATA, NWP_TARGET_TIME],
-            time_of_first_example=batch[NWP_TARGET_TIME][0].data,
-            start_time=start_time,
-            end_time=end_time,
+    if batch.nwp is not None:
+        batch.nwp.select_time_period(
+            keys=[NWP_DATA, NWP_TARGET_TIME],
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
-        _LOG.debug(
-            f"NWP Datetime Shape: {batch[NWP_TARGET_TIME].shape} NWP Data Shape: {batch[NWP_DATA].shape}"
-        )
-
-    # Now GSP, if used
-    if GSP_YIELD in required_keys and GSP_DATETIME_INDEX in batch:
-        batch = select_time_period(
-            batch,
+    #
+    # Now for GSP, if used
+    if batch.gsp is not None:
+        batch.gsp.select_time_period(
             keys=[GSP_DATETIME_INDEX, GSP_YIELD],
-            time_of_first_example=batch[GSP_DATETIME_INDEX][0].data,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        _LOG.debug(
-            f"GSP Datetime Shape: {batch[GSP_DATETIME_INDEX].shape} GSP Data Shape: {batch[GSP_YIELD].shape}"
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
 
-    # Now PV systems, if used
-    if PV_YIELD in required_keys and PV_DATETIME_INDEX in batch:
-        batch = select_time_period(
-            batch,
-            keys=[PV_DATETIME_INDEX, PV_YIELD, SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
-            time_of_first_example=batch[PV_DATETIME_INDEX][0].data,
-            start_time=start_time,
-            end_time=end_time,
+    # Now for PV, if used
+    if batch.pv is not None:
+        batch.pv.select_time_period(
+            keys=[PV_DATETIME_INDEX, PV_YIELD],
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
-        _LOG.debug(
-            f"PV Datetime Shape: {batch[PV_DATETIME_INDEX].shape} PV Data Shape: {batch[PV_YIELD].shape}"
-            f" PV Azimuth Shape: {batch[SUN_ELEVATION_ANGLE].shape} PV Elevation Shape: {batch[SUN_AZIMUTH_ANGLE].shape}"
+
+    # Now for SUN, if used
+    if batch.sun is not None:
+        batch.sun.select_time_period(
+            keys=[SUN_ELEVATION_ANGLE, SUN_AZIMUTH_ANGLE],
+            history_minutes=history_minutes,
+            forecast_minutes=forecast_minutes,
+            t0_dt_of_first_example=t0_dt_of_first_example,
         )
+
+    # DATETIME TODO
 
     return batch

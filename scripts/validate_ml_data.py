@@ -7,7 +7,7 @@ import torch
 from nowcasting_dataset.config.load import load_configuration_from_gcs, load_yaml_configuration
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
 from nowcasting_dataset.dataset.validate import ValidatorDataset
-from nowcasting_dataset.utils import get_maximum_batch_id_from_gcs
+from nowcasting_dataset.cloud.utils import get_maximum_batch_id
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -27,9 +27,9 @@ DST_TEST_PATH = os.path.join(DST_NETCDF4_PATH, "test")
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 
 # find how many datasets there are
-maximum_batch_id_train = get_maximum_batch_id_from_gcs(f"gs://{DST_TRAIN_PATH}")
-maximum_batch_id_validation = get_maximum_batch_id_from_gcs(f"gs://{DST_VALIDATION_PATH}")
-maximum_batch_id_test = get_maximum_batch_id_from_gcs(f"gs://{DST_TEST_PATH}")
+maximum_batch_id_train = get_maximum_batch_id(f"gs://{DST_TRAIN_PATH}")
+maximum_batch_id_validation = get_maximum_batch_id(f"gs://{DST_VALIDATION_PATH}")
+maximum_batch_id_test = get_maximum_batch_id(f"gs://{DST_TEST_PATH}")
 
 dataloader_config = dict(
     pin_memory=True,
@@ -49,6 +49,7 @@ train_dataset = torch.utils.data.DataLoader(
         f"gs://{DST_TRAIN_PATH}",
         LOCAL_TEMP_PATH,
         cloud="gcp",
+        configuration=config,
     ),
     **dataloader_config,
 )
@@ -60,6 +61,7 @@ validation_dataset = torch.utils.data.DataLoader(
         f"gs://{DST_VALIDATION_PATH}",
         LOCAL_TEMP_PATH,
         cloud="gcp",
+        configuration=config,
     ),
     **dataloader_config,
 )
@@ -70,6 +72,7 @@ test_dataset = torch.utils.data.DataLoader(
         f"gs://{DST_TEST_PATH}",
         LOCAL_TEMP_PATH,
         cloud="gcp",
+        configuration=config,
     ),
     **dataloader_config,
 )

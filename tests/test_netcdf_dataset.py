@@ -10,6 +10,7 @@ import torch
 import xarray as xr
 
 import nowcasting_dataset
+import nowcasting_dataset.dataset.batch
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     SATELLITE_X_COORDS,
@@ -25,18 +26,18 @@ from nowcasting_dataset.consts import (
     GSP_DATETIME_INDEX,
     T0_DT,
 )
-from nowcasting_dataset.dataset import example
+
+# from nowcasting_dataset.dataset import example
+from nowcasting_dataset.dataset.batch import Batch
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 
 
 def test_subselect_date(test_data_folder):
-    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
-    x = example.Example(
-        sat_data=dataset["sat_data"],
-        nwp=dataset["nwp"],
-        nwp_target_time=dataset["nwp_time_coords"],
-        sat_datetime_index=dataset["sat_time_coords"],
-    )
+
+    # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
+    x = Batch.fake()
+    x = x.batch_to_dataset()
+    x = Batch.load_batch_from_dataset(x)
 
     batch = subselect_data(
         x,
@@ -46,19 +47,16 @@ def test_subselect_date(test_data_folder):
         forecast_minutes=10,
     )
 
-    assert batch[SATELLITE_DATA].shape[1] == 5
-    assert batch[NWP_DATA].shape[2] == 5
+    assert batch.satellite.sat_data.shape[1] == 5
+    assert batch.nwp.nwp.shape[2] == 5
 
 
-def test_subselect_date_with_t0_dt(test_data_folder):
-    dataset = xr.open_dataset(f"{test_data_folder}/0.nc")
-    x = example.Example(
-        sat_data=dataset["sat_data"],
-        nwp=dataset["nwp"],
-        nwp_target_time=dataset["nwp_time_coords"],
-        sat_datetime_index=dataset["sat_time_coords"],
-    )
-    x[T0_DT] = x[SATELLITE_DATETIME_INDEX].isel(time=7)
+def test_subselect_date_with_to_dt(test_data_folder):
+
+    # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
+    x = Batch.fake()
+    x = x.batch_to_dataset()
+    x = Batch.load_batch_from_dataset(x)
 
     batch = subselect_data(
         x,
@@ -67,8 +65,8 @@ def test_subselect_date_with_t0_dt(test_data_folder):
         forecast_minutes=10,
     )
 
-    assert batch[SATELLITE_DATA].shape[1] == 5
-    assert batch[NWP_DATA].shape[2] == 5
+    assert batch.satellite.sat_data.shape[1] == 5
+    assert batch.nwp.nwp.shape[2] == 5
 
 
 def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
@@ -105,11 +103,12 @@ def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
     t = iter(train_dataset)
     data = next(t)
 
-    sat_data = data[SATELLITE_DATA]
+    sat_data = data.satellite.sat_data
 
+    # TODO
     # Sat is in 5min increments, so should have 2 history + current + 2 future
     assert sat_data.shape[1] == 5
-    assert data[NWP_DATA].shape[2] == 5
+    assert data.nwp.nwp.shape[2] == 5
 
     # Make sure file isn't deleted!
     assert os.path.exists(os.path.join(DATA_PATH, "0.nc"))
@@ -142,13 +141,13 @@ def test_get_dataloaders_gcp(configuration: Configuration):
 
     train_dataset.per_worker_init(1)
     t = iter(train_dataset)
-    data = next(t)
+    data: Batch = next(t)
 
     # image
-    z = data[SATELLITE_DATA][0][0][:, :, 0]
-    _ = data[GSP_YIELD][0][:, 0]
+    z = data.satellite.sat_data[0][0][:, :, 0]
+    _ = data.gsp.gsp_yield[0][:, 0]
 
-    _ = pd.to_datetime(data[SATELLITE_DATETIME_INDEX][0, 0], unit="s")
+    _ = pd.to_datetime(data.satellite.sat_datetime_index[0, 0], unit="s")
 
     fig = go.Figure(data=go.Contour(z=z))
 
@@ -206,15 +205,15 @@ def test_required_keys_gcp(configuration: Configuration):
         os.path.join(DATA_PATH, "train"),
         os.path.join(TEMP_PATH, "train"),
         cloud="gcp",
-        required_keys=[
-            NWP_DATA,
-            NWP_X_COORDS,
-            NWP_Y_COORDS,
-            SATELLITE_DATA,
-            SATELLITE_X_COORDS,
-            SATELLITE_Y_COORDS,
-            GSP_DATETIME_INDEX,
-        ],
+        # required_keys=[
+        #     NWP_DATA,
+        #     NWP_X_COORDS,
+        #     NWP_Y_COORDS,
+        #     SATELLITE_DATA,
+        #     SATELLITE_X_COORDS,
+        #     SATELLITE_Y_COORDS,
+        #     GSP_DATETIME_INDEX,
+        # ],
         configuration=configuration,
     )
 

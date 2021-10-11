@@ -1,30 +1,213 @@
 """ batch functions """
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
-import numpy as np
 import xarray as xr
+from pydantic import BaseModel, Field
 
-from nowcasting_dataset.consts import (
-    GSP_ID,
-    GSP_YIELD,
-    GSP_X_COORDS,
-    GSP_Y_COORDS,
-    GSP_DATETIME_INDEX,
-    DATETIME_FEATURE_NAMES,
-    T0_DT,
-    TOPOGRAPHIC_DATA,
-    TOPOGRAPHIC_X_COORDS,
-    TOPOGRAPHIC_Y_COORDS,
-)
-from nowcasting_dataset.dataset.example import Example
+from nowcasting_dataset.config.model import Configuration
+
+from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.time import make_random_time_vectors
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
 
-def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
+class Example(BaseModel):
+    """Single Data item"""
+
+    metadata: Metadata
+    satellite: Optional[Satellite]
+    topographic: Optional[Topographic]
+    pv: Optional[PV]
+    sun: Optional[Sun]
+    gsp: Optional[GSP]
+    nwp: Optional[NWP]
+    datetime: Optional[Datetime]
+
+    def change_type_to_numpy(self):
+        """Change data to numpy"""
+        for data_source in self.data_sources:
+            if data_source is not None:
+                data_source.to_numpy()
+
+    @property
+    def data_sources(self):
+        """ The different data sources """
+        return [
+            self.satellite,
+            self.topographic,
+            self.pv,
+            self.sun,
+            self.gsp,
+            self.nwp,
+            self.datetime,
+            self.metadata,
+        ]
+
+
+class Batch(Example):
+    """
+    Batch data object.
+
+    Contains the following data sources
+    - gsp, satellite, topogrpahic, sun, pv, nwp and datetime.
+    Also contains metadata of the class
+
+    """
+
+    batch_size: int = Field(
+        ...,
+        g=0,
+        description="The size of this batch. If the batch size is 0, "
+        "then this item stores one data item",
+    )
+
+    def batch_to_dataset(self) -> xr.Dataset:
+        """Change batch to xr.Dataset so it can be saved and compressed"""
+        return batch_to_dataset(batch=self)
+
+    @staticmethod
+    def load_batch_from_dataset(xr_dataset: xr.Dataset):
+        """Change xr.Datatset to Batch object"""
+        # get a list of data sources
+        data_sources_names = Example.__fields__.keys()
+
+        # collect data sources
+        data_sources_dict = {}
+        for data_source_name in data_sources_names:
+            cls = Example.__fields__[data_source_name].type_
+            data_sources_dict[data_source_name] = cls.from_xr_dataset(xr_dataset=xr_dataset)
+
+        data_sources_dict["batch_size"] = data_sources_dict["metadata"].batch_size
+
+        return Batch(**data_sources_dict)
+
+    def split(self) -> List[Example]:
+        """Split batch into list of data items"""
+        # collect split data
+        split_data_dict = {}
+        for data_source in self.data_sources:
+            if data_source is not None:
+                cls = data_source.__class__.__name__.lower()
+                split_data_dict[cls] = data_source.split()
+
+        # make in to Example objects
+        data_items = []
+        for batch_idx in range(self.batch_size):
+            split_data_one_example_dict = {k: v[batch_idx] for k, v in split_data_dict.items()}
+            data_items.append(Example(**split_data_one_example_dict))
+
+        return data_items
+
+    @staticmethod
+    def fake(configuration: Configuration = Configuration()):
+        """Create fake batch"""
+        process = configuration.process
+
+        t0_dt, time_5, time_30 = make_random_time_vectors(
+            batch_size=process.batch_size,
+            seq_len_5_minutes=process.seq_len_5_minutes,
+            seq_len_30_minutes=process.seq_len_30_minutes,
+        )
+
+        return Batch(
+            batch_size=process.batch_size,
+            metadata=Metadata.fake(batch_size=process.batch_size, t0_dt=t0_dt),
+            satellite=Satellite.fake(
+                process.batch_size,
+                process.seq_len_5_minutes,
+                process.satellite_image_size_pixels,
+                len(process.nwp_channels),
+                time_5=time_5,
+            ),
+            topographic=Topographic.fake(
+                batch_size=process.batch_size,
+                satellite_image_size_pixels=process.satellite_image_size_pixels,
+            ),
+            pv=PV.fake(
+                batch_size=process.batch_size,
+                seq_length_5=process.seq_len_5_minutes,
+                n_pv_systems_per_batch=128,
+                time_5=time_5,
+            ),
+            sun=Sun.fake(batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes),
+            gsp=GSP.fake(
+                batch_size=process.batch_size,
+                seq_length_30=process.seq_len_30_minutes,
+                n_gsp_per_batch=32,
+                time_30=time_30,
+            ),
+            nwp=NWP.fake(
+                batch_size=process.batch_size,
+                seq_length_5=process.seq_len_5_minutes,
+                nwp_image_size_pixels=process.nwp_image_size_pixels,
+                number_nwp_channels=len(process.nwp_channels),
+                time_5=time_5,
+            ),
+            datetime=Datetime.fake(
+                batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes
+            ),
+        )
+
+    def save_netcdf(self, batch_i: int, path: Path):
+        """
+        Save batch to netcdf file
+
+        Args:
+            batch_i: the batch id, used to make the filename
+            path: the path where it will be saved. This can be local or in the cloud.
+
+        """
+        batch_xr = self.batch_to_dataset()
+
+        encoding = {name: {"compression": "lzf"} for name in batch_xr.data_vars}
+        filename = get_netcdf_filename(batch_i)
+        local_filename = path / filename
+        batch_xr.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+
+    @staticmethod
+    def load_netcdf(local_netcdf_filename: Path):
+        """Load batch from netcdf file"""
+        netcdf_batch = xr.load_dataset(local_netcdf_filename)
+
+        return Batch.load_batch_from_dataset(netcdf_batch)
+
+
+def batch_to_dataset(batch: Batch) -> xr.Dataset:
+    """Concat all the individual fields in an Example into a single Dataset.
+
+    Args:
+      batch: List of Example objects, which together constitute a single batch.
+    """
+    datasets = []
+
+    # loop over each item in the batch
+    for i, example in enumerate(batch.split()):
+
+        individual_datasets = []
+
+        for data_source in example.data_sources:
+            if data_source is not None:
+                individual_datasets.append(data_source.to_xr_dataset(i))
+
+        # Merge
+        merged_ds = xr.merge(individual_datasets)
+        datasets.append(merged_ds)
+
+    return xr.concat(datasets, dim="example")
+
+
+def write_batch_locally(batch: Union[Batch, dict], batch_i: int, path: Path):
     """
     Write a batch to a locally file
 
@@ -33,179 +216,11 @@ def write_batch_locally(batch: List[Example], batch_i: int, path: Path):
         batch_i: The number of the batch
         path: The directory to write the batch into.
     """
-    dataset = batch_to_dataset(batch)
-    dataset = fix_dtypes(dataset)
+    if type(batch):
+        batch = Batch(**batch)
+
+    dataset = batch.batch_to_dataset()
     encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
     filename = get_netcdf_filename(batch_i)
     local_filename = path / filename
     dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
-
-
-def fix_dtypes(concat_ds):
-    """
-    TODO
-    """
-    ds_dtypes = {
-        "example": np.int32,
-        "sat_x_coords": np.int32,
-        "sat_y_coords": np.int32,
-        "nwp": np.float32,
-        "nwp_x_coords": np.float32,
-        "nwp_y_coords": np.float32,
-        "pv_system_id": np.float32,
-        "pv_system_row_number": np.float32,
-        "pv_system_x_coords": np.float32,
-        "pv_system_y_coords": np.float32,
-        GSP_YIELD: np.float32,
-        GSP_ID: np.float32,
-        GSP_X_COORDS: np.float32,
-        GSP_Y_COORDS: np.float32,
-        TOPOGRAPHIC_X_COORDS: np.float32,
-        TOPOGRAPHIC_Y_COORDS: np.float32,
-        TOPOGRAPHIC_DATA: np.float32,
-    }
-
-    for name, dtype in ds_dtypes.items():
-        concat_ds[name] = concat_ds[name].astype(dtype)
-
-    assert concat_ds["sat_data"].dtype == np.int16
-    return concat_ds
-
-
-def batch_to_dataset(batch: List[Example]) -> xr.Dataset:
-    """Concat all the individual fields in an Example into a single Dataset.
-
-    Args:
-      batch: List of Example objects, which together constitute a single batch.
-    """
-    datasets = []
-    for i, example in enumerate(batch):
-        try:
-            individual_datasets = []
-            example_dim = {"example": np.array([i], dtype=np.int32)}
-            for name in ["sat_data", "nwp"]:
-                ds = example[name].to_dataset(name=name)
-                short_name = name.replace("_data", "")
-                if name == "nwp":
-                    ds = ds.rename({"target_time": "time"})
-                for dim in ["time", "x", "y"]:
-                    ds = coord_to_range(ds, dim, prefix=short_name)
-                ds = ds.rename(
-                    {
-                        "variable": f"{short_name}_variable",
-                        "x": f"{short_name}_x",
-                        "y": f"{short_name}_y",
-                    }
-                )
-                individual_datasets.append(ds)
-
-            # Datetime features
-            for name in DATETIME_FEATURE_NAMES:
-                ds = example[name].rename(name).to_xarray().to_dataset().rename({"index": "time"})
-                ds = coord_to_range(ds, "time", prefix=None)
-                individual_datasets.append(ds)
-
-            # PV
-            one_dataset = xr.DataArray(example["pv_yield"], dims=["time", "pv_system"])
-            one_dataset = one_dataset.to_dataset(name="pv_yield")
-            n_pv_systems = len(example["pv_system_id"])
-
-            # GSP
-            n_gsp = len(example[GSP_ID])
-            one_dataset[GSP_YIELD] = xr.DataArray(example[GSP_YIELD], dims=["time_30", "gsp"])
-            one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
-                example[GSP_DATETIME_INDEX],
-                dims=["time_30"],
-                coords=[np.arange(len(example[GSP_DATETIME_INDEX]))],
-            )
-
-            # Topographic
-            ds = example[TOPOGRAPHIC_DATA].to_dataset(name=TOPOGRAPHIC_DATA)
-            topo_name = "topo"
-            for dim in ["x", "y"]:
-                ds = coord_to_range(ds, dim, prefix=topo_name)
-            ds = ds.rename(
-                {
-                    "x": f"{topo_name}_x",
-                    "y": f"{topo_name}_y",
-                }
-            )
-            individual_datasets.append(ds)
-
-            # This will expand all dataarrays to have an 'example' dim.
-            # 0D
-            for name in ["x_meters_center", "y_meters_center", T0_DT]:
-                try:
-                    one_dataset[name] = xr.DataArray(
-                        [example[name]], coords=example_dim, dims=["example"]
-                    )
-                except Exception as e:
-                    _LOG.error(
-                        f"Could not make pv_yield data for {name} with example_dim={example_dim}"
-                    )
-                    if name not in example.keys():
-                        _LOG.error(f"{name} not in data keys: {example.keys()}")
-                    _LOG.error(e)
-                    raise Exception
-
-            # 1D
-            for name in [
-                "pv_system_id",
-                "pv_system_row_number",
-                "pv_system_x_coords",
-                "pv_system_y_coords",
-            ]:
-                one_dataset[name] = xr.DataArray(
-                    example[name][None, :],
-                    coords={
-                        **example_dim,
-                        **{"pv_system": np.arange(n_pv_systems, dtype=np.int32)},
-                    },
-                    dims=["example", "pv_system"],
-                )
-
-            # GSP
-            for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
-                try:
-                    one_dataset[name] = xr.DataArray(
-                        example[name][None, :],
-                        coords={
-                            **example_dim,
-                            **{"gsp": np.arange(n_gsp, dtype=np.int32)},
-                        },
-                        dims=["example", "gsp"],
-                    )
-                except Exception as e:
-                    _LOG.debug(f"Could not add {name} to dataset. {example[name].shape}")
-                    _LOG.error(e)
-                    raise e
-
-            individual_datasets.append(one_dataset)
-
-            # Merge
-            merged_ds = xr.merge(individual_datasets)
-            datasets.append(merged_ds)
-
-        except Exception as e:
-            print(e)
-            _LOG.error(e)
-            raise Exception
-
-    return xr.concat(datasets, dim="example")
-
-
-def coord_to_range(
-    da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
-) -> xr.DataArray:
-    """
-    TODO
-
-    TODO: Actually, I think this is over-complicated?  I think we can
-    just strip off the 'coord' from the dimension.
-
-    """
-    coord = da[dim]
-    da[dim] = np.arange(len(coord), dtype=dtype)
-    if prefix is not None:
-        da[f"{prefix}_{dim}_coords"] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
-    return da

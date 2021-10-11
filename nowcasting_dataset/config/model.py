@@ -7,8 +7,8 @@ from pathy import Pathy
 from pydantic import BaseModel, Field
 from pydantic import validator
 
-from nowcasting_dataset.data_sources.nwp_data_source import NWP_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.satellite_data_source import SAT_VARIABLE_NAMES
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 
 
 class General(BaseModel):
@@ -107,7 +107,7 @@ class Process(BaseModel):
     )
     history_minutes: int = Field(30, ge=0, description="how many historic minutes are used")
     satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
-    nwp_image_size_pixels: int = Field(2, description="the size of the nwp images")
+    nwp_image_size_pixels: int = Field(64, description="the size of the nwp images")
 
     sat_channels: tuple = Field(
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"

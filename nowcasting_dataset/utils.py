@@ -2,16 +2,17 @@
 import hashlib
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import fsspec.asyn
 import numpy as np
 import pandas as pd
+import torch
+import xarray as xr
 import tempfile
 import gcsfs
 
 from nowcasting_dataset.consts import Array
-from nowcasting_dataset.dataset.example import Example
 
 logger = logging.getLogger(__name__)
 
@@ -114,38 +115,41 @@ def pad_nans(array, pad_width) -> np.ndarray:
     return np.pad(array, pad_width, constant_values=np.NaN)
 
 
-def pad_data(
-    data: Example,
-    pad_size: int,
-    one_dimensional_arrays: List[str],
-    two_dimensional_arrays: List[str],
-) -> Example:
+def to_numpy(value):
+    """ Change generic data to numpy"""
+    if isinstance(value, xr.DataArray):
+        # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
+        value = value.data
+
+    if isinstance(value, (pd.Series, pd.DataFrame)):
+        value = value.values
+    elif isinstance(value, pd.DatetimeIndex):
+        value = value.values.astype("datetime64[s]").astype(np.int32)
+    elif isinstance(value, pd.Timestamp):
+        value = np.int32(value.timestamp())
+    elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
+        value = value.astype("datetime64[s]").astype(np.int32)
+    elif isinstance(value, torch.Tensor):
+        value = value.numpy()
+
+    return value
+
+
+def coord_to_range(
+    da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
+) -> xr.DataArray:
     """
-    Pad (if necessary) so returned arrays are always of size
+    TODO
 
-    data has two types of arrays in it, one dimensional arrays and two dimensional arrays
-    the one dimensional arrays are padded in that dimension
-    the two dimensional arrays are padded in the second dimension
-
-    Args:
-        data: typed dictionary of data objects
-        pad_size: the maount that should be padded
-        one_dimensional_arrays: list of data items that should be padded by one dimension
-        two_dimensional_arrays: list of data tiems that should be padded in the third dimension (and more)
-
-    Returns: Example data
+    TODO: Actually, I think this is over-complicated?  I think we can
+    just strip off the 'coord' from the dimension.
 
     """
-    # Pad (if necessary) so returned arrays are always of size
-    pad_shape = (0, pad_size)  # (before, after)
-
-    for name in one_dimensional_arrays:
-        data[name] = pad_nans(data[name], pad_width=pad_shape)
-
-    for variable in two_dimensional_arrays:
-        data[variable] = pad_nans(data[variable], pad_width=((0, 0), pad_shape))  # (axis0, axis1)
-
-    return data
+    coord = da[dim]
+    da[dim] = np.arange(len(coord), dtype=dtype)
+    if prefix is not None:
+        da[f"{prefix}_{dim}_coords"] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
+    return da
 
 
 class OpenData:

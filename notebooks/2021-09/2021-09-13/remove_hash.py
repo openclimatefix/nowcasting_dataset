@@ -1,4 +1,4 @@
-from nowcasting_dataset.cloud.gcp import get_all_filenames_in_path, rename_file
+from nowcasting_dataset.filesystem.gcp import get_all_filenames_in_path, rename_file
 import random
 
 

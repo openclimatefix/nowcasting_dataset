@@ -1,5 +1,10 @@
 """ General Data Source output pydantic class. """
 from __future__ import annotations
+import os
+from nowcasting_dataset.filesystem.utils import make_folder
+from nowcasting_dataset.utils import get_netcdf_filename
+
+from pathlib import Path
 from pydantic import BaseModel, Field
 import pandas as pd
 import xarray as xr
@@ -32,7 +37,7 @@ class DataSourceOutput(BaseModel):
         "then this item stores one data item i.e Example",
     )
 
-    def __name__(self) -> str:
+    def get_name(self) -> str:
         """ Get the name of the class """
         return self.__class__.__name__.lower()
 
@@ -96,6 +101,29 @@ class DataSourceOutput(BaseModel):
     def get_datetime_index(self):
         """ Datetime index for the data """
         pass
+
+    def save_netcdf(self, batch_i: int, path: Path, xr_dataset: xr.Dataset):
+        """
+        Save batch to netcdf file
+
+        Args:
+            batch_i: the batch id, used to make the filename
+            path: the path where it will be saved. This can be local or in the cloud.
+            xr_dataset: xr dataset that has batch information in it
+        """
+        filename = get_netcdf_filename(batch_i)
+
+        name = self.get_name()
+
+        # make folder
+        folder = os.path.join(path, name)
+        make_folder(path=folder)
+
+        # make file
+        local_filename = os.path.join(folder, filename)
+
+        encoding = {name: {"compression": "lzf"} for name in xr_dataset.data_vars}
+        xr_dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
     def select_time_period(
         self,

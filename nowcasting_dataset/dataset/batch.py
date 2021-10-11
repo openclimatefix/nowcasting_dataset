@@ -175,24 +175,13 @@ class Batch(Example):
         """
         batch_xr = self.batch_to_dict_dataset()
 
-        filename = get_netcdf_filename(batch_i)
-
-        for k, v in batch_xr.items():
-
-            # make folder
-            folder = os.path.join(path, k)
-            make_folder(path=folder)
-
-            # make file
-            local_filename = os.path.join(folder, filename)
-
-            encoding = {name: {"compression": "lzf"} for name in v.data_vars}
-            v.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+        for data_source in self.data_sources:
+            xr_dataset = batch_xr[data_source.get_name()]
+            data_source.save_netcdf(batch_i=batch_i, path=path, xr_dataset=xr_dataset)
 
     @staticmethod
     def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):
         """Load batch from netcdf file"""
-
         data_sources_names = Example.__fields__.keys()
 
         # collect data sources
@@ -222,7 +211,7 @@ def batch_to_dict_dataset(batch: Batch) -> Dict[str, xr.Dataset]:
     for data_source in split_batch[0].data_sources:
 
         datasets = []
-        name = data_source.__name__()
+        name = data_source.get_name()
 
         # loop over each item in the batch
         for i, example in enumerate(split_batch):

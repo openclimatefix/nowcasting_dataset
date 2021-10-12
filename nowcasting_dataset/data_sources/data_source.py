@@ -30,6 +30,9 @@ class DataSource:
         will consist of a single timestep at t0.
       convert_to_numpy: Whether or not to convert each example to numpy.
       sample_period_minutes: The time delta between each data point
+
+    Attributes ending in `_len` are sequence lengths represented as integer numbers of timesteps.
+    Attributes ending in `_dur` are sequence durations represented as pd.Timedeltas.
     """
 
     history_minutes: int
@@ -39,7 +42,9 @@ class DataSource:
     def __post_init__(self):
         """ Post Init """
         self.sample_period_minutes = self._get_sample_period_minutes()
+        self.sample_period_dur = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
+        # TODO: Do we still need all these different representations of sequence lengths? #219
         self.history_len = self.history_minutes // self.sample_period_minutes
         self.forecast_len = self.forecast_minutes // self.sample_period_minutes
 
@@ -56,12 +61,11 @@ class DataSource:
 
         # Plus 1 because neither history_len nor forecast_len include t0.
         self._total_seq_len = self.history_len + self.forecast_len + 1
-        self._history_dur = nd_time.timesteps_to_duration(
-            self.history_len, self.sample_period_minutes
-        )
-        self._forecast_dur = nd_time.timesteps_to_duration(
-            self.forecast_len, self.sample_period_minutes
-        )
+
+        self._history_dur = pd.Timedelta(self.history_minutes, unit="minutes")
+        self._forecast_dur = pd.Timedelta(self.forecast_minutes, unit="minutes")
+        # Add sample_period_duration because neither history_dur not forecast_dur include t0.
+        self._total_seq_dur = self._history_dur + self._forecast_dur + self.sample_period_dur
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt - self._history_dur
@@ -131,6 +135,28 @@ class DataSource:
         # Leave this NotImplemented if this DataSource has no concept
         # of a list of datetimes (e.g. for DatetimeDataSource).
         raise NotImplementedError()
+
+    def get_t0_datetimes(self) -> pd.DatetimeIndex:
+        """Get all the valid t0 datetimes.
+
+        In each example timeseries, t0 is the datetime of the most recent observation.
+        t0 is used to specify the temporal location of each example.
+
+        Returns all t0 datetimes which identify valid, contiguous example timeseries.
+        In other words, this function returns all datetimes which come after at least
+        history_minutes of contiguous samples; and which have at least forecast_minutes of
+        contiguous data ahead.
+
+        Raises NotImplementedError if self.datetime_index() raises NotImplementedError,
+        which means that this DataSource doesn't have a concept of a list of datetimes.
+        """
+        all_datetimes = self.datetime_index()
+        return nd_time.get_t0_datetimes(
+            datetimes=all_datetimes,
+            total_seq_len=self._total_seq_len,
+            history_dur=self._history_dur,
+            max_gap=self.sample_period_dur,
+        )
 
     def _get_time_slice(self, t0_dt: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden."""

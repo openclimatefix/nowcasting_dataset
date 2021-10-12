@@ -421,7 +421,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         t0_datetimes = nd_time.get_t0_datetimes(
             datetimes=dt_index,
             total_seq_len=self._total_seq_len_5_minutes,
-            history_len=self.history_len_5_minutes,
+            history_dur=self.history_len_5_minutes * nd_time.FIVE_MINUTES,
         )
 
         # only select datetimes for half hours, ignore 5 minute timestamps

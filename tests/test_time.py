@@ -57,12 +57,6 @@ def test_get_start_datetimes_2(total_seq_len):
     np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)
 
 
-def test_timesteps_to_duration():
-    assert nd_time.timesteps_to_duration(0) == pd.Timedelta(0)
-    assert nd_time.timesteps_to_duration(1) == pd.Timedelta("5T")
-    assert nd_time.timesteps_to_duration(12) == pd.Timedelta("1H")
-
-
 def test_datetime_features_in_example():
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="h")
     example = nd_time.datetime_features_in_example(index)
@@ -79,13 +73,14 @@ def test_datetime_features_in_example():
 def test_get_t0_datetimes(history_length, forecast_length):
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="30T")
     total_seq_len = history_length + forecast_length + 1
+    sample_period_dur = THIRTY_MINUTES
+    history_dur = sample_period_dur * history_length
 
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=index,
         total_seq_len=total_seq_len,
-        history_len=history_length,
+        history_dur=history_dur,
         max_gap=THIRTY_MINUTES,
-        minute_delta=30,
     )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length
@@ -96,14 +91,16 @@ def test_get_t0_datetimes(history_length, forecast_length):
 def test_get_t0_datetimes_night():
     history_length = 6
     forecast_length = 12
-    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq="5T")
+    sample_period_dur = FIVE_MINUTES
+    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq=sample_period_dur)
     total_seq_len = history_length + forecast_length + 1
+    history_dur = history_length * sample_period_dur
 
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=index,
         total_seq_len=total_seq_len,
-        history_len=history_length,
-        max_gap=FIVE_MINUTES,
+        history_dur=history_dur,
+        max_gap=sample_period_dur,
     )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length

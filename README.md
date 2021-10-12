@@ -1,16 +1,20 @@
 # nowcasting_dataset
-A multi-process data loader for PyTorch which aligns three separate datasets:
+Pre-prepare batches of data for use in machine learning training.
+
+This code combines several data sources including:
 
 * Satellite imagery (EUMETSAT SEVIRI RSS 5-minutely data of UK)
 * Numerical Weather Predictions (NWPs.  UK Met Office UKV model from CEDA)
 * Solar PV power timeseries data (from PVOutput.org, downloaded using
   our [pvoutput Python
   code](https://github.com/openclimatefix/pvoutput).)
+* Topographic data.
+* The Sun's azimuth and angle.
 
+# History of nowcasting_dataset
 When we first started writing `nowcasting_dataset`, our intention was
 to load and align data from these three datasets on-the-fly during ML
-training.  And `nowcasting_dataset` can still be used that way!  But
-it just isn't quite fast enough to keep a modern GPU constantly fed
+training.  But it just isn't quite fast enough to keep a modern GPU constantly fed
 with data when loading multiple satellite channels and multiple NWP
 parameters.  So, now, this code is used to pre-prepare thousands of
 batches, and save these batches to disk, each as a separate NetCDF
@@ -78,4 +82,7 @@ To test using the full dataset on Google Cloud, add the `--use_cloud_data` switc
 
 # Documentation
 
-Please see the [`Example` class](https://github.com/openclimatefix/nowcasting_dataset/blob/main/nowcasting_dataset/dataset/example.py) for documentation about the different data fields in each example / batch.
+Please see the `data_sources/<modality>/<modality>_model.py` files
+(where `<modality>` is one of {datetime, metadata, gsp, nwp, pv,
+satellite, sun, topographic}) for documentation about the different
+data fields in each example / batch

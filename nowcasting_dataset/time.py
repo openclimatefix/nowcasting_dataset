@@ -113,22 +113,21 @@ def get_start_datetimes(
 def get_t0_datetimes(
     datetimes: pd.DatetimeIndex,
     total_seq_len: int,
-    history_len: int,
-    minute_delta: int = 5,
+    history_dur: pd.Timedelta,
     max_gap: pd.Timedelta = FIVE_MINUTES,
 ) -> pd.DatetimeIndex:
     """
-    Get datetimes for ML learning batches. T0 refers to the time 'now'.
+    Get T0 datetimes for ML learning batches. T0 refers to the time of the most recent observation.
 
     Args:
-        datetimes: list of datetimes when data is available
-        total_seq_len: total sequence length of data for ml model
-        history_len: the number of historic timestemps
-        minute_delta: the amount of minutes in one time step
-        max_gap: The maximum allowed gap in the datetimes for it to be valid
+        datetimes: Datetimes of every valid timestep.
+        total_seq_len: Total sequence length (number of timesteps) of each example sequence.
+            total_seq_len = history_len + forecast_len + 1
+            (the plus 1 is because neither history_len nor forecast_len include t0).
+        history_dur: The duration of the history included in each example sequence.
+        max_gap: The maximum allowed gap in the datetimes for it to be valid.
 
-    Returns: Datetimes that ml learning data can be built around.
-
+    Returns: T0 datetimes that identify valid, contiguous sequences at least total_seq_len long.
     """
     logger.debug("Getting t0 datetimes")
 
@@ -136,17 +135,9 @@ def get_t0_datetimes(
         datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap
     )
 
-    logger.debug("Adding history during to t0 datetimes")
-    history_dur = timesteps_to_duration(history_len, minute_delta=minute_delta)
+    logger.debug("Adding history duration to t0 datetimes")
     t0_datetimes = start_datetimes + history_dur
-
     return t0_datetimes
-
-
-def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
-    """Change timesteps to a time duration"""
-    assert n_timesteps >= 0
-    return pd.Timedelta(n_timesteps * minute_delta, unit="minutes")
 
 
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:

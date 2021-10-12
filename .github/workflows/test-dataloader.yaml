@@ -10,29 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
         with:
-          python-version: 3.9
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install git+https://github.com/SheffieldSolar/PV_Live-API
-          pip install -e .[torch]
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Test with pytest
-        run: |
-          pytest -s --cov=nowcasting_dataset
-      - name: Test with nowcasting_dataloader
-        run: |
-          curl -XPOST -u "${{ secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" -H "Accept:
-          application/vnd.github.everest-preview+json" -H "Content-Type:
-            application/json" https://api.github.com/repos/openclimatefix/nowcasting_dataloader/dispatches --data '{"event_type": "build_application" }'
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: openclimatefix/nowcasting_dataloader
+          event-type: my-event
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

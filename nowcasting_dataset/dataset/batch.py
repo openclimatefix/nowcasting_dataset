@@ -132,7 +132,7 @@ class Batch(Example):
                 process.batch_size,
                 process.seq_len_5_minutes,
                 process.satellite_image_size_pixels,
-                len(process.nwp_channels),
+                len(process.sat_channels),
                 time_5=time_5,
             ),
             topographic=Topographic.fake(

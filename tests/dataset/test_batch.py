@@ -1,5 +1,7 @@
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 import numpy as np
+import tempfile
+from pathlib import Path
 
 from nowcasting_dataset.dataset.batch import Batch, GSP
 from nowcasting_dataset.dataset.validate import FakeDataset
@@ -36,26 +38,37 @@ def test_model_split():
 def test_model_to_xr_dataset(configuration):
 
     f = Batch.fake(configuration=configuration)
-    f_xr = f.batch_to_dataset()
+    f_xr = f.batch_to_dict_dataset()
 
-    assert type(f_xr) == xr.Dataset
+    assert type(f_xr) == dict
+    assert type(f_xr["metadata"]) == xr.Dataset
 
 
 def test_model_from_xr_dataset():
 
     f = Batch.fake()
 
-    f_xr = f.batch_to_dataset()
+    f_xr = f.batch_to_dict_dataset()
 
-    _ = Batch.load_batch_from_dataset(xr_dataset=f_xr)
+    _ = Batch.load_batch_from_dict_dataset(xr_dataset=f_xr)
+
+
+def test_model_save_to_netcdf(test_data_folder):
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        Batch.fake().save_netcdf(path=dirpath, batch_i=0)
+
+
+def test_model_from_test_data(test_data_folder):
+    x = Batch.load_netcdf(local_netcdf_path=f"{test_data_folder}/batch", batch_idx=0)
 
 
 def test_model_from_xr_dataset_to_numpy():
 
     f = Batch.fake()
 
-    f_xr = f.batch_to_dataset()
-    fs = Batch.load_batch_from_dataset(xr_dataset=f_xr)
+    f_xr = f.batch_to_dict_dataset()
+    fs = Batch.load_batch_from_dict_dataset(xr_dataset=f_xr)
     # check they are the same
     fs.change_type_to_numpy()
     f.gsp.to_numpy()

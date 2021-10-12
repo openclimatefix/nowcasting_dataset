@@ -1,10 +1,13 @@
 """ batch functions """
 import logging
+import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 
 import xarray as xr
 from pydantic import BaseModel, Field
+
+from nowcasting_dataset.filesystem.utils import make_folder
 
 from nowcasting_dataset.config.model import Configuration
 
@@ -72,13 +75,13 @@ class Batch(Example):
         "then this item stores one data item",
     )
 
-    def batch_to_dataset(self) -> xr.Dataset:
+    def batch_to_dict_dataset(self) -> Dict[str, xr.Dataset]:
         """Change batch to xr.Dataset so it can be saved and compressed"""
-        return batch_to_dataset(batch=self)
+        return batch_to_dict_dataset(batch=self)
 
     @staticmethod
-    def load_batch_from_dataset(xr_dataset: xr.Dataset):
-        """Change xr.Datatset to Batch object"""
+    def load_batch_from_dict_dataset(xr_dataset: Dict[str, xr.Dataset]):
+        """Change dictionary of xr.Datatset to Batch object"""
         # get a list of data sources
         data_sources_names = Example.__fields__.keys()
 
@@ -86,7 +89,9 @@ class Batch(Example):
         data_sources_dict = {}
         for data_source_name in data_sources_names:
             cls = Example.__fields__[data_source_name].type_
-            data_sources_dict[data_source_name] = cls.from_xr_dataset(xr_dataset=xr_dataset)
+            data_sources_dict[data_source_name] = cls.from_xr_dataset(
+                xr_dataset=xr_dataset[data_source_name]
+            )
 
         data_sources_dict["batch_size"] = data_sources_dict["metadata"].batch_size
 
@@ -168,43 +173,57 @@ class Batch(Example):
             path: the path where it will be saved. This can be local or in the cloud.
 
         """
-        batch_xr = self.batch_to_dataset()
+        batch_xr = self.batch_to_dict_dataset()
 
-        encoding = {name: {"compression": "lzf"} for name in batch_xr.data_vars}
-        filename = get_netcdf_filename(batch_i)
-        local_filename = path / filename
-        batch_xr.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+        for data_source in self.data_sources:
+            xr_dataset = batch_xr[data_source.get_name()]
+            data_source.save_netcdf(batch_i=batch_i, path=path, xr_dataset=xr_dataset)
 
     @staticmethod
-    def load_netcdf(local_netcdf_filename: Path):
+    def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):
         """Load batch from netcdf file"""
-        netcdf_batch = xr.load_dataset(local_netcdf_filename)
+        data_sources_names = Example.__fields__.keys()
 
-        return Batch.load_batch_from_dataset(netcdf_batch)
+        # collect data sources
+        batch_dict = {}
+        for data_source_name in data_sources_names:
+
+            local_netcdf_filename = os.path.join(
+                local_netcdf_path, data_source_name, f"{batch_idx}.nc"
+            )
+            xr_dataset = xr.load_dataset(local_netcdf_filename)
+
+            batch_dict[data_source_name] = xr_dataset
+
+        return Batch.load_batch_from_dict_dataset(batch_dict)
 
 
-def batch_to_dataset(batch: Batch) -> xr.Dataset:
-    """Concat all the individual fields in an Example into a single Dataset.
+def batch_to_dict_dataset(batch: Batch) -> Dict[str, xr.Dataset]:
+    """Concat all the individual fields in an Example into a dictionary of Datasets.
 
     Args:
       batch: List of Example objects, which together constitute a single batch.
     """
-    datasets = []
+    individual_datasets = {}
+    split_batch = batch.split()
 
-    # loop over each item in the batch
-    for i, example in enumerate(batch.split()):
+    # loop over each data source
+    for data_source in split_batch[0].data_sources:
 
-        individual_datasets = []
+        datasets = []
+        name = data_source.get_name()
 
-        for data_source in example.data_sources:
+        # loop over each item in the batch
+        for i, example in enumerate(split_batch):
+
             if data_source is not None:
-                individual_datasets.append(data_source.to_xr_dataset(i))
+                datasets.append(getattr(split_batch[i], name).to_xr_dataset(i))
 
         # Merge
-        merged_ds = xr.merge(individual_datasets)
-        datasets.append(merged_ds)
+        merged_ds = xr.concat(datasets, dim="example")
+        individual_datasets[name] = merged_ds
 
-    return xr.concat(datasets, dim="example")
+    return individual_datasets
 
 
 def write_batch_locally(batch: Union[Batch, dict], batch_i: int, path: Path):
@@ -219,8 +238,4 @@ def write_batch_locally(batch: Union[Batch, dict], batch_i: int, path: Path):
     if type(batch):
         batch = Batch(**batch)
 
-    dataset = batch.batch_to_dataset()
-    encoding = {name: {"compression": "lzf"} for name in dataset.data_vars}
-    filename = get_netcdf_filename(batch_i)
-    local_filename = path / filename
-    dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+    batch.save_netcdf(batch_i=batch_i, path=path)

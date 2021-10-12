@@ -121,6 +121,9 @@ class DataSource:
                 output.to_numpy()
             examples.append(output)
 
+        # could add option here, to save each data source using
+        # 1. # DataSourceOutput.to_xr_dataset() to make it a dataset
+        # 2. DataSourceOutput.save_netcdf(), save to netcdf
         return DataSourceOutput.create_batch_from_examples(examples)
 
     def datetime_index(self) -> pd.DatetimeIndex:

@@ -177,11 +177,4 @@ def test_batch_to_batch_to_dataset():
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    batch = Batch(**batch)
-
-    batch_xr = batch.batch_to_dataset()
-
-    assert type(batch_xr) == xr.Dataset
-    assert pd.DataFrame(batch_xr.gsp_datetime_index).isnull().sum().sum() == 0
-
-    _ = Batch.load_batch_from_dataset(batch_xr)
+    _ = Batch(**batch)

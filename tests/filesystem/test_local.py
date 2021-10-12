@@ -7,6 +7,7 @@ from nowcasting_dataset.filesystem.utils import (
     download_to_local,
     get_all_filenames_in_path,
     upload_one_file,
+    make_folder,
 )
 
 
@@ -31,6 +32,29 @@ def test_check_file_exists():
 
         # run function
         check_path_exists(path=f"{tmpdirname}/test_dir")
+
+
+def test_make_folder():
+
+    folder_1 = "test_dir_1"
+    folder_2 = "test_dir_2"
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        local_path = Path(tmpdirname)
+
+        # add fake file to dir
+        folder_1 = os.path.join(local_path, folder_1)
+        folder_2 = os.path.join(local_path, folder_2)
+
+        # use the make folder function
+        make_folder(folder_1)
+        check_path_exists(path=folder_1)
+
+        # make a folder
+        os.mkdir(folder_2)
+
+        # make a folder that already exists
+        check_path_exists(path=folder_2)
 
 
 def test_delete_local_files():

@@ -127,3 +127,9 @@ def upload_one_file(
     """
     filesystem = fsspec.open(remote_filename).fs
     filesystem.put(local_filename, remote_filename)
+
+
+def make_folder(path: Union[str, Path]):
+    """ Make folder """
+    filesystem = fsspec.open(path).fs
+    filesystem.mkdir(path)

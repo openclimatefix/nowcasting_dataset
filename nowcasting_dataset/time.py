@@ -180,50 +180,6 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
     return Datetime(**datetime_dict)
 
 
-def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
-    """
-    Fill a 30 minute index with 5 minute timestamps too. Note any gaps in 30 mins are not filled
-    """
-    # resample index to 5 mins
-    index_5 = pd.Series(0, index=index).resample("5T")
-
-    # calculate forward fill and backward fill
-    index_5_ffill = index_5.ffill(limit=5)
-    index_5_bfill = index_5.bfill(limit=5)
-
-    # Time forward fill and backward together.
-    # This means there will be NaNs if the original index is not in surrounding the values
-    # for example:
-    # index = [00:00:00, 01:00:00, 01:30:00, 02:00:00]
-    #
-    # index_5   ffill   bfill   ffill*bfill
-    # 00:00:00  0       0       0
-    # 00:05:00  0       NaN     NaN
-    # 00:10:00  0       NaN     NaN
-    # 00:15:00  0       NaN     NaN
-    # 00:20:00  0       NaN     NaN
-    # 00:25:00  0       NaN     NaN
-    # 00:30:00  NaN     NaN     NaN
-    # 00:35:00  NaN     0       NaN
-    # 00:40:00  NaN     0       NaN
-    # 00:45:00  NaN     0       NaN
-    # 00:50:00  NaN     0       NaN
-    # 00:55:00  NaN     0       NaN
-    # 01:00:00  0       0       0
-    # 01:05:00  0       0       0
-    # 01:10:00  0       0       0
-    # 01:15:00  0       0       0
-    # 01:20:00  0       0       0
-    # 01:25:00  0       0       0
-    # 01:30:00  0       0       0
-    # .....
-    # 02:00:00  0       0       0
-    index_with_gaps = index_5_ffill * index_5_bfill
-
-    # drop nans and take index
-    return index_with_gaps.dropna().index
-
-
 def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
     """
     Make random time vectors

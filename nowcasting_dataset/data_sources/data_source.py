@@ -136,6 +136,7 @@ class DataSource:
         # of a list of datetimes (e.g. for DatetimeDataSource).
         raise NotImplementedError()
 
+    # TODO: Remove this function (and any tests) after get_contiguous_time_periods() is implemented.
     def get_t0_datetimes(self) -> pd.DatetimeIndex:
         """Get all the valid t0 datetimes.
 
@@ -157,6 +158,22 @@ class DataSource:
             history_dur=self._history_dur,
             max_gap=self.sample_period_dur,
         )
+
+    def get_contiguous_time_periods(self) -> pd.DataFrame:
+        """Get all the time periods for which this DataSource has contiguous data.
+
+        Optionally filter out any time periods which don't make sense for this DataSource,
+        e.g. remove nighttime.
+
+        Returns:
+          pd.DataFrame where each row represents a single time period.  The pd.DataFrame
+          has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+        """
+
+        # TODO:
+        # Modify nd_time.get_start_datetimes so that it returns the segment boundaries
+        # as a pd.DataFrame?
+        raise NotImplementedError()
 
     def _get_time_slice(self, t0_dt: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden."""

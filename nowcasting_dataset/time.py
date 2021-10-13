@@ -88,7 +88,6 @@ def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) ->
         Sorted list of intersecting time periods represented as a pd.DataFrame with two columns:
         start_dt and end_dt.
     """
-
     all_intersecting_periods = []
     for a_period in a.itertuples():
         # There are four ways in which two periods may overlap:

@@ -96,6 +96,9 @@ wget --user=<username> --password=<password> --recursive -nH --cut-dirs=5 --no-c
 ftp://ftp.ceda.ac.uk/badc/ukmo-nwp/data/ukv-grib
 ```
 
+The Met Office data on CEDA goes back to March 2016.  Using this `wget` command will download about
+4 terabytes per year of data.
+
 (You probably want to run this in a `gnu screen` session if you're SSH'ing into a VM or remote server).
 
 What are all those `--reject-regex` instructions doing?

@@ -79,7 +79,7 @@ Use [Satip](https://github.com/openclimatefix/Satip) to download
 ### PV data from PVOutput.org
 
 Download PV timeseries data from PVOutput.org using
-our PVOutput code](https://github.com/openclimatefix/pvoutput).
+[our PVOutput code](https://github.com/openclimatefix/pvoutput).
 
 
 ### Numerical weather predictions from the UK Met Office
@@ -128,6 +128,7 @@ TODO
 
 Copy and modify one of the config yaml files in
 [`nowcasting_dataset/config/`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/nowcasting_dataset/config)
+and modify `prepare_ml_data.py` to use your config file.
 
 
 ## Prepare ML batches
@@ -139,7 +140,7 @@ Run [`scripts/prepare_ml_data.py`](https://github.com/openclimatefix/nowcasting_
 
 `nowcasting_dataset.dataset.datasets.NetCDFDataset` is a PyTorch
 Dataset which loads the pre-prepared batches during ML training
-(although this will soon be moved to a separate
+(although this will soon be moved to our separate
 [`nowcasting_dataloader`
 repository](https://github.com/openclimatefix/nowcasting_dataloader)).
 
@@ -153,6 +154,7 @@ data fields in each example / batch.
 
 
 # History of nowcasting_dataset
+
 When we first started writing `nowcasting_dataset`, our intention was
 to load and align data from these three datasets on-the-fly during ML
 training.  But it just isn't quite fast enough to keep a modern GPU constantly fed

@@ -1,7 +1,7 @@
 """ Time functions """
 import logging
 import warnings
-from typing import Iterable, Tuple, List
+from typing import Iterable, Tuple, List, Dict
 
 import numpy as np
 import pandas as pd
@@ -118,6 +118,7 @@ def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) ->
     return all_intersecting_periods.sort_values(by="start_dt").reset_index(drop=True)
 
 
+# TODO: Delete this and its tests!
 def get_start_datetimes(
     datetimes: pd.DatetimeIndex, total_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
 ) -> pd.DatetimeIndex:
@@ -163,6 +164,57 @@ def get_start_datetimes(
     assert len(start_dt_index) > 0
 
     return pd.DatetimeIndex(np.concatenate(start_dt_index))
+
+
+# TODO: Write test!
+def get_contiguous_time_periods(
+    datetimes: pd.DatetimeIndex, min_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+) -> pd.DataFrame:
+    """Returns a pd.DataFrame where each row records the boundary of a contiguous time periods.
+
+    Args:
+      datetimes: The pd.DatetimeIndex of the timeseries. Must be sorted.
+      min_seq_len: Sequences of min_seq_len or shorter will be discarded.
+      max_gap: If any pair of consecutive `datetimes` is more than `max_gap` apart, then this pair
+        of `datetimes` will be considered a "gap" between two contiguous sequences.
+
+    Returns:
+      pd.DataFrame where each row represents a single time period.  The pd.DataFrame
+          has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+    """
+    # Sanity checks.
+    assert len(datetimes) > 0
+    assert min_seq_len > 1
+    assert datetimes.is_monotonic_increasing()
+    assert datetimes.is_unique()
+
+    # Find indices of gaps larger than max_gap:
+    gap_mask = np.diff(datetimes) > max_gap
+    gap_indices = np.argwhere(gap_mask)[:, 0]
+
+    # gap_indicies are the indices into dt_index for the timestep immediately
+    # *before* the gap.  e.g. if the datetimes at 12:00, 12:05, 18:00, 18:05
+    # then gap_indicies will be [1].  So we add 1 to gap_indices to get
+    # segment_boundaries, an index into dt_index which identifies the _start_
+    # of each segment.
+    segment_boundaries = gap_indices + 1
+
+    # Capture the last segment of dt_index.
+    segment_boundaries = np.concatenate((segment_boundaries, [len(datetimes)]))
+
+    periods: List[Dict[str, pd.Timestamp]] = []
+    start_i = 0
+    for next_start_i in segment_boundaries:
+        n_timesteps = next_start_i - start_i
+        if n_timesteps > min_seq_len:
+            end_i = next_start_i - 1
+            period = {"start_dt": datetimes[start_i], "end_dt": datetimes[end_i]}
+            periods.append(period)
+        start_i = next_start_i
+
+    assert len(periods) > 0
+
+    return pd.DataFrame(periods)
 
 
 def get_t0_datetimes(

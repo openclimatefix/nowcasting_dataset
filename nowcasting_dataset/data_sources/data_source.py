@@ -170,9 +170,7 @@ class DataSource:
           has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
         """
 
-        # TODO:
-        # Modify nd_time.get_start_datetimes so that it returns the segment boundaries
-        # as a pd.DataFrame?
+        # TODO: Use nd_time.get_contiguous_time_periods()
         raise NotImplementedError()
 
     def _get_time_slice(self, t0_dt: pd.Timestamp):

@@ -1,0 +1,18 @@
+# This workflow will trigger the repository_dispath in nowcasting_dataloader and run pytest over there on every push
+
+name: Test Nowcasting_dataloader
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: openclimatefix/nowcasting_dataloader
+          event-type: my-event
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

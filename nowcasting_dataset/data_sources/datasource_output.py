@@ -13,7 +13,6 @@ from typing import List, Union
 import logging
 from datetime import datetime
 
-from nowcasting_dataset.utils import to_numpy
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 

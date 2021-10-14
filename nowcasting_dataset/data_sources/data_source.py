@@ -118,8 +118,6 @@ class DataSource:
         for t0_datetime, x_location, y_location in zipped:
             output: xr.Dataset = self.get_example(t0_datetime, x_location, y_location)
 
-            # if self.convert_to_numpy:
-            #     output.to_numpy()
             examples.append(output)
 
         # could add option here, to save each data source using

@@ -73,22 +73,6 @@ class MetadataML(DataSourceOutputML):
             object_at_center_label=np.array([1] * batch_size),
         )
 
-    # def to_xr_dataset(self, i):
-    #     """Make a xr dataset"""
-    #     individual_datasets = []
-    #     for name in ["t0_dt", "x_meters_center", "y_meters_center", "object_at_center_label"]:
-    #
-    #         var = self.__getattribute__(name)
-    #
-    #         example_dim = {"example": np.array([i], dtype=np.int32)}
-    #
-    #         data = xr.DataArray([var], coords=example_dim, dims=["example"], name=name)
-    #
-    #         ds = data.to_dataset()
-    #         individual_datasets.append(ds)
-    #
-    #     return xr.merge(individual_datasets)
-
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """Change xr dataset to model. If data does not exist, then return None"""

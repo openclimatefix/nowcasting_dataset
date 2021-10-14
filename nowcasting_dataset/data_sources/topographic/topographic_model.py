@@ -104,33 +104,6 @@ class TopographicML(DataSourceOutputML):
             # copy is needed as torch doesnt not support negative strides
         )
 
-    # def to_xr_dataset(self, i):
-    #     """ Make a xr dataset """
-    #     logger.debug(f"Making xr dataset for batch {i}")
-    #     data = xr.DataArray(
-    #         self.topo_data,
-    #         coords={
-    #             "x": self.topo_x_coords,
-    #             "y": self.topo_y_coords,
-    #         },
-    #     )
-    #
-    #     ds = data.to_dataset(name=TOPOGRAPHIC_DATA)
-    #     for dim in ["x", "y"]:
-    #         ds = coord_to_range(ds, dim, prefix="topo")
-    #     ds = ds.rename(
-    #         {
-    #             "x": f"topo_x",
-    #             "y": f"topo_y",
-    #         }
-    #     )
-    #
-    #     ds[TOPOGRAPHIC_DATA] = ds[TOPOGRAPHIC_DATA].astype(np.float32)
-    #     ds[TOPOGRAPHIC_X_COORDS] = ds[TOPOGRAPHIC_X_COORDS].astype(np.float32)
-    #     ds[TOPOGRAPHIC_Y_COORDS] = ds[TOPOGRAPHIC_Y_COORDS].astype(np.float32)
-    #
-    #     return ds
-
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """

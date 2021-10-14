@@ -131,7 +131,6 @@ def upload_one_file(
 
 def make_folder(path: Union[str, Path]):
     """ Make folder """
-
     filesystem = fsspec.open(path).fs
     if not filesystem.exists(path):
         filesystem.mkdir(path)

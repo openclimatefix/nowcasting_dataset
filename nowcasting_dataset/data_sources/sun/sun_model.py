@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class Sun(DataSourceOutput):
+    """ Class to store Sun data as a xr.Dataset with some validation """
+
     # Use to store xr.Dataset data
     __slots__ = []
 
@@ -26,7 +28,7 @@ class Sun(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, seq_length_5):
-
+        """ Create fake data """
         # create dataset with both azimuth and elevation, index with time
         # make batch of arrays
         xr_arrays = [

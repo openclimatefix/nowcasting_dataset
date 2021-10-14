@@ -26,6 +26,7 @@ def create_image_array(
     image_size_pixels=64,
     number_channels=7,
 ):
+    """ Create Satellite or NWP fake image data"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
         "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
@@ -51,7 +52,7 @@ def create_gsp_pv_dataset(
     seq_length=19,
     number_of_systems=128,
 ):
-
+    """ Create gsp or pv fake dataset """
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
         "system": np.random.randint(low=0, high=1000, size=number_of_systems),
@@ -93,7 +94,18 @@ def create_sun_dataset(
     dims=("time",),
     freq="5T",
     seq_length=19,
-):
+) -> xr.Dataset:
+    """
+    Create sun fake dataset
+
+    Args:
+        dims: # TODO
+        freq: # TODO
+        seq_length: # TODO
+
+    Returns: # TODO
+
+    """
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
     }
@@ -112,8 +124,8 @@ def create_sun_dataset(
     return sun
 
 
-def create_metadata_dataset():
-
+def create_metadata_dataset() -> xr.Dataset:
+    """ Create fake metadata dataset"""
     d = {
         "dims": ("t0_dt"),
         "data": pd.date_range("2021-01-01", freq="5T", periods=1) + pd.Timedelta("30T"),
@@ -165,8 +177,8 @@ class DataSourceOutput(PydanticXArrayDataSet):
         encoding = {name: {"compression": "lzf"} for name in self.data_vars}
         self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
-    def from_xr_dataset(self):
-        pass
+    # def from_xr_dataset(self):
+    #     pass
 
 
 class DataSourceOutputML(BaseModel):

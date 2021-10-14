@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 
 
 class PV(DataSourceOutput):
+    """ Class to store PV data as a xr.Dataset with some validation """
+
     # Use to store xr.Dataset data
 
     __slots__ = []
@@ -42,7 +44,7 @@ class PV(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, seq_length_5, n_pv_systems_per_batch):
-
+        """ Create fake data """
         # make batch of arrays
         xr_arrays = [
             create_gsp_pv_dataset(

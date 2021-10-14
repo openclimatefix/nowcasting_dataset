@@ -7,6 +7,7 @@ import numpy as np
 
 
 def make_xr_data_array_to_tensor():
+    """ Add torch object to data array """
     if not hasattr(xr.DataArray, "torch"):
 
         @xr.register_dataarray_accessor("torch")
@@ -26,6 +27,7 @@ def make_xr_data_array_to_tensor():
 
 
 def make_xr_data_set_to_tensor():
+    """ Add torch object to dataset """
     if not hasattr(xr.Dataset, "torch"):
 
         @xr.register_dataset_accessor("torch")
@@ -35,7 +37,6 @@ def make_xr_data_set_to_tensor():
 
             def to_tensor(self, dims: List[str]) -> dict:
                 """Convert this Dataset to dictionary of torch tensors"""
-
                 torch_dict = {}
 
                 for dim in dims:

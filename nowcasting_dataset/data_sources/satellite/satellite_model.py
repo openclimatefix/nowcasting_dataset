@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 class Satellite(DataSourceOutput):
+    """ Class to store satellite data as a xr.Dataset with some validation """
+
     # Use to store xr.Dataset data
 
     __slots__ = []
@@ -36,8 +38,7 @@ class Satellite(DataSourceOutput):
         satellite_image_size_pixels=64,
         number_sat_channels=7,
     ) -> Satellite:
-        pass
-
+        """ Create fake data """
         # make batch of arrays
         xr_arrays = [
             create_image_array(
@@ -111,7 +112,6 @@ class SatelliteML(DataSourceOutputML):
     @staticmethod
     def from_xr_dataset(xr_dataset: xr.Dataset):
         """Change xr dataset to model. If data does not exist, then return None"""
-
         # to tensor
         satellite_batch_ml = xr_dataset.torch.to_tensor(["data", "time", "x", "y", "channels"])
 

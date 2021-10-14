@@ -82,7 +82,7 @@ class Batch(BaseModel):
 
     @staticmethod
     def fake(configuration: Configuration = Configuration()):
-
+        """ Make fake batch object """
         batch_size = configuration.process.batch_size
         seq_length_5 = configuration.process.seq_len_5_minutes
         seq_length_30 = configuration.process.seq_len_30_minutes
@@ -122,7 +122,6 @@ class Batch(BaseModel):
             path: the path where it will be saved. This can be local or in the cloud.
 
         """
-
         for data_source in self.data_sources:
             if data_source is not None:
                 # add encoding
@@ -249,7 +248,7 @@ class BatchML(Example):
 
     @staticmethod
     def from_batch(batch: Batch) -> BatchML:
-
+        """ Change batch to ML batch """
         data_sources_names = Example.__fields__.keys()
 
         data_sources_dict = {}

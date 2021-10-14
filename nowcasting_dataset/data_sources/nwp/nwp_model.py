@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 class NWP(DataSourceOutput):
+    """ Class to store NWP data as a xr.Dataset with some validation """
+
     # Use to store xr.Dataset data
 
     __slots__ = []
@@ -47,8 +49,7 @@ class NWP(DataSourceOutput):
         image_size_pixels=64,
         number_nwp_channels=7,
     ) -> NWP:
-        pass
-
+        """ Create fake data """
         # make batch of arrays
         xr_arrays = [
             create_image_array(
@@ -140,8 +141,7 @@ class NWPML(DataSourceOutputML):
 
     @staticmethod
     def from_xr_dataset(xr_dataset: xr.Dataset):
-        """Change xr dataset to model. If data does not exist, then return None"""
-
+        """Change xr dataset to model with tensors"""
         nwp_batch_ml = xr_dataset.torch.to_tensor(
             ["data", "target_time", "init_time", "x", "y", "channels"]
         )

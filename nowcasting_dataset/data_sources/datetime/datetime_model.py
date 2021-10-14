@@ -11,6 +11,8 @@ from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_da
 
 
 class Datetime(DataSourceOutput):
+    """ Class to store Datetime data as a xr.Dataset with some validation """
+
     # Use to store xr.Dataset data
 
     __slots__ = []
@@ -20,6 +22,7 @@ class Datetime(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, seq_length_5):
+        """ Create fake data """
         pass
 
         # delta_5 = pd.Timedelta(minutes=5)

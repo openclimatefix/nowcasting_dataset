@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class GSP(DataSourceOutput):
-    # Use to store xr.Dataset data
+    """ Class to store GSP data as a xr.Dataset with some validation """
 
     __slots__ = []
 
@@ -42,7 +42,7 @@ class GSP(DataSourceOutput):
         seq_length_30,
         n_gsp_per_batch,
     ):
-
+        """ Create fake data """
         # make batch of arrays
         xr_arrays = [
             create_gsp_pv_dataset(

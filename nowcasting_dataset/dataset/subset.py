@@ -1,3 +1,4 @@
+""" Take subsets of xr.datasets """
 import pandas as pd
 import numpy as np
 from typing import Optional, Union
@@ -110,7 +111,7 @@ def select_time_period(
     Note that class is edited so nothing is returned.
 
     Args:
-        keys: Keys in batch to use
+        x: dataset that is ot be reduced
         t0_dt_of_first_example: datetime of the current time (t0) in the first example of the batch
         history_minutes: How many minutes of history to use
         forecast_minutes: How many minutes of future data to use for forecasting

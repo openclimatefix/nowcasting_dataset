@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class Topographic(DataSourceOutput):
+    """ Class to store topographic data as a xr.Dataset with some validation """
+
     # Use to store xr.Dataset data
     __slots__ = []
 
@@ -22,7 +24,7 @@ class Topographic(DataSourceOutput):
 
     @staticmethod
     def fake(batch_size, image_size_pixels):
-
+        """ Create fake data """
         # make batch of arrays
         xr_arrays = [
             xr.DataArray(

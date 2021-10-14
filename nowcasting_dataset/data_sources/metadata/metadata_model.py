@@ -18,7 +18,7 @@ from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 
 
 class Metadata(DataSourceOutput):
-    # Use to store xr.Dataset data
+    """ Class to store metedata data as a xr.Dataset with some validation """
 
     __slots__ = []
 
@@ -28,7 +28,6 @@ class Metadata(DataSourceOutput):
     @staticmethod
     def fake(batch_size):
         """Make a xr dataset"""
-
         create_metadata_dataset()
 
         xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]

@@ -5,7 +5,8 @@ import os
 from pathlib import Path
 
 from nowcasting_dataset.dataset.batch import BatchML, GSPML, Batch
-from nowcasting_dataset.dataset.validate import FakeDataset
+
+# from nowcasting_dataset.dataset.validate import FakeDataset
 import torch
 from nowcasting_dataset.config.model import Configuration
 

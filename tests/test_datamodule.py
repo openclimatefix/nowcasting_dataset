@@ -13,7 +13,7 @@ from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.dataset import datamodule
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.split.split import SplitMethod
-from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.dataset.batch import BatchML
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -113,7 +113,7 @@ def test_data_module(config_filename):
 
     assert batch["batch_size"] == config.process.batch_size
 
-    _ = Batch(**batch)
+    _ = BatchML(**batch)
 
     # for key in list(Example.__annotations__.keys()):
     #     assert key in batch[0].keys()
@@ -177,4 +177,4 @@ def test_batch_to_batch_to_dataset():
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    _ = Batch(**batch)
+    _ = BatchML(**batch)

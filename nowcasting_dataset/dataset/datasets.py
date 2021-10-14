@@ -33,7 +33,7 @@ from nowcasting_dataset.consts import (
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
 
 from nowcasting_dataset.utils import set_fsspec_for_multiprocess, to_numpy
-from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.dataset.batch import BatchML
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         """ Length of dataset """
         return self.n_batches
 
-    def __getitem__(self, batch_idx: int) -> Batch:
+    def __getitem__(self, batch_idx: int) -> BatchML:
         """Returns a whole batch at once.
 
         Args:
@@ -198,7 +198,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         else:
             local_netcdf_folder = self.src_path
 
-        batch = Batch.load_netcdf(local_netcdf_folder, batch_idx=batch_idx)
+        batch = BatchML.load_netcdf(local_netcdf_folder, batch_idx=batch_idx)
         # netcdf_batch = xr.load_dataset(local_netcdf_filename)
         if self.cloud != "local":
             # remove files in a folder, but not the folder itself
@@ -333,7 +333,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         examples["batch_size"] = len(t0_datetimes)
 
-        b = Batch(**examples)
+        b = BatchML(**examples)
 
         # return as  dictionary because .... # TODO
         return b.dict()
@@ -373,12 +373,12 @@ def worker_init_fn(worker_id):
 
 
 def subselect_data(
-    batch: Batch,
+    batch: BatchML,
     required_keys: Union[Tuple[str], List[str]],
     history_minutes: int,
     forecast_minutes: int,
     current_timestep_index: Optional[int] = None,
-) -> Batch:
+) -> BatchML:
     """
     Subselects the data temporally. This function selects all data within the time range [t0 - history_minutes, t0 + forecast_minutes]
 

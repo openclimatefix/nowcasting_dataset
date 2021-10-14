@@ -3,7 +3,11 @@ from pydantic import Field, validator
 import numpy as np
 import xarray as xr
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput, pad_data
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    pad_data,
+    DataSourceOutput,
+)
 from nowcasting_dataset.consts import (
     Array,
     PV_YIELD,
@@ -14,13 +18,48 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_ID,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    pad_data,
+    DataSourceOutput,
+    create_gsp_pv_dataset,
+)
+from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
+
 from nowcasting_dataset.time import make_random_time_vectors
+from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class PV(DataSourceOutput):
+    # Use to store xr.Dataset data
+
+    __slots__ = []
+
+    # todo add validation here
+
+    @staticmethod
+    def fake(batch_size, seq_length_5, n_pv_systems_per_batch):
+
+        # make batch of arrays
+        xr_arrays = [
+            create_gsp_pv_dataset(
+                seq_length=seq_length_5,
+                freq="5T",
+                number_of_systems=n_pv_systems_per_batch,
+            )
+            for _ in range(batch_size)
+        ]
+
+        # make dataset
+        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+        return xr_dataset
+
+
+class PVML(DataSourceOutputML):
     """ Model for output of PV data """
 
     # Shape: [batch_size,] seq_length, width, height, channel
@@ -82,7 +121,7 @@ class PV(DataSourceOutput):
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
             )
 
-        return PV(
+        return PVML(
             batch_size=batch_size,
             pv_yield=np.random.randn(
                 batch_size,
@@ -180,7 +219,7 @@ class PV(DataSourceOutput):
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
         if PV_YIELD in xr_dataset.keys():
-            return PV(
+            return PVML(
                 batch_size=xr_dataset[PV_YIELD].shape[0],
                 pv_yield=xr_dataset[PV_YIELD],
                 pv_system_id=xr_dataset[PV_SYSTEM_ID],

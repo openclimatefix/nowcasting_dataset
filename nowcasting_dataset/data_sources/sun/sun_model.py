@@ -3,16 +3,46 @@ from pydantic import Field, validator
 import numpy as np
 import xarray as xr
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    DataSourceOutput,
+    create_sun_dataset,
+)
 from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
 from nowcasting_dataset.utils import coord_to_range
 from nowcasting_dataset.time import make_random_time_vectors
+from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 import logging
+from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 
 logger = logging.getLogger(__name__)
 
 
 class Sun(DataSourceOutput):
+    # Use to store xr.Dataset data
+    __slots__ = []
+
+    # todo add validation here
+
+    @staticmethod
+    def fake(batch_size, seq_length_5):
+
+        # create dataset with both azimuth and elevation, index with time
+        # make batch of arrays
+        xr_arrays = [
+            create_sun_dataset(
+                seq_length=seq_length_5,
+            )
+            for _ in range(batch_size)
+        ]
+
+        # make dataset
+        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+        return xr_dataset
+
+
+class SunML(DataSourceOutputML):
     """ Model for Sun features """
 
     sun_azimuth_angle: Array = Field(
@@ -55,7 +85,7 @@ class Sun(DataSourceOutput):
                 batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
             )
 
-        return Sun(
+        return SunML(
             batch_size=batch_size,
             sun_azimuth_angle=np.random.randn(
                 batch_size,
@@ -105,7 +135,7 @@ class Sun(DataSourceOutput):
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
         if SUN_AZIMUTH_ANGLE in xr_dataset.keys():
-            return Sun(
+            return SunML(
                 batch_size=xr_dataset[SUN_AZIMUTH_ANGLE].shape[0],
                 sun_azimuth_angle=xr_dataset[SUN_AZIMUTH_ANGLE],
                 sun_elevation_angle=xr_dataset[SUN_ELEVATION_ANGLE],

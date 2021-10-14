@@ -14,102 +14,123 @@ import logging
 from datetime import datetime
 
 from nowcasting_dataset.utils import to_numpy
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 
 logger = logging.getLogger(__name__)
 
 
-class DataSourceOutput(BaseModel):
+def create_image_array(
+    dims=("time", "x", "y", "channels"),
+    seq_length_5=19,
+    image_size_pixels=64,
+    number_channels=7,
+):
+    ALL_COORDS = {
+        "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
+        "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
+        "y": np.random.randint(low=0, high=1000, size=image_size_pixels),
+        "channels": np.arange(number_channels),
+    }
+    coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+    image_data_array = xr.DataArray(
+        np.random.randn(
+            seq_length_5,
+            image_size_pixels,
+            image_size_pixels,
+            number_channels,
+        ),
+        coords=coords,
+    )  # Fake data for testing!
+    return image_data_array
+
+
+def create_gsp_pv_dataset(
+    dims=("time", "system"),
+    freq="5T",
+    seq_length=19,
+    number_of_systems=128,
+):
+
+    ALL_COORDS = {
+        "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
+        "system": np.random.randint(low=0, high=1000, size=number_of_systems),
+    }
+    coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+    data_array = xr.DataArray(
+        np.random.randn(
+            seq_length,
+            number_of_systems,
+        ),
+        coords=coords,
+    )  # Fake data for testing!
+
+    data = convert_data_array_to_dataset(data_array)
+
+    x_coords = xr.DataArray(
+        data=np.sort(np.random.randn(number_of_systems)),
+        dims=["system_index"],
+        coords=dict(
+            system_index=range(number_of_systems),
+        ),
+    )
+
+    y_coords = xr.DataArray(
+        data=np.sort(np.random.randn(number_of_systems)),
+        dims=["system_index"],
+        coords=dict(
+            system_index=range(number_of_systems),
+        ),
+    )
+
+    data["x_coords"] = x_coords
+    data["y_coords"] = y_coords
+
+    return data
+
+
+def create_sun_dataset(
+    dims=("time",),
+    freq="5T",
+    seq_length=19,
+):
+    ALL_COORDS = {
+        "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
+    }
+    coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+    data_array = xr.DataArray(
+        np.random.randn(
+            seq_length,
+        ),
+        coords=coords,
+    )  # Fake data for testing!
+
+    data = convert_data_array_to_dataset(data_array)
+    sun = data.rename({"data": "elevation"})
+    sun["azimuth"] = data.data
+
+    return sun
+
+
+class DataSourceOutput(PydanticXArrayDataSet):
     """General Data Source output pydantic class.
 
     Data source output classes should inherit from this class
     """
 
-    class Config:
-        """ Allowed classes e.g. tensor.Tensor"""
-
-        # TODO maybe there is a better way to do this
-        arbitrary_types_allowed = True
-
-    batch_size: int = Field(
-        0,
-        ge=0,
-        description="The size of this batch. If the batch size is 0, "
-        "then this item stores one data item i.e Example",
-    )
+    __slots__ = []
 
     def get_name(self) -> str:
-        """ Get the name of the class """
+        """Get the name of the class"""
         return self.__class__.__name__.lower()
 
-    def to_numpy(self):
-        """Change to numpy"""
-        for k, v in self.dict().items():
-            self.__setattr__(k, to_numpy(v))
-
-    def to_xr_data_array(self):
-        """ Change to xr DataArray"""
-        raise NotImplementedError()
-
-    @staticmethod
-    def create_batch_from_examples(data):
-        """
-        Join a list of data source items to a batch.
-
-        Note that this only works for numpy objects, so objects are changed into numpy
-        """
-        _ = [d.to_numpy() for d in data]
-
-        # use the first item in the list, and then update each item
-        batch = data[0]
-        for k in batch.dict().keys():
-
-            # set batch size to the list of the items
-            if k == "batch_size":
-                batch.batch_size = len(data)
-            else:
-
-                # get list of one variable from the list of data items.
-                one_variable_list = [d.__getattribute__(k) for d in data]
-                batch.__setattr__(k, np.stack(one_variable_list, axis=0))
-
-        return batch
-
-    def split(self) -> List[DataSourceOutput]:
-        """
-        Split the datasource from a batch to a list of items
-
-        Returns: List of single data source items
-        """
-        cls = self.__class__
-
-        items = []
-        for batch_idx in range(self.batch_size):
-            d = {k: v[batch_idx] for k, v in self.dict().items() if k != "batch_size"}
-            d["batch_size"] = 0
-            items.append(cls(**d))
-
-        return items
-
-    def to_xr_dataset(self, **kwargs):
-        """ Make a xr dataset. Each data source needs to define this """
-        raise NotImplementedError
-
-    def from_xr_dataset(self):
-        """ Load from xr dataset. Each data source needs to define this """
-        raise NotImplementedError
-
-    def get_datetime_index(self):
-        """ Datetime index for the data """
-        pass
-
-    def save_netcdf(self, batch_i: int, path: Path, xr_dataset: xr.Dataset):
+    def save_netcdf(self, batch_i: int, path: Path):
         """
         Save batch to netcdf file
 
         Args:
             batch_i: the batch id, used to make the filename
             path: the path where it will be saved. This can be local or in the cloud.
-            xr_dataset: xr dataset that has batch information in it
         """
         filename = get_netcdf_filename(batch_i)
 
@@ -124,77 +145,108 @@ class DataSourceOutput(BaseModel):
         # make file
         local_filename = os.path.join(folder, filename)
 
-        encoding = {name: {"compression": "lzf"} for name in xr_dataset.data_vars}
-        xr_dataset.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+        encoding = {name: {"compression": "lzf"} for name in self.data_vars}
+        self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
-    def select_time_period(
-        self,
-        keys: List[str],
-        history_minutes: int,
-        forecast_minutes: int,
-        t0_dt_of_first_example: Union[datetime, pd.Timestamp],
-    ):
-        """
-        Selects a subset of data between the indicies of [start, end] for each key in keys
+    def from_xr_dataset(self):
+        pass
 
-        Note that class is edited so nothing is returned.
 
-        Args:
-            keys: Keys in batch to use
-            t0_dt_of_first_example: datetime of the current time (t0) in the first example of the batch
-            history_minutes: How many minutes of history to use
-            forecast_minutes: How many minutes of future data to use for forecasting
+class DataSourceOutputML(BaseModel):
+    """General Data Source output pydantic class.
 
-        """
-        logger.debug(
-            f"Taking a sub-selection of the batch data based on a history minutes of {history_minutes} "
-            f"and forecast minutes of {forecast_minutes}"
-        )
+    Data source output classes should inherit from this class
+    """
 
-        start_time_of_first_batch = t0_dt_of_first_example - pd.to_timedelta(
-            f"{history_minutes} minute 30 second"
-        )
-        end_time_of_first_example = t0_dt_of_first_example + pd.to_timedelta(
-            f"{forecast_minutes} minute 30 second"
-        )
+    class Config:
+        """Allowed classes e.g. tensor.Tensor"""
 
-        logger.debug(f"New start time for first batch is {start_time_of_first_batch}")
-        logger.debug(f"New end time for first batch is {end_time_of_first_example}")
+        # TODO maybe there is a better way to do this
+        arbitrary_types_allowed = True
 
-        start_time_of_first_example = to_numpy(start_time_of_first_batch)
-        end_time_of_first_example = to_numpy(end_time_of_first_example)
+    batch_size: int = Field(
+        0,
+        ge=0,
+        description="The size of this batch. If the batch size is 0, "
+        "then this item stores one data item i.e Example",
+    )
 
-        if self.get_datetime_index() is not None:
+    def get_name(self) -> str:
+        """Get the name of the class"""
+        return self.__class__.__name__.lower()
 
-            time_of_first_example = to_numpy(pd.to_datetime(self.get_datetime_index()[0]))
+    def get_datetime_index(self):
+        """Datetime index for the data"""
+        pass
 
-            # find the start and end index, that we will then use to slice the data
-            start_i, end_i = np.searchsorted(
-                time_of_first_example, [start_time_of_first_example, end_time_of_first_example]
-            )
-
-            # slice all the data
-            for key in keys:
-                if "time" in self.__getattribute__(key).dims:
-                    self.__setattr__(
-                        key, self.__getattribute__(key).isel(time=slice(start_i, end_i))
-                    )
-                elif "time_30" in self.__getattribute__(key).dims:
-                    self.__setattr__(
-                        key, self.__getattribute__(key).isel(time_30=slice(start_i, end_i))
-                    )
-
-                logger.debug(f"{self.__class__.__name__} {key}: {self.__getattribute__(key).shape}")
+    # def select_time_period(
+    #     self,
+    #     keys: List[str],
+    #     history_minutes: int,
+    #     forecast_minutes: int,
+    #     t0_dt_of_first_example: Union[datetime, pd.Timestamp],
+    # ):
+    #     """
+    #     Selects a subset of data between the indicies of [start, end] for each key in keys
+    #
+    #     Note that class is edited so nothing is returned.
+    #
+    #     Args:
+    #         keys: Keys in batch to use
+    #         t0_dt_of_first_example: datetime of the current time (t0) in the first example of the batch
+    #         history_minutes: How many minutes of history to use
+    #         forecast_minutes: How many minutes of future data to use for forecasting
+    #
+    #     """
+    #     logger.debug(
+    #         f"Taking a sub-selection of the batch data based on a history minutes of {history_minutes} "
+    #         f"and forecast minutes of {forecast_minutes}"
+    #     )
+    #
+    #     start_time_of_first_batch = t0_dt_of_first_example - pd.to_timedelta(
+    #         f"{history_minutes} minute 30 second"
+    #     )
+    #     end_time_of_first_example = t0_dt_of_first_example + pd.to_timedelta(
+    #         f"{forecast_minutes} minute 30 second"
+    #     )
+    #
+    #     logger.debug(f"New start time for first batch is {start_time_of_first_batch}")
+    #     logger.debug(f"New end time for first batch is {end_time_of_first_example}")
+    #
+    #     start_time_of_first_example = to_numpy(start_time_of_first_batch)
+    #     end_time_of_first_example = to_numpy(end_time_of_first_example)
+    #
+    #     if self.get_datetime_index() is not None:
+    #
+    #         time_of_first_example = to_numpy(pd.to_datetime(self.get_datetime_index()[0]))
+    #
+    #         # find the start and end index, that we will then use to slice the data
+    #         start_i, end_i = np.searchsorted(
+    #             time_of_first_example, [start_time_of_first_example, end_time_of_first_example]
+    #         )
+    #
+    #         # slice all the data
+    #         for key in keys:
+    #             if "time" in self.__getattribute__(key).dims:
+    #                 self.__setattr__(
+    #                     key, self.__getattribute__(key).isel(time=slice(start_i, end_i))
+    #                 )
+    #             elif "time_30" in self.__getattribute__(key).dims:
+    #                 self.__setattr__(
+    #                     key, self.__getattribute__(key).isel(time_30=slice(start_i, end_i))
+    #                 )
+    #
+    #             logger.debug(f"{self.__class__.__name__} {key}: {self.__getattribute__(key).shape}")
 
 
 def pad_nans(array, pad_width) -> np.ndarray:
-    """ Pad nans with nans"""
+    """Pad nans with nans"""
     array = array.astype(np.float32)
     return np.pad(array, pad_width, constant_values=np.NaN)
 
 
 def pad_data(
-    data: DataSourceOutput,
+    data: DataSourceOutputML,
     pad_size: int,
     one_dimensional_arrays: List[str],
     two_dimensional_arrays: List[str],

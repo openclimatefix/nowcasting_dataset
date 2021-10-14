@@ -12,6 +12,7 @@ import xarray as xr
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset import square
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -115,16 +116,16 @@ class DataSource:
         examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
-            output: DataSourceOutput = self.get_example(t0_datetime, x_location, y_location)
+            output: xr.Dataset = self.get_example(t0_datetime, x_location, y_location)
 
-            if self.convert_to_numpy:
-                output.to_numpy()
+            # if self.convert_to_numpy:
+            #     output.to_numpy()
             examples.append(output)
 
         # could add option here, to save each data source using
         # 1. # DataSourceOutput.to_xr_dataset() to make it a dataset
         # 2. DataSourceOutput.save_netcdf(), save to netcdf
-        return DataSourceOutput.create_batch_from_examples(examples)
+        return join_data_set_to_batch_dataset(examples)
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
@@ -157,7 +158,7 @@ class DataSource:
         t0_dt: pd.Timestamp,  #: Datetime of "now": The most recent obs.
         x_meters_center: Number,  #: Centre, in OSGB coordinates.
         y_meters_center: Number,  #: Centre, in OSGB coordinates.
-    ) -> DataSourceOutput:
+    ) -> xr.Dataset:
         """Must be overridden by child classes."""
         raise NotImplementedError()
 

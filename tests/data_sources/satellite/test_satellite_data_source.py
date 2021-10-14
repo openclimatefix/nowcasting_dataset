@@ -17,7 +17,7 @@ def test_datetime_index(sat_data_source):
     assert isinstance(datetimes, pd.DatetimeIndex)
     assert len(datetimes) > 0
     assert len(np.unique(datetimes)) == len(datetimes)
-    assert np.all(np.diff(datetimes.astype(int)) > 0)
+    assert np.all(np.diff(datetimes.view(int)) > 0)
 
 
 @pytest.mark.parametrize(
@@ -38,7 +38,7 @@ def test_get_example(sat_data_source, x, y, left, right, top, bottom):
     sat_data_source.open()
     t0_dt = pd.Timestamp("2019-01-01T13:00")
     example = sat_data_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
-    sat_data = example.sat_data
+    sat_data = example
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]
     # sat_data.y is top-to-bottom.

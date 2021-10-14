@@ -6,6 +6,7 @@ from numbers import Number
 from typing import List, Tuple, Union, Optional
 from pathlib import Path
 import numpy as np
+import xarray as xr
 from datetime import datetime
 
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
@@ -28,7 +29,7 @@ class SunDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Sun:
+    ) -> xr.Dataset:
         """
         Get example data from t0_dt and x and y xoordinates
 
@@ -66,11 +67,10 @@ class SunDataSource(DataSource):
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 
-        sun = Sun(
-            sun_azimuth_angle=azimuth.values,
-            sun_elevation_angle=elevation.values,
-            sun_datetime_index=azimuth.index.values,
-        )
+        azimuth = azimuth.to_xarray()
+        elevation = elevation.to_xarray()
+
+        sun = xr.Dataset({"azimuth": azimuth, "elevation": elevation})
 
         return sun
 

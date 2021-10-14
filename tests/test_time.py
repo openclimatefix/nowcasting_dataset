@@ -69,8 +69,8 @@ def test_datetime_features_in_example():
     assert len(example.hour_of_day_sin) == len(index)
     for col_name in ["hour_of_day_sin", "hour_of_day_cos"]:
         np.testing.assert_array_almost_equal(
-            example.__getattribute__(col_name),
-            np.tile(example.__getattribute__(col_name)[:24], reps=6),
+            getattr(example, col_name),
+            np.tile(getattr(example, col_name)[:24], reps=6),
         )
 
 

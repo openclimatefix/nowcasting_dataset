@@ -28,16 +28,16 @@ from nowcasting_dataset.consts import (
 )
 
 # from nowcasting_dataset.dataset import example
-from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.dataset.batch import BatchML
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
 
 
 def test_subselect_date(test_data_folder):
 
     # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
-    x = Batch.fake()
+    x = BatchML.fake()
     x = x.batch_to_dict_dataset()
-    x = Batch.load_batch_from_dict_dataset(x)
+    x = BatchML.load_batch_from_dict_dataset(x)
 
     batch = subselect_data(
         x,
@@ -54,9 +54,9 @@ def test_subselect_date(test_data_folder):
 def test_subselect_date_with_to_dt(test_data_folder):
 
     # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
-    x = Batch.fake()
+    x = BatchML.fake()
     x = x.batch_to_dict_dataset()
-    x = Batch.load_batch_from_dict_dataset(x)
+    x = BatchML.load_batch_from_dict_dataset(x)
 
     batch = subselect_data(
         x,
@@ -143,7 +143,7 @@ def test_get_dataloaders_gcp(configuration: Configuration):
 
     train_dataset.per_worker_init(1)
     t = iter(train_dataset)
-    data: Batch = next(t)
+    data: BatchML = next(t)
 
     # image
     z = data.satellite.sat_data[0][0][:, :, 0]

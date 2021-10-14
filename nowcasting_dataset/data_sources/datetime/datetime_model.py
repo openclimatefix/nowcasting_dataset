@@ -2,12 +2,42 @@
 from pydantic import validator
 import xarray as xr
 import numpy as np
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+import pandas as pd
+import random
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
 from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
 from nowcasting_dataset.utils import coord_to_range
+from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 
 class Datetime(DataSourceOutput):
+    # Use to store xr.Dataset data
+
+    __slots__ = []
+
+    # todo add validation here
+    pass
+
+    @staticmethod
+    def fake(batch_size, seq_length_5):
+        pass
+
+        # delta_5 = pd.Timedelta(minutes=5)
+        #
+        # data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
+        # t0_dt = pd.Series(random.choices(data_range, k=batch_size))
+        # time_5 = (
+        #         pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_length_5)])
+        # )
+        #
+        # xr_arrays = [datetime_features_in_example(time_5[i]) for i in range(seq_length_5)]
+        #
+        # # xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+        #
+        # return xr_dataset
+
+
+class DatetimeML(DataSourceOutputML):
     """ Model for output of datetime data """
 
     hour_of_day_sin: Array  #: Shape: [batch_size,] seq_length
@@ -42,7 +72,7 @@ class Datetime(DataSourceOutput):
     @staticmethod
     def fake(batch_size, seq_length_5):
         """ Make a fake Datetime object """
-        return Datetime(
+        return DatetimeML(
             batch_size=batch_size,
             hour_of_day_sin=np.random.randn(
                 batch_size,
@@ -88,7 +118,7 @@ class Datetime(DataSourceOutput):
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
         if "hour_of_day_sin" in xr_dataset.keys():
-            return Datetime(
+            return DatetimeML(
                 batch_size=xr_dataset["hour_of_day_sin"].shape[0],
                 hour_of_day_sin=xr_dataset["hour_of_day_sin"],
                 hour_of_day_cos=xr_dataset["hour_of_day_cos"],

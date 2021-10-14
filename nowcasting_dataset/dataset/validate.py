@@ -30,7 +30,7 @@ from nowcasting_dataset.consts import (
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, logger
 
 # from nowcasting_dataset.dataset.example import Example
-from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.dataset.batch import BatchML
 
 
 class ValidatorDataset:
@@ -69,7 +69,7 @@ class ValidatorDataset:
 
             # change dict to Batch, this does some validation
             if type(batch) == dict:
-                batch = Batch(**batch)
+                batch = BatchML(**batch)
 
             all_day_from_batch_unique = self.validate_and_get_day_datetimes_for_one_batch(
                 batch=batch
@@ -81,7 +81,7 @@ class ValidatorDataset:
 
         self.day_datetimes = day_datetimes
 
-    def validate_and_get_day_datetimes_for_one_batch(self, batch: Batch):
+    def validate_and_get_day_datetimes_for_one_batch(self, batch: BatchML):
         """
         For one batch, validate, and return the day datetimes in that batch
 
@@ -131,7 +131,7 @@ class FakeDataset(torch.utils.data.Dataset):
         Returns: Dictionary of random data
 
         """
-        x = Batch.fake(configuration=self.configuration)
+        x = BatchML.fake(configuration=self.configuration)
         x.change_type_to_numpy()
 
         return x.dict()

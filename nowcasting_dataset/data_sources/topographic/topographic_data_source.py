@@ -112,23 +112,23 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        return self._put_data_into_example(selected_data)
+        return xr.Dataset({"data": selected_data})
 
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> Topographic:
-        """
-        Insert the data and coordinates into an Example
-
-        Args:
-            selected_data: DataArray containing the data to insert
-
-        Returns:
-            Example containing the Topographic data
-        """
-        return Topographic(
-            topo_data=selected_data,
-            topo_x_coords=selected_data.x,
-            topo_y_coords=selected_data.y,
-        )
+    # def _put_data_into_example(self, selected_data: xr.DataArray) -> TopographicML:
+    #     """
+    #     Insert the data and coordinates into an Example
+    #
+    #     Args:
+    #         selected_data: DataArray containing the data to insert
+    #
+    #     Returns:
+    #         Example containing the Topographic data
+    #     """
+    #     return TopographicML(
+    #         topo_data=selected_data,
+    #         topo_x_coords=selected_data.x,
+    #         topo_y_coords=selected_data.y,
+    #     )
 
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp

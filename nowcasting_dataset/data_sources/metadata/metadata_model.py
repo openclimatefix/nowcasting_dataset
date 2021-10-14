@@ -5,13 +5,23 @@ import xarray as xr
 import torch
 from pydantic import validator, Field
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
 from nowcasting_dataset.time import make_random_time_vectors
+from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 
 # seems to be a pandas dataseries
 
 
-class Metadata(DataSourceOutput):
+class Metadata(PydanticXArrayDataSet):
+    # Use to store xr.Dataset data
+
+    __slots__ = []
+
+    # todo add validation here
+    pass
+
+
+class MetadataML(DataSourceOutputML):
     """Model for output of general/metadata data"""
 
     # TODO add descriptions
@@ -34,7 +44,7 @@ class Metadata(DataSourceOutput):
                 batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=0
             )
 
-        return Metadata(
+        return MetadataML(
             batch_size=batch_size,
             t0_dt=t0_dt,
             x_meters_center=np.random.randn(
@@ -65,7 +75,7 @@ class Metadata(DataSourceOutput):
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """Change xr dataset to model. If data does not exist, then return None"""
-        return Metadata(
+        return MetadataML(
             batch_size=xr_dataset["t0_dt"].shape[0],
             t0_dt=xr_dataset["t0_dt"],
             x_meters_center=xr_dataset["x_meters_center"],

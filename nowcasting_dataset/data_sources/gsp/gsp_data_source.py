@@ -21,10 +21,11 @@ from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 # from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
 from nowcasting_dataset.utils import scale_to_0_to_1
-from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSPML
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +158,7 @@ class GSPDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> GSP:
+    ) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
 
@@ -202,17 +203,43 @@ class GSPDataSource(ImageDataSource):
         gsp_x_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_x
         gsp_y_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_y
 
-        # Save data into the Example dict...
-
-        gsp = GSP(
-            gsp_id=all_gsp_ids.values,
-            gsp_yield=selected_gsp_power.values,
-            gsp_x_coords=gsp_x_coords.values,
-            gsp_y_coords=gsp_y_coords.values,
-            gsp_datetime_index=selected_gsp_power.index.values,
+        # convert to data array
+        da = xr.DataArray(
+            data=selected_gsp_power.values,
+            dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
         )
 
-        gsp.pad()
+        # convert to dataset
+        gsp = convert_data_array_to_dataset(da)
+
+        # add gsp x coords
+        gsp_x_coords = xr.DataArray(
+            data=gsp_x_coords.values,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_gsp_ids.values)),
+            ),
+        )
+
+        gsp_y_coords = xr.DataArray(
+            data=gsp_y_coords.values,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_gsp_ids.values)),
+            ),
+        )
+        gsp["x_coords"] = gsp_x_coords
+        gsp["y_coords"] = gsp_y_coords
+
+        # pad out so that there are always 32 gsp
+        pad_n = 32 - len(gsp.id_index)
+        gsp = gsp.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)))
+
+        gsp.__setitem__("id_index", range(32))
 
         return gsp
 

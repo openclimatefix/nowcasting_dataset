@@ -7,8 +7,9 @@ import pandas as pd
 import numpy as np
 
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
+from nowcasting_dataset.data_sources.metadata.metadata_model import MetadataML
 from nowcasting_dataset.utils import to_numpy
+from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 
 @dataclass
@@ -23,7 +24,7 @@ class MetadataDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Metadata:
+    ) -> MetadataML:
         """
         Get example data
 
@@ -42,7 +43,7 @@ class MetadataDataSource(DataSource):
         else:
             object_at_center_label = 0
 
-        return Metadata(
+        return MetadataML(
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),
             y_meters_center=np.array(y_meters_center),

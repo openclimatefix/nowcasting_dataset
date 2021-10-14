@@ -29,44 +29,7 @@ from nowcasting_dataset.consts import (
 
 # from nowcasting_dataset.dataset import example
 from nowcasting_dataset.dataset.batch import BatchML
-from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn, subselect_data
-
-
-def test_subselect_date(test_data_folder):
-
-    # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
-    x = BatchML.fake()
-    x = x.batch_to_dict_dataset()
-    x = BatchML.load_batch_from_dict_dataset(x)
-
-    batch = subselect_data(
-        x,
-        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
-        current_timestep_index=7,
-        history_minutes=10,
-        forecast_minutes=10,
-    )
-
-    assert batch.satellite.sat_data.shape[1] == 5
-    assert batch.nwp.nwp.shape[2] == 5
-
-
-def test_subselect_date_with_to_dt(test_data_folder):
-
-    # x = Batch.load_netcdf(f"{test_data_folder}/0.nc")
-    x = BatchML.fake()
-    x = x.batch_to_dict_dataset()
-    x = BatchML.load_batch_from_dict_dataset(x)
-
-    batch = subselect_data(
-        x,
-        required_keys=(NWP_DATA, NWP_TARGET_TIME, SATELLITE_DATA, SATELLITE_DATETIME_INDEX),
-        history_minutes=10,
-        forecast_minutes=10,
-    )
-
-    assert batch.satellite.sat_data.shape[1] == 5
-    assert batch.nwp.nwp.shape[2] == 5
+from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
 
 
 def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
@@ -105,12 +68,14 @@ def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
     t = iter(train_dataset)
     data = next(t)
 
-    sat_data = data.satellite.sat_data
+    batch_ml = BatchML(**data)
+
+    sat_data = batch_ml.satellite.data
 
     # TODO
     # Sat is in 5min increments, so should have 2 history + current + 2 future
     assert sat_data.shape[1] == 5
-    assert data.nwp.nwp.shape[2] == 5
+    assert batch_ml.nwp.data.shape[2] == 5
 
     # Make sure file isn't deleted!
     assert os.path.exists(os.path.join(DATA_PATH, "metadata/0.nc"))

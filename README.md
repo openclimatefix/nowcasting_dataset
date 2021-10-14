@@ -7,6 +7,8 @@ This code combines several data sources including:
 * Numerical Weather Predictions (NWPs.  UK Met Office UKV model from CEDA)
 * Solar PV power timeseries data (from PVOutput.org, downloaded using
   our [pvoutput Python code](https://github.com/openclimatefix/pvoutput).)
+* Estimated total solar PV generation for each of the ~350 "grid supply points"
+  (GSPs) in Britain from [Sheffield Solar's PV Live Regional API](https://www.solar.sheffield.ac.uk/pvlive/regional/).
 * Topographic data.
 * The Sun's azimuth and angle.
 
@@ -86,33 +88,9 @@ Download PV timeseries data from PVOutput.org using
 
 Request access to the [UK Met Office data on CEDA](https://catalogue.ceda.ac.uk/uuid/f47bc62786394626b665e23b658d385f).
 
-Once you have a username and password, download using:
-
-```shell
-wget --user=<username> --password=<password> --recursive -nH --cut-dirs=5 --no-clobber \
---reject-regex "[[:digit:]]{8}(03|09|15|21)00.*\.grib$" \
---reject-regex "T120\.grib$" \
---reject-regex "Wholesale5.*\.grib$" \
-ftp://ftp.ceda.ac.uk/badc/ukmo-nwp/data/ukv-grib
-```
-
-The Met Office data on CEDA goes back to March 2016.  Using this `wget` command will download about
-4 terabytes per year of data.
-
-(You probably want to run this in a `gnu screen` session if you're SSH'ing into a VM or remote server).
-
-What are all those `--reject-regex` instructions doing?
-
-* `--reject-regex "[[:digit:]]{8}(03|09|15|21)00.*\.grib$"` rejects all NWPs initialised at
-  3, 9, 15, or 21 hours (and so you end up with "only" four initialisations per day: 00, 06, 12, 18).
-* `--reject-regex "T120\.grib$"` rejects the `T120` files, which contain forecast steps from
-  2 days and 9 hours ahead, to 5 days ahead, in 3-hourly increments.  So we accept the
-  `Wholesale[1234].grib` files (steps from 00:00 to 1 day and 12 hours ahead, in hourly increments)
-  and `Wholesale[1234]T54.grib` files (step runs from 1 day and 13 hours ahead to 2 days and 6 hours
-  ahead.  Hourly increments from 1 day and 13 hours ahead to 2 days ahead.
-  Then 3-hourly increments).
-* `--reject-regex "Wholesale5.*\.grib$"` rejects the `Wholesale5` files, which are just static
-  topography data, so no need to download multiple copies of this data!
+Once you have a username and password, download using
+[`scripts/download_UK_Met_Office_NWPs_from_CEDA.sh`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/scripts/download_UK_Met_Office_NWPs_from_CEDA.sh).
+Please see the comments at the top of the script for instructions.
 
 Detailed docs of the Met Office data is available [here](http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf).
 

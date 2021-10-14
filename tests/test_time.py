@@ -41,43 +41,45 @@ def test_intersection_of_datetimeindexes():
 
 
 # TODO: Delete this test.
-@pytest.mark.parametrize("total_seq_len", [2, 3, 12])
-def test_get_start_datetimes_1(total_seq_len):
+@pytest.mark.parametrize("total_seq_length", [2, 3, 12])
+def test_get_start_datetimes_1(total_seq_length):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
-    start_datetimes = nd_time.get_start_datetimes(dt_index1, total_seq_len=total_seq_len)
-    np.testing.assert_array_equal(start_datetimes, dt_index1[: 1 - total_seq_len])
+    start_datetimes = nd_time.get_start_datetimes(dt_index1, total_seq_length=total_seq_length)
+    np.testing.assert_array_equal(start_datetimes, dt_index1[: 1 - total_seq_length])
 
 
 # TODO: Delete this test.
-@pytest.mark.parametrize("total_seq_len", [2, 3, 12])
-def test_get_start_datetimes_2(total_seq_len):
+@pytest.mark.parametrize("total_seq_length", [2, 3, 12])
+def test_get_start_datetimes_2(total_seq_length):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
     dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq="5 min")
     dt_index = dt_index1.union(dt_index2)
-    start_datetimes = nd_time.get_start_datetimes(dt_index, total_seq_len=total_seq_len)
-    correct_start_datetimes = dt_index1[: 1 - total_seq_len].union(dt_index2[: 1 - total_seq_len])
+    start_datetimes = nd_time.get_start_datetimes(dt_index, total_seq_length=total_seq_length)
+    correct_start_datetimes = dt_index1[: 1 - total_seq_length].union(
+        dt_index2[: 1 - total_seq_length]
+    )
     np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)
 
 
-@pytest.mark.parametrize("min_seq_len", [2, 3, 12])
-def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_len):
+@pytest.mark.parametrize("min_seq_length", [2, 3, 12])
+def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_length):
     freq = pd.Timedelta(5, unit="minutes")
     dt_index = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
     periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
-        dt_index, min_seq_len=min_seq_len, max_gap=freq
+        dt_index, min_seq_length=min_seq_length, max_gap=freq
     )
     correct_periods = pd.DataFrame([{"start_dt": dt_index[0], "end_dt": dt_index[-1]}])
     pd.testing.assert_frame_equal(periods, correct_periods)
 
 
-@pytest.mark.parametrize("min_seq_len", [2, 3, 12])
-def test_get_contiguous_time_periods_2_with_2_chunks(min_seq_len):
+@pytest.mark.parametrize("min_seq_length", [2, 3, 12])
+def test_get_contiguous_time_periods_2_with_2_chunks(min_seq_length):
     freq = pd.Timedelta(5, unit="minutes")
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
     dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq=freq)
     dt_index = dt_index1.union(dt_index2)
     periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
-        dt_index, min_seq_len=min_seq_len, max_gap=freq
+        dt_index, min_seq_length=min_seq_length, max_gap=freq
     )
     correct_periods = pd.DataFrame(
         [
@@ -103,14 +105,14 @@ def test_datetime_features_in_example():
 @pytest.mark.parametrize("forecast_length", [2, 3, 12])
 def test_get_t0_datetimes(history_length, forecast_length):
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="30T")
-    total_seq_len = history_length + forecast_length + 1
-    sample_period_dur = THIRTY_MINUTES
-    history_dur = sample_period_dur * history_length
+    total_seq_length = history_length + forecast_length + 1
+    sample_period_duration = THIRTY_MINUTES
+    history_duration = sample_period_duration * history_length
 
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=index,
-        total_seq_len=total_seq_len,
-        history_dur=history_dur,
+        total_seq_length=total_seq_length,
+        history_duration=history_duration,
         max_gap=THIRTY_MINUTES,
     )
 
@@ -122,16 +124,16 @@ def test_get_t0_datetimes(history_length, forecast_length):
 def test_get_t0_datetimes_night():
     history_length = 6
     forecast_length = 12
-    sample_period_dur = FIVE_MINUTES
-    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq=sample_period_dur)
-    total_seq_len = history_length + forecast_length + 1
-    history_dur = history_length * sample_period_dur
+    sample_period_duration = FIVE_MINUTES
+    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq=sample_period_duration)
+    total_seq_length = history_length + forecast_length + 1
+    history_duration = history_length * sample_period_duration
 
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=index,
-        total_seq_len=total_seq_len,
-        history_dur=history_dur,
-        max_gap=sample_period_dur,
+        total_seq_length=total_seq_length,
+        history_duration=history_duration,
+        max_gap=sample_period_duration,
     )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length

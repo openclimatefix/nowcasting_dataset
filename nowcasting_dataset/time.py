@@ -120,14 +120,14 @@ def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) ->
 
 # TODO: Delete this and its tests!
 def get_start_datetimes(
-    datetimes: pd.DatetimeIndex, total_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+    datetimes: pd.DatetimeIndex, total_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
 ) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
-    at least total_seq_len contiguous timesteps ahead.
+    at least total_seq_length contiguous timesteps ahead.
 
-    For each contiguous_segment, remove the last total_seq_len datetimes,
+    For each contiguous_segment, remove the last total_seq_length datetimes,
     and then check the resulting segment is large enough.
 
     max_gap defines the threshold for what constitutes a 'gap' between
@@ -136,7 +136,7 @@ def get_start_datetimes(
     Throw away any timesteps in a sequence shorter than min_timesteps long.
     """
     assert len(datetimes) > 0
-    min_timesteps = total_seq_len * 2
+    min_timesteps = total_seq_length * 2
     assert min_timesteps > 1
 
     gap_mask = np.diff(datetimes) > max_gap
@@ -157,7 +157,7 @@ def get_start_datetimes(
     for next_start_i in segment_boundaries:
         n_timesteps = next_start_i - start_i
         if n_timesteps >= min_timesteps:
-            end_i = next_start_i + 1 - total_seq_len
+            end_i = next_start_i + 1 - total_seq_length
             start_dt_index.append(datetimes[start_i:end_i])
         start_i = next_start_i
 
@@ -167,13 +167,13 @@ def get_start_datetimes(
 
 
 def get_contiguous_time_periods(
-    datetimes: pd.DatetimeIndex, min_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+    datetimes: pd.DatetimeIndex, min_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
 ) -> pd.DataFrame:
     """Returns a pd.DataFrame where each row records the boundary of a contiguous time periods.
 
     Args:
       datetimes: The pd.DatetimeIndex of the timeseries. Must be sorted.
-      min_seq_len: Sequences of min_seq_len or shorter will be discarded.
+      min_seq_length: Sequences of min_seq_length or shorter will be discarded.
       max_gap: If any pair of consecutive `datetimes` is more than `max_gap` apart, then this pair
         of `datetimes` will be considered a "gap" between two contiguous sequences.
 
@@ -183,7 +183,7 @@ def get_contiguous_time_periods(
     """
     # Sanity checks.
     assert len(datetimes) > 0
-    assert min_seq_len > 1
+    assert min_seq_length > 1
     assert datetimes.is_monotonic_increasing
     assert datetimes.is_unique
 
@@ -205,7 +205,7 @@ def get_contiguous_time_periods(
     start_i = 0
     for next_start_i in segment_boundaries:
         n_timesteps = next_start_i - start_i
-        if n_timesteps > min_seq_len:
+        if n_timesteps > min_seq_length:
             end_i = next_start_i - 1
             period = {"start_dt": datetimes[start_i], "end_dt": datetimes[end_i]}
             periods.append(period)
@@ -218,8 +218,8 @@ def get_contiguous_time_periods(
 
 def get_t0_datetimes(
     datetimes: pd.DatetimeIndex,
-    total_seq_len: int,
-    history_dur: pd.Timedelta,
+    total_seq_length: int,
+    history_duration: pd.Timedelta,
     max_gap: pd.Timedelta = FIVE_MINUTES,
 ) -> pd.DatetimeIndex:
     """
@@ -227,22 +227,22 @@ def get_t0_datetimes(
 
     Args:
         datetimes: Datetimes of every valid timestep.
-        total_seq_len: Total sequence length (number of timesteps) of each example sequence.
-            total_seq_len = history_len + forecast_len + 1
-            (the plus 1 is because neither history_len nor forecast_len include t0).
-        history_dur: The duration of the history included in each example sequence.
+        total_seq_length: Total sequence length (number of timesteps) of each example sequence.
+            total_seq_length = history_length + forecast_length + 1
+            (the plus 1 is because neither history_length nor forecast_length include t0).
+        history_duration: The duration of the history included in each example sequence.
         max_gap: The maximum allowed gap in the datetimes for it to be valid.
 
-    Returns: T0 datetimes that identify valid, contiguous sequences at least total_seq_len long.
+    Returns: T0 datetimes that identify valid, contiguous sequences at least total_seq_length long.
     """
     logger.debug("Getting t0 datetimes")
 
     start_datetimes = get_start_datetimes(
-        datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap
+        datetimes=datetimes, total_seq_length=total_seq_length, max_gap=max_gap
     )
 
     logger.debug("Adding history duration to t0 datetimes")
-    t0_datetimes = start_datetimes + history_dur
+    t0_datetimes = start_datetimes + history_duration
     return t0_datetimes
 
 
@@ -286,7 +286,7 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
     return Datetime(**datetime_dict)
 
 
-def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
+def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_minutes):
     """
     Make random time vectors
 
@@ -295,14 +295,14 @@ def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
 
     Args:
         batch_size: the batch size
-        seq_len_5_minutes: the length of the sequence in 5 mins deltas
-        seq_len_30_minutes: the length of the sequence in 30 mins deltas
+        seq_length_5_minutes: the length of the sequence in 5 mins deltas
+        seq_length_30_minutes: the length of the sequence in 30 mins deltas
 
     Returns:
         - t0_dt: [batch_size] random init datetimes
-        - time_5: [batch_size, seq_len_5_minutes] random sequence of datetimes, with 5 mins deltas.
+        - time_5: [batch_size, seq_length_5_minutes] random sequence of datetimes, with 5 mins deltas.
         t0_dt is in the middle of the sequence
-        - time_30: [batch_size, seq_len_30_minutes] random sequence of datetimes, with 30 mins deltas.
+        - time_30: [batch_size, seq_length_30_minutes] random sequence of datetimes, with 30 mins deltas.
         t0_dt is in the middle of the sequence
     """
     delta_5 = pd.Timedelta(minutes=5)
@@ -311,12 +311,12 @@ def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
     data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
     t0_dt = pd.Series(random.choices(data_range, k=batch_size))
     time_5 = (
-        pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_len_5_minutes)])
-        - int(seq_len_5_minutes / 2) * delta_5
+        pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_length_5_minutes)])
+        - int(seq_length_5_minutes / 2) * delta_5
     )
     time_30 = (
-        pd.DataFrame([t0_dt + i * delta_30 for i in range(seq_len_30_minutes)])
-        - int(seq_len_30_minutes / 2) * delta_5
+        pd.DataFrame([t0_dt + i * delta_30 for i in range(seq_length_30_minutes)])
+        - int(seq_length_30_minutes / 2) * delta_5
     )
 
     t0_dt = utils.to_numpy(t0_dt)

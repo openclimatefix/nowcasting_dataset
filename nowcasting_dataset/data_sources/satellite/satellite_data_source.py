@@ -83,7 +83,7 @@ class SatelliteDataSource(ZarrDataSource):
         self._cache = {}
         n_channels = len(self.channels)
         self._shape_of_example = (
-            self._total_seq_len,
+            self._total_seq_length,
             image_size_pixels,
             image_size_pixels,
             n_channels,

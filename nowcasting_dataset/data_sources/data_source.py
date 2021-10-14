@@ -22,17 +22,17 @@ class DataSource:
 
     Attributes:
       history_minutes: Number of minutes of history to include in each example.
-        Does NOT include t0.  That is, if history_len = 0 then the example
+        Does NOT include t0.  That is, if history_minutes = 0 then the example
         will start at t0.
       forecast_minutes: Number of minutes of forecast to include in each example.
-        Does NOT include t0.  If forecast_len = 0 then the example will end
-        at t0.  If both history_len and forecast_len are 0, then the example
+        Does NOT include t0.  If forecast_minutes = 0 then the example will end
+        at t0.  If both history_minutes and forecast_minutes are 0, then the example
         will consist of a single timestep at t0.
       convert_to_numpy: Whether or not to convert each example to numpy.
       sample_period_minutes: The time delta between each data point
 
-    Attributes ending in `_len` are sequence lengths represented as integer numbers of timesteps.
-    Attributes ending in `_dur` are sequence durations represented as pd.Timedeltas.
+    Attributes ending in `_length` are sequence lengths represented as integer numbers of timesteps.
+    Attributes ending in `_duration` are sequence durations represented as pd.Timedeltas.
     """
 
     history_minutes: int
@@ -42,14 +42,14 @@ class DataSource:
     def __post_init__(self):
         """ Post Init """
         self.sample_period_minutes = self._get_sample_period_minutes()
-        self.sample_period_dur = pd.Timedelta(self.sample_period_minutes, unit="minutes")
+        self.sample_period_duration = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
         # TODO: Do we still need all these different representations of sequence lengths? #219
-        self.history_len = self.history_minutes // self.sample_period_minutes
-        self.forecast_len = self.forecast_minutes // self.sample_period_minutes
+        self.history_length = self.history_minutes // self.sample_period_minutes
+        self.forecast_length = self.forecast_minutes // self.sample_period_minutes
 
-        assert self.history_len >= 0
-        assert self.forecast_len >= 0
+        assert self.history_length >= 0
+        assert self.forecast_length >= 0
         assert self.history_minutes % self.sample_period_minutes == 0, (
             f"sample period ({self.sample_period_minutes}) minutes "
             f"does not fit into historic minutes ({self.forecast_minutes})"
@@ -59,19 +59,21 @@ class DataSource:
             f"does not fit into forecast minutes ({self.forecast_minutes})"
         )
 
-        # Plus 1 because neither history_len nor forecast_len include t0.
-        self._total_seq_len = self.history_len + self.forecast_len + 1
+        # Plus 1 because neither history_length nor forecast_length include t0.
+        self._total_seq_length = self.history_length + self.forecast_length + 1
 
-        self._history_dur = pd.Timedelta(self.history_minutes, unit="minutes")
-        self._forecast_dur = pd.Timedelta(self.forecast_minutes, unit="minutes")
-        # Add sample_period_duration because neither history_dur not forecast_dur include t0.
-        self._total_seq_dur = self._history_dur + self._forecast_dur + self.sample_period_dur
+        self._history_duration = pd.Timedelta(self.history_minutes, unit="minutes")
+        self._forecast_duration = pd.Timedelta(self.forecast_minutes, unit="minutes")
+        # Add sample_period_duration because neither history_duration not forecast_duration include t0.
+        self._total_seq_duration = (
+            self._history_duration + self._forecast_duration + self.sample_period_duration
+        )
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt - self._history_dur
+        return t0_dt - self._history_duration
 
     def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt + self._forecast_dur
+        return t0_dt + self._forecast_duration
 
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
     def _get_sample_period_minutes(self):
@@ -154,9 +156,9 @@ class DataSource:
         all_datetimes = self.datetime_index()
         return nd_time.get_t0_datetimes(
             datetimes=all_datetimes,
-            total_seq_len=self._total_seq_len,
-            history_dur=self._history_dur,
-            max_gap=self.sample_period_dur,
+            total_seq_length=self._total_seq_length,
+            history_duration=self._history_duration,
+            max_gap=self.sample_period_duration,
         )
 
     def get_contiguous_time_periods(self) -> pd.DataFrame:

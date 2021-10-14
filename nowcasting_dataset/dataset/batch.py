@@ -35,6 +35,8 @@ _LOG = logging.getLogger(__name__)
 make_xr_data_array_to_tensor()
 make_xr_data_set_to_tensor()
 
+data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP, Datetime]
+
 
 class Batch(BaseModel):
     """
@@ -79,12 +81,36 @@ class Batch(BaseModel):
         ]
 
     @staticmethod
-    def fake(batch_size: int = 32):
+    def fake(configuration: Configuration = Configuration()):
+
+        batch_size = configuration.process.batch_size
+        seq_length_5 = configuration.process.seq_len_5_minutes
+        seq_length_30 = configuration.process.seq_len_30_minutes
+        image_size_pixels = configuration.process.satellite_image_size_pixels
 
         return Batch(
             batch_size=batch_size,
-            satellite=Satellite.fake(batch_size=batch_size),
-            nwp=NWP.fake(batch_size=batch_size),
+            satellite=Satellite.fake(
+                batch_size=batch_size,
+                seq_length_5=seq_length_5,
+                satellite_image_size_pixels=image_size_pixels,
+                number_sat_channels=len(configuration.process.sat_channels),
+            ),
+            nwp=NWP.fake(
+                batch_size=batch_size,
+                seq_length_5=seq_length_5,
+                image_size_pixels=image_size_pixels,
+                number_nwp_channels=len(configuration.process.nwp_channels),
+            ),
+            metadata=Metadata.fake(batch_size=batch_size),
+            pv=PV.fake(
+                batch_size=batch_size, seq_length_5=seq_length_5, n_pv_systems_per_batch=128
+            ),
+            gsp=GSP.fake(batch_size=batch_size, seq_length_30=seq_length_30, n_gsp_per_batch=32),
+            sun=Sun.fake(batch_size=batch_size, seq_length_5=seq_length_5),
+            topographic=Topographic.fake(
+                batch_size=batch_size, image_size_pixels=image_size_pixels
+            ),
         )
 
     def save_netcdf(self, batch_i: int, path: Path):
@@ -99,10 +125,8 @@ class Batch(BaseModel):
 
         for data_source in self.data_sources:
             if data_source is not None:
-                xr_dataset: xr.Dataset = getattr(self, data_source.get_name())
-
                 # add encoding
-                xr_dataset.save_netcdf(batch_i=batch_i, path=path)
+                data_source.save_netcdf(batch_i=batch_i, path=path)
 
     @staticmethod
     def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):
@@ -196,7 +220,7 @@ class BatchML(Example):
             ),
             topographic=TopographicML.fake(
                 batch_size=process.batch_size,
-                satellite_image_size_pixels=process.satellite_image_size_pixels,
+                image_size_pixels=process.satellite_image_size_pixels,
             ),
             pv=PVML.fake(
                 batch_size=process.batch_size,
@@ -215,7 +239,7 @@ class BatchML(Example):
                 batch_size=process.batch_size,
                 seq_length_5=process.seq_len_5_minutes,
                 image_size_pixels=process.nwp_image_size_pixels,
-                number_now_channels=len(process.nwp_channels),
+                number_nwp_channels=len(process.nwp_channels),
                 time_5=time_5,
             ),
             datetime=DatetimeML.fake(

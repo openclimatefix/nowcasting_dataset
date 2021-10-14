@@ -125,7 +125,10 @@ class DataSource:
         # could add option here, to save each data source using
         # 1. # DataSourceOutput.to_xr_dataset() to make it a dataset
         # 2. DataSourceOutput.save_netcdf(), save to netcdf
-        return join_data_set_to_batch_dataset(examples)
+
+        cls = examples[0].__class__
+
+        return cls(join_data_set_to_batch_dataset(examples))
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

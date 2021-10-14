@@ -12,7 +12,7 @@ import xarray as xr
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.dataset.batch import BatchML
+from nowcasting_dataset.dataset.batch import Batch
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
@@ -144,8 +144,9 @@ sun_xr.to_zarr(f"{local_path}/tests/data/sun/test.zarr", mode="w")
 ########
 
 c = Configuration()
+c.process.batch_size = 4
 c.process.nwp_channels = c.process.nwp_channels[0:1]
 c.process.sat_channels = c.process.sat_channels[0:1]
 
-f = BatchML.fake(configuration=c)
+f = Batch.fake(configuration=c)
 f.save_netcdf(batch_i=0, path=Path(f"{local_path}/tests/data/batch"))

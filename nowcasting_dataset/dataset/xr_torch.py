@@ -39,7 +39,6 @@ def make_xr_data_set_to_tensor():
                 torch_dict = {}
 
                 for dim in dims:
-                    print(dim)
                     v = getattr(self._obj, dim)
                     if dim.find("time") != -1:
                         v = v.astype(np.int32)

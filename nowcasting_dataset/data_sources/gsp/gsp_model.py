@@ -56,7 +56,7 @@ class GSP(DataSourceOutput):
         # make dataset
         xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
 
-        return xr_dataset
+        return GSP(xr_dataset)
 
 
 class GSPML(DataSourceOutputML):
@@ -145,67 +145,67 @@ class GSPML(DataSourceOutputML):
         )
         # copy is needed as torch doesnt not support negative strides
 
-    def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
-        """
-        Pad out data
-
-        Args:
-            n_gsp_per_example: The number of gsp's there are per example.
-
-        Note that nothing is returned as the changes are made inplace.
-        """
-        assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
-
-        pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]
-        pad_data(
-            data=self,
-            one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
-            two_dimensional_arrays=[GSP_YIELD],
-            pad_size=pad_size,
-        )
+    # def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
+    #     """
+    #     Pad out data
+    #
+    #     Args:
+    #         n_gsp_per_example: The number of gsp's there are per example.
+    #
+    #     Note that nothing is returned as the changes are made inplace.
+    #     """
+    #     assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
+    #
+    #     pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]
+    #     pad_data(
+    #         data=self,
+    #         one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
+    #         two_dimensional_arrays=[GSP_YIELD],
+    #         pad_size=pad_size,
+    #     )
 
     def get_datetime_index(self) -> Array:
         """ Get the datetime index of this data """
         return self.gsp_datetime_index
 
-    def to_xr_dataset(self, i):
-        """ Make a xr dataset """
-        logger.debug(f"Making xr dataset for batch {i}")
-        assert self.batch_size == 0
-
-        example_dim = {"example": np.array([i], dtype=np.int32)}
-
-        # GSP
-        n_gsp = len(self.gsp_id)
-
-        one_dataset = xr.DataArray(self.gsp_yield, dims=["time_30", "gsp"], name="gsp_yield")
-        one_dataset = one_dataset.to_dataset(name="gsp_yield")
-        one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
-            self.gsp_datetime_index,
-            dims=["time_30"],
-            coords=[np.arange(len(self.gsp_datetime_index))],
-        )
-
-        # GSP
-        for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
-
-            var = self.__getattribute__(name)
-
-            one_dataset[name] = xr.DataArray(
-                var[None, :],
-                coords={
-                    **example_dim,
-                    **{"gsp": np.arange(n_gsp, dtype=np.int32)},
-                },
-                dims=["example", "gsp"],
-            )
-
-        one_dataset[GSP_YIELD] = one_dataset[GSP_YIELD].astype(np.float32)
-        one_dataset[GSP_ID] = one_dataset[GSP_ID].astype(np.float32)
-        one_dataset[GSP_X_COORDS] = one_dataset[GSP_X_COORDS].astype(np.float32)
-        one_dataset[GSP_Y_COORDS] = one_dataset[GSP_Y_COORDS].astype(np.float32)
-
-        return one_dataset
+    # def to_xr_dataset(self, i):
+    #     """ Make a xr dataset """
+    #     logger.debug(f"Making xr dataset for batch {i}")
+    #     assert self.batch_size == 0
+    #
+    #     example_dim = {"example": np.array([i], dtype=np.int32)}
+    #
+    #     # GSP
+    #     n_gsp = len(self.gsp_id)
+    #
+    #     one_dataset = xr.DataArray(self.gsp_yield, dims=["time_30", "gsp"], name="gsp_yield")
+    #     one_dataset = one_dataset.to_dataset(name="gsp_yield")
+    #     one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
+    #         self.gsp_datetime_index,
+    #         dims=["time_30"],
+    #         coords=[np.arange(len(self.gsp_datetime_index))],
+    #     )
+    #
+    #     # GSP
+    #     for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
+    #
+    #         var = self.__getattribute__(name)
+    #
+    #         one_dataset[name] = xr.DataArray(
+    #             var[None, :],
+    #             coords={
+    #                 **example_dim,
+    #                 **{"gsp": np.arange(n_gsp, dtype=np.int32)},
+    #             },
+    #             dims=["example", "gsp"],
+    #         )
+    #
+    #     one_dataset[GSP_YIELD] = one_dataset[GSP_YIELD].astype(np.float32)
+    #     one_dataset[GSP_ID] = one_dataset[GSP_ID].astype(np.float32)
+    #     one_dataset[GSP_X_COORDS] = one_dataset[GSP_X_COORDS].astype(np.float32)
+    #     one_dataset[GSP_Y_COORDS] = one_dataset[GSP_Y_COORDS].astype(np.float32)
+    #
+    #     return one_dataset
 
     @staticmethod
     def from_xr_dataset(xr_dataset):

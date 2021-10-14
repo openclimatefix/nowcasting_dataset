@@ -158,7 +158,7 @@ class SatelliteDataSource(ZarrDataSource):
         #     output.to_numpy()
         self._cache = {}
 
-        return output
+        return Satellite(output)
 
     def _put_data_into_example(self, selected_data: xr.DataArray) -> Satellite:
         return selected_data

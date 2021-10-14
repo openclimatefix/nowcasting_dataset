@@ -25,7 +25,7 @@ from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 # from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
 from nowcasting_dataset.utils import scale_to_0_to_1
-from nowcasting_dataset.data_sources.gsp.gsp_model import GSPML
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +241,7 @@ class GSPDataSource(ImageDataSource):
 
         gsp.__setitem__("id_index", range(32))
 
-        return gsp
+        return GSP(gsp)
 
     def _get_central_gsp_id(
         self,

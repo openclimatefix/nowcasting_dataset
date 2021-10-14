@@ -39,7 +39,7 @@ class Sun(DataSourceOutput):
         # make dataset
         xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
 
-        return xr_dataset
+        return Sun(xr_dataset)
 
 
 class SunML(DataSourceOutputML):
@@ -102,34 +102,34 @@ class SunML(DataSourceOutputML):
         """ Get the datetime index of this data """
         return self.sun_datetime_index
 
-    def to_xr_dataset(self, i):
-        """ Make a xr dataset """
-        logger.debug(f"Making xr dataset for batch {i}")
-        individual_datasets = []
-        for name in [SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE]:
-
-            var = self.__getattribute__(name)
-
-            data = xr.DataArray(
-                var,
-                dims=["time"],
-                coords={"time": self.sun_datetime_index},
-                name=name,
-            )
-
-            ds = data.to_dataset()
-            ds = coord_to_range(ds, "time", prefix=None)
-            individual_datasets.append(ds)
-
-        data = xr.DataArray(
-            self.sun_datetime_index,
-            dims=["time"],
-            coords=[np.arange(len(self.sun_datetime_index))],
-        )
-        ds = data.to_dataset(name="sun_datetime_index")
-        individual_datasets.append(ds)
-
-        return xr.merge(individual_datasets)
+    # def to_xr_dataset(self, i):
+    #     """ Make a xr dataset """
+    #     logger.debug(f"Making xr dataset for batch {i}")
+    #     individual_datasets = []
+    #     for name in [SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE]:
+    #
+    #         var = self.__getattribute__(name)
+    #
+    #         data = xr.DataArray(
+    #             var,
+    #             dims=["time"],
+    #             coords={"time": self.sun_datetime_index},
+    #             name=name,
+    #         )
+    #
+    #         ds = data.to_dataset()
+    #         ds = coord_to_range(ds, "time", prefix=None)
+    #         individual_datasets.append(ds)
+    #
+    #     data = xr.DataArray(
+    #         self.sun_datetime_index,
+    #         dims=["time"],
+    #         coords=[np.arange(len(self.sun_datetime_index))],
+    #     )
+    #     ds = data.to_dataset(name="sun_datetime_index")
+    #     individual_datasets.append(ds)
+    #
+    #     return xr.merge(individual_datasets)
 
     @staticmethod
     def from_xr_dataset(xr_dataset):

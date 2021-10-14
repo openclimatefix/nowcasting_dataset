@@ -119,16 +119,17 @@ class NWPML(DataSourceOutputML):
             data=np.random.randn(
                 batch_size,
                 seq_length_5,
-                satellite_image_size_pixels,
-                satellite_image_size_pixels,
-                number_sat_channels,
+                image_size_pixels,
+                image_size_pixels,
+                number_nwp_channels,
             ),
-            x=np.sort(np.random.randn(batch_size, satellite_image_size_pixels)),
-            y=np.sort(np.random.randn(batch_size, satellite_image_size_pixels))[:, ::-1].copy()
+            x=np.sort(np.random.randn(batch_size, image_size_pixels)),
+            y=np.sort(np.random.randn(batch_size, image_size_pixels))[:, ::-1].copy()
             # copy is needed as torch doesnt not support negative strides
             ,
-            time=time_5,
-            channels=np.array([list(range(number_sat_channels)) for _ in range(batch_size)]),
+            target_time=time_5,
+            init_time=time_5[0],
+            channels=np.array([list(range(number_nwp_channels)) for _ in range(batch_size)]),
         )
 
         return s

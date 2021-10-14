@@ -5,11 +5,13 @@ from typing import List, Tuple
 
 import pandas as pd
 import numpy as np
+import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import MetadataML
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.utils import to_numpy
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 
 @dataclass
@@ -24,7 +26,7 @@ class MetadataDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> MetadataML:
+    ) -> xr.Dataset:
         """
         Get example data
 
@@ -43,12 +45,30 @@ class MetadataDataSource(DataSource):
         else:
             object_at_center_label = 0
 
-        return MetadataML(
+        data_dict = dict(
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),
             y_meters_center=np.array(y_meters_center),
             object_at_center_label=object_at_center_label,
         )
+
+        d_all = {
+            "t0_dt": {"dims": ("t0_dt"), "data": [t0_dt]},
+            "x_meters_center": {"dims": ("t0_dt_index"), "data": [x_meters_center]},
+            "y_meters_center": {"dims": ("t0_dt_index"), "data": [y_meters_center]},
+            "object_at_center_label": {"dims": ("t0_dt_index"), "data": [object_at_center_label]},
+        }
+
+        data = convert_data_array_to_dataset(xr.DataArray.from_dict(d_all["t0_dt"]))
+
+        for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
+            d: dict = d_all[v]
+            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename(
+                {"data": v}
+            )
+            data[v] = getattr(d, v)
+
+        return data
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

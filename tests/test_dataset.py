@@ -4,6 +4,7 @@ import pytest
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import GSP_DATETIME_INDEX
 from nowcasting_dataset.dataset.datasets import NowcastingDataset
+from nowcasting_dataset.dataset.batch import Batch
 
 
 @pytest.fixture
@@ -53,10 +54,11 @@ def test_per_worker_init(dataset: NowcastingDataset):
 
 def test_get_batch(dataset: NowcastingDataset):
     dataset.per_worker_init(worker_id=1)
-    example = dataset._get_batch()
-    assert isinstance(example, dict)
-    assert "satellite" in example
-    assert example["satellite"]["sat_data"].shape == (
+    batch = dataset._get_batch()
+    assert isinstance(batch, Batch)
+    print(batch)
+    assert batch.satellite is not None
+    assert batch.satellite.data.shape == (
         8,
         2,
         pytest.IMAGE_SIZE_PIXELS,
@@ -67,7 +69,7 @@ def test_get_batch(dataset: NowcastingDataset):
 
 def test_get_batch_gsp(dataset_gsp: NowcastingDataset):
     dataset_gsp.per_worker_init(worker_id=1)
-    example = dataset_gsp._get_batch()
-    assert isinstance(example, dict)
+    batch = dataset_gsp._get_batch()
+    assert isinstance(batch, Batch)
 
-    assert "gsp" in example.keys()
+    assert batch.gsp is not None

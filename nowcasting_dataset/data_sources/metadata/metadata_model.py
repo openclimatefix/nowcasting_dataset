@@ -5,20 +5,38 @@ import xarray as xr
 import torch
 from pydantic import validator, Field
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    DataSourceOutput,
+    create_metadata_dataset,
+)
 from nowcasting_dataset.time import make_random_time_vectors
 from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
+from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 
 # seems to be a pandas dataseries
 
 
-class Metadata(PydanticXArrayDataSet):
+class Metadata(DataSourceOutput):
     # Use to store xr.Dataset data
 
     __slots__ = []
 
     # todo add validation here
     pass
+
+    @staticmethod
+    def fake(batch_size):
+        """Make a xr dataset"""
+
+        create_metadata_dataset()
+
+        xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
+
+        # make dataset
+        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+        return Metadata(xr_dataset)
 
 
 class MetadataML(DataSourceOutputML):
@@ -56,29 +74,29 @@ class MetadataML(DataSourceOutputML):
             object_at_center_label=np.array([1] * batch_size),
         )
 
-    def to_xr_dataset(self, i):
-        """Make a xr dataset"""
-        individual_datasets = []
-        for name in ["t0_dt", "x_meters_center", "y_meters_center", "object_at_center_label"]:
-
-            var = self.__getattribute__(name)
-
-            example_dim = {"example": np.array([i], dtype=np.int32)}
-
-            data = xr.DataArray([var], coords=example_dim, dims=["example"], name=name)
-
-            ds = data.to_dataset()
-            individual_datasets.append(ds)
-
-        return xr.merge(individual_datasets)
+    # def to_xr_dataset(self, i):
+    #     """Make a xr dataset"""
+    #     individual_datasets = []
+    #     for name in ["t0_dt", "x_meters_center", "y_meters_center", "object_at_center_label"]:
+    #
+    #         var = self.__getattribute__(name)
+    #
+    #         example_dim = {"example": np.array([i], dtype=np.int32)}
+    #
+    #         data = xr.DataArray([var], coords=example_dim, dims=["example"], name=name)
+    #
+    #         ds = data.to_dataset()
+    #         individual_datasets.append(ds)
+    #
+    #     return xr.merge(individual_datasets)
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """Change xr dataset to model. If data does not exist, then return None"""
         return MetadataML(
-            batch_size=xr_dataset["t0_dt"].shape[0],
-            t0_dt=xr_dataset["t0_dt"],
-            x_meters_center=xr_dataset["x_meters_center"],
-            y_meters_center=xr_dataset["y_meters_center"],
-            object_at_center_label=xr_dataset["object_at_center_label"],
+            batch_size=xr_dataset.t0_dt.shape[0],
+            t0_dt=xr_dataset.t0_dt.values,
+            x_meters_center=xr_dataset.x_meters_center.values,
+            y_meters_center=xr_dataset.y_meters_center.values,
+            object_at_center_label=xr_dataset.object_at_center_label.values,
         )

@@ -109,13 +109,13 @@ def test_get_t0_datetimes_night():
 
 
 def test_intersection_of_2_dataframes_of_periods():
-    # There are four ways in which two periods may overlap:
-    #      1          2         3          4
-    # a: |----| or |---|   or  |---| or   |--|
-    # b:  |--|       |---|   |---|      |------|
+    # Five ways in which two periods may overlap:
+    #      1          2         3          4         5
+    # a: |----| or |---|   or  |---| or   |--|   or |-|
+    # b:  |--|       |---|   |---|      |------|    |-|
     #
-    # And two ways in which two periods may *not* overlap:
-    #      5                      6
+    # Two ways in which two periods may *not* overlap:
+    #      6                      7
     # a: |---|        or        |---|
     # b:       |---|      |---|
     #
@@ -130,8 +130,9 @@ def test_intersection_of_2_dataframes_of_periods():
             {"start_dt": dt.replace(hour=4), "end_dt": dt.replace(hour=6)},  # 2
             {"start_dt": dt.replace(hour=9), "end_dt": dt.replace(hour=11)},  # 3
             {"start_dt": dt.replace(hour=13), "end_dt": dt.replace(hour=14)},  # 4
-            {"start_dt": dt.replace(hour=16), "end_dt": dt.replace(hour=17)},  # 5
-            {"start_dt": dt.replace(hour=22), "end_dt": dt.replace(hour=23)},  # 6
+            {"start_dt": dt.replace(day=2, hour=12), "end_dt": dt.replace(day=2, hour=14)},  # 5
+            {"start_dt": dt.replace(hour=16), "end_dt": dt.replace(hour=17)},  # 6
+            {"start_dt": dt.replace(hour=22), "end_dt": dt.replace(hour=23)},  # 7
         ]
     )
 
@@ -141,8 +142,9 @@ def test_intersection_of_2_dataframes_of_periods():
             {"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=7)},  # 2
             {"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)},  # 3
             {"start_dt": dt.replace(hour=12), "end_dt": dt.replace(hour=15)},  # 4
-            {"start_dt": dt.replace(hour=18), "end_dt": dt.replace(hour=19)},  # 5
-            {"start_dt": dt.replace(hour=20), "end_dt": dt.replace(hour=21)},  # 6
+            {"start_dt": dt.replace(day=2, hour=12), "end_dt": dt.replace(day=2, hour=14)},  # 5
+            {"start_dt": dt.replace(hour=18), "end_dt": dt.replace(hour=19)},  # 6
+            {"start_dt": dt.replace(hour=20), "end_dt": dt.replace(hour=21)},  # 7
         ]
     )
 
@@ -154,6 +156,7 @@ def test_intersection_of_2_dataframes_of_periods():
             {"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=6)},  # 2
             {"start_dt": dt.replace(hour=9), "end_dt": dt.replace(hour=10)},  # 3
             {"start_dt": dt.replace(hour=13), "end_dt": dt.replace(hour=14)},  # 4
+            {"start_dt": dt.replace(day=2, hour=12), "end_dt": dt.replace(day=2, hour=14)},  # 5
         ]
     )
 

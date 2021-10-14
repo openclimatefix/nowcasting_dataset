@@ -90,12 +90,12 @@ def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) ->
     """
     all_intersecting_periods = []
     for a_period in a.itertuples():
-        # There are four ways in which two periods may overlap:
-        # a: |----| or |---|   or  |---| or   |--|
-        # b:  |--|       |---|   |---|      |------|
-        # In all four, `a` must always start before `b` ends,
+        # Five ways in which two periods may overlap:
+        # a: |----| or |---|   or  |---| or   |--|   or |-|
+        # b:  |--|       |---|   |---|      |------|    |-|
+        # In all five, `a` must always start before `b` ends,
         # and `a` must always end after `b` starts:
-        overlapping_periods = b[(a_period.start_dt <= b.end_dt) & (a_period.end_dt >= b.start_dt)]
+        overlapping_periods = b[(a_period.start_dt < b.end_dt) & (a_period.end_dt > b.start_dt)]
 
         # There are two ways in which two periods may *not* overlap:
         # a: |---|        or        |---|

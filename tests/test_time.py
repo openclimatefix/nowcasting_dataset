@@ -40,6 +40,7 @@ def test_intersection_of_datetimeindexes():
     )
 
 
+# TODO: Delete this test.
 @pytest.mark.parametrize("total_seq_len", [2, 3, 12])
 def test_get_start_datetimes_1(total_seq_len):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
@@ -47,6 +48,7 @@ def test_get_start_datetimes_1(total_seq_len):
     np.testing.assert_array_equal(start_datetimes, dt_index1[: 1 - total_seq_len])
 
 
+# TODO: Delete this test.
 @pytest.mark.parametrize("total_seq_len", [2, 3, 12])
 def test_get_start_datetimes_2(total_seq_len):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
@@ -55,6 +57,35 @@ def test_get_start_datetimes_2(total_seq_len):
     start_datetimes = nd_time.get_start_datetimes(dt_index, total_seq_len=total_seq_len)
     correct_start_datetimes = dt_index1[: 1 - total_seq_len].union(dt_index2[: 1 - total_seq_len])
     np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)
+
+
+@pytest.mark.parametrize("min_seq_len", [2, 3, 12])
+def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_len):
+    freq = pd.Timedelta(5, unit="minutes")
+    dt_index = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
+    periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
+        dt_index, min_seq_len=min_seq_len, max_gap=freq
+    )
+    correct_periods = pd.DataFrame([{"start_dt": dt_index[0], "end_dt": dt_index[-1]}])
+    pd.testing.assert_frame_equal(periods, correct_periods)
+
+
+@pytest.mark.parametrize("min_seq_len", [2, 3, 12])
+def test_get_contiguous_time_periods_2_with_2_chunks(min_seq_len):
+    freq = pd.Timedelta(5, unit="minutes")
+    dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
+    dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq=freq)
+    dt_index = dt_index1.union(dt_index2)
+    periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
+        dt_index, min_seq_len=min_seq_len, max_gap=freq
+    )
+    correct_periods = pd.DataFrame(
+        [
+            {"start_dt": dt_index1[0], "end_dt": dt_index1[-1]},
+            {"start_dt": dt_index2[0], "end_dt": dt_index2[-1]},
+        ]
+    )
+    pd.testing.assert_frame_equal(periods, correct_periods)
 
 
 def test_datetime_features_in_example():

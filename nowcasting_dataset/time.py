@@ -166,7 +166,6 @@ def get_start_datetimes(
     return pd.DatetimeIndex(np.concatenate(start_dt_index))
 
 
-# TODO: Write test!
 def get_contiguous_time_periods(
     datetimes: pd.DatetimeIndex, min_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
 ) -> pd.DataFrame:
@@ -185,8 +184,8 @@ def get_contiguous_time_periods(
     # Sanity checks.
     assert len(datetimes) > 0
     assert min_seq_len > 1
-    assert datetimes.is_monotonic_increasing()
-    assert datetimes.is_unique()
+    assert datetimes.is_monotonic_increasing
+    assert datetimes.is_unique
 
     # Find indices of gaps larger than max_gap:
     gap_mask = np.diff(datetimes) > max_gap

@@ -195,12 +195,12 @@ class NetCDFDataset(torch.utils.data.Dataset):
         if self.select_subset_data:
             batch = subselect_data(
                 batch=batch,
-                required_keys=self.required_keys,
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
                 current_timestep_index=self.current_timestep_5_index,
             )
 
+        # change batch into ML learning batch ready for training
         batch = BatchML.from_batch(batch=batch)
 
         # netcdf_batch = xr.load_dataset(local_netcdf_filename)

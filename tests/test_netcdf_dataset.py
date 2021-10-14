@@ -75,7 +75,7 @@ def test_netcdf_dataset_local_using_configuration(configuration: Configuration):
     # TODO
     # Sat is in 5min increments, so should have 2 history + current + 2 future
     assert sat_data.shape[1] == 5
-    assert batch_ml.nwp.data.shape[2] == 5
+    assert batch_ml.nwp.data.shape == (4, 5, 64, 64, 1)
 
     # Make sure file isn't deleted!
     assert os.path.exists(os.path.join(DATA_PATH, "metadata/0.nc"))

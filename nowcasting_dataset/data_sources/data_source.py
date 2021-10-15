@@ -140,6 +140,7 @@ class DataSource:
         raise NotImplementedError()
 
     # TODO: Remove this function (and any tests) after get_contiguous_time_periods() is implemented.
+    # See https://github.com/openclimatefix/nowcasting_dataset/issues/223
     def get_t0_datetimes(self) -> pd.DatetimeIndex:
         """Get all the valid t0 datetimes.
 
@@ -174,6 +175,7 @@ class DataSource:
         """
 
         # TODO: Use nd_time.get_contiguous_time_periods()
+        # See https://github.com/openclimatefix/nowcasting_dataset/issues/223
         raise NotImplementedError()
 
     def _get_time_slice(self, t0_dt: pd.Timestamp):

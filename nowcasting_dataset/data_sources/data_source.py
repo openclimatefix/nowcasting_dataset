@@ -22,14 +22,17 @@ class DataSource:
 
     Attributes:
       history_minutes: Number of minutes of history to include in each example.
-        Does NOT include t0.  That is, if history_len = 0 then the example
+        Does NOT include t0.  That is, if history_minutes = 0 then the example
         will start at t0.
       forecast_minutes: Number of minutes of forecast to include in each example.
-        Does NOT include t0.  If forecast_len = 0 then the example will end
-        at t0.  If both history_len and forecast_len are 0, then the example
+        Does NOT include t0.  If forecast_minutes = 0 then the example will end
+        at t0.  If both history_minutes and forecast_minutes are 0, then the example
         will consist of a single timestep at t0.
       convert_to_numpy: Whether or not to convert each example to numpy.
       sample_period_minutes: The time delta between each data point
+
+    Attributes ending in `_length` are sequence lengths represented as integer numbers of timesteps.
+    Attributes ending in `_duration` are sequence durations represented as pd.Timedeltas.
     """
 
     history_minutes: int
@@ -39,12 +42,15 @@ class DataSource:
     def __post_init__(self):
         """ Post Init """
         self.sample_period_minutes = self._get_sample_period_minutes()
+        self.sample_period_duration = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
-        self.history_len = self.history_minutes // self.sample_period_minutes
-        self.forecast_len = self.forecast_minutes // self.sample_period_minutes
+        # TODO: Do we still need all these different representations of sequence lengths?
+        # See GitHub issue #219 for more details, and to track this TODO task.
+        self.history_length = self.history_minutes // self.sample_period_minutes
+        self.forecast_length = self.forecast_minutes // self.sample_period_minutes
 
-        assert self.history_len >= 0
-        assert self.forecast_len >= 0
+        assert self.history_length >= 0
+        assert self.forecast_length >= 0
         assert self.history_minutes % self.sample_period_minutes == 0, (
             f"sample period ({self.sample_period_minutes}) minutes "
             f"does not fit into historic minutes ({self.forecast_minutes})"
@@ -54,20 +60,21 @@ class DataSource:
             f"does not fit into forecast minutes ({self.forecast_minutes})"
         )
 
-        # Plus 1 because neither history_len nor forecast_len include t0.
-        self._total_seq_len = self.history_len + self.forecast_len + 1
-        self._history_dur = nd_time.timesteps_to_duration(
-            self.history_len, self.sample_period_minutes
-        )
-        self._forecast_dur = nd_time.timesteps_to_duration(
-            self.forecast_len, self.sample_period_minutes
+        # Plus 1 because neither history_length nor forecast_length include t0.
+        self._total_seq_length = self.history_length + self.forecast_length + 1
+
+        self._history_duration = pd.Timedelta(self.history_minutes, unit="minutes")
+        self._forecast_duration = pd.Timedelta(self.forecast_minutes, unit="minutes")
+        # Add sample_period_duration because neither history_duration not forecast_duration include t0.
+        self._total_seq_duration = (
+            self._history_duration + self._forecast_duration + self.sample_period_duration
         )
 
     def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt - self._history_dur
+        return t0_dt - self._history_duration
 
     def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
-        return t0_dt + self._forecast_dur
+        return t0_dt + self._forecast_duration
 
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
     def _get_sample_period_minutes(self):
@@ -130,6 +137,45 @@ class DataSource:
         """Returns a complete list of all available datetimes."""
         # Leave this NotImplemented if this DataSource has no concept
         # of a list of datetimes (e.g. for DatetimeDataSource).
+        raise NotImplementedError()
+
+    # TODO: Remove this function (and any tests) after get_contiguous_time_periods() is implemented.
+    # See https://github.com/openclimatefix/nowcasting_dataset/issues/223
+    def get_t0_datetimes(self) -> pd.DatetimeIndex:
+        """Get all the valid t0 datetimes.
+
+        In each example timeseries, t0 is the datetime of the most recent observation.
+        t0 is used to specify the temporal location of each example.
+
+        Returns all t0 datetimes which identify valid, contiguous example timeseries.
+        In other words, this function returns all datetimes which come after at least
+        history_minutes of contiguous samples; and which have at least forecast_minutes of
+        contiguous data ahead.
+
+        Raises NotImplementedError if self.datetime_index() raises NotImplementedError,
+        which means that this DataSource doesn't have a concept of a list of datetimes.
+        """
+        all_datetimes = self.datetime_index()
+        return nd_time.get_t0_datetimes(
+            datetimes=all_datetimes,
+            total_seq_length=self._total_seq_length,
+            history_duration=self._history_duration,
+            max_gap=self.sample_period_duration,
+        )
+
+    def get_contiguous_time_periods(self) -> pd.DataFrame:
+        """Get all the time periods for which this DataSource has contiguous data.
+
+        Optionally filter out any time periods which don't make sense for this DataSource,
+        e.g. remove nighttime.
+
+        Returns:
+          pd.DataFrame where each row represents a single time period.  The pd.DataFrame
+          has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+        """
+
+        # TODO: Use nd_time.get_contiguous_time_periods()
+        # See https://github.com/openclimatefix/nowcasting_dataset/issues/223
         raise NotImplementedError()
 
     def _get_time_slice(self, t0_dt: pd.Timestamp):

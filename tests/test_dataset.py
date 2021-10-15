@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 import nowcasting_dataset.time as nd_time
@@ -9,7 +10,9 @@ from nowcasting_dataset.dataset.datasets import NowcastingDataset
 @pytest.fixture
 def dataset(sat_data_source, general_data_source):
     all_datetimes = sat_data_source.datetime_index()
-    t0_datetimes = nd_time.get_t0_datetimes(datetimes=all_datetimes, total_seq_len=2, history_len=0)
+    t0_datetimes = nd_time.get_t0_datetimes(
+        datetimes=all_datetimes, total_seq_length=2, history_duration=pd.Timedelta(0)
+    )
     return NowcastingDataset(
         batch_size=8,
         n_batches_per_epoch_per_worker=64,
@@ -24,9 +27,8 @@ def dataset_gsp(gsp_data_source, general_data_source):
     all_datetimes = gsp_data_source.datetime_index()
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=all_datetimes,
-        total_seq_len=2,
-        history_len=0,
-        minute_delta=30,
+        total_seq_length=2,
+        history_duration=pd.Timedelta(0),
         max_gap=nd_time.THIRTY_MINUTES,
     )
 

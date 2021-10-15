@@ -89,7 +89,7 @@ class GSP(DataSourceOutput):
         """ Make a fake GSP object """
         if time_30 is None:
             _, _, time_30 = make_random_time_vectors(
-                batch_size=batch_size, seq_len_5_minutes=0, seq_len_30_minutes=seq_length_30
+                batch_size=batch_size, seq_length_5_minutes=0, seq_length_30_minutes=seq_length_30
             )
 
         return GSP(

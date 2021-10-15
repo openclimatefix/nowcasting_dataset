@@ -35,15 +35,20 @@ def test_get_daylight_datetime_index(
     # Check it throws RuntimeError if we try running
     # _get_daylight_datetime_index() before running prepare_data():
     with pytest.raises(RuntimeError):
-        nowcasting_datamodule._get_datetimes()
+        nowcasting_datamodule._get_t0_datetimes()
     nowcasting_datamodule.prepare_data()
-    datetimes = nowcasting_datamodule._get_datetimes(
-        interpolate_for_30_minute_data=False, adjust_for_sequence_length=False
-    )
-    assert isinstance(datetimes, pd.DatetimeIndex)
+    t0_datetimes = nowcasting_datamodule._get_t0_datetimes()
+    assert isinstance(t0_datetimes, pd.DatetimeIndex)
     if not use_cloud_data:
-        correct_datetimes = pd.date_range("2019-01-01 12:05", "2019-01-01 16:20", freq="5 min")
-        np.testing.assert_array_equal(datetimes, correct_datetimes)
+        # The testing sat_data.zarr has contiguous data from 12:05 to 18:00.
+        # nowcasting_datamodule.history_minutes = 30
+        # nowcasting_datamodule.forecast_minutes = 60
+        # Daylight ends at 16:20.
+        # So the expected t0_datetimes start at 12:35 (12:05 + 30 minutes)
+        # and end at 15:20 (16:20 - 60 minutes)
+        print(t0_datetimes)
+        correct_t0_datetimes = pd.date_range("2019-01-01 12:35", "2019-01-01 15:20", freq="5 min")
+        np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
 
 
 def test_setup(nowcasting_datamodule: datamodule.NowcastingDataModule):
@@ -118,8 +123,8 @@ def test_data_module(config_filename):
     # for key in list(Example.__annotations__.keys()):
     #     assert key in batch[0].keys()
     #
-    # seq_len_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
-    # seq_len_5_minutes = (
+    # seq_length_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
+    # seq_length_5_minutes = (
     #     19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
     # )
 
@@ -130,8 +135,8 @@ def test_data_module(config_filename):
     #         nwp_image_size=config.process.nwp_image_size_pixels,
     #         n_sat_channels=len(config.process.sat_channels),
     #         sat_image_size=config.process.satellite_image_size_pixels,
-    #         seq_len_30_minutes=seq_len_30_minutes,
-    #         seq_len_5_minutes=seq_len_5_minutes,
+    #         seq_length_30_minutes=seq_length_30_minutes,
+    #         seq_length_5_minutes=seq_length_5_minutes,
     #     )
 
 

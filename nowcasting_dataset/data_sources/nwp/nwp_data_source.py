@@ -104,7 +104,7 @@ class NWPDataSource(ZarrDataSource):
         n_channels = len(self.channels)
         self._shape_of_example = (
             n_channels,
-            self._total_seq_len,
+            self._total_seq_length,
             image_size_pixels,
             image_size_pixels,
         )

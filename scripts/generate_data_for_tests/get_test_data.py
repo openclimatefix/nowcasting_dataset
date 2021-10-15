@@ -101,8 +101,8 @@ gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=e
 
 # s = SatelliteDataSource(filename="gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/"
 #                                  "all_zarr_int16_single_timestep.zarr",
-#                           history_len=6,
-#                           forecast_len=12,
+#                           history_length=6,
+#                           forecast_length=12,
 #                           convert_to_numpy=True,
 #                           image_size_pixels=64,
 #                           meters_per_pixel=2000,

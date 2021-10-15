@@ -40,27 +40,56 @@ def test_intersection_of_datetimeindexes():
     )
 
 
-@pytest.mark.parametrize("total_seq_len", [2, 3, 12])
-def test_get_start_datetimes_1(total_seq_len):
+# TODO: Delete this test.
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
+@pytest.mark.parametrize("total_seq_length", [2, 3, 12])
+def test_get_start_datetimes_1(total_seq_length):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
-    start_datetimes = nd_time.get_start_datetimes(dt_index1, total_seq_len=total_seq_len)
-    np.testing.assert_array_equal(start_datetimes, dt_index1[: 1 - total_seq_len])
+    start_datetimes = nd_time.get_start_datetimes(dt_index1, total_seq_length=total_seq_length)
+    np.testing.assert_array_equal(start_datetimes, dt_index1[: 1 - total_seq_length])
 
 
-@pytest.mark.parametrize("total_seq_len", [2, 3, 12])
-def test_get_start_datetimes_2(total_seq_len):
+# TODO: Delete this test.
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
+@pytest.mark.parametrize("total_seq_length", [2, 3, 12])
+def test_get_start_datetimes_2(total_seq_length):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
     dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq="5 min")
     dt_index = dt_index1.union(dt_index2)
-    start_datetimes = nd_time.get_start_datetimes(dt_index, total_seq_len=total_seq_len)
-    correct_start_datetimes = dt_index1[: 1 - total_seq_len].union(dt_index2[: 1 - total_seq_len])
+    start_datetimes = nd_time.get_start_datetimes(dt_index, total_seq_length=total_seq_length)
+    correct_start_datetimes = dt_index1[: 1 - total_seq_length].union(
+        dt_index2[: 1 - total_seq_length]
+    )
     np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)
 
 
-def test_timesteps_to_duration():
-    assert nd_time.timesteps_to_duration(0) == pd.Timedelta(0)
-    assert nd_time.timesteps_to_duration(1) == pd.Timedelta("5T")
-    assert nd_time.timesteps_to_duration(12) == pd.Timedelta("1H")
+@pytest.mark.parametrize("min_seq_length", [2, 3, 12])
+def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_length):
+    freq = pd.Timedelta(5, unit="minutes")
+    dt_index = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
+    periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
+        dt_index, min_seq_length=min_seq_length, max_gap=freq
+    )
+    correct_periods = pd.DataFrame([{"start_dt": dt_index[0], "end_dt": dt_index[-1]}])
+    pd.testing.assert_frame_equal(periods, correct_periods)
+
+
+@pytest.mark.parametrize("min_seq_length", [2, 3, 12])
+def test_get_contiguous_time_periods_2_with_2_chunks(min_seq_length):
+    freq = pd.Timedelta(5, unit="minutes")
+    dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
+    dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq=freq)
+    dt_index = dt_index1.union(dt_index2)
+    periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
+        dt_index, min_seq_length=min_seq_length, max_gap=freq
+    )
+    correct_periods = pd.DataFrame(
+        [
+            {"start_dt": dt_index1[0], "end_dt": dt_index1[-1]},
+            {"start_dt": dt_index2[0], "end_dt": dt_index2[-1]},
+        ]
+    )
+    pd.testing.assert_frame_equal(periods, correct_periods)
 
 
 def test_datetime_features_in_example():
@@ -78,14 +107,15 @@ def test_datetime_features_in_example():
 @pytest.mark.parametrize("forecast_length", [2, 3, 12])
 def test_get_t0_datetimes(history_length, forecast_length):
     index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="30T")
-    total_seq_len = history_length + forecast_length + 1
+    total_seq_length = history_length + forecast_length + 1
+    sample_period_duration = THIRTY_MINUTES
+    history_duration = sample_period_duration * history_length
 
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=index,
-        total_seq_len=total_seq_len,
-        history_len=history_length,
+        total_seq_length=total_seq_length,
+        history_duration=history_duration,
         max_gap=THIRTY_MINUTES,
-        minute_delta=30,
     )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length
@@ -96,14 +126,16 @@ def test_get_t0_datetimes(history_length, forecast_length):
 def test_get_t0_datetimes_night():
     history_length = 6
     forecast_length = 12
-    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq="5T")
-    total_seq_len = history_length + forecast_length + 1
+    sample_period_duration = FIVE_MINUTES
+    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq=sample_period_duration)
+    total_seq_length = history_length + forecast_length + 1
+    history_duration = history_length * sample_period_duration
 
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=index,
-        total_seq_len=total_seq_len,
-        history_len=history_length,
-        max_gap=FIVE_MINUTES,
+        total_seq_length=total_seq_length,
+        history_duration=history_duration,
+        max_gap=sample_period_duration,
     )
 
     assert len(t0_datetimes) == len(index) - history_length - forecast_length
@@ -111,14 +143,65 @@ def test_get_t0_datetimes_night():
     assert t0_datetimes[-1] == index[-1] - timedelta(minutes=5 * forecast_length)
 
 
-def test_fill_30_minutes_timestamps_to_5_minutes():
-    index = pd.date_range("2020-01-01", "2020-01-02", freq="30T")
+def test_intersection_of_2_dataframes_of_periods():
+    dt = pd.Timestamp("2020-01-01 00:00")
+    a = []
+    b = []
+    c = []  # The correct intersection
 
-    # remove >4.30 to <7.30 o'clock
-    index = index[0:10].join(index[15:], how="outer")
+    # a: |----|       |--|
+    # b:  |--|  and |------|
+    # c:  |--|        |--|
+    a.append({"start_dt": dt, "end_dt": dt.replace(hour=3)})
+    b.append({"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=2)})
+    c.append({"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=2)})
 
-    index_5 = nd_time.fill_30_minutes_timestamps_to_5_minutes(index)
+    # a: |---|         |---|
+    # b:   |---| and |---|
+    # c:   |-|         |-|
+    a.append({"start_dt": dt.replace(hour=4), "end_dt": dt.replace(hour=6)})
+    b.append({"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=7)})
+    c.append({"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=6)})
 
-    assert len(index_5) == 24 * 12 + 1 - (3 * 12 - 1)
-    # 24*12 is total number of 5s in a day, +1 for the next day.
-    # 3*12 - 1 is the amount of 5 mins between 4.30 and 7.30 (not inclusive)
+    # Test identical periods:
+    # a: |---|
+    # b: |---|
+    # c: |---|
+    a.append({"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)})
+    b.append({"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)})
+    c.append({"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)})
+
+    # Test non-overlapping but adjacent periods:
+    # a: |---|
+    # b:     |---|
+    # c:
+    a.append({"start_dt": dt.replace(hour=12), "end_dt": dt.replace(hour=13)})
+    b.append({"start_dt": dt.replace(hour=13), "end_dt": dt.replace(hour=14)})
+
+    # Test non-overlapping periods:
+    # a: |---|
+    # b:       |---|
+    # c:
+    a.append({"start_dt": dt.replace(hour=15), "end_dt": dt.replace(hour=16)})
+    b.append({"start_dt": dt.replace(hour=17), "end_dt": dt.replace(hour=18)})
+
+    # Convert these lists to DataFrames:
+    a = pd.DataFrame(a)
+    b = pd.DataFrame(b)
+    c = pd.DataFrame(c)
+
+    # Test intersection(a, b)
+    intersection = nd_time.intersection_of_2_dataframes_of_periods(a, b)
+    pd.testing.assert_frame_equal(intersection, c)
+
+    # Test intersection(b, a)
+    intersection = nd_time.intersection_of_2_dataframes_of_periods(b, a)
+    pd.testing.assert_frame_equal(intersection, c)
+
+    # Test with empty DataFrames
+    empty_df = pd.DataFrame(columns=["start_dt", "end_dt"])
+    test_cases = [(a, empty_df), (empty_df, b), (empty_df, empty_df)]
+    for test_case in test_cases:
+        pd.testing.assert_frame_equal(
+            nd_time.intersection_of_2_dataframes_of_periods(*test_case), empty_df
+        )

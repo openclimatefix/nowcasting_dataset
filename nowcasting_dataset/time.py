@@ -1,7 +1,7 @@
 """ Time functions """
 import logging
 import warnings
-from typing import Iterable, Tuple, List
+from typing import Iterable, Tuple, List, Dict
 
 import numpy as np
 import pandas as pd
@@ -54,6 +54,8 @@ def select_daylight_datetimes(
     return datetimes[mask]
 
 
+# TODO: Remove this function and its test(s).
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
 def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
     """Get intersections of datetime indexes"""
     assert len(indexes) > 0
@@ -63,15 +65,74 @@ def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.Datet
     return intersection
 
 
+def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
+    """Finds the intersection of two pd.DataFrames of time periods.
+
+    Each row of each pd.DataFrame represents a single time period.  Each pd.DataFrame has
+    two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+
+    A typical use-case is that each pd.DataFrame represents all the time periods where
+    a `DataSource` has contiguous, valid data.
+
+    Here's a graphical example of two pd.DataFrames of time periods and their intersection:
+
+                 ----------------------> TIME ->---------------------
+               a: |-----|   |----|     |----------|     |-----------|
+               b:    |--------|                       |----|    |---|
+    intersection:    |--|   |-|                         |--|    |---|
+
+    Args:
+        a, b: pd.DataFrame where each row represents a time period.  The pd.DataFrame has
+        two columns: start_dt and end_dt.
+
+    Returns:
+        Sorted list of intersecting time periods represented as a pd.DataFrame with two columns:
+        start_dt and end_dt.
+    """
+    if a.empty or b.empty:
+        return pd.DataFrame(columns=["start_dt", "end_dt"])
+
+    all_intersecting_periods = []
+    for a_period in a.itertuples():
+        # Five ways in which two periods may overlap:
+        # a: |----| or |---|   or  |---| or   |--|   or |-|
+        # b:  |--|       |---|   |---|      |------|    |-|
+        # In all five, `a` must always start before `b` ends,
+        # and `a` must always end after `b` starts:
+        overlapping_periods = b[(a_period.start_dt < b.end_dt) & (a_period.end_dt > b.start_dt)]
+
+        # There are two ways in which two periods may *not* overlap:
+        # a: |---|        or        |---|
+        # b:       |---|      |---|
+        # `overlapping` will not include periods which do *not* overlap.
+
+        # Now find the intersection of each period in `overlapping_periods` with
+        # the period from `a` that starts at `a_start_dt` and ends at `a_end_dt`.
+        # We do this by clipping each row of `overlapping_periods`
+        # to start no earlier than `a_start_dt`, and end no later than `a_end_dt`.
+
+        # First, make a copy, so we don't clip the underlying data in `b`.
+        intersecting_periods = overlapping_periods.copy()
+        intersecting_periods.start_dt.clip(lower=a_period.start_dt, inplace=True)
+        intersecting_periods.end_dt.clip(upper=a_period.end_dt, inplace=True)
+
+        all_intersecting_periods.append(intersecting_periods)
+
+    all_intersecting_periods = pd.concat(all_intersecting_periods)
+    return all_intersecting_periods.sort_values(by="start_dt").reset_index(drop=True)
+
+
+# TODO: Delete this and its tests!
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
 def get_start_datetimes(
-    datetimes: pd.DatetimeIndex, total_seq_len: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+    datetimes: pd.DatetimeIndex, total_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
 ) -> pd.DatetimeIndex:
     """Returns a datetime index of valid start datetimes.
 
     Valid start datetimes are those where there is certain to be
-    at least total_seq_len contiguous timesteps ahead.
+    at least total_seq_length contiguous timesteps ahead.
 
-    For each contiguous_segment, remove the last total_seq_len datetimes,
+    For each contiguous_segment, remove the last total_seq_length datetimes,
     and then check the resulting segment is large enough.
 
     max_gap defines the threshold for what constitutes a 'gap' between
@@ -80,7 +141,7 @@ def get_start_datetimes(
     Throw away any timesteps in a sequence shorter than min_timesteps long.
     """
     assert len(datetimes) > 0
-    min_timesteps = total_seq_len * 2
+    min_timesteps = total_seq_length * 2
     assert min_timesteps > 1
 
     gap_mask = np.diff(datetimes) > max_gap
@@ -101,7 +162,7 @@ def get_start_datetimes(
     for next_start_i in segment_boundaries:
         n_timesteps = next_start_i - start_i
         if n_timesteps >= min_timesteps:
-            end_i = next_start_i + 1 - total_seq_len
+            end_i = next_start_i + 1 - total_seq_length
             start_dt_index.append(datetimes[start_i:end_i])
         start_i = next_start_i
 
@@ -110,43 +171,84 @@ def get_start_datetimes(
     return pd.DatetimeIndex(np.concatenate(start_dt_index))
 
 
+def get_contiguous_time_periods(
+    datetimes: pd.DatetimeIndex, min_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+) -> pd.DataFrame:
+    """Returns a pd.DataFrame where each row records the boundary of a contiguous time periods.
+
+    Args:
+      datetimes: The pd.DatetimeIndex of the timeseries. Must be sorted.
+      min_seq_length: Sequences of min_seq_length or shorter will be discarded.
+      max_gap: If any pair of consecutive `datetimes` is more than `max_gap` apart, then this pair
+        of `datetimes` will be considered a "gap" between two contiguous sequences.
+
+    Returns:
+      pd.DataFrame where each row represents a single time period.  The pd.DataFrame
+          has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+    """
+    # Sanity checks.
+    assert len(datetimes) > 0
+    assert min_seq_length > 1
+    assert datetimes.is_monotonic_increasing
+    assert datetimes.is_unique
+
+    # Find indices of gaps larger than max_gap:
+    gap_mask = np.diff(datetimes) > max_gap
+    gap_indices = np.argwhere(gap_mask)[:, 0]
+
+    # gap_indicies are the indices into dt_index for the timestep immediately
+    # *before* the gap.  e.g. if the datetimes at 12:00, 12:05, 18:00, 18:05
+    # then gap_indicies will be [1].  So we add 1 to gap_indices to get
+    # segment_boundaries, an index into dt_index which identifies the _start_
+    # of each segment.
+    segment_boundaries = gap_indices + 1
+
+    # Capture the last segment of dt_index.
+    segment_boundaries = np.concatenate((segment_boundaries, [len(datetimes)]))
+
+    periods: List[Dict[str, pd.Timestamp]] = []
+    start_i = 0
+    for next_start_i in segment_boundaries:
+        n_timesteps = next_start_i - start_i
+        if n_timesteps > min_seq_length:
+            end_i = next_start_i - 1
+            period = {"start_dt": datetimes[start_i], "end_dt": datetimes[end_i]}
+            periods.append(period)
+        start_i = next_start_i
+
+    assert len(periods) > 0
+
+    return pd.DataFrame(periods)
+
+
 def get_t0_datetimes(
     datetimes: pd.DatetimeIndex,
-    total_seq_len: int,
-    history_len: int,
-    minute_delta: int = 5,
+    total_seq_length: int,
+    history_duration: pd.Timedelta,
     max_gap: pd.Timedelta = FIVE_MINUTES,
 ) -> pd.DatetimeIndex:
     """
-    Get datetimes for ML learning batches. T0 refers to the time 'now'.
+    Get T0 datetimes for ML learning batches. T0 refers to the time of the most recent observation.
 
     Args:
-        datetimes: list of datetimes when data is available
-        total_seq_len: total sequence length of data for ml model
-        history_len: the number of historic timestemps
-        minute_delta: the amount of minutes in one time step
-        max_gap: The maximum allowed gap in the datetimes for it to be valid
+        datetimes: Datetimes of every valid timestep.
+        total_seq_length: Total sequence length (number of timesteps) of each example sequence.
+            total_seq_length = history_length + forecast_length + 1
+            (the plus 1 is because neither history_length nor forecast_length include t0).
+        history_duration: The duration of the history included in each example sequence.
+        max_gap: The maximum allowed gap in the datetimes for it to be valid.
 
-    Returns: Datetimes that ml learning data can be built around.
-
+    Returns: T0 datetimes that identify valid, contiguous sequences at least total_seq_length long.
     """
     logger.debug("Getting t0 datetimes")
 
     start_datetimes = get_start_datetimes(
-        datetimes=datetimes, total_seq_len=total_seq_len, max_gap=max_gap
+        datetimes=datetimes, total_seq_length=total_seq_length, max_gap=max_gap
     )
 
-    logger.debug("Adding history during to t0 datetimes")
-    history_dur = timesteps_to_duration(history_len, minute_delta=minute_delta)
-    t0_datetimes = start_datetimes + history_dur
-
+    logger.debug("Adding history duration to t0 datetimes")
+    t0_datetimes = start_datetimes + history_duration
     return t0_datetimes
-
-
-def timesteps_to_duration(n_timesteps: int, minute_delta: int = 5) -> pd.Timedelta:
-    """Change timesteps to a time duration"""
-    assert n_timesteps >= 0
-    return pd.Timedelta(n_timesteps * minute_delta, unit="minutes")
 
 
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
@@ -189,51 +291,7 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
     return Datetime(**datetime_dict)
 
 
-def fill_30_minutes_timestamps_to_5_minutes(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
-    """
-    Fill a 30 minute index with 5 minute timestamps too. Note any gaps in 30 mins are not filled
-    """
-    # resample index to 5 mins
-    index_5 = pd.Series(0, index=index).resample("5T")
-
-    # calculate forward fill and backward fill
-    index_5_ffill = index_5.ffill(limit=5)
-    index_5_bfill = index_5.bfill(limit=5)
-
-    # Time forward fill and backward together.
-    # This means there will be NaNs if the original index is not in surrounding the values
-    # for example:
-    # index = [00:00:00, 01:00:00, 01:30:00, 02:00:00]
-    #
-    # index_5   ffill   bfill   ffill*bfill
-    # 00:00:00  0       0       0
-    # 00:05:00  0       NaN     NaN
-    # 00:10:00  0       NaN     NaN
-    # 00:15:00  0       NaN     NaN
-    # 00:20:00  0       NaN     NaN
-    # 00:25:00  0       NaN     NaN
-    # 00:30:00  NaN     NaN     NaN
-    # 00:35:00  NaN     0       NaN
-    # 00:40:00  NaN     0       NaN
-    # 00:45:00  NaN     0       NaN
-    # 00:50:00  NaN     0       NaN
-    # 00:55:00  NaN     0       NaN
-    # 01:00:00  0       0       0
-    # 01:05:00  0       0       0
-    # 01:10:00  0       0       0
-    # 01:15:00  0       0       0
-    # 01:20:00  0       0       0
-    # 01:25:00  0       0       0
-    # 01:30:00  0       0       0
-    # .....
-    # 02:00:00  0       0       0
-    index_with_gaps = index_5_ffill * index_5_bfill
-
-    # drop nans and take index
-    return index_with_gaps.dropna().index
-
-
-def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
+def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_minutes):
     """
     Make random time vectors
 
@@ -242,14 +300,14 @@ def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
 
     Args:
         batch_size: the batch size
-        seq_len_5_minutes: the length of the sequence in 5 mins deltas
-        seq_len_30_minutes: the length of the sequence in 30 mins deltas
+        seq_length_5_minutes: the length of the sequence in 5 mins deltas
+        seq_length_30_minutes: the length of the sequence in 30 mins deltas
 
     Returns:
         - t0_dt: [batch_size] random init datetimes
-        - time_5: [batch_size, seq_len_5_minutes] random sequence of datetimes, with 5 mins deltas.
+        - time_5: [batch_size, seq_length_5_minutes] random sequence of datetimes, with 5 mins deltas.
         t0_dt is in the middle of the sequence
-        - time_30: [batch_size, seq_len_30_minutes] random sequence of datetimes, with 30 mins deltas.
+        - time_30: [batch_size, seq_length_30_minutes] random sequence of datetimes, with 30 mins deltas.
         t0_dt is in the middle of the sequence
     """
     delta_5 = pd.Timedelta(minutes=5)
@@ -258,12 +316,12 @@ def make_random_time_vectors(batch_size, seq_len_5_minutes, seq_len_30_minutes):
     data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
     t0_dt = pd.Series(random.choices(data_range, k=batch_size))
     time_5 = (
-        pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_len_5_minutes)])
-        - int(seq_len_5_minutes / 2) * delta_5
+        pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_length_5_minutes)])
+        - int(seq_length_5_minutes / 2) * delta_5
     )
     time_30 = (
-        pd.DataFrame([t0_dt + i * delta_30 for i in range(seq_len_30_minutes)])
-        - int(seq_len_30_minutes / 2) * delta_5
+        pd.DataFrame([t0_dt + i * delta_30 for i in range(seq_length_30_minutes)])
+        - int(seq_length_30_minutes / 2) * delta_5
     )
 
     t0_dt = utils.to_numpy(t0_dt)

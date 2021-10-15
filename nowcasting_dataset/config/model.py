@@ -115,13 +115,15 @@ class Process(BaseModel):
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
     local_temp_path: str = Field("~/temp/")
 
+    # TODO: Remove!
     @property
-    def seq_len_30_minutes(self):
+    def seq_length_30_minutes(self):
         """ How many steps are there in 30 minute datasets """
         return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
 
+    # TODO: Remove!
     @property
-    def seq_len_5_minutes(self):
+    def seq_length_5_minutes(self):
         """ How many steps are there in 5 minute datasets """
         return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
 

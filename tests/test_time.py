@@ -194,3 +194,11 @@ def test_intersection_of_2_dataframes_of_periods():
     )
 
     pd.testing.assert_frame_equal(intersection, correct_intersection)
+
+    # Test with empty DataFrames
+    empty_df = pd.DataFrame(columns=["start_dt", "end_dt"])
+    test_cases = [(a, empty_df), (empty_df, b), (empty_df, empty_df)]
+    for test_case in test_cases:
+        pd.testing.assert_frame_equal(
+            nd_time.intersection_of_2_dataframes_of_periods(*test_case), empty_df
+        )

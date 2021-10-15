@@ -44,7 +44,8 @@ class DataSource:
         self.sample_period_minutes = self._get_sample_period_minutes()
         self.sample_period_duration = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
-        # TODO: Do we still need all these different representations of sequence lengths? #219
+        # TODO: Do we still need all these different representations of sequence lengths?
+        # See GitHub issue #219 for more details, and to track this TODO task.
         self.history_length = self.history_minutes // self.sample_period_minutes
         self.forecast_length = self.forecast_minutes // self.sample_period_minutes
 

@@ -142,58 +142,59 @@ def test_get_t0_datetimes_night():
 
 
 def test_intersection_of_2_dataframes_of_periods():
-    # Five ways in which two periods may overlap:
-    #      1          2         3          4         5
-    # a: |----| or |---|   or  |---| or   |--|   or |-|
-    # b:  |--|       |---|   |---|      |------|    |-|
-    #
-    # Two ways in which two periods may *not* overlap:
-    #      6                      7
-    # a: |---|        or        |---|
-    # b:       |---|      |---|
-    #
-    # Let's test all 6 ways.  The comment at the end of each line below
-    # identifies the "overlapping configuration" in the little text
-    # diagram above.
-
     dt = pd.Timestamp("2020-01-01 00:00")
-    a = pd.DataFrame(
-        [
-            {"start_dt": dt, "end_dt": dt.replace(hour=3)},  # 1
-            {"start_dt": dt.replace(hour=4), "end_dt": dt.replace(hour=6)},  # 2
-            {"start_dt": dt.replace(hour=9), "end_dt": dt.replace(hour=11)},  # 3
-            {"start_dt": dt.replace(hour=13), "end_dt": dt.replace(hour=14)},  # 4
-            {"start_dt": dt.replace(day=2, hour=12), "end_dt": dt.replace(day=2, hour=14)},  # 5
-            {"start_dt": dt.replace(hour=16), "end_dt": dt.replace(hour=17)},  # 6
-            {"start_dt": dt.replace(hour=22), "end_dt": dt.replace(hour=23)},  # 7
-        ]
-    )
+    a = []
+    b = []
+    c = []  # The correct intersection
 
-    b = pd.DataFrame(
-        [
-            {"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=2)},  # 1
-            {"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=7)},  # 2
-            {"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)},  # 3
-            {"start_dt": dt.replace(hour=12), "end_dt": dt.replace(hour=15)},  # 4
-            {"start_dt": dt.replace(day=2, hour=12), "end_dt": dt.replace(day=2, hour=14)},  # 5
-            {"start_dt": dt.replace(hour=18), "end_dt": dt.replace(hour=19)},  # 6
-            {"start_dt": dt.replace(hour=20), "end_dt": dt.replace(hour=21)},  # 7
-        ]
-    )
+    # a: |----|       |--|
+    # b:  |--|  and |------|
+    # c:  |--|        |--|
+    a.append({"start_dt": dt, "end_dt": dt.replace(hour=3)})
+    b.append({"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=2)})
+    c.append({"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=2)})
 
+    # a: |---|         |---|
+    # b:   |---| and |---|
+    # c:   |-|         |-|
+    a.append({"start_dt": dt.replace(hour=4), "end_dt": dt.replace(hour=6)})
+    b.append({"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=7)})
+    c.append({"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=6)})
+
+    # Test identical periods:
+    # a: |---|
+    # b: |---|
+    # c: |---|
+    a.append({"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)})
+    b.append({"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)})
+    c.append({"start_dt": dt.replace(hour=8), "end_dt": dt.replace(hour=10)})
+
+    # Test non-overlapping but adjacent periods:
+    # a: |---|
+    # b:     |---|
+    # c:
+    a.append({"start_dt": dt.replace(hour=12), "end_dt": dt.replace(hour=13)})
+    b.append({"start_dt": dt.replace(hour=13), "end_dt": dt.replace(hour=14)})
+
+    # Test non-overlapping periods:
+    # a: |---|
+    # b:       |---|
+    # c:
+    a.append({"start_dt": dt.replace(hour=15), "end_dt": dt.replace(hour=16)})
+    b.append({"start_dt": dt.replace(hour=17), "end_dt": dt.replace(hour=18)})
+
+    # Convert these lists to DataFrames:
+    a = pd.DataFrame(a)
+    b = pd.DataFrame(b)
+    c = pd.DataFrame(c)
+
+    # Test intersection(a, b)
     intersection = nd_time.intersection_of_2_dataframes_of_periods(a, b)
+    pd.testing.assert_frame_equal(intersection, c)
 
-    correct_intersection = pd.DataFrame(
-        [
-            {"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=2)},  # 1
-            {"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=6)},  # 2
-            {"start_dt": dt.replace(hour=9), "end_dt": dt.replace(hour=10)},  # 3
-            {"start_dt": dt.replace(hour=13), "end_dt": dt.replace(hour=14)},  # 4
-            {"start_dt": dt.replace(day=2, hour=12), "end_dt": dt.replace(day=2, hour=14)},  # 5
-        ]
-    )
-
-    pd.testing.assert_frame_equal(intersection, correct_intersection)
+    # Test intersection(b, a)
+    intersection = nd_time.intersection_of_2_dataframes_of_periods(b, a)
+    pd.testing.assert_frame_equal(intersection, c)
 
     # Test with empty DataFrames
     empty_df = pd.DataFrame(columns=["start_dt", "end_dt"])

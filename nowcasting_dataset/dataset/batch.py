@@ -91,8 +91,8 @@ class Batch(BaseModel):
     def fake(configuration: Configuration = Configuration()):
         """ Make fake batch object """
         batch_size = configuration.process.batch_size
-        seq_length_5 = configuration.process.seq_len_5_minutes
-        seq_length_30 = configuration.process.seq_len_30_minutes
+        seq_length_5 = configuration.process.seq_length_5_minutes
+        seq_length_30 = configuration.process.seq_length_30_minutes
         image_size_pixels = configuration.process.satellite_image_size_pixels
 
         return Batch(
@@ -211,8 +211,8 @@ class BatchML(Example):
 
         t0_dt, time_5, time_30 = make_random_time_vectors(
             batch_size=process.batch_size,
-            seq_len_5_minutes=process.seq_len_5_minutes,
-            seq_len_30_minutes=process.seq_len_30_minutes,
+            seq_length_5_minutes=process.seq_length_5_minutes,
+            seq_length_30_minutes=process.seq_length_30_minutes,
         )
 
         return BatchML(
@@ -220,7 +220,7 @@ class BatchML(Example):
             metadata=MetadataML.fake(batch_size=process.batch_size, t0_dt=t0_dt),
             satellite=SatelliteML.fake(
                 process.batch_size,
-                process.seq_len_5_minutes,
+                process.seq_length_5_minutes,
                 process.satellite_image_size_pixels,
                 len(process.sat_channels),
                 time_5=time_5,
@@ -231,26 +231,22 @@ class BatchML(Example):
             ),
             pv=PVML.fake(
                 batch_size=process.batch_size,
-                seq_length_5=process.seq_len_5_minutes,
+                seq_length_5=process.seq_length_5_minutes,
                 n_pv_systems_per_batch=128,
                 time_5=time_5,
             ),
-            sun=SunML.fake(batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes),
-            gsp=GSPML.fake(
-                batch_size=process.batch_size,
-                seq_length_30=process.seq_len_30_minutes,
-                n_gsp_per_batch=32,
-                time_30=time_30,
+            sun=SunML.fake(
+                batch_size=process.batch_size, seq_length_5=process.seq_length_5_minutes
             ),
             nwp=NWPML.fake(
                 batch_size=process.batch_size,
-                seq_length_5=process.seq_len_5_minutes,
+                seq_length_5=process.seq_length_5_minutes,
                 image_size_pixels=process.nwp_image_size_pixels,
                 number_nwp_channels=len(process.nwp_channels),
                 time_5=time_5,
             ),
             datetime=DatetimeML.fake(
-                batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes
+                batch_size=process.batch_size, seq_length_5=process.seq_length_5_minutes
             ),
         )
 

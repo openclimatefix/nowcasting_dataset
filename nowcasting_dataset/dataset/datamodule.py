@@ -89,16 +89,18 @@ class NowcastingDataModule(pl.LightningDataModule):
         """ Post Init """
         super().__init__()
 
-        self.history_len_30_minutes = self.history_minutes // 30
-        self.forecast_len_30_minutes = self.forecast_minutes // 30
+        self.history_length_30_minutes = self.history_minutes // 30
+        self.forecast_length_30_minutes = self.forecast_minutes // 30
 
-        self.history_len_5_minutes = self.history_minutes // 5
-        self.forecast_len_5_minutes = self.forecast_minutes // 5
+        self.history_length_5_minutes = self.history_minutes // 5
+        self.forecast_length_5_minutes = self.forecast_minutes // 5
 
-        # Plus 1 because neither history_len nor forecast_len include t0.
-        self._total_seq_len_5_minutes = self.history_len_5_minutes + self.forecast_len_5_minutes + 1
-        self._total_seq_len_30_minutes = (
-            self.history_len_30_minutes + self.forecast_len_30_minutes + 1
+        # Plus 1 because neither history_length nor forecast_length include t0.
+        self._total_seq_length_5_minutes = (
+            self.history_length_5_minutes + self.forecast_length_5_minutes + 1
+        )
+        self._total_seq_length_30_minutes = (
+            self.history_length_30_minutes + self.forecast_length_30_minutes + 1
         )
         self.contiguous_dataset = None
         if self.num_workers == 0:
@@ -316,17 +318,18 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug("Going to split data")
 
         self._check_has_prepared_data()
-        self.t0_datetimes = self._get_datetimes(interpolate_for_30_minute_data=True)
+        self.t0_datetimes = self._get_t0_datetimes()
 
-        logger.debug(f"Got all start times, there are {len(self.t0_datetimes)}")
+        logger.debug(f"Got all start times, there are {len(self.t0_datetimes):,d}")
 
         self.train_t0_datetimes, self.val_t0_datetimes, self.test_t0_datetimes = split_data(
             datetimes=self.t0_datetimes, method=self.split_method, seed=self.seed
         )
 
         logger.debug(
-            f"Split data done, train has {len(self.train_t0_datetimes)}, "
-            f"validation has {len(self.val_t0_datetimes)}"
+            f"Split data done, train has {len(self.train_t0_datetimes):,d}, "
+            f"validation has {len(self.val_t0_datetimes):,d}, "
+            f"test has {len(self.test_t0_datetimes):,d} t0 datetimes."
         )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
@@ -360,76 +363,39 @@ class NowcastingDataModule(pl.LightningDataModule):
             batch_sampler=None,
         )
 
-    def _get_datetimes(
-        self, interpolate_for_30_minute_data: bool = False, adjust_for_sequence_length: bool = True
-    ) -> pd.DatetimeIndex:
+    def _get_t0_datetimes(self) -> pd.DatetimeIndex:
         """
-        Compute the datetime index.
+        Compute the intersection of the t0 datetimes available across all DataSources.
 
-        interpolate_for_30_minute_data: If True,
-        1. all datetimes from source will be interpolated to 5 min intervals,
-        2. the total intersection will be taken
-        3. only 30 mins datetimes will be selected
-
-        adjust_for_sequence_length, if true, adjust the datetimes by sequence history and length.
-        This means that all the datetimes from [datetime - history_delta: datetime + forecast_delta] should be available
-
-        This deals with a mixture of data sources that have 5 mins and 30 min datatime.
-
-        Returns the intersection of the datetime indicies of all the
-        data_sources, filtered by daylight hours.
+        Returns the intersection of the datetime indicies of all the data_sources,
+        filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night datetimes).
         """
         logger.debug("Get the datetimes")
         self._check_has_prepared_data()
 
         # Get the intersection of datetimes from all data sources.
-        all_datetime_indexes = []
+        t0_datetime_indexes_for_all_data_sources = []
         for data_source in self.data_sources:
-            logger.debug(f"Getting datetimes for {type(data_source).__name__}")
+            logger.debug(f"Getting t0 datetimes for {type(data_source).__name__}")
             try:
-
-                # get datetimes from data source
-                datetime_index = data_source.datetime_index()
-
-                if interpolate_for_30_minute_data and type(data_source).__name__ == "GSPDataSource":
-                    # change 30 min data to 5 mins, only for GSP Data
-                    datetime_index = nd_time.fill_30_minutes_timestamps_to_5_minutes(
-                        index=datetime_index
-                    )
-
-                all_datetime_indexes.append(datetime_index)
+                t0_datetimes = data_source.get_t0_datetimes()
             except NotImplementedError:
+                # data_source has no concept of a datetime index, so skip this data_source.
                 pass
-        datetimes = nd_time.intersection_of_datetimeindexes(all_datetime_indexes)
-        del all_datetime_indexes  # save memory
-
-        # Select datetimes that have at least some sunlight
-        border_locations = self.sat_data_source.geospatial_border()
-        dt_index = nd_time.select_daylight_datetimes(
-            datetimes=datetimes, locations=border_locations
+            else:
+                t0_datetime_indexes_for_all_data_sources.append(t0_datetimes)
+        intersection_of_t0_datetimes = nd_time.intersection_of_datetimeindexes(
+            t0_datetime_indexes_for_all_data_sources
         )
 
-        # Sanity check
-        assert len(dt_index) > 2
-        assert utils.is_monotonically_increasing(dt_index)
+        # Save memory.
+        del t0_datetimes, t0_datetime_indexes_for_all_data_sources
 
-        if not adjust_for_sequence_length:
-            return dt_index
+        # Sanity check.
+        assert len(intersection_of_t0_datetimes) > 2
+        assert utils.is_monotonically_increasing(intersection_of_t0_datetimes)
 
-        # get t0 datetime which depend on the sequence length in the dataset
-        t0_datetimes = nd_time.get_t0_datetimes(
-            datetimes=dt_index,
-            total_seq_len=self._total_seq_len_5_minutes,
-            history_len=self.history_len_5_minutes,
-        )
-
-        # only select datetimes for half hours, ignore 5 minute timestamps
-        if interpolate_for_30_minute_data:
-            t0_datetimes = [t0 for t0 in t0_datetimes if (t0.minute in [0, 30])]
-
-        del dt_index
-
-        return t0_datetimes
+        return intersection_of_t0_datetimes
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

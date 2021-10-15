@@ -12,6 +12,7 @@ import xarray as xr
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
+import nowcasting_dataset.time as nd_time
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -82,7 +83,7 @@ class SatelliteDataSource(ZarrDataSource):
         self._cache = {}
         n_channels = len(self.channels)
         self._shape_of_example = (
-            self._total_seq_len,
+            self._total_seq_length,
             image_size_pixels,
             image_size_pixels,
             n_channels,
@@ -178,13 +179,26 @@ class SatelliteDataSource(ZarrDataSource):
             selected_data = selected_data / SAT_STD
         return selected_data
 
-    def datetime_index(self) -> pd.DatetimeIndex:
-        """Returns a complete list of all available datetimes"""
+    def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:
+        """Returns a complete list of all available datetimes
+
+        Args:
+            remove_night: If True then remove datetimes a night.
+        """
         if self._data is None:
             sat_data = self._open_data()
         else:
             sat_data = self._data
-        return pd.DatetimeIndex(sat_data.time.values)
+
+        datetime_index = pd.DatetimeIndex(sat_data.time.values)
+
+        if remove_night:
+            border_locations = self.geospatial_border()
+            datetime_index = nd_time.select_daylight_datetimes(
+                datetimes=datetime_index, locations=border_locations
+            )
+
+        return datetime_index
 
 
 def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:

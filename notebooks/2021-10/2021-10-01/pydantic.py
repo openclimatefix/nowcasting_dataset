@@ -72,10 +72,10 @@ class FakeDataset(torch.utils.data.Dataset):
         """
         self.batch_size = configuration.process.batch_size
         self.seq_length_5 = (
-            configuration.process.seq_len_5_minutes
+            configuration.process.seq_length_5_minutes
         )  # the sequence data in 5 minute steps
         self.seq_length_30 = (
-            configuration.process.seq_len_30_minutes
+            configuration.process.seq_length_30_minutes
         )  # the sequence data in 30 minute steps
         self.satellite_image_size_pixels = configuration.process.satellite_image_size_pixels
         self.nwp_image_size_pixels = configuration.process.nwp_image_size_pixels

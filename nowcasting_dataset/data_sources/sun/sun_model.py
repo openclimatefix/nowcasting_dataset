@@ -64,7 +64,7 @@ class SunML(DataSourceOutputML):
         """ Create fake data """
         if time_5 is None:
             _, time_5, _ = make_random_time_vectors(
-                batch_size=batch_size, seq_len_5_minutes=seq_length_5, seq_len_30_minutes=0
+                batch_size=batch_size, seq_length_5_minutes=seq_length_5, seq_length_30_minutes=0
             )
 
         return SunML(

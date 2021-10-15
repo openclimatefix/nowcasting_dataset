@@ -161,7 +161,11 @@ class Batch(BaseModel):
 
 
 class Example(BaseModel):
-    """Single Data item"""
+    """
+    Single Data item
+
+    Note that this is currently not really used
+    """
 
     metadata: Optional[MetadataML]
     satellite: Optional[SatelliteML]

@@ -113,6 +113,8 @@ def make_xr_data_array_to_tensor():
                 """Convert this DataArray to a torch.Tensor"""
                 return torch.tensor(self._obj.data)
 
+            # torch tensor names does not working in dataloader yet - 2021-10-15
+            # https://discuss.pytorch.org/t/collating-named-tensors/78650
             # def to_named_tensor(self):
             #     """Convert this DataArray to a torch.Tensor with named dimensions"""
             #     import torch

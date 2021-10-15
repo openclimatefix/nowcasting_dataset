@@ -282,12 +282,6 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.DataArray:
     dt_features["day_of_year"] /= 365
     dt_features = utils.sin_and_cos(dt_features)
 
-    # datetime_dict = {}
-    # for col_name, series in dt_features.iteritems():
-    #     datetime_dict[col_name] = series.values
-    #
-    # datetime_dict["datetime_index"] = series.index.values
-
     return dt_features.to_xarray()
 
 

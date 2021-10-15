@@ -8,6 +8,7 @@ import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.utils import to_numpy
 
@@ -24,7 +25,7 @@ class MetadataDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> xr.Dataset:
+    ) -> Metadata:
         """
         Get example data
 
@@ -66,7 +67,7 @@ class MetadataDataSource(DataSource):
             )
             data[v] = getattr(d, v)
 
-        return data
+        return Metadata(data)
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

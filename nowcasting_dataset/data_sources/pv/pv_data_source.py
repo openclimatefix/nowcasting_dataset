@@ -20,6 +20,7 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
+from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.square import get_bounding_box_mask
 
@@ -196,7 +197,7 @@ class PVDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> xr.Dataset:
+    ) -> PV:
         """
         Get Example data for PV data
 
@@ -273,7 +274,7 @@ class PVDataSource(ImageDataSource):
 
         pv.__setitem__("id_index", range(128))
 
-        return pv
+        return PV(pv)
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

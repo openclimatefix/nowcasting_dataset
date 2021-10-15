@@ -150,5 +150,3 @@ def select_time_period(
 
     # slice all the data
     return x.where(((x.time_index >= start_i) & (x.time_index < end_i)), drop=True)
-    # else:
-    #     return x.where(((x.time_index >= start_i) & (x.time_index < end_i)), drop=True)

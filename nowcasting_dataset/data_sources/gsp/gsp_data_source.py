@@ -157,7 +157,7 @@ class GSPDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> xr.Dataset:
+    ) -> GSP:
         """
         Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
 

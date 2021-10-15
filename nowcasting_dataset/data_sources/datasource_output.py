@@ -52,9 +52,6 @@ class DataSourceOutput(PydanticXArrayDataSet):
         encoding = {name: {"compression": "lzf"} for name in self.data_vars}
         self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
 
-    # def from_xr_dataset(self):
-    #     pass
-
 
 class DataSourceOutputML(BaseModel):
     """General Data Source output pydantic class.

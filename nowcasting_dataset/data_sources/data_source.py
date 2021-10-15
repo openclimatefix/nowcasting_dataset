@@ -131,8 +131,10 @@ class DataSource:
         # 1. # DataSourceOutput.to_xr_dataset() to make it a dataset
         # 2. DataSourceOutput.save_netcdf(), save to netcdf
 
+        # get the name of the cls, this could be one of the data sources like Sun
         cls = examples[0].__class__
 
+        # join the examples together, and cast them to the cls, so that validation can occur
         return cls(join_data_set_to_batch_dataset(examples))
 
     def datetime_index(self) -> pd.DatetimeIndex:

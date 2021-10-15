@@ -1,33 +1,20 @@
 """ Model for output of NWP data """
 from __future__ import annotations
-from pydantic import Field, validator
-from typing import Union, List
+
+import logging
+
 import numpy as np
 import xarray as xr
-import torch
+from pydantic import Field
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
-from nowcasting_dataset.consts import (
-    Array,
-    NWP_VARIABLE_NAMES,
-    NWP_DATA,
-)
-from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.time import make_random_time_vectors
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
-
+from nowcasting_dataset.consts import Array
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
     create_image_array,
 )
-from nowcasting_dataset.consts import Array, SAT_VARIABLE_NAMES
-from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.time import make_random_time_vectors
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
-
-import logging
+from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
 

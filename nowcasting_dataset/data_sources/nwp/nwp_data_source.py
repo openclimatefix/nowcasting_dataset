@@ -12,7 +12,6 @@ import xarray as xr
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger(__name__)

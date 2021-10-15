@@ -10,9 +10,8 @@ from rasterio.warp import Resampling
 
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.geospatial import OSGB
-
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
 
 # Means computed with
@@ -113,22 +112,6 @@ class TopographicDataSource(ImageDataSource):
             )
 
         return xr.Dataset({"data": selected_data})
-
-    # def _put_data_into_example(self, selected_data: xr.DataArray) -> TopographicML:
-    #     """
-    #     Insert the data and coordinates into an Example
-    #
-    #     Args:
-    #         selected_data: DataArray containing the data to insert
-    #
-    #     Returns:
-    #         Example containing the Topographic data
-    #     """
-    #     return TopographicML(
-    #         topo_data=selected_data,
-    #         topo_x_coords=selected_data.x,
-    #         topo_y_coords=selected_data.y,
-    #     )
 
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp

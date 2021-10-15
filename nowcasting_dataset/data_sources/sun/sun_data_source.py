@@ -1,17 +1,16 @@
 """ Loading Raw data """
-from nowcasting_dataset.data_sources.data_source import DataSource
 from dataclasses import dataclass
-import pandas as pd
-from numbers import Number
-from typing import List, Tuple, Union, Optional
-from pathlib import Path
-import numpy as np
-import xarray as xr
 from datetime import datetime
+from numbers import Number
+from pathlib import Path
+from typing import List, Tuple, Union, Optional
 
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
-
-from nowcasting_dataset.data_sources.sun.sun_model import Sun
 
 
 @dataclass

@@ -1,18 +1,15 @@
 """ Sun Data Source """
 import datetime
-import time
-import io
 import logging
+import time
 from concurrent import futures
+from pathlib import Path
 from typing import List, Union, Optional
 
-import fsspec
 import numcodecs
 import pandas as pd
-from tqdm import tqdm
 import xarray as xr
-import numpy as np
-from pathlib import Path
+from tqdm import tqdm
 
 from nowcasting_dataset import geospatial
 

@@ -1,19 +1,17 @@
 """ Model for Sun features """
-from pydantic import Field, validator
-import numpy as np
-import xarray as xr
+import logging
 
+import numpy as np
+from pydantic import Field, validator
+
+from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
     create_sun_dataset,
 )
-from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
-from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.time import make_random_time_vectors
 from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
-import logging
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
+from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
 

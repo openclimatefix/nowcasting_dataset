@@ -1,20 +1,20 @@
 """ General Data Source output pydantic class. """
 from __future__ import annotations
-import os
-from nowcasting_dataset.filesystem.utils import make_folder
-from nowcasting_dataset.utils import get_netcdf_filename
 
+import logging
+import os
 from pathlib import Path
-from pydantic import BaseModel, Field
+from typing import List
+
+import numpy as np
 import pandas as pd
 import xarray as xr
-import numpy as np
-from typing import List, Union
-import logging
-from datetime import datetime
+from pydantic import BaseModel, Field
 
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.filesystem.utils import make_folder
+from nowcasting_dataset.utils import get_netcdf_filename
 
 logger = logging.getLogger(__name__)
 

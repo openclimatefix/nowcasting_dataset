@@ -1,15 +1,14 @@
 """ Model for Topogrpahic features """
-from pydantic import Field, validator
-import xarray as xr
-import numpy as np
 import logging
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
-from nowcasting_dataset.consts import Array
 
-from nowcasting_dataset.consts import TOPOGRAPHIC_DATA, TOPOGRAPHIC_X_COORDS, TOPOGRAPHIC_Y_COORDS
-from nowcasting_dataset.utils import coord_to_range
+import numpy as np
+import xarray as xr
+from pydantic import Field, validator
+
+from nowcasting_dataset.consts import Array
+from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 
 logger = logging.getLogger(__name__)
 

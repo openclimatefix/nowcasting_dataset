@@ -1,12 +1,12 @@
 """ Time functions """
 import logging
+import random
 import warnings
 from typing import Iterable, Tuple, List
 
 import numpy as np
 import pandas as pd
 import pvlib
-import random
 
 from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime

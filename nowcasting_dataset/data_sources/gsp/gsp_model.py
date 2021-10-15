@@ -1,29 +1,24 @@
 """ Model for output of GSP data """
-from pydantic import Field, validator
+import logging
+
 import numpy as np
-import xarray as xr
+from pydantic import Field, validator
 
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutputML,
-    pad_data,
-    DataSourceOutput,
-    create_gsp_pv_dataset,
-)
 from nowcasting_dataset.consts import Array
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
-
-
 from nowcasting_dataset.consts import (
     GSP_ID,
     GSP_YIELD,
     GSP_X_COORDS,
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
-    DEFAULT_N_GSP_PER_EXAMPLE,
 )
-from nowcasting_dataset.time import make_random_time_vectors
-import logging
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    DataSourceOutput,
+    create_gsp_pv_dataset,
+)
 from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
+from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
 

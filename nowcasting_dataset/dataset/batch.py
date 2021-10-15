@@ -1,20 +1,18 @@
 """ batch functions """
 from __future__ import annotations
+
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional, Union, Dict
+from typing import Optional, Union
 
 import xarray as xr
 from pydantic import BaseModel, Field
 
-from nowcasting_dataset.filesystem.utils import make_folder
-
 from nowcasting_dataset.config.model import Configuration
-
 from nowcasting_dataset.data_sources.datetime.datetime_model import DatetimeML, Datetime
-from nowcasting_dataset.data_sources.metadata.metadata_model import MetadataML, Metadata
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSPML, GSP
+from nowcasting_dataset.data_sources.metadata.metadata_model import MetadataML, Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import (
     NWPML,
     NWP,
@@ -23,12 +21,11 @@ from nowcasting_dataset.data_sources.pv.pv_model import PVML, PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import SatelliteML, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import SunML, Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import TopographicML, Topographic
-from nowcasting_dataset.time import make_random_time_vectors
-from nowcasting_dataset.utils import get_netcdf_filename
 from nowcasting_dataset.dataset.xr_torch import (
     make_xr_data_array_to_tensor,
     make_xr_data_set_to_tensor,
 )
+from nowcasting_dataset.time import make_random_time_vectors
 
 _LOG = logging.getLogger(__name__)
 

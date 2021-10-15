@@ -19,13 +19,13 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 # from nowcasting_dataset.utils import scale_to_0_to_1, pad_data
 from nowcasting_dataset.utils import scale_to_0_to_1
-from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ class GSPDataSource(ImageDataSource):
         gsp["y_coords"] = gsp_y_coords
 
         # pad out so that there are always 32 gsp
-        pad_n = 32 - len(gsp.id_index)
+        pad_n = self.n_gsp_per_example - len(gsp.id_index)
         gsp = gsp.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)))
 
         gsp.__setitem__("id_index", range(32))

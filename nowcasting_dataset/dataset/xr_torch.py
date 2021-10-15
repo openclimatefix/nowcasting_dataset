@@ -1,9 +1,10 @@
 """xr array and xr dataset --> to torch functions """
 
+from typing import List
+
+import numpy as np
 import torch
 import xarray as xr
-from typing import List
-import numpy as np
 
 
 def make_xr_data_array_to_tensor():

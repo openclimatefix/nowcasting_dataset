@@ -1,7 +1,6 @@
 """ Data Modules """
 import logging
 import warnings
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union, Optional, Iterable, Dict, Callable
@@ -14,8 +13,8 @@ from nowcasting_dataset import data_sources
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
+from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
 

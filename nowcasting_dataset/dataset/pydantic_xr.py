@@ -1,6 +1,7 @@
 """ Pydantic extension of xarray dataset """
-import xarray as xr
 from typing import Any
+
+import xarray as xr
 
 
 class PydanticXArrayDataSet(xr.Dataset):

@@ -1,7 +1,8 @@
 """ Useful functions for xarray objects """
-import xarray as xr
-import numpy as np
 from typing import List
+
+import numpy as np
+import xarray as xr
 
 
 def from_list_data_array_to_batch_dataset(image_data_arrays: List[xr.DataArray]) -> xr.Dataset:

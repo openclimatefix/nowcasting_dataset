@@ -5,7 +5,6 @@ from typing import Union, List
 
 import fsspec
 
-
 _LOG = logging.getLogger("nowcasting_dataset")
 
 

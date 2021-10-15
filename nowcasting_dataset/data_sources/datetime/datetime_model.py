@@ -1,13 +1,11 @@
 """ Model for output of datetime data """
-from pydantic import validator
-import xarray as xr
 import numpy as np
-import pandas as pd
-import random
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
+import xarray as xr
+from pydantic import validator
+
 from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
 from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 
 class Datetime(DataSourceOutput):

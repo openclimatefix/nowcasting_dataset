@@ -1,13 +1,9 @@
 """ Model for output of PV data """
-from pydantic import Field, validator
-import numpy as np
-import xarray as xr
+import logging
 
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutputML,
-    pad_data,
-    DataSourceOutput,
-)
+import numpy as np
+from pydantic import Field, validator
+
 from nowcasting_dataset.consts import (
     Array,
     PV_YIELD,
@@ -16,19 +12,14 @@ from nowcasting_dataset.consts import (
     PV_SYSTEM_X_COORDS,
     PV_SYSTEM_ROW_NUMBER,
     PV_SYSTEM_ID,
-    DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
-    pad_data,
     DataSourceOutput,
     create_gsp_pv_dataset,
 )
 from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
-
 from nowcasting_dataset.time import make_random_time_vectors
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
-import logging
 
 logger = logging.getLogger(__name__)
 

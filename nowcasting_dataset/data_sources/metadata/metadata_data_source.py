@@ -3,15 +3,13 @@ from dataclasses import dataclass
 from numbers import Number
 from typing import List, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
-from nowcasting_dataset.utils import to_numpy
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.utils import to_numpy
 
 
 @dataclass

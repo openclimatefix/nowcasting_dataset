@@ -1,18 +1,19 @@
 """ Model for output of general/metadata data, useful for a batch """
-from typing import Union, List
+from typing import Union
+
 import numpy as np
-import xarray as xr
 import torch
-from pydantic import validator, Field
+import xarray as xr
+from pydantic import Field
 
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
     create_metadata_dataset,
 )
-from nowcasting_dataset.time import make_random_time_vectors
-from nowcasting_dataset.dataset.pydantic_xr import PydanticXArrayDataSet
 from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
+from nowcasting_dataset.time import make_random_time_vectors
+
 
 # seems to be a pandas dataseries
 

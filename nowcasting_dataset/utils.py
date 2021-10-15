@@ -1,16 +1,16 @@
 """ utils functions """
 import hashlib
 import logging
+import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import fsspec.asyn
+import gcsfs
 import numpy as np
 import pandas as pd
 import torch
 import xarray as xr
-import tempfile
-import gcsfs
 
 from nowcasting_dataset.consts import Array
 

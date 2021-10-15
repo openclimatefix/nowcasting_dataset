@@ -15,17 +15,16 @@ import xarray as xr
 
 from nowcasting_dataset import data_sources
 from nowcasting_dataset import utils as nd_utils
-from nowcasting_dataset.dataset.subset import subselect_data
-from nowcasting_dataset.filesystem.utils import download_to_local, delete_all_files_in_temp_path
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import (
     SATELLITE_DATA,
     DEFAULT_REQUIRED_KEYS,
 )
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
-
-from nowcasting_dataset.utils import set_fsspec_for_multiprocess
 from nowcasting_dataset.dataset.batch import BatchML, Batch
+from nowcasting_dataset.dataset.subset import subselect_data
+from nowcasting_dataset.filesystem.utils import download_to_local, delete_all_files_in_temp_path
+from nowcasting_dataset.utils import set_fsspec_for_multiprocess
 
 logger = logging.getLogger(__name__)
 

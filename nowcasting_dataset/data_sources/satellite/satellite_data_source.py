@@ -11,7 +11,6 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -159,9 +158,6 @@ class SatelliteDataSource(ZarrDataSource):
         self._cache = {}
 
         return Satellite(output)
-
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> Satellite:
-        return selected_data
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         try:

@@ -4,8 +4,13 @@ import xarray as xr
 from pydantic import validator
 
 from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    DataSourceOutput,
+    create_datetime_dataset,
+)
 from nowcasting_dataset.utils import coord_to_range
+from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 
 
 class Datetime(DataSourceOutput):
@@ -21,21 +26,12 @@ class Datetime(DataSourceOutput):
     @staticmethod
     def fake(batch_size, seq_length_5):
         """ Create fake data """
-        pass
+        xr_arrays = [create_datetime_dataset() for _ in range(batch_size)]
 
-        # delta_5 = pd.Timedelta(minutes=5)
-        #
-        # data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
-        # t0_dt = pd.Series(random.choices(data_range, k=batch_size))
-        # time_5 = (
-        #         pd.DataFrame([t0_dt + i * delta_5 for i in range(seq_length_5)])
-        # )
-        #
-        # xr_arrays = [datetime_features_in_example(time_5[i]) for i in range(seq_length_5)]
-        #
-        # # xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
-        #
-        # return xr_dataset
+        # make dataset
+        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+        return Datetime(xr_dataset)
 
 
 class DatetimeML(DataSourceOutputML):

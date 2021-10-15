@@ -142,6 +142,32 @@ def create_metadata_dataset() -> xr.Dataset:
     return data
 
 
+def create_datetime_dataset(
+    seq_length=19,
+) -> xr.Dataset:
+    """ Create fake datetime dataset"""
+
+    ALL_COORDS = {
+        "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length),
+    }
+    coords = [("time", ALL_COORDS["time"])]
+    data_array = xr.DataArray(
+        np.random.randn(
+            seq_length,
+        ),
+        coords=coords,
+    )  # Fake data
+
+    data = convert_data_array_to_dataset(data_array)
+
+    ds = data.rename({"data": "day_of_year_cos"})
+    ds["day_of_year_sin"] = data.rename({"data": "day_of_year_sin"}).day_of_year_sin
+    ds["hour_of_day_cos"] = data.rename({"data": "hour_of_day_cos"}).hour_of_day_cos
+    ds["hour_of_day_sin"] = data.rename({"data": "hour_of_day_sin"}).hour_of_day_sin
+
+    return data
+
+
 class DataSourceOutput(PydanticXArrayDataSet):
     """General Data Source output pydantic class.
 

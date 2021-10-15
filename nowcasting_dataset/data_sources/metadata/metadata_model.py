@@ -29,8 +29,6 @@ class Metadata(DataSourceOutput):
     @staticmethod
     def fake(batch_size):
         """Make a xr dataset"""
-        create_metadata_dataset()
-
         xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
 
         # make dataset

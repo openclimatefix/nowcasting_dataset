@@ -108,6 +108,7 @@ class Batch(BaseModel):
             topographic=Topographic.fake(
                 batch_size=batch_size, image_size_pixels=image_size_pixels
             ),
+            datetime=Datetime.fake(batch_size=batch_size, seq_length_5=seq_length_5),
         )
 
     def save_netcdf(self, batch_i: int, path: Path):

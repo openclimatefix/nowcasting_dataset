@@ -26,6 +26,16 @@ from nowcasting_dataset.dataset.xr_utils import (
     make_xr_data_set_to_tensor,
 )
 from nowcasting_dataset.time import make_random_time_vectors
+from nowcasting_dataset.data_sources.fake import (
+    datetime_fake,
+    metadata_fake,
+    gsp_fake,
+    pv_fake,
+    satellite_fake,
+    sun_fake,
+    topographic_fake,
+    nwp_fake,
+)
 
 _LOG = logging.getLogger(__name__)
 
@@ -87,28 +97,28 @@ class Batch(BaseModel):
 
         return Batch(
             batch_size=batch_size,
-            satellite=Satellite.fake(
+            satellite=satellite_fake(
                 batch_size=batch_size,
                 seq_length_5=seq_length_5,
                 satellite_image_size_pixels=image_size_pixels,
                 number_sat_channels=len(configuration.process.sat_channels),
             ),
-            nwp=NWP.fake(
+            nwp=nwp_fake(
                 batch_size=batch_size,
                 seq_length_5=seq_length_5,
                 image_size_pixels=image_size_pixels,
                 number_nwp_channels=len(configuration.process.nwp_channels),
             ),
-            metadata=Metadata.fake(batch_size=batch_size),
-            pv=PV.fake(
+            metadata=metadata_fake(batch_size=batch_size),
+            pv=pv_fake(
                 batch_size=batch_size, seq_length_5=seq_length_5, n_pv_systems_per_batch=128
             ),
-            gsp=GSP.fake(batch_size=batch_size, seq_length_30=seq_length_30, n_gsp_per_batch=32),
-            sun=Sun.fake(batch_size=batch_size, seq_length_5=seq_length_5),
-            topographic=Topographic.fake(
+            gsp=gsp_fake(batch_size=batch_size, seq_length_30=seq_length_30, n_gsp_per_batch=32),
+            sun=sun_fake(batch_size=batch_size, seq_length_5=seq_length_5),
+            topographic=topographic_fake(
                 batch_size=batch_size, image_size_pixels=image_size_pixels
             ),
-            datetime=Datetime.fake(batch_size=batch_size, seq_length_5=seq_length_5),
+            datetime=datetime_fake(batch_size=batch_size, seq_length_5=seq_length_5),
         )
 
     def save_netcdf(self, batch_i: int, path: Path):

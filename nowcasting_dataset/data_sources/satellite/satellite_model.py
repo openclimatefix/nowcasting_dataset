@@ -12,8 +12,6 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
-from nowcasting_dataset.data_sources.fake import create_image_array
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -31,29 +29,6 @@ class Satellite(DataSourceOutput):
         """ Check that all values are non negative """
         assert (v.data != np.NaN).all(), f"Some satellite data values are NaNs"
         return v
-
-    @staticmethod
-    def fake(
-        batch_size=32,
-        seq_length_5=19,
-        satellite_image_size_pixels=64,
-        number_sat_channels=7,
-    ) -> Satellite:
-        """ Create fake data """
-        # make batch of arrays
-        xr_arrays = [
-            create_image_array(
-                seq_length_5=seq_length_5,
-                image_size_pixels=satellite_image_size_pixels,
-                number_channels=number_sat_channels,
-            )
-            for _ in range(batch_size)
-        ]
-
-        # make dataset
-        xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
-
-        return Satellite(xr_dataset)
 
 
 class SatelliteML(DataSourceOutputML):

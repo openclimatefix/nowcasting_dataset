@@ -10,8 +10,7 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
-from nowcasting_dataset.data_sources.fake import create_metadata_dataset
-from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
+
 from nowcasting_dataset.time import make_random_time_vectors
 
 
@@ -25,16 +24,6 @@ class Metadata(DataSourceOutput):
     _expected_dimensions = ("t0_dt",)
 
     # todo add validation here
-
-    @staticmethod
-    def fake(batch_size):
-        """Make a xr dataset"""
-        xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
-
-        # make dataset
-        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
-
-        return Metadata(xr_dataset)
 
 
 class MetadataML(DataSourceOutputML):

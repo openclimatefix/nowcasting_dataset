@@ -6,7 +6,170 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.dataset.xr_utils import (
+    convert_data_array_to_dataset,
+    join_data_set_to_batch_dataset,
+    from_list_data_array_to_batch_dataset,
+)
+
+from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+
+
+def datetime_fake(batch_size, seq_length_5):
+    """ Create fake data """
+    xr_arrays = [create_datetime_dataset(seq_length=seq_length_5) for _ in range(batch_size)]
+
+    # make dataset
+    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+    return Datetime(xr_dataset)
+
+
+def gsp_fake(
+    batch_size,
+    seq_length_30,
+    n_gsp_per_batch,
+):
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        create_gsp_pv_dataset(
+            seq_length=seq_length_30,
+            freq="30T",
+            number_of_systems=n_gsp_per_batch,
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+    return GSP(xr_dataset)
+
+
+def metadata_fake(batch_size):
+    """Make a xr dataset"""
+    xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
+
+    # make dataset
+    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+    return Metadata(xr_dataset)
+
+
+def nwp_fake(
+    batch_size=32,
+    seq_length_5=19,
+    image_size_pixels=64,
+    number_nwp_channels=7,
+) -> NWP:
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length_5=seq_length_5,
+            image_size_pixels=image_size_pixels,
+            number_channels=number_nwp_channels,
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+
+    xr_dataset = xr_dataset.rename({"time": "target_time"})
+    xr_dataset["init_time"] = xr_dataset.target_time[:, 0]
+
+    return NWP(xr_dataset)
+
+
+def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        create_gsp_pv_dataset(
+            seq_length=seq_length_5,
+            freq="5T",
+            number_of_systems=n_pv_systems_per_batch,
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+    return PV(xr_dataset)
+
+
+def satellite_fake(
+    batch_size=32,
+    seq_length_5=19,
+    satellite_image_size_pixels=64,
+    number_sat_channels=7,
+) -> Satellite:
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length_5=seq_length_5,
+            image_size_pixels=satellite_image_size_pixels,
+            number_channels=number_sat_channels,
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+
+    return Satellite(xr_dataset)
+
+
+def sun_fake(batch_size, seq_length_5):
+    """ Create fake data """
+    # create dataset with both azimuth and elevation, index with time
+    # make batch of arrays
+    xr_arrays = [
+        create_sun_dataset(
+            seq_length=seq_length_5,
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+
+    return Sun(xr_dataset)
+
+
+def topographic_fake(batch_size, image_size_pixels):
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        xr.DataArray(
+            data=np.random.randn(
+                image_size_pixels,
+                image_size_pixels,
+            ),
+            dims=["x", "y"],
+            coords=dict(
+                x=np.sort(np.random.randn(image_size_pixels)),
+                y=np.sort(np.random.randn(image_size_pixels))[::-1].copy(),
+            ),
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+
+    return Topographic(xr_dataset)
 
 
 def create_image_array(

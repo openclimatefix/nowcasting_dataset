@@ -12,8 +12,6 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
-from nowcasting_dataset.data_sources.fake import create_image_array
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
@@ -32,32 +30,6 @@ class NWP(DataSourceOutput):
         """ Check that all values are not NaNs """
         assert (v.data != np.nan).all(), "Some nwp data values are NaNs"
         return v
-
-    @staticmethod
-    def fake(
-        batch_size=32,
-        seq_length_5=19,
-        image_size_pixels=64,
-        number_nwp_channels=7,
-    ) -> NWP:
-        """ Create fake data """
-        # make batch of arrays
-        xr_arrays = [
-            create_image_array(
-                seq_length_5=seq_length_5,
-                image_size_pixels=image_size_pixels,
-                number_channels=number_nwp_channels,
-            )
-            for _ in range(batch_size)
-        ]
-
-        # make dataset
-        xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
-
-        xr_dataset = xr_dataset.rename({"time": "target_time"})
-        xr_dataset["init_time"] = xr_dataset.target_time[:, 0]
-
-        return NWP(xr_dataset)
 
 
 class NWPML(DataSourceOutputML):

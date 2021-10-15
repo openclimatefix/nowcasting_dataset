@@ -6,10 +6,10 @@ from typing import Iterable, Tuple, List
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 import pvlib
 
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     return pd.DataFrame(features, index=index).astype(np.float32)
 
 
-def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
+def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.DataArray:
     """
     Make datetime features with sin and cos
 

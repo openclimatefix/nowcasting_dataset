@@ -8,9 +8,8 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
-from nowcasting_dataset.data_sources.fake import create_datetime_dataset
+
 from nowcasting_dataset.utils import coord_to_range
-from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 
 
 class Datetime(DataSourceOutput):
@@ -22,16 +21,6 @@ class Datetime(DataSourceOutput):
 
     # todo add validation here
     _expected_dimensions = ("time",)
-
-    @staticmethod
-    def fake(batch_size, seq_length_5):
-        """ Create fake data """
-        xr_arrays = [create_datetime_dataset() for _ in range(batch_size)]
-
-        # make dataset
-        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
-
-        return Datetime(xr_dataset)
 
 
 class DatetimeML(DataSourceOutputML):

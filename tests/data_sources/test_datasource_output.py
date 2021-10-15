@@ -1,15 +1,17 @@
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
-from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
-from nowcasting_dataset.data_sources.sun.sun_model import Sun
-from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.data_sources.fake import (
+    sun_fake,
+    topographic_fake,
+    gsp_fake,
+    datetime_fake,
+    nwp_fake,
+    satellite_fake,
+    pv_fake,
+)
 
 
 def test_datetime():
 
-    s = Datetime.fake(
+    s = datetime_fake(
         batch_size=4,
         seq_length_5=13,
     )
@@ -17,7 +19,7 @@ def test_datetime():
 
 def test_gsp():
 
-    s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
+    s = gsp_fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
 
     assert s.data.shape == (4, 13, 32)
 
@@ -35,7 +37,7 @@ def test_gsp():
 
 def test_nwp():
 
-    s = NWP.fake(
+    s = nwp_fake(
         batch_size=4,
         seq_length_5=13,
         image_size_pixels=64,
@@ -45,7 +47,7 @@ def test_nwp():
 
 def test_pv():
 
-    s = PV.fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=128)
+    s = pv_fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=128)
 
 
 # def test_nwp_pad():
@@ -59,7 +61,7 @@ def test_pv():
 
 def test_satellite():
 
-    s = Satellite.fake(
+    s = satellite_fake(
         batch_size=4, seq_length_5=13, satellite_image_size_pixels=64, number_sat_channels=7
     )
 
@@ -68,7 +70,7 @@ def test_satellite():
 
 def test_sun():
 
-    s = Sun.fake(
+    s = sun_fake(
         batch_size=4,
         seq_length_5=13,
     )
@@ -76,7 +78,7 @@ def test_sun():
 
 def test_topo():
 
-    s = Topographic.fake(
+    s = topographic_fake(
         batch_size=4,
         image_size_pixels=64,
     )

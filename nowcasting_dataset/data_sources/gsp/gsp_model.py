@@ -16,8 +16,6 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
-from nowcasting_dataset.data_sources.fake import create_gsp_pv_dataset
-from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
@@ -30,28 +28,6 @@ class GSP(DataSourceOutput):
     _expected_dimensions = ("time", "id")
 
     # todo add validation here
-
-    @staticmethod
-    def fake(
-        batch_size,
-        seq_length_30,
-        n_gsp_per_batch,
-    ):
-        """ Create fake data """
-        # make batch of arrays
-        xr_arrays = [
-            create_gsp_pv_dataset(
-                seq_length=seq_length_30,
-                freq="30T",
-                number_of_systems=n_gsp_per_batch,
-            )
-            for _ in range(batch_size)
-        ]
-
-        # make dataset
-        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
-
-        return GSP(xr_dataset)
 
 
 class GSPML(DataSourceOutputML):

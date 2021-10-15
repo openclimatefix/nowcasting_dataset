@@ -9,8 +9,6 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
-from nowcasting_dataset.data_sources.fake import create_sun_dataset
-from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
@@ -24,23 +22,6 @@ class Sun(DataSourceOutput):
     _expected_dimensions = ("time",)
 
     # todo add validation here
-
-    @staticmethod
-    def fake(batch_size, seq_length_5):
-        """ Create fake data """
-        # create dataset with both azimuth and elevation, index with time
-        # make batch of arrays
-        xr_arrays = [
-            create_sun_dataset(
-                seq_length=seq_length_5,
-            )
-            for _ in range(batch_size)
-        ]
-
-        # make dataset
-        xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
-
-        return Sun(xr_dataset)
 
 
 class SunML(DataSourceOutputML):

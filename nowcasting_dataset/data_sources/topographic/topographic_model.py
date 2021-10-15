@@ -22,30 +22,6 @@ class Topographic(DataSourceOutput):
 
     # todo add validation here
 
-    @staticmethod
-    def fake(batch_size, image_size_pixels):
-        """ Create fake data """
-        # make batch of arrays
-        xr_arrays = [
-            xr.DataArray(
-                data=np.random.randn(
-                    image_size_pixels,
-                    image_size_pixels,
-                ),
-                dims=["x", "y"],
-                coords=dict(
-                    x=np.sort(np.random.randn(image_size_pixels)),
-                    y=np.sort(np.random.randn(image_size_pixels))[::-1].copy(),
-                ),
-            )
-            for _ in range(batch_size)
-        ]
-
-        # make dataset
-        xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
-
-        return Topographic(xr_dataset)
-
 
 class TopographicML(DataSourceOutputML):
     """

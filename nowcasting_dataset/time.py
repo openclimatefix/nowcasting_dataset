@@ -55,7 +55,7 @@ def select_daylight_datetimes(
 
 
 # TODO: Remove this function and its test(s).
-# https://github.com/openclimatefix/nowcasting_dataset/issues/223
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
 def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
     """Get intersections of datetime indexes"""
     assert len(indexes) > 0
@@ -123,7 +123,7 @@ def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) ->
 
 
 # TODO: Delete this and its tests!
-# https://github.com/openclimatefix/nowcasting_dataset/issues/223
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
 def get_start_datetimes(
     datetimes: pd.DatetimeIndex, total_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
 ) -> pd.DatetimeIndex:

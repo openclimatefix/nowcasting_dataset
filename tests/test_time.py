@@ -41,6 +41,7 @@ def test_intersection_of_datetimeindexes():
 
 
 # TODO: Delete this test.
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
 @pytest.mark.parametrize("total_seq_length", [2, 3, 12])
 def test_get_start_datetimes_1(total_seq_length):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
@@ -49,6 +50,7 @@ def test_get_start_datetimes_1(total_seq_length):
 
 
 # TODO: Delete this test.
+# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
 @pytest.mark.parametrize("total_seq_length", [2, 3, 12])
 def test_get_start_datetimes_2(total_seq_length):
     dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")

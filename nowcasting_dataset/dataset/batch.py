@@ -121,8 +121,8 @@ class Batch(Example):
 
         t0_dt, time_5, time_30 = make_random_time_vectors(
             batch_size=process.batch_size,
-            seq_len_5_minutes=process.seq_len_5_minutes,
-            seq_len_30_minutes=process.seq_len_30_minutes,
+            seq_length_5_minutes=process.seq_length_5_minutes,
+            seq_length_30_minutes=process.seq_length_30_minutes,
         )
 
         return Batch(
@@ -130,7 +130,7 @@ class Batch(Example):
             metadata=Metadata.fake(batch_size=process.batch_size, t0_dt=t0_dt),
             satellite=Satellite.fake(
                 process.batch_size,
-                process.seq_len_5_minutes,
+                process.seq_length_5_minutes,
                 process.satellite_image_size_pixels,
                 len(process.nwp_channels),
                 time_5=time_5,
@@ -141,26 +141,26 @@ class Batch(Example):
             ),
             pv=PV.fake(
                 batch_size=process.batch_size,
-                seq_length_5=process.seq_len_5_minutes,
+                seq_length_5=process.seq_length_5_minutes,
                 n_pv_systems_per_batch=128,
                 time_5=time_5,
             ),
-            sun=Sun.fake(batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes),
+            sun=Sun.fake(batch_size=process.batch_size, seq_length_5=process.seq_length_5_minutes),
             gsp=GSP.fake(
                 batch_size=process.batch_size,
-                seq_length_30=process.seq_len_30_minutes,
+                seq_length_30=process.seq_length_30_minutes,
                 n_gsp_per_batch=32,
                 time_30=time_30,
             ),
             nwp=NWP.fake(
                 batch_size=process.batch_size,
-                seq_length_5=process.seq_len_5_minutes,
+                seq_length_5=process.seq_length_5_minutes,
                 nwp_image_size_pixels=process.nwp_image_size_pixels,
                 number_nwp_channels=len(process.nwp_channels),
                 time_5=time_5,
             ),
             datetime=Datetime.fake(
-                batch_size=process.batch_size, seq_length_5=process.seq_len_5_minutes
+                batch_size=process.batch_size, seq_length_5=process.seq_length_5_minutes
             ),
         )
 

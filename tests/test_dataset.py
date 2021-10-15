@@ -11,7 +11,7 @@ from nowcasting_dataset.dataset.datasets import NowcastingDataset
 def dataset(sat_data_source, general_data_source):
     all_datetimes = sat_data_source.datetime_index()
     t0_datetimes = nd_time.get_t0_datetimes(
-        datetimes=all_datetimes, total_seq_len=2, history_dur=pd.Timedelta(0)
+        datetimes=all_datetimes, total_seq_length=2, history_duration=pd.Timedelta(0)
     )
     return NowcastingDataset(
         batch_size=8,
@@ -27,8 +27,8 @@ def dataset_gsp(gsp_data_source, general_data_source):
     all_datetimes = gsp_data_source.datetime_index()
     t0_datetimes = nd_time.get_t0_datetimes(
         datetimes=all_datetimes,
-        total_seq_len=2,
-        history_dur=pd.Timedelta(0),
+        total_seq_length=2,
+        history_duration=pd.Timedelta(0),
         max_gap=nd_time.THIRTY_MINUTES,
     )
 

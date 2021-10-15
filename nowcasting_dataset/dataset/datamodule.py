@@ -90,16 +90,18 @@ class NowcastingDataModule(pl.LightningDataModule):
         """ Post Init """
         super().__init__()
 
-        self.history_len_30_minutes = self.history_minutes // 30
-        self.forecast_len_30_minutes = self.forecast_minutes // 30
+        self.history_length_30_minutes = self.history_minutes // 30
+        self.forecast_length_30_minutes = self.forecast_minutes // 30
 
-        self.history_len_5_minutes = self.history_minutes // 5
-        self.forecast_len_5_minutes = self.forecast_minutes // 5
+        self.history_length_5_minutes = self.history_minutes // 5
+        self.forecast_length_5_minutes = self.forecast_minutes // 5
 
-        # Plus 1 because neither history_len nor forecast_len include t0.
-        self._total_seq_len_5_minutes = self.history_len_5_minutes + self.forecast_len_5_minutes + 1
-        self._total_seq_len_30_minutes = (
-            self.history_len_30_minutes + self.forecast_len_30_minutes + 1
+        # Plus 1 because neither history_length nor forecast_length include t0.
+        self._total_seq_length_5_minutes = (
+            self.history_length_5_minutes + self.forecast_length_5_minutes + 1
+        )
+        self._total_seq_length_30_minutes = (
+            self.history_length_30_minutes + self.forecast_length_30_minutes + 1
         )
         self.contiguous_dataset = None
         if self.num_workers == 0:

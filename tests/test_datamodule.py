@@ -123,8 +123,8 @@ def test_data_module(config_filename):
     # for key in list(Example.__annotations__.keys()):
     #     assert key in batch[0].keys()
     #
-    # seq_len_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
-    # seq_len_5_minutes = (
+    # seq_length_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
+    # seq_length_5_minutes = (
     #     19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
     # )
 
@@ -135,8 +135,8 @@ def test_data_module(config_filename):
     #         nwp_image_size=config.process.nwp_image_size_pixels,
     #         n_sat_channels=len(config.process.sat_channels),
     #         sat_image_size=config.process.satellite_image_size_pixels,
-    #         seq_len_30_minutes=seq_len_30_minutes,
-    #         seq_len_5_minutes=seq_len_5_minutes,
+    #         seq_length_30_minutes=seq_length_30_minutes,
+    #         seq_length_5_minutes=seq_length_5_minutes,
     #     )
 
 

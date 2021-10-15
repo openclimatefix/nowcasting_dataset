@@ -261,6 +261,9 @@ class ZarrDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
+        # rename 'variable' to 'channels'
+        selected_data = selected_data.rename({"variable": "channels"})
+
         return self._put_data_into_example(selected_data)
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:

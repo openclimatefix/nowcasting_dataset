@@ -18,7 +18,7 @@ class Datetime(DataSourceOutput):
     __slots__ = []
 
     # todo add validation here
-    pass
+    _expected_dimensions = ("time",)
 
     @staticmethod
     def fake(batch_size, seq_length_5):

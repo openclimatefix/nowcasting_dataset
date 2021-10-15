@@ -46,7 +46,7 @@ def create_image_array(
 
 
 def create_gsp_pv_dataset(
-    dims=("time", "system"),
+    dims=("time", "id"),
     freq="5T",
     seq_length=19,
     number_of_systems=128,
@@ -54,7 +54,7 @@ def create_gsp_pv_dataset(
     """ Create gsp or pv fake dataset """
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
-        "system": np.random.randint(low=0, high=1000, size=number_of_systems),
+        "id": np.random.randint(low=0, high=1000, size=number_of_systems),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     data_array = xr.DataArray(
@@ -69,17 +69,17 @@ def create_gsp_pv_dataset(
 
     x_coords = xr.DataArray(
         data=np.sort(np.random.randn(number_of_systems)),
-        dims=["system_index"],
+        dims=["id_index"],
         coords=dict(
-            system_index=range(number_of_systems),
+            id_index=range(number_of_systems),
         ),
     )
 
     y_coords = xr.DataArray(
         data=np.sort(np.random.randn(number_of_systems)),
-        dims=["system_index"],
+        dims=["id_index"],
         coords=dict(
-            system_index=range(number_of_systems),
+            id_index=range(number_of_systems),
         ),
     )
 
@@ -133,7 +133,7 @@ def create_metadata_dataset() -> xr.Dataset:
     data = convert_data_array_to_dataset(xr.DataArray.from_dict(d))
 
     for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
-        d: dict = {"dims": ("t0_dt_index"), "data": [np.random.randint(0, 1000)]}
+        d: dict = {"dims": ("t0_dt",), "data": [np.random.randint(0, 1000)]}
         d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename({"data": v})
         data[v] = getattr(d, v)
 

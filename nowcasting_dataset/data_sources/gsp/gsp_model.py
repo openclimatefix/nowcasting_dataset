@@ -32,9 +32,9 @@ class GSP(DataSourceOutput):
     """ Class to store GSP data as a xr.Dataset with some validation """
 
     __slots__ = []
+    _expected_dimensions = ("time", "id")
 
     # todo add validation here
-    pass
 
     @staticmethod
     def fake(

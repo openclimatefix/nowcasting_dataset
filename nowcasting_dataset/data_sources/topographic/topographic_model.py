@@ -19,6 +19,7 @@ class Topographic(DataSourceOutput):
 
     # Use to store xr.Dataset data
     __slots__ = []
+    _expected_dimensions = ("x", "y")
 
     # todo add validation here
 

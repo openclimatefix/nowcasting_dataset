@@ -56,7 +56,6 @@ def test_get_batch(dataset: NowcastingDataset):
     dataset.per_worker_init(worker_id=1)
     batch = dataset._get_batch()
     assert isinstance(batch, Batch)
-    print(batch)
     assert batch.satellite is not None
     assert batch.satellite.data.shape == (
         8,

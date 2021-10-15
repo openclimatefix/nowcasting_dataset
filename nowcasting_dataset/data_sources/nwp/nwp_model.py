@@ -38,9 +38,9 @@ class NWP(DataSourceOutput):
     # Use to store xr.Dataset data
 
     __slots__ = []
+    _expected_dimensions = ("time", "x", "y", "channels")
 
     # todo add validation here
-    pass
 
     @staticmethod
     def fake(

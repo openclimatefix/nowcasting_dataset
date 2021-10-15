@@ -11,8 +11,8 @@ from nowcasting_dataset.consts import Array
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
-    create_image_array,
 )
+from nowcasting_dataset.data_sources.fake import create_image_array
 from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 logger = logging.getLogger(__name__)

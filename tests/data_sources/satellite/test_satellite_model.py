@@ -3,7 +3,7 @@ import tempfile
 
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite, SatelliteML
 
-from nowcasting_dataset.dataset.xr_torch import (
+from nowcasting_dataset.dataset.xr_utils import (
     make_xr_data_array_to_tensor,
     make_xr_data_set_to_tensor,
 )

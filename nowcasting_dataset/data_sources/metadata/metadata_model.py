@@ -9,8 +9,8 @@ from pydantic import Field
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
-    create_metadata_dataset,
 )
+from nowcasting_dataset.data_sources.fake import create_metadata_dataset
 from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 from nowcasting_dataset.time import make_random_time_vectors
 

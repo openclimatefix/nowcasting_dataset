@@ -21,7 +21,7 @@ from nowcasting_dataset.data_sources.pv.pv_model import PVML, PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import SatelliteML, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import SunML, Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import TopographicML, Topographic
-from nowcasting_dataset.dataset.xr_torch import (
+from nowcasting_dataset.dataset.xr_utils import (
     make_xr_data_array_to_tensor,
     make_xr_data_set_to_tensor,
 )

@@ -7,8 +7,8 @@ from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
-    create_datetime_dataset,
 )
+from nowcasting_dataset.data_sources.fake import create_datetime_dataset
 from nowcasting_dataset.utils import coord_to_range
 from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
 

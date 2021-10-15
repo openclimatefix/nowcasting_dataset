@@ -12,7 +12,7 @@ from nowcasting_dataset.config.model import Configuration
 
 import xarray as xr
 
-from nowcasting_dataset.dataset.xr_torch import (
+from nowcasting_dataset.dataset.xr_utils import (
     make_xr_data_array_to_tensor,
     make_xr_data_set_to_tensor,
 )

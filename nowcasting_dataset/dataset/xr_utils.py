@@ -1,7 +1,13 @@
-""" Useful functions for xarray objects """
-from typing import List
+""" Useful functions for xarray objects
+
+1. joining data arrays to datasets
+2. pydantic exentions model of xr.Dataset
+3. xr array and xr dataset --> to torch functions
+"""
+from typing import List, Any
 
 import numpy as np
+import torch
 import xarray as xr
 
 
@@ -39,3 +45,99 @@ def convert_data_array_to_dataset(data_xarray):
         data[dim] = xr.DataArray(coord, coords=data[f"{dim}_index"].coords, dims=[f"{dim}_index"])
 
     return data
+
+
+class PydanticXArrayDataSet(xr.Dataset):
+    """Pydantic Xarray Dataset Class
+
+    Adapted from https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__
+
+    """
+
+    _expected_dimensions = ()  # Subclasses should set this.
+
+    __slots__ = []
+
+    @classmethod
+    def model_validation(cls, v):
+        """ Specific model validation, to be overwritten by class """
+        return v
+
+    @classmethod
+    def __get_validators__(cls):
+        """Get validators"""
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: Any) -> Any:
+        """Do validation"""
+        v = cls.validate_dims(v)
+        v = cls.validate_coords(v)
+        v = cls.model_validation(v)
+        return v
+        # TODO: How to call multiple validation functions?
+
+    @classmethod
+    def validate_dims(cls, v: Any) -> Any:
+        """Validate the dims"""
+        assert all(
+            dim.replace("_index", "") in cls._expected_dimensions
+            for dim in v.dims
+            if dim != "example"
+        ), (
+            f"{cls.__name__}.dims is wrong! "
+            f"{cls.__name__}.dims is {v.dims}. "
+            f"But we expected {cls._expected_dimensions}. Note that '_index' is removed, and 'example' is ignored"
+        )
+        return v
+
+    @classmethod
+    def validate_coords(cls, v: Any) -> Any:
+        """Validate the coords"""
+        for dim in cls._expected_dimensions:
+            coord = v.coords[f"{dim}_index"]
+            assert len(coord) > 0, f"{dim}_index is empty in {cls.__name__}!"
+        return v
+
+
+def make_xr_data_array_to_tensor():
+    """ Add torch object to data array """
+    if not hasattr(xr.DataArray, "torch"):
+
+        @xr.register_dataarray_accessor("torch")
+        class TorchAccessor:
+            def __init__(self, xarray_obj):
+                self._obj = xarray_obj
+
+            def to_tensor(self):
+                """Convert this DataArray to a torch.Tensor"""
+                return torch.tensor(self._obj.data)
+
+            # def to_named_tensor(self):
+            #     """Convert this DataArray to a torch.Tensor with named dimensions"""
+            #     import torch
+            #
+            #     return torch.tensor(self._obj.data, names=self._obj.dims)
+
+
+def make_xr_data_set_to_tensor():
+    """ Add torch object to dataset """
+    if not hasattr(xr.Dataset, "torch"):
+
+        @xr.register_dataset_accessor("torch")
+        class TorchAccessor:
+            def __init__(self, xdataset_obj: xr.Dataset):
+                self._obj = xdataset_obj
+
+            def to_tensor(self, dims: List[str]) -> dict:
+                """Convert this Dataset to dictionary of torch tensors"""
+                torch_dict = {}
+
+                for dim in dims:
+                    v = getattr(self._obj, dim)
+                    if dim.find("time") != -1:
+                        v = v.astype(np.int32)
+
+                    torch_dict[dim] = v.torch.to_tensor()
+
+                return torch_dict

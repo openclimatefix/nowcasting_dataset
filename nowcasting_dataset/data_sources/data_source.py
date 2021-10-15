@@ -264,7 +264,7 @@ class ZarrDataSource(ImageDataSource):
         # rename 'variable' to 'channels'
         selected_data = selected_data.rename({"variable": "channels"})
 
-        return self._put_data_into_example(selected_data)
+        return selected_data
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:
         """
@@ -300,7 +300,4 @@ class ZarrDataSource(ImageDataSource):
         raise NotImplementedError()
 
     def _open_data(self) -> xr.DataArray:
-        raise NotImplementedError()
-
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> DataSourceOutput:
         raise NotImplementedError()

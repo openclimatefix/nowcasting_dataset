@@ -51,6 +51,7 @@ class PydanticXArrayDataSet(xr.Dataset):
     @classmethod
     def validate_coords(cls, v: Any) -> Any:
         """Validate the coords"""
+        print(v)
         for dim in cls._expected_dimensions:
             coord = v.coords[f"{dim}_index"]
             assert len(coord) > 0, f"{dim}_index is empty in {cls.__name__}!"

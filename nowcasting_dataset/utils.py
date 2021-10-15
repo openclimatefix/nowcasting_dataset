@@ -109,12 +109,6 @@ def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
     return filename
 
 
-def pad_nans(array, pad_width) -> np.ndarray:
-    """ Pad nans with nans"""
-    array = array.astype(np.float32)
-    return np.pad(array, pad_width, constant_values=np.NaN)
-
-
 def to_numpy(value):
     """ Change generic data to numpy"""
     if isinstance(value, xr.DataArray):

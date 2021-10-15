@@ -29,8 +29,11 @@ class Satellite(DataSourceOutput):
     __slots__ = []
     _expected_dimensions = ("time", "x", "y", "channels")
 
-    # todo add validation here
-    pass
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are non negative """
+        assert (v.data > 0).all(), "Some satellite data values are negative"
+        return v
 
     @staticmethod
     def fake(

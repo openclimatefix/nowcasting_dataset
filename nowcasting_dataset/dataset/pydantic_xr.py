@@ -15,15 +15,21 @@ class PydanticXArrayDataSet(xr.Dataset):
     __slots__ = []
 
     @classmethod
+    def model_validation(cls, v):
+        """ Specific model validation, to be overwritten by class """
+        return v
+
+    @classmethod
     def __get_validators__(cls):
         """Get validators"""
-        yield cls.validate_dims
+        yield cls.validate
 
     @classmethod
     def validate(cls, v: Any) -> Any:
         """Do validation"""
         v = cls.validate_dims(v)
         v = cls.validate_coords(v)
+        v = cls.model_validation(v)
         return v
         # TODO: How to call multiple validation functions?
 
@@ -43,8 +49,8 @@ class PydanticXArrayDataSet(xr.Dataset):
 
     @classmethod
     def validate_coords(cls, v: Any) -> Any:
-        """Validate teh coords"""
+        """Validate the coords"""
         for dim in cls._expected_dimensions:
-            coord = v.coords[dim]
-            assert len(coord) > 0, f"{dim} is empty in {cls.__name__}!"
+            coord = v.coords[f"{dim}_index"]
+            assert len(coord) > 0, f"{dim}_index is empty in {cls.__name__}!"
         return v

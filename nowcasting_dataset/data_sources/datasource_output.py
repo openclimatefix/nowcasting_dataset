@@ -34,11 +34,13 @@ def create_image_array(
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     image_data_array = xr.DataArray(
-        np.random.randn(
-            seq_length_5,
-            image_size_pixels,
-            image_size_pixels,
-            number_channels,
+        abs(
+            np.random.randn(
+                seq_length_5,
+                image_size_pixels,
+                image_size_pixels,
+                number_channels,
+            )
         ),
         coords=coords,
     )  # Fake data for testing!
@@ -126,7 +128,7 @@ def create_sun_dataset(
 def create_metadata_dataset() -> xr.Dataset:
     """ Create fake metadata dataset"""
     d = {
-        "dims": ("t0_dt"),
+        "dims": ("t0_dt",),
         "data": pd.date_range("2021-01-01", freq="5T", periods=1) + pd.Timedelta("30T"),
     }
 

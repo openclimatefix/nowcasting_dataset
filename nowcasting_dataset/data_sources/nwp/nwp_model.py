@@ -40,7 +40,11 @@ class NWP(DataSourceOutput):
     __slots__ = []
     _expected_dimensions = ("time", "x", "y", "channels")
 
-    # todo add validation here
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are not NaNs """
+        assert (v.data != np.nan).all(), "Some nwp data values are NaNs"
+        return v
 
     @staticmethod
     def fake(

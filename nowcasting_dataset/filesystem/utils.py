@@ -29,6 +29,11 @@ def get_maximum_batch_id(path: str):
     """
     _LOG.debug(f"Looking for maximum batch id in {path}")
 
+    filesystem = fsspec.open(path).fs
+    if not filesystem.exists(path):
+        _LOG.debug(f"{path} does not exists")
+        return None
+
     filenames = get_all_filenames_in_path(path=path)
 
     # just take filename

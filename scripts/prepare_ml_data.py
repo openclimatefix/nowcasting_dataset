@@ -140,6 +140,7 @@ def get_data_module():
         nwp_base_path=NWP_ZARR_PATH,
         gsp_filename=GSP_ZARR_PATH,
         topographic_filename=TOPO_TIFF_PATH,
+        sun_filename=config.input_data.sun_zarr_path,
         pin_memory=False,  #: Passed to DataLoader.
         num_workers=num_workers,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.

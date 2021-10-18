@@ -1,1 +1,3 @@
 include *.txt
+include versioneer.py
+include nowcasting_dataset/_version.py

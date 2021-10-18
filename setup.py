@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 
 # read the contents of your README file
 from pathlib import Path
+import versioneer
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -10,7 +11,8 @@ install_requires = (this_directory / "requirements.txt").read_text().splitlines(
 
 setup(
     name="nowcasting_dataset",
-    version="0.2.1",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",

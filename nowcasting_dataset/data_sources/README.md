@@ -47,3 +47,66 @@ This inherits from 'datasource_output.DataSourceOutput'.
 
 `fake.py` has several function to create fake `Batch` data. This is useful for testing,
 and hopefully useful outside this module too.
+
+
+## How to add a new data source
+
+This should give a checklist of general things to do when creating a new data source.
+1. Assuming that data can not be made on the fly, create script to make process data.
+
+2. Create folder in nowcasting/data_sources with the name of the new data source
+
+3. Create a file called `<name>_datasource.py`. This file should contain class which
+inherits `nowcasting_dataset.data_source.DataSource`
+
+4. This class will need `get_example` method. (there is also an option to use a `get_batch` method instead)
+```python
+def get_example(
+    self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+) -> NewDataSource:
+    """
+    Get a single example
+
+    Args:
+        t0_dt: Current datetime for the example, unused
+        x_meters_center: Center of the example in meters in the x direction in OSGB coordinates
+        y_meters_center: Center of the example in meters in the y direction in OSGB coordinates
+
+    Returns:
+        Example containing xxx data for the selected area
+    """
+```
+
+5. Create a file called `<name>_model.py` which a class with the name of the data soure. This class is an extension
+of an xr.Dataset with some pydantic validation
+```python
+class NewDataSource(DataSourceOutput):
+    """ Class to store <name> data as a xr.Dataset with some validation """
+
+    # Use to store xr.Dataset data
+    __slots__ = ()
+    _expected_dimensions = ("x", "y")
+
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are not NaNs """
+        assert (v.data != np.nan).all(), "Some data values are NaNs"
+        return v
+
+```
+6. Also in `<name>_model.py` create a pydantic model of the new data output which will be used for machine learning. The
+pydantic model is typically the data and coords of the xr.Dataset changed into `torch.Tensor`.
+Note this might move to `nowcatsing_dataloader` soon.
+
+7. Add to new data source `Batch` object.
+
+8. Add new data source to `nowcasting.dataset.datamodule.NowcastingDataModule`.
+
+9. Add configuration data to configuration model, for example where the raw data is loaded from.
+
+### Testing
+1. Create a test to check that new data source is loaded correctly.
+2. Create a script to make test data in `scritps/generate_data_for_tests`
+3. Create a function to make a randomly generated xr.Dataset for generating fake data in `nowcasting.dataset.fake.py` \
+and to batch fake function
+4. Re-run script to generate batch test data.

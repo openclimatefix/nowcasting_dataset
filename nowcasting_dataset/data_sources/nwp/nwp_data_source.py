@@ -233,6 +233,9 @@ class NWPDataSource(ZarrDataSource):
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
         selected_data = selected_data.rename({"target_time": "time"})
         selected_data = selected_data.rename({"variable": "channels"})
+
+        selected_data.data = selected_data.data.astype(np.float32)
+
         return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:

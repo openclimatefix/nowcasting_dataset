@@ -175,6 +175,9 @@ class SatelliteDataSource(ZarrDataSource):
         if self.normalise:
             selected_data = selected_data - SAT_MEAN
             selected_data = selected_data / SAT_STD
+
+        selected_data.data = selected_data.data.astype(np.float32)
+
         return selected_data
 
     def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:

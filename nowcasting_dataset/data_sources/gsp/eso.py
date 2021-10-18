@@ -77,12 +77,12 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
 
         assert "centroid_lat" in metadata.keys(), (
             "GSP Metadata does not contain centroid_lat, "
-            'try deleteing the folder "nowcasting_dataset/data_sources/gsp/gsp_shape"'
+            'try deleting the folder "nowcasting_dataset/data_sources/gsp/gsp_shape"'
         )
 
         assert "centroid_lon" in metadata.keys(), (
             "GSP Metadata does not contain centroid_lon, "
-            'try deleteing the folder "nowcasting_dataset/data_sources/gsp/gsp_shape"'
+            'try deleting the folder "nowcasting_dataset/data_sources/gsp/gsp_shape"'
         )
 
     return metadata

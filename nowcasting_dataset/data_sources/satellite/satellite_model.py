@@ -12,6 +12,7 @@ from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutputML,
     DataSourceOutput,
 )
+from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
 
@@ -67,19 +68,29 @@ class SatelliteML(DataSourceOutputML):
         time_5=None,
     ):
         """Create fake data"""
-        # if time_5 is None:
-        #     _, time_5, _ = make_random_time_vectors(
-        #         batch_size=batch_size, seq_length_5_minutes=seq_length_5, seq_length_30_minutes=0
-        #     )
+        if time_5 is None:
+            _, time_5, _ = make_random_time_vectors(
+                batch_size=batch_size, seq_length_5_minutes=seq_length_5, seq_length_30_minutes=0
+            )
 
-        s = Satellite.fake(
+        s = SatelliteML(
             batch_size=batch_size,
-            seq_length_5=seq_length_5,
-            satellite_image_size_pixels=satellite_image_size_pixels,
-            number_sat_channels=number_sat_channels,
+            data=np.random.randn(
+                batch_size,
+                seq_length_5,
+                satellite_image_size_pixels,
+                satellite_image_size_pixels,
+                number_sat_channels,
+            ),
+            x=np.sort(np.random.randn(batch_size, satellite_image_size_pixels)),
+            y=np.sort(np.random.randn(batch_size, satellite_image_size_pixels))[:, ::-1].copy()
+            # copy is needed as torch doesnt not support negative strides
+            ,
+            time=time_5,
+            channels=np.array([list(range(number_sat_channels)) for _ in range(batch_size)]),
         )
 
-        return SatelliteML.from_xr_dataset(xr_dataset=s)
+        return s
 
     def get_datetime_index(self) -> Array:
         """Get the datetime index of this data"""

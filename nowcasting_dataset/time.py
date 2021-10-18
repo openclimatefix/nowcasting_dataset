@@ -318,8 +318,8 @@ def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_min
         - int(seq_length_30_minutes / 2) * delta_5
     )
 
-    t0_dt = utils.to_numpy(t0_dt)
-    time_5 = utils.to_numpy(time_5.T)
-    time_30 = utils.to_numpy(time_30.T)
+    t0_dt = utils.to_numpy(t0_dt).astype(np.int32)
+    time_5 = utils.to_numpy(time_5.T).astype(np.int32)
+    time_30 = utils.to_numpy(time_30.T).astype(np.int32)
 
     return t0_dt, time_5, time_30

@@ -32,18 +32,27 @@ def join_dataset_to_batch_dataset(image_data_arrays: List[xr.Dataset]) -> xr.Dat
 
 def convert_data_array_to_dataset(data_xarray):
     """ Convert data array to dataset. Reindex dim so that it can be merged with batch"""
-    dims = data_xarray.dims
     data = xr.Dataset({"data": data_xarray})
 
+    return make_dim_index(data_xarray_dataset=data)
+
+
+def make_dim_index(data_xarray_dataset: xr.Dataset) -> xr.Dataset:
+    """ Reindex dataset dims so that it can be merged with batch"""
+
+    dims = data_xarray_dataset.dims
+
     for dim in dims:
-        coord = data[dim]
-        data[dim] = np.arange(len(coord))
+        coord = data_xarray_dataset[dim]
+        data_xarray_dataset[dim] = np.arange(len(coord))
 
-        data = data.rename({dim: f"{dim}_index"})
+        data_xarray_dataset = data_xarray_dataset.rename({dim: f"{dim}_index"})
 
-        data[dim] = xr.DataArray(coord, coords=data[f"{dim}_index"].coords, dims=[f"{dim}_index"])
+        data_xarray_dataset[dim] = xr.DataArray(
+            coord, coords=data_xarray_dataset[f"{dim}_index"].coords, dims=[f"{dim}_index"]
+        )
 
-    return data
+    return data_xarray_dataset
 
 
 class PydanticXArrayDataSet(xr.Dataset):

@@ -11,6 +11,8 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 
 @dataclass
@@ -28,7 +30,7 @@ class SunDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> xr.Dataset:
+    ) -> Sun:
         """
         Get example data from t0_dt and x and y xoordinates
 
@@ -66,12 +68,14 @@ class SunDataSource(DataSource):
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 
-        azimuth = azimuth.to_xarray()
-        elevation = elevation.to_xarray()
+        azimuth = azimuth.to_xarray().rename({"index": "time"})
+        elevation = elevation.to_xarray().rename({"index": "time"})
 
-        sun = xr.Dataset({"azimuth": azimuth, "elevation": elevation})
+        sun = convert_data_array_to_dataset(azimuth).rename({"data": "azimuth"})
+        elevation = convert_data_array_to_dataset(elevation)
+        sun["elevation"] = elevation.data
 
-        return sun
+        return Sun(sun)
 
     def _load(self):
 

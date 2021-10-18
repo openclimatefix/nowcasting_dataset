@@ -182,7 +182,7 @@ class NWPDataSource(ZarrDataSource):
 
         output = join_list_data_array_to_batch_dataset(examples)
 
-        return output
+        return NWP(output)
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)
@@ -231,6 +231,8 @@ class NWPDataSource(ZarrDataSource):
         selected_data = selected_data.resample({"target_time": "5T"})
         selected_data = selected_data.interpolate()
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
+        selected_data = selected_data.rename({"target_time": "time"})
+        selected_data = selected_data.rename({"variable": "channels"})
         return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:

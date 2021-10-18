@@ -119,6 +119,15 @@ def test_data_module(config_filename):
     assert batch.batch_size == config.process.batch_size
     assert type(batch) == Batch
 
+    assert batch.satellite is not None
+    assert batch.nwp is not None
+    assert batch.sun is not None
+    assert batch.topographic is not None
+    assert batch.pv is not None
+    assert batch.gsp is not None
+    assert batch.metadata is not None
+    assert batch.datetime is not None
+
     # for key in list(Example.__annotations__.keys()):
     #     assert key in batch[0].keys()
     #

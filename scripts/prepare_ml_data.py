@@ -175,11 +175,11 @@ def iterate_over_dataloader_and_write_to_disk(
         batch.save_netcdf(batch_i=batch_i, path=local_output_path)
 
         if UPLOAD_EVERY_N_BATCHES > 0 and batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
-            utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
+            utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
 
     # Make sure we upload the last few batches, if necessary.
     if UPLOAD_EVERY_N_BATCHES > 0:
-        utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
+        utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
 
 
 def main():

@@ -267,7 +267,7 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     return pd.DataFrame(features, index=index).astype(np.float32)
 
 
-def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.DataArray:
+def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.Dataset:
     """
     Make datetime features with sin and cos
 

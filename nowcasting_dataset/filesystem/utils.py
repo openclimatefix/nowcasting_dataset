@@ -52,17 +52,24 @@ def get_maximum_batch_id(path: str):
     return maximum_batch_id
 
 
-def delete_all_files_in_temp_path(path: Union[Path, str]):
+def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = False):
     """
-    Delete all the files in a temporary path
+    Delete all the files in a temporary path. Option to delete the folders or not
     """
     filesystem = fsspec.open(path).fs
     filenames = get_all_filenames_in_path(path=path)
 
     _LOG.info(f"Deleting {len(filenames)} files from {path}.")
 
-    for file in filenames:
-        filesystem.rm(file, recursive=True)
+    if delete_dirs:
+        for file in filenames:
+            filesystem.rm(file, recursive=True)
+    else:
+        # loop over folder structure, but only delete files
+        for root, dirs, files in filesystem.walk(path):
+
+            for f in files:
+                filesystem.rm(f"{root}/{f}")
 
 
 def check_path_exists(path: Union[str, Path]):

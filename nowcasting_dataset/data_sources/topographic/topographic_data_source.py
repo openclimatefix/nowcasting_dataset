@@ -13,6 +13,7 @@ from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
@@ -111,7 +112,9 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        return xr.Dataset({"data": selected_data})
+        topo_xd = convert_data_array_to_dataset(selected_data)
+
+        return Topographic(topo_xd)
 
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp

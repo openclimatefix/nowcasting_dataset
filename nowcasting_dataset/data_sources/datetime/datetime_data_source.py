@@ -8,6 +8,7 @@ import pandas as pd
 from nowcasting_dataset import time as nd_time
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
+from nowcasting_dataset.dataset.xr_utils import make_dim_index
 
 
 @dataclass
@@ -36,7 +37,13 @@ class DatetimeDataSource(DataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         index = pd.date_range(start_dt, end_dt, freq="5T")
-        return nd_time.datetime_features_in_example(index)
+
+        datetime_xr_dataset = nd_time.datetime_features_in_example(index).rename({"index": "time"})
+
+        # make sure time is indexes in the correct way
+        datetime_xr_dataset = make_dim_index(datetime_xr_dataset)
+
+        return Datetime(datetime_xr_dataset)
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

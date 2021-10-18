@@ -56,7 +56,8 @@ class PydanticXArrayDataSet(xr.Dataset):
 
     _expected_dimensions = ()  # Subclasses should set this.
 
-    __slots__ = []
+    # xarray doesnt support sub classing at the moment - https://github.com/pydata/xarray/issues/3980
+    __slots__ = ()
 
     @classmethod
     def model_validation(cls, v):

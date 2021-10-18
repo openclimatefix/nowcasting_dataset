@@ -27,7 +27,7 @@ class PV(DataSourceOutput):
 
     # Use to store xr.Dataset data
 
-    __slots__ = []
+    __slots__ = ()
     _expected_dimensions = ("time", "id")
 
     # todo add validation here

@@ -18,7 +18,7 @@ class Sun(DataSourceOutput):
     """ Class to store Sun data as a xr.Dataset with some validation """
 
     # Use to store xr.Dataset data
-    __slots__ = []
+    __slots__ = ()
     _expected_dimensions = ("time",)
 
     # todo add validation here

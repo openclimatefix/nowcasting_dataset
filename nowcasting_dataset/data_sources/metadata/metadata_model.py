@@ -20,7 +20,7 @@ from nowcasting_dataset.time import make_random_time_vectors
 class Metadata(DataSourceOutput):
     """ Class to store metedata data as a xr.Dataset with some validation """
 
-    __slots__ = []
+    __slots__ = ()
     _expected_dimensions = ("t0_dt",)
 
     # todo add validation here

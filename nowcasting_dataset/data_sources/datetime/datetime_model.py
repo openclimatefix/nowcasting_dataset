@@ -17,7 +17,7 @@ class Datetime(DataSourceOutput):
 
     # Use to store xr.Dataset data
 
-    __slots__ = []
+    __slots__ = ()
 
     # todo add validation here
     _expected_dimensions = ("time",)

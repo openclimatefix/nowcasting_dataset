@@ -111,11 +111,11 @@ def get_data_module():
     num_workers = 4
 
     # get the batch id already made
-    maximum_batch_id_train = utils.get_maximum_batch_id(os.join(DST_TRAIN_PATH, "metadata"))
+    maximum_batch_id_train = utils.get_maximum_batch_id(os.path.join(DST_TRAIN_PATH, "metadata"))
     maximum_batch_id_validation = utils.get_maximum_batch_id(
-        os.join(DST_VALIDATION_PATH, "metadata")
+        os.path.join(DST_VALIDATION_PATH, "metadata")
     )
-    maximum_batch_id_test = utils.get_maximum_batch_id(os.join(DST_TEST_PATH, "metadata"))
+    maximum_batch_id_test = utils.get_maximum_batch_id(os.path.join(DST_TEST_PATH, "metadata"))
 
     if maximum_batch_id_train is None:
         maximum_batch_id_train = 0

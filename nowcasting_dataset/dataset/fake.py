@@ -25,7 +25,7 @@ class FakeDataset(torch.utils.data.Dataset):
         return self.length
 
     def per_worker_init(self, worker_id: int):
-        """ Not needed """
+        """ Nothing to do for FakeDataset """
         pass
 
     def __getitem__(self, idx):

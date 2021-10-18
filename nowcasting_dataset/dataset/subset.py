@@ -46,10 +46,6 @@ def subselect_data(
         else:
             t0_dt_of_first_example = batch.nwp.time[0, current_timestep_index].values
 
-    # make this a datetime object
-    # print(t0_dt_of_first_example)
-    # t0_dt_of_first_example = pd.to_datetime(t0_dt_of_first_example.to_numpy())
-
     if batch.satellite is not None:
         batch.satellite = select_time_period(
             x=batch.satellite,
@@ -66,7 +62,7 @@ def subselect_data(
             forecast_minutes=forecast_minutes,
             t0_dt_of_first_example=t0_dt_of_first_example,
         )
-    #
+
     # Now for GSP, if used
     if batch.gsp is not None:
         batch.gsp = select_time_period(
@@ -131,9 +127,6 @@ def select_time_period(
 
     logger.debug(f"New start time for first example is {start_time_of_first_example}")
     logger.debug(f"New end time for first example is {end_time_of_first_example}")
-
-    # start_time_of_first_example = to_numpy(start_time_of_first_batch)
-    # end_time_of_first_example = to_numpy(end_time_of_first_example)
 
     if hasattr(x, "time"):
 

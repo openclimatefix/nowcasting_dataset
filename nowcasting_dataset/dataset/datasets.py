@@ -175,9 +175,6 @@ class NetCDFDataset(torch.utils.data.Dataset):
             raise IndexError(
                 "batch_idx must be in the range" f" [0, {self.n_batches}), not {batch_idx}!"
             )
-        netcdf_filename = nd_utils.get_netcdf_filename(batch_idx)
-        # remote_netcdf_folder = os.path.join(self.src_path, netcdf_filename)
-        # local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
 
         if self.cloud in ["gcp", "aws"]:
             # TODO check this works for multiple files
@@ -207,9 +204,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
             # remove files in a folder, but not the folder itself
             delete_all_files_in_temp_path(self.src_path)
 
-        # batch = example.xr_to_example(batch_xr=netcdf_batch, required_keys=self.required_keys)
-
-        # Todo this may should be done when the data is created
+        # Todo issue - https://github.com/openclimatefix/nowcasting_dataset/issues/231
         if SATELLITE_DATA in self.required_keys:
             sat_data = batch.satellite.data
             if sat_data.dtype == np.int16:
@@ -325,10 +320,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
 
         examples["batch_size"] = len(t0_datetimes)
 
-        b = Batch(**examples)
-
-        # return as  dictionary because .... # TODO
-        return b
+        return Batch(**examples)
 
     def _get_t0_datetimes_for_batch(self) -> pd.DatetimeIndex:
         # Pick random datetimes.

@@ -32,7 +32,6 @@ def join_dataset_to_batch_dataset(image_data_arrays: List[xr.Dataset]) -> xr.Dat
 
 def convert_data_array_to_dataset(data_xarray):
     """ Convert data array to dataset. Reindex dim so that it can be merged with batch"""
-    # convert data array to dataset, and re index dims
     dims = data_xarray.dims
     data = xr.Dataset({"data": data_xarray})
 
@@ -76,7 +75,6 @@ class PydanticXArrayDataSet(xr.Dataset):
         v = cls.validate_coords(v)
         v = cls.model_validation(v)
         return v
-        # TODO: How to call multiple validation functions?
 
     @classmethod
     def validate_dims(cls, v: Any) -> Any:
@@ -116,6 +114,7 @@ def register_xr_data_array_to_tensor():
 
             # torch tensor names does not working in dataloader yet - 2021-10-15
             # https://discuss.pytorch.org/t/collating-named-tensors/78650
+            # https://github.com/openclimatefix/nowcasting_dataset/issues/25
             # def to_named_tensor(self):
             #     """Convert this DataArray to a torch.Tensor with named dimensions"""
             #     import torch

@@ -53,7 +53,7 @@ class SatelliteML(DataSourceOutputML):
         ...,
         description="Time index of satellite data at 5 minutes past the hour {0, 5, ..., 55}. "
         "*not* the {4, 9, ..., 59} timings of the satellite imagery. "
-        "Datetimes become Unix epochs (UTC) represented as int64 just before being"  # TOOD, is it int32?
+        "Datetimes become Unix epochs (UTC) represented as int64 just before being"
         "passed into the ML model.",
     )
 

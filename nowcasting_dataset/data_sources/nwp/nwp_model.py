@@ -100,7 +100,7 @@ class NWPML(DataSourceOutputML):
 
     def get_datetime_index(self) -> Array:
         """Get the datetime index of this data"""
-        return self.time
+        return self.target_time
 
     @staticmethod
     def from_xr_dataset(xr_dataset: xr.Dataset):

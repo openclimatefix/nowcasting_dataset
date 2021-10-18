@@ -30,7 +30,7 @@ class PV(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("time", "id")
 
-    # todo add validation here
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
 
 
 class PVML(DataSourceOutputML):

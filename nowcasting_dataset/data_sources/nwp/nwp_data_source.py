@@ -12,7 +12,7 @@ import xarray as xr
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ class NWPDataSource(ZarrDataSource):
 
             examples.append(selected_data)
 
-        output = from_list_data_array_to_batch_dataset(examples)
+        output = join_list_data_array_to_batch_dataset(examples)
 
         return output
 

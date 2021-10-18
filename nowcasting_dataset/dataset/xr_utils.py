@@ -17,7 +17,7 @@ def join_list_data_array_to_batch_dataset(image_data_arrays: List[xr.DataArray])
         convert_data_array_to_dataset(image_data_arrays[i]) for i in range(len(image_data_arrays))
     ]
 
-    return join_data_set_to_batch_dataset(image_data_arrays)
+    return join_dataset_to_batch_dataset(image_data_arrays)
 
 
 def join_dataset_to_batch_dataset(image_data_arrays: List[xr.Dataset]) -> xr.Dataset:

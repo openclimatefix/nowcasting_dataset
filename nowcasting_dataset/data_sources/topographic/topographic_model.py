@@ -2,13 +2,11 @@
 import logging
 
 import numpy as np
-import xarray as xr
 from pydantic import Field, validator
 
 from nowcasting_dataset.consts import Array
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,7 @@ class Topographic(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("x", "y")
 
-    # todo add validation here
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
 
 
 class TopographicML(DataSourceOutputML):

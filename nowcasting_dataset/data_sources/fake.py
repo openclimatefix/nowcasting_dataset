@@ -8,8 +8,8 @@ import xarray as xr
 
 from nowcasting_dataset.dataset.xr_utils import (
     convert_data_array_to_dataset,
-    join_data_set_to_batch_dataset,
-    from_list_data_array_to_batch_dataset,
+    join_dataset_to_batch_dataset,
+    join_list_data_array_to_batch_dataset,
 )
 
 from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
@@ -27,7 +27,7 @@ def datetime_fake(batch_size, seq_length_5):
     xr_arrays = [create_datetime_dataset(seq_length=seq_length_5) for _ in range(batch_size)]
 
     # make dataset
-    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
 
     return Datetime(xr_dataset)
 
@@ -49,7 +49,7 @@ def gsp_fake(
     ]
 
     # make dataset
-    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
 
     return GSP(xr_dataset)
 
@@ -59,7 +59,7 @@ def metadata_fake(batch_size):
     xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
 
     # make dataset
-    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
 
     return Metadata(xr_dataset)
 
@@ -82,7 +82,7 @@ def nwp_fake(
     ]
 
     # make dataset
-    xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     xr_dataset = xr_dataset.rename({"time": "target_time"})
     xr_dataset["init_time"] = xr_dataset.target_time[:, 0]
@@ -103,7 +103,7 @@ def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
     ]
 
     # make dataset
-    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
 
     return PV(xr_dataset)
 
@@ -126,7 +126,7 @@ def satellite_fake(
     ]
 
     # make dataset
-    xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return Satellite(xr_dataset)
 
@@ -143,7 +143,7 @@ def sun_fake(batch_size, seq_length_5):
     ]
 
     # make dataset
-    xr_dataset = join_data_set_to_batch_dataset(xr_arrays)
+    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
 
     return Sun(xr_dataset)
 
@@ -167,7 +167,7 @@ def topographic_fake(batch_size, image_size_pixels):
     ]
 
     # make dataset
-    xr_dataset = from_list_data_array_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return Topographic(xr_dataset)
 

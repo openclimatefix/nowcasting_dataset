@@ -98,8 +98,7 @@ class SatelliteML(DataSourceOutputML):
 
     @staticmethod
     def from_xr_dataset(xr_dataset: xr.Dataset):
-        """Change xr dataset to model. If data does not exist, then return None"""
-        # to tensor
+        """Change xr dataset to model. """
         satellite_batch_ml = xr_dataset.torch.to_tensor(["data", "time", "x", "y", "channels"])
 
         return SatelliteML(**satellite_batch_ml)

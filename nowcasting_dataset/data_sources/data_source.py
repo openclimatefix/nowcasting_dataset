@@ -12,7 +12,7 @@ import xarray as xr
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset import square
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import join_data_set_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import join_dataset_to_batch_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ class DataSource:
         cls = examples[0].__class__
 
         # join the examples together, and cast them to the cls, so that validation can occur
-        return cls(join_data_set_to_batch_dataset(examples))
+        return cls(join_dataset_to_batch_dataset(examples))
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

@@ -132,7 +132,7 @@ class Batch(BaseModel):
         """
         for data_source in self.data_sources:
             if data_source is not None:
-                # add encoding
+                # TODO add encoding
                 data_source.save_netcdf(batch_i=batch_i, path=path)
 
     @staticmethod
@@ -154,8 +154,7 @@ class Batch(BaseModel):
 
             batch_dict[data_source_name] = xr_dataset
 
-        # TODO change this to metadata
-        batch_dict["batch_size"] = len(batch_dict["satellite"].example)
+        batch_dict["batch_size"] = len(batch_dict["metadata"].example)
 
         return Batch(**batch_dict)
 

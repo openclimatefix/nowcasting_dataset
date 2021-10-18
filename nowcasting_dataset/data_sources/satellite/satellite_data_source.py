@@ -11,7 +11,7 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
-from nowcasting_dataset.dataset.xr_utils import from_list_data_array_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
 import nowcasting_dataset.time as nd_time
 
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -152,10 +152,8 @@ class SatelliteDataSource(ZarrDataSource):
             example = self.get_example(t0_datetime, x_location, y_location)
             examples.append(example)
 
-        output = from_list_data_array_to_batch_dataset(examples)
+        output = join_list_data_array_to_batch_dataset(examples)
 
-        # if self.convert_to_numpy:
-        #     output.to_numpy()
         self._cache = {}
 
         return Satellite(output)

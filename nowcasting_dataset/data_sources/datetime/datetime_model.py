@@ -19,7 +19,7 @@ class Datetime(DataSourceOutput):
 
     __slots__ = ()
 
-    # todo add validation here
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
     _expected_dimensions = ("time",)
 
 

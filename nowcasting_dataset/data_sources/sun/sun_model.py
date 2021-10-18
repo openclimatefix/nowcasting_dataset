@@ -21,7 +21,7 @@ class Sun(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("time",)
 
-    # todo add validation here
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
 
 
 class SunML(DataSourceOutputML):

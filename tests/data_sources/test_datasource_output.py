@@ -24,17 +24,6 @@ def test_gsp():
     assert s.data.shape == (4, 13, 32)
 
 
-# def test_gsp_pad():
-#
-#     s = GSP.fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=7)
-#     # s.to_numpy()
-#     # s.pad(n_gsp_per_example=32)
-#
-#     # need to add pad
-#
-#     assert s.data.shape == (4, 13, 32)
-
-
 def test_nwp():
 
     s = nwp_fake(

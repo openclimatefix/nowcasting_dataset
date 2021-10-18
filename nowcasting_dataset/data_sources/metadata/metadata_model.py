@@ -23,7 +23,7 @@ class Metadata(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("t0_dt",)
 
-    # todo add validation here
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
 
 
 class MetadataML(DataSourceOutputML):

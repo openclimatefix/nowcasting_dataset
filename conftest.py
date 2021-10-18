@@ -17,7 +17,7 @@ from nowcasting_dataset.dataset.xr_utils import (
 
 pytest.IMAGE_SIZE_PIXELS = 128
 
-# need to run these to ensure that xarray Data Array Dataset have torch functions
+# need to run these to ensure that xarray DataArray and Dataset have torch functions
 register_xr_data_array_to_tensor()
 register_xr_data_set_to_tensor()
 

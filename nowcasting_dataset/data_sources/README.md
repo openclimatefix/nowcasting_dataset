@@ -46,4 +46,4 @@ This inherits from 'datasource_output.DataSourceOutput'.
 # fake
 
 `fake.py` has several function to create fake `Batch` data. This is useful for testing,
-and I assume useful outside this module too.
+and hopefully useful outside this module too.

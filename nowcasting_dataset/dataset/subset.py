@@ -35,8 +35,8 @@ def subselect_data(
         f"and forecast minutes if {forecast_minutes}"
     )
 
-    # We are subsetting the data, so we need to select the t0_dt, i.e the time now for eahc Example.
-    # We infact only need this from the first example in each batch
+    # We are subsetting the data, so we need to select the t0_dt, i.e the time now for each Example.
+    # We in fact only need this from the first example in each batch
     if current_timestep_index is None:
         # t0_dt or if not available use a different datetime index
         t0_dt_of_first_example = batch.metadata.t0_dt[0].values

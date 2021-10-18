@@ -11,7 +11,7 @@ import torch
 import xarray as xr
 
 
-def from_list_data_array_to_batch_dataset(image_data_arrays: List[xr.DataArray]) -> xr.Dataset:
+def join_list_data_array_to_batch_dataset(image_data_arrays: List[xr.DataArray]) -> xr.Dataset:
     """ Join a list of data arrays to a dataset byt expanding dims """
     image_data_arrays = [
         convert_data_array_to_dataset(image_data_arrays[i]) for i in range(len(image_data_arrays))
@@ -20,7 +20,7 @@ def from_list_data_array_to_batch_dataset(image_data_arrays: List[xr.DataArray])
     return join_data_set_to_batch_dataset(image_data_arrays)
 
 
-def join_data_set_to_batch_dataset(image_data_arrays: List[xr.Dataset]) -> xr.Dataset:
+def join_dataset_to_batch_dataset(image_data_arrays: List[xr.Dataset]) -> xr.Dataset:
     """ Join a list of data arrays to a dataset byt expanding dims """
     image_data_arrays = [
         image_data_arrays[i].expand_dims(dim="example").assign_coords(example=("example", [i]))

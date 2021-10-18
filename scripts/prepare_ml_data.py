@@ -21,9 +21,11 @@ from nowcasting_dataset.config.model import set_git_commit
 from nowcasting_dataset.filesystem.utils import check_path_exists
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.dataset.batch import write_batch_locally
+
+# from nowcasting_dataset.dataset.batch import write_batch_locally
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.dataset.batch import Batch
 from pathy import Pathy
 from pathlib import Path
 import fsspec
@@ -169,8 +171,9 @@ def iterate_over_dataloader_and_write_to_disk(
 
     for batch_i, batch in enumerate(dataloader):
         _LOG.info(f"Got batch {batch_i}")
-        if len(batch) > 0:
-            write_batch_locally(batch, batch_i, local_output_path)
+
+        batch.save_netcdf(batch_i=batch_i, path=local_output_path)
+
         if UPLOAD_EVERY_N_BATCHES > 0 and batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
             utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
 

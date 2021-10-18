@@ -132,7 +132,6 @@ class Batch(BaseModel):
         """
         for data_source in self.data_sources:
             if data_source is not None:
-                # TODO add encoding
                 data_source.save_netcdf(batch_i=batch_i, path=path)
 
     @staticmethod

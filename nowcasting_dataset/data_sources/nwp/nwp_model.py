@@ -110,31 +110,3 @@ class NWPML(DataSourceOutputML):
         )
 
         return NWPML(**nwp_batch_ml)
-
-    # @property
-    # def width(self):
-    #     """The width of the nwp data"""
-    #     return self.nwp.shape[-2]
-    #
-    # @property
-    # def height(self):
-    #     """The width of the nwp data"""
-    #     return self.nwp.shape[-1]
-    #
-    # @property
-    # def sequence_length(self):
-    #     """The sequence length of the NWP timeseries"""
-    #     return self.nwp.shape[-3]
-    #
-    # @validator("nwp_x_coords")
-    # def x_coordinates_shape(cls, v, values):
-    #     """ Validate 'nwp_x_coords' """
-    #     assert v.shape[-1] == values["nwp"].shape[-2]
-    #     return v
-    #
-    # @validator("nwp_y_coords")
-    # def y_coordinates_shape(cls, v, values):
-    #     """ Validate 'nwp_y_coords' """
-    #     assert v.shape[-1] == values["nwp"].shape[-1]
-    #     return v
-    #

@@ -180,7 +180,7 @@ class NetCDFDataset(torch.utils.data.Dataset):
         # local_netcdf_filename = os.path.join(self.tmp_path, netcdf_filename)
 
         if self.cloud in ["gcp", "aws"]:
-            # TODO check this works for mulitple files
+            # TODO check this works for multiple files
             download_to_local(
                 remote_filename=self.src_path,
                 local_filename=self.tmp_path,

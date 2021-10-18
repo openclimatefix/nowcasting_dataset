@@ -22,8 +22,8 @@ from nowcasting_dataset.data_sources.satellite.satellite_model import SatelliteM
 from nowcasting_dataset.data_sources.sun.sun_model import SunML, Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import TopographicML, Topographic
 from nowcasting_dataset.dataset.xr_utils import (
-    make_xr_data_array_to_tensor,
-    make_xr_data_set_to_tensor,
+    register_xr_data_array_to_tensor,
+    register_xr_data_set_to_tensor,
 )
 from nowcasting_dataset.time import make_random_time_vectors
 from nowcasting_dataset.data_sources.fake import (
@@ -39,8 +39,8 @@ from nowcasting_dataset.data_sources.fake import (
 
 _LOG = logging.getLogger(__name__)
 
-make_xr_data_array_to_tensor()
-make_xr_data_set_to_tensor()
+register_xr_data_array_to_tensor()
+register_xr_data_set_to_tensor()
 
 data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP, Datetime]
 

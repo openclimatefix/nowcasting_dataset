@@ -272,7 +272,7 @@ class PVDataSource(ImageDataSource):
         pad_n = self.n_pv_systems_per_example - len(pv.id_index)
         pv = pv.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)))
 
-        pv.__setitem__("id_index", range(128))
+        pv.__setitem__("id_index", range(self.n_pv_systems_per_example))
 
         return PV(pv)
 

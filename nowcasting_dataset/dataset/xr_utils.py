@@ -101,7 +101,7 @@ class PydanticXArrayDataSet(xr.Dataset):
         return v
 
 
-def make_xr_data_array_to_tensor():
+def register_xr_data_array_to_tensor():
     """ Add torch object to data array """
     if not hasattr(xr.DataArray, "torch"):
 
@@ -123,7 +123,7 @@ def make_xr_data_array_to_tensor():
             #     return torch.tensor(self._obj.data, names=self._obj.dims)
 
 
-def make_xr_data_set_to_tensor():
+def register_xr_data_set_to_tensor():
     """ Add torch object to dataset """
     if not hasattr(xr.Dataset, "torch"):
 

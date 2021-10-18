@@ -238,7 +238,7 @@ class GSPDataSource(ImageDataSource):
         pad_n = self.n_gsp_per_example - len(gsp.id_index)
         gsp = gsp.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)))
 
-        gsp.__setitem__("id_index", range(32))
+        gsp.__setitem__("id_index", range(self.n_gsp_per_example))
 
         return GSP(gsp)
 

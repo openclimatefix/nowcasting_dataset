@@ -75,6 +75,16 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
             metadata.merge(shape_data, right_on="RegionID", left_on="region_id", how="left")
         )
 
+        assert "centroid_lat" in metadata.keys(), (
+            "GSP Metadata does not contain centroid_lat, "
+            'try deleting the folder "nowcasting_dataset/data_sources/gsp/gsp_shape"'
+        )
+
+        assert "centroid_lon" in metadata.keys(), (
+            "GSP Metadata does not contain centroid_lon, "
+            'try deleting the folder "nowcasting_dataset/data_sources/gsp/gsp_shape"'
+        )
+
     return metadata
 
 

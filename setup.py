@@ -8,9 +8,10 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 install_requires = (this_directory / "requirements.txt").read_text().splitlines()
 
+exec(open("nowcasting_dataset/version.py").read())
 setup(
     name="nowcasting_dataset",
-    version="0.2.1",
+    version=__version__,
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",

@@ -1,26 +1,36 @@
 """ Model for output of GSP data """
-from pydantic import Field, validator
+import logging
+
 import numpy as np
-import xarray as xr
+from pydantic import Field, validator
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput, pad_data
 from nowcasting_dataset.consts import Array
-
 from nowcasting_dataset.consts import (
     GSP_ID,
     GSP_YIELD,
     GSP_X_COORDS,
     GSP_Y_COORDS,
     GSP_DATETIME_INDEX,
-    DEFAULT_N_GSP_PER_EXAMPLE,
+)
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    DataSourceOutput,
 )
 from nowcasting_dataset.time import make_random_time_vectors
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class GSP(DataSourceOutput):
+    """ Class to store GSP data as a xr.Dataset with some validation """
+
+    __slots__ = ()
+    _expected_dimensions = ("time", "id")
+
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+
+
+class GSPML(DataSourceOutputML):
     """ Model for output of GSP data """
 
     # Shape: [batch_size,] seq_length, width, height, channel
@@ -92,7 +102,7 @@ class GSP(DataSourceOutput):
                 batch_size=batch_size, seq_length_5_minutes=0, seq_length_30_minutes=seq_length_30
             )
 
-        return GSP(
+        return GSPML(
             batch_size=batch_size,
             gsp_yield=np.random.randn(
                 batch_size,
@@ -106,73 +116,15 @@ class GSP(DataSourceOutput):
         )
         # copy is needed as torch doesnt not support negative strides
 
-    def pad(self, n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE):
-        """
-        Pad out data
-
-        Args:
-            n_gsp_per_example: The number of gsp's there are per example.
-
-        Note that nothing is returned as the changes are made inplace.
-        """
-        assert self.batch_size == 0, "Padding only works for batch_size=0, i.e one Example"
-
-        pad_size = n_gsp_per_example - self.gsp_yield.shape[-1]
-        pad_data(
-            data=self,
-            one_dimensional_arrays=[GSP_ID, GSP_X_COORDS, GSP_Y_COORDS],
-            two_dimensional_arrays=[GSP_YIELD],
-            pad_size=pad_size,
-        )
-
     def get_datetime_index(self) -> Array:
         """ Get the datetime index of this data """
         return self.gsp_datetime_index
-
-    def to_xr_dataset(self, i):
-        """ Make a xr dataset """
-        logger.debug(f"Making xr dataset for batch {i}")
-        assert self.batch_size == 0
-
-        example_dim = {"example": np.array([i], dtype=np.int32)}
-
-        # GSP
-        n_gsp = len(self.gsp_id)
-
-        one_dataset = xr.DataArray(self.gsp_yield, dims=["time_30", "gsp"], name="gsp_yield")
-        one_dataset = one_dataset.to_dataset(name="gsp_yield")
-        one_dataset[GSP_DATETIME_INDEX] = xr.DataArray(
-            self.gsp_datetime_index,
-            dims=["time_30"],
-            coords=[np.arange(len(self.gsp_datetime_index))],
-        )
-
-        # GSP
-        for name in [GSP_ID, GSP_X_COORDS, GSP_Y_COORDS]:
-
-            var = self.__getattribute__(name)
-
-            one_dataset[name] = xr.DataArray(
-                var[None, :],
-                coords={
-                    **example_dim,
-                    **{"gsp": np.arange(n_gsp, dtype=np.int32)},
-                },
-                dims=["example", "gsp"],
-            )
-
-        one_dataset[GSP_YIELD] = one_dataset[GSP_YIELD].astype(np.float32)
-        one_dataset[GSP_ID] = one_dataset[GSP_ID].astype(np.float32)
-        one_dataset[GSP_X_COORDS] = one_dataset[GSP_X_COORDS].astype(np.float32)
-        one_dataset[GSP_Y_COORDS] = one_dataset[GSP_Y_COORDS].astype(np.float32)
-
-        return one_dataset
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
         if "gsp_yield" in xr_dataset.keys():
-            return GSP(
+            return GSPML(
                 batch_size=xr_dataset["gsp_yield"].shape[0],
                 gsp_yield=xr_dataset[GSP_YIELD],
                 gsp_id=xr_dataset[GSP_ID],

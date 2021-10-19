@@ -116,9 +116,17 @@ def test_data_module(config_filename):
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    assert batch["batch_size"] == config.process.batch_size
+    assert batch.batch_size == config.process.batch_size
+    assert type(batch) == Batch
 
-    _ = Batch(**batch)
+    assert batch.satellite is not None
+    assert batch.nwp is not None
+    assert batch.sun is not None
+    assert batch.topographic is not None
+    assert batch.pv is not None
+    assert batch.gsp is not None
+    assert batch.metadata is not None
+    assert batch.datetime is not None
 
     # for key in list(Example.__annotations__.keys()):
     #     assert key in batch[0].keys()
@@ -182,4 +190,4 @@ def test_batch_to_batch_to_dataset():
     data_generator = iter(data_module.train_dataset)
     batch = next(data_generator)
 
-    _ = Batch(**batch)
+    assert type(batch) == Batch

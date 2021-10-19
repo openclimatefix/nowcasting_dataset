@@ -1,18 +1,27 @@
 """ Model for Topogrpahic features """
-from pydantic import Field, validator
-import xarray as xr
-import numpy as np
 import logging
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.consts import Array
 
-from nowcasting_dataset.consts import TOPOGRAPHIC_DATA, TOPOGRAPHIC_X_COORDS, TOPOGRAPHIC_Y_COORDS
-from nowcasting_dataset.utils import coord_to_range
+import numpy as np
+from pydantic import Field, validator
+
+from nowcasting_dataset.consts import Array
+from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutputML, DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
 
 class Topographic(DataSourceOutput):
+    """ Class to store topographic data as a xr.Dataset with some validation """
+
+    # Use to store xr.Dataset data
+    __slots__ = ()
+    _expected_dimensions = ("x", "y")
+
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+
+
+class TopographicML(DataSourceOutputML):
     """
     Topographic/elevation map features.
     """
@@ -55,54 +64,25 @@ class Topographic(DataSourceOutput):
         return v
 
     @staticmethod
-    def fake(batch_size, satellite_image_size_pixels):
+    def fake(batch_size, image_size_pixels):
         """ Create fake data """
-        return Topographic(
+        return TopographicML(
             batch_size=batch_size,
             topo_data=np.random.randn(
                 batch_size,
-                satellite_image_size_pixels,
-                satellite_image_size_pixels,
+                image_size_pixels,
+                image_size_pixels,
             ),
-            topo_x_coords=np.sort(np.random.randn(batch_size, satellite_image_size_pixels)),
-            topo_y_coords=np.sort(np.random.randn(batch_size, satellite_image_size_pixels))[
-                :, ::-1
-            ].copy(),
+            topo_x_coords=np.sort(np.random.randn(batch_size, image_size_pixels)),
+            topo_y_coords=np.sort(np.random.randn(batch_size, image_size_pixels))[:, ::-1].copy(),
             # copy is needed as torch doesnt not support negative strides
         )
-
-    def to_xr_dataset(self, i):
-        """ Make a xr dataset """
-        logger.debug(f"Making xr dataset for batch {i}")
-        data = xr.DataArray(
-            self.topo_data,
-            coords={
-                "x": self.topo_x_coords,
-                "y": self.topo_y_coords,
-            },
-        )
-
-        ds = data.to_dataset(name=TOPOGRAPHIC_DATA)
-        for dim in ["x", "y"]:
-            ds = coord_to_range(ds, dim, prefix="topo")
-        ds = ds.rename(
-            {
-                "x": f"topo_x",
-                "y": f"topo_y",
-            }
-        )
-
-        ds[TOPOGRAPHIC_DATA] = ds[TOPOGRAPHIC_DATA].astype(np.float32)
-        ds[TOPOGRAPHIC_X_COORDS] = ds[TOPOGRAPHIC_X_COORDS].astype(np.float32)
-        ds[TOPOGRAPHIC_Y_COORDS] = ds[TOPOGRAPHIC_Y_COORDS].astype(np.float32)
-
-        return ds
 
     @staticmethod
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
         if TOPOGRAPHIC_DATA in xr_dataset.keys():
-            return Topographic(
+            return TopographicML(
                 batch_size=xr_dataset[TOPOGRAPHIC_DATA].shape[0],
                 topo_data=xr_dataset[TOPOGRAPHIC_DATA],
                 topo_x_coords=xr_dataset[TOPOGRAPHIC_DATA].topo_x,

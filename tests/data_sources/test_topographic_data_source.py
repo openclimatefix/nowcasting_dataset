@@ -31,20 +31,19 @@ def test_get_example_2km(x, y, left, right, top, bottom):
         history_minutes=10,
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
-    example = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
-    topo_data = example.topo_data
-    assert topo_data.shape == (128, 128)
+    topo_data = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    assert topo_data.data.shape == (128, 128)
     assert len(topo_data.x) == 128
     assert len(topo_data.y) == 128
-    assert not np.isnan(topo_data).any()
+    assert not np.isnan(topo_data.data).any()
     # Topo x and y coords are not exactly set on the edges, but the center of the pixels
     assert np.isclose(left, topo_data.x.values[0], atol=size)
     assert np.isclose(right, topo_data.x.values[-1], atol=size)
     assert np.isclose(top, topo_data.y.values[0], atol=size)
     assert np.isclose(bottom, topo_data.y.values[-1], atol=size)
     # Check normalization works
-    assert np.max(topo_data) <= 1.0
-    assert np.min(topo_data) >= -1.0
+    assert np.max(topo_data.data) <= 1.0
+    assert np.min(topo_data.data) >= -1.0
 
 
 @pytest.mark.skip("CD does not have access to GCS")

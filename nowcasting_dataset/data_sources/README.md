@@ -38,5 +38,12 @@ General pydantic model of output of the data source. Contains the following meth
 
 Roughly each of the data source folders follows this pattern
 - A class which defines how to load the data source, how to select for batches etc. This inherits from 'data_source.DataSource',
-- A class which contains the output model of the data source. This is the information used in the batches.
+- A class which contains the output model of the data source, built from an xarray Dataset. This is the information used in the batches.
 This inherits from 'datasource_output.DataSourceOutput'.
+- A second class (pydantic) which moves the xarray Dataset to tensor fields. This will be used for training in ML models
+
+
+# fake
+
+`fake.py` has several function to create fake `Batch` data. This is useful for testing,
+and hopefully useful outside this module too.

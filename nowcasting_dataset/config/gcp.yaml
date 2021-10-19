@@ -8,6 +8,7 @@ input_data:
   solar_pv_metadata_filename: gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv
   gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v1/pv_gsp.zarr
   topographic_filename: gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif
+  sun_zarr_path: gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr
 output_data:
   filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/
 process:

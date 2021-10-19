@@ -1,13 +1,29 @@
 """ Model for output of datetime data """
-from pydantic import validator
-import xarray as xr
 import numpy as np
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+import xarray as xr
+from pydantic import validator
+
 from nowcasting_dataset.consts import Array, DATETIME_FEATURE_NAMES
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutputML,
+    DataSourceOutput,
+)
+
 from nowcasting_dataset.utils import coord_to_range
 
 
 class Datetime(DataSourceOutput):
+    """ Class to store Datetime data as a xr.Dataset with some validation """
+
+    # Use to store xr.Dataset data
+
+    __slots__ = ()
+
+    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+    _expected_dimensions = ("time",)
+
+
+class DatetimeML(DataSourceOutputML):
     """ Model for output of datetime data """
 
     hour_of_day_sin: Array  #: Shape: [batch_size,] seq_length
@@ -42,7 +58,7 @@ class Datetime(DataSourceOutput):
     @staticmethod
     def fake(batch_size, seq_length_5):
         """ Make a fake Datetime object """
-        return Datetime(
+        return DatetimeML(
             batch_size=batch_size,
             hour_of_day_sin=np.random.randn(
                 batch_size,
@@ -88,7 +104,7 @@ class Datetime(DataSourceOutput):
     def from_xr_dataset(xr_dataset):
         """ Change xr dataset to model. If data does not exist, then return None """
         if "hour_of_day_sin" in xr_dataset.keys():
-            return Datetime(
+            return DatetimeML(
                 batch_size=xr_dataset["hour_of_day_sin"].shape[0],
                 hour_of_day_sin=xr_dataset["hour_of_day_sin"],
                 hour_of_day_cos=xr_dataset["hour_of_day_cos"],

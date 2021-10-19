@@ -12,7 +12,7 @@ import xarray as xr
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger(__name__)
 
@@ -178,26 +178,14 @@ class NWPDataSource(ZarrDataSource):
             t0_dt = t0_datetimes[i]
             selected_data = self._post_process_example(selected_data, t0_dt)
 
-            output: DataSourceOutput = self._put_data_into_example(selected_data)
-            if self.convert_to_numpy:
-                output.to_numpy()
-            examples.append(output)
+            examples.append(selected_data)
 
-        return DataSourceOutput.create_batch_from_examples(examples)
+        output = join_list_data_array_to_batch_dataset(examples)
+
+        return NWP(output)
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)
-
-    def _put_data_into_example(self, selected_data: xr.DataArray) -> NWP:
-
-        return NWP(
-            nwp=selected_data,
-            nwp_x_coords=selected_data.x,
-            nwp_y_coords=selected_data.y,
-            nwp_target_time=selected_data.target_time,
-            nwp_init_time=np.array(selected_data.init_time.data),
-            nwp_channel_names=self.channels,  # TODO perhaps could get this from selected data instead
-        )
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         """
@@ -243,6 +231,11 @@ class NWPDataSource(ZarrDataSource):
         selected_data = selected_data.resample({"target_time": "5T"})
         selected_data = selected_data.interpolate()
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
+        selected_data = selected_data.rename({"target_time": "time"})
+        selected_data = selected_data.rename({"variable": "channels"})
+
+        selected_data.data = selected_data.data.astype(np.float32)
+
         return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:

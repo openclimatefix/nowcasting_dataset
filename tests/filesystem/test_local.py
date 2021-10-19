@@ -60,6 +60,7 @@ def test_make_folder():
 def test_delete_local_files():
 
     file1 = "test_file1.txt"
+    folder1 = "test_dir"
     file2 = "test_dir/test_file2.txt"
 
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -71,7 +72,8 @@ def test_delete_local_files():
             pass
 
         # add fake file to dir
-        os.mkdir(f"{tmpdirname}/test_dir")
+        path_and_folder_1 = os.path.join(local_path, folder1)
+        os.mkdir(path_and_folder_1)
         path_and_filename_2 = os.path.join(local_path, file2)
         with open(os.path.join(local_path, file2), "w"):
             pass
@@ -82,6 +84,37 @@ def test_delete_local_files():
         # check the object are not there
         assert not os.path.exists(path_and_filename_1)
         assert not os.path.exists(path_and_filename_2)
+        assert os.path.exists(path_and_folder_1)
+
+
+def test_delete_local_files_and_folder():
+
+    file1 = "test_file1.txt"
+    folder1 = "test_dir"
+    file2 = "test_dir/test_file2.txt"
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        local_path = Path(tmpdirname)
+
+        # add fake file to dir
+        path_and_filename_1 = os.path.join(local_path, file1)
+        with open(path_and_filename_1, "w"):
+            pass
+
+        # add fake file to dir
+        path_and_folder_1 = os.path.join(local_path, folder1)
+        os.mkdir(path_and_folder_1)
+        path_and_filename_2 = os.path.join(local_path, file2)
+        with open(os.path.join(local_path, file2), "w"):
+            pass
+
+        # run function
+        delete_all_files_in_temp_path(path=local_path, delete_dirs=True)
+
+        # check the object are not there
+        assert not os.path.exists(path_and_filename_1)
+        assert not os.path.exists(path_and_filename_2)
+        assert not os.path.exists(path_and_folder_1)
 
 
 def test_download():

@@ -44,7 +44,7 @@ def test_get_example_and_batch():
     batch = pv_data_source.get_batch(
         pv_data_source.pv_power.index[6:11], x_locations[0:10], y_locations[0:10]
     )
-    assert batch.batch_size == 5
+    assert batch.data.shape == (5, 19, 128)
 
 
 def test_drop_pv_systems_which_produce_overnight():

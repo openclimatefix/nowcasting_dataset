@@ -10,8 +10,16 @@ from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.data_sources import SatelliteDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
+from nowcasting_dataset.dataset.xr_utils import (
+    register_xr_data_array_to_tensor,
+    register_xr_data_set_to_tensor,
+)
 
 pytest.IMAGE_SIZE_PIXELS = 128
+
+# need to run these to ensure that xarray DataArray and Dataset have torch functions
+register_xr_data_array_to_tensor()
+register_xr_data_set_to_tensor()
 
 
 def pytest_addoption(parser):

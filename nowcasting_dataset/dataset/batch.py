@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Optional, Union
+from concurrent import futures
 
 import xarray as xr
 from pydantic import BaseModel, Field
@@ -130,26 +131,45 @@ class Batch(BaseModel):
             path: the path where it will be saved. This can be local or in the cloud.
 
         """
-        for data_source in self.data_sources:
-            if data_source is not None:
-                data_source.save_netcdf(batch_i=batch_i, path=path)
+
+        with futures.ThreadPoolExecutor() as executor:
+            # Submit tasks to the executor.
+            for data_source in self.data_sources:
+                if data_source is not None:
+                    _ = executor.submit(
+                        data_source.save_netcdf,
+                        batch_i=batch_i,
+                        path=path,
+                    )
+                    # data_source.save_netcdf(batch_i=batch_i, path=path)
 
     @staticmethod
     def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):
         """Load batch from netcdf file"""
         data_sources_names = Example.__fields__.keys()
 
-        # collect data sources
+        # set up futures executor
         batch_dict = {}
-        for data_source_name in data_sources_names:
+        with futures.ThreadPoolExecutor() as executor:
+            future_examples_per_source = []
 
-            local_netcdf_filename = os.path.join(
-                local_netcdf_path, data_source_name, f"{batch_idx}.nc"
-            )
-            if os.path.exists(local_netcdf_filename):
-                xr_dataset = xr.load_dataset(local_netcdf_filename)
-            else:
-                xr_dataset = None
+            # loop over data sources
+            for data_source_name in data_sources_names:
+
+                local_netcdf_filename = os.path.join(
+                    local_netcdf_path, data_source_name, f"{batch_idx}.nc"
+                )
+
+                # submit task
+                future_examples = executor.submit(
+                    xr.load_dataset,
+                    filename_or_obj=local_netcdf_filename,
+                )
+                future_examples_per_source.append([data_source_name, future_examples])
+
+        # Collect results from each thread.
+        for data_source_name, future_examples in future_examples_per_source:
+            xr_dataset = future_examples.result()
 
             batch_dict[data_source_name] = xr_dataset
 

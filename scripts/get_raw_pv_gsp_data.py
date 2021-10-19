@@ -71,6 +71,7 @@ upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)
 
 
 # # code to change 'generation_mw' to 'generation_normalised'
-# data_xarray = xr.open_dataset(gcp_path, engine="zarr")
+# data_xarray = xr.open_dataset(gcp_path + '/pv_gsp.zarr', engine="zarr")
+# data_xarray.__setitem__('gsp_id', [int(gsp_id) for gsp_id in data_xarray.gsp_id])
 # data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
-# data_xarray.to_zarr(gcp_path, mode="w", encoding=encoding)
+# data_xarray.to_zarr(gcp_path + '/pv_gsp.zarr', mode="w", encoding=encoding)

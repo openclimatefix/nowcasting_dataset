@@ -25,9 +25,9 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-start = datetime(2018, 1, 1, tzinfo=pytz.utc)
-end = datetime(2021, 1, 1, tzinfo=pytz.utc)
-gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v1"
+start = datetime(2016, 1, 1, tzinfo=pytz.utc)
+end = datetime(2021, 10, 1, tzinfo=pytz.utc)
+gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v2"
 
 config = {"start": start, "end": end, "gcp_path": gcp_path}
 

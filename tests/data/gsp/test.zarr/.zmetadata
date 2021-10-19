@@ -6,7 +6,7 @@
         },
         "datetime_gmt/.zarray": {
             "chunks": [
-                49
+                26305
             ],
             "compressor": {
                 "blocksize": 0,
@@ -29,9 +29,9 @@
                 "datetime_gmt"
             ],
             "calendar": "proleptic_gregorian",
-            "units": "minutes since 2019-01-01"
+            "units": "minutes since 2018-01-01"
         },
-        "generation_mw/.zarray": {
+        "generation_normalised/.zarray": {
             "chunks": [
                 49,
                 21
@@ -53,7 +53,7 @@
             ],
             "zarr_format": 2
         },
-        "generation_mw/.zattrs": {
+        "generation_normalised/.zattrs": {
             "_ARRAY_DIMENSIONS": [
                 "datetime_gmt",
                 "gsp_id"
@@ -70,7 +70,7 @@
                 "id": "blosc",
                 "shuffle": 1
             },
-            "dtype": "<U2",
+            "dtype": "<U21",
             "fill_value": null,
             "filters": null,
             "order": "C",

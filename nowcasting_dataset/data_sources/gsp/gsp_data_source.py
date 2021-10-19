@@ -377,13 +377,13 @@ def load_solar_gsp_data(
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
 
     # only take generation data
-    gsp_power = gsp_power.generation_mw
+    gsp_power = gsp_power.generation_normalised
 
     # make dataframe with index datetime_gmt and columns og gsp_id
     gsp_power_df = gsp_power.to_dataframe()
     gsp_power_df.reset_index(inplace=True)
     gsp_power_df = gsp_power_df.pivot(
-        index="datetime_gmt", columns="gsp_id", values="generation_mw"
+        index="datetime_gmt", columns="gsp_id", values="generation_normalised"
     )
 
     # Save memory

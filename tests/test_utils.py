@@ -4,8 +4,6 @@ import pytest
 
 from nowcasting_dataset import utils
 
-# from nowcasting_dataset.dataset.example import Example
-
 
 def test_is_monotically_increasing():
     assert utils.is_monotonically_increasing([1, 2, 3, 4])

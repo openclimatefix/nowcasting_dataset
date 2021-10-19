@@ -63,4 +63,4 @@ def test_nwp_data_source_batch():
 
     batch = nwp.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
 
-    assert batch.batch_size == 4
+    assert batch.data.shape == (4, 1, 19, 2, 2)

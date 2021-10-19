@@ -144,6 +144,7 @@ sun_xr.to_zarr(f"{local_path}/tests/data/sun/test.zarr", mode="w")
 ########
 
 c = Configuration()
+c.process.batch_size = 4
 c.process.nwp_channels = c.process.nwp_channels[0:1]
 c.process.sat_channels = c.process.sat_channels[0:1]
 

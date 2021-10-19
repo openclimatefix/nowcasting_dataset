@@ -20,8 +20,9 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.square import get_bounding_box_mask
 from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.square import get_bounding_box_mask
 
 logger = logging.getLogger(__name__)
 
@@ -235,18 +236,45 @@ class PVDataSource(ImageDataSource):
 
         # Save data into the PV object...
 
-        pv = PV(
-            pv_system_id=all_pv_system_ids.values,
-            pv_system_row_number=pv_system_row_number,
-            pv_yield=selected_pv_power.values,
-            pv_system_x_coords=pv_system_x_coords.values,
-            pv_system_y_coords=pv_system_y_coords.values,
-            pv_datetime_index=selected_pv_power.index.values,
+        # convert to data array
+        da = xr.DataArray(
+            data=selected_pv_power.values,
+            dims=["time", "id"],
+            coords=dict(
+                id=all_pv_system_ids.values.astype(int),
+                time=selected_pv_power.index.values,
+            ),
         )
 
-        pv.pad()
+        # convert to dataset
+        pv = convert_data_array_to_dataset(da)
 
-        return pv
+        # add pv x coords
+        x_coords = xr.DataArray(
+            data=pv_system_x_coords.values,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_pv_system_ids.values)),
+            ),
+        )
+
+        y_coords = xr.DataArray(
+            data=pv_system_y_coords.values,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_pv_system_ids.values)),
+            ),
+        )
+        pv["x_coords"] = x_coords
+        pv["y_coords"] = y_coords
+
+        # pad out so that there are always 32 gsp
+        pad_n = self.n_pv_systems_per_example - len(pv.id_index)
+        pv = pv.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)))
+
+        pv.__setitem__("id_index", range(self.n_pv_systems_per_example))
+
+        return PV(pv)
 
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex

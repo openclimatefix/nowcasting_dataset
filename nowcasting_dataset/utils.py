@@ -1,16 +1,16 @@
 """ utils functions """
 import hashlib
 import logging
+import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import fsspec.asyn
+import gcsfs
 import numpy as np
 import pandas as pd
 import torch
 import xarray as xr
-import tempfile
-import gcsfs
 
 from nowcasting_dataset.consts import Array
 
@@ -107,12 +107,6 @@ def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
         filename = f"{hash_of_filename[0:6]}_{filename}"
 
     return filename
-
-
-def pad_nans(array, pad_width) -> np.ndarray:
-    """ Pad nans with nans"""
-    array = array.astype(np.float32)
-    return np.pad(array, pad_width, constant_values=np.NaN)
 
 
 def to_numpy(value):

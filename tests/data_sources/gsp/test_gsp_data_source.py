@@ -69,9 +69,9 @@ def test_gsp_pv_data_source_get_example():
         t0_dt=gsp.gsp_power.index[0], x_meters_center=x_locations[0], y_meters_center=y_locations[0]
     )
 
-    assert len(l.gsp_id) == len(l.gsp_yield[0])
-    assert len(l.gsp_x_coords) == len(l.gsp_y_coords)
-    assert len(l.gsp_x_coords) > 0
+    assert len(l.id) == len(l.data[0])
+    assert len(l.x_coords) == len(l.y_coords)
+    assert len(l.x_coords) > 0
     # assert type(l[T0_DT]) == pd.Timestamp
 
 
@@ -102,9 +102,10 @@ def test_gsp_pv_data_source_get_batch():
         y_locations=y_locations[0:batch_size],
     )
 
-    assert batch.batch_size == batch_size
-    assert len(batch.gsp_yield[0]) == 4
-    assert len(batch.gsp_id[0]) == len(batch.gsp_x_coords[0])
-    assert len(batch.gsp_x_coords[1]) == len(batch.gsp_y_coords[1])
-    assert len(batch.gsp_x_coords[2]) > 0
+    print(batch.data[0])
+
+    assert len(batch.data[0]) == 4
+    assert len(batch.id[0]) == len(batch.x_coords[0])
+    assert len(batch.x_coords[1]) == len(batch.y_coords[1])
+    assert len(batch.x_coords[2]) > 0
     # assert T0_DT in batch[3].keys()

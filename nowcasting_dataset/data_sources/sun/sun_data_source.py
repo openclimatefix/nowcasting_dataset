@@ -1,16 +1,18 @@
 """ Loading Raw data """
-from nowcasting_dataset.data_sources.data_source import DataSource
 from dataclasses import dataclass
-import pandas as pd
-from numbers import Number
-from typing import List, Tuple, Union, Optional
-from pathlib import Path
-import numpy as np
 from datetime import datetime
+from numbers import Number
+from pathlib import Path
+from typing import List, Tuple, Union, Optional
 
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
-
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 
 @dataclass
@@ -66,13 +68,14 @@ class SunDataSource(DataSource):
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 
-        sun = Sun(
-            sun_azimuth_angle=azimuth.values,
-            sun_elevation_angle=elevation.values,
-            sun_datetime_index=azimuth.index.values,
-        )
+        azimuth = azimuth.to_xarray().rename({"index": "time"})
+        elevation = elevation.to_xarray().rename({"index": "time"})
 
-        return sun
+        sun = convert_data_array_to_dataset(azimuth).rename({"data": "azimuth"})
+        elevation = convert_data_array_to_dataset(elevation)
+        sun["elevation"] = elevation.data
+
+        return Sun(sun)
 
     def _load(self):
 

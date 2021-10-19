@@ -21,9 +21,11 @@ from nowcasting_dataset.config.model import set_git_commit
 from nowcasting_dataset.filesystem.utils import check_path_exists
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.dataset.batch import write_batch_locally
+
+# from nowcasting_dataset.dataset.batch import write_batch_locally
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.dataset.batch import Batch
 from pathy import Pathy
 from pathlib import Path
 import fsspec
@@ -109,9 +111,11 @@ def get_data_module():
     num_workers = 4
 
     # get the batch id already made
-    maximum_batch_id_train = utils.get_maximum_batch_id(DST_TRAIN_PATH)
-    maximum_batch_id_validation = utils.get_maximum_batch_id(DST_VALIDATION_PATH)
-    maximum_batch_id_test = utils.get_maximum_batch_id(DST_TEST_PATH)
+    maximum_batch_id_train = utils.get_maximum_batch_id(os.path.join(DST_TRAIN_PATH, "metadata"))
+    maximum_batch_id_validation = utils.get_maximum_batch_id(
+        os.path.join(DST_VALIDATION_PATH, "metadata")
+    )
+    maximum_batch_id_test = utils.get_maximum_batch_id(os.path.join(DST_TEST_PATH, "metadata"))
 
     if maximum_batch_id_train is None:
         maximum_batch_id_train = 0
@@ -136,6 +140,7 @@ def get_data_module():
         nwp_base_path=NWP_ZARR_PATH,
         gsp_filename=GSP_ZARR_PATH,
         topographic_filename=TOPO_TIFF_PATH,
+        sun_filename=config.input_data.sun_zarr_path,
         pin_memory=False,  #: Passed to DataLoader.
         num_workers=num_workers,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
@@ -169,14 +174,15 @@ def iterate_over_dataloader_and_write_to_disk(
 
     for batch_i, batch in enumerate(dataloader):
         _LOG.info(f"Got batch {batch_i}")
-        if len(batch) > 0:
-            write_batch_locally(batch, batch_i, local_output_path)
+
+        batch.save_netcdf(batch_i=batch_i, path=local_output_path)
+
         if UPLOAD_EVERY_N_BATCHES > 0 and batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
-            utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
+            utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
 
     # Make sure we upload the last few batches, if necessary.
     if UPLOAD_EVERY_N_BATCHES > 0:
-        utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH, cloud=CLOUD)
+        utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
 
 
 def main():

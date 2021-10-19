@@ -5,6 +5,7 @@ This folder contains the following files
 ## batch.py
 
 'Batch' pydantic class, to hold batch data in. An 'Example' is one item in the batch.
+'BatchML' pydantic class, holds data for a batch, ready for ML models.
 
 ## datamodule.py
 
@@ -23,6 +24,10 @@ NetCDFDataset - torch.utils.data.Dataset: Use for loading pre-made batches
 NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
 
 
-## validate.py
+## subset.py
 
-Contains a class that can validate the prepare ml dataset
+Function to subset the 'Batch'
+
+## fake.py
+
+A fake dataset, perhaps useful outside this repo.

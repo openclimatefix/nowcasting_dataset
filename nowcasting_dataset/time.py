@@ -1,15 +1,15 @@
 """ Time functions """
 import logging
+import random
 import warnings
 from typing import Iterable, Tuple, List, Dict
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 import pvlib
-import random
 
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,7 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     return pd.DataFrame(features, index=index).astype(np.float32)
 
 
-def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
+def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.Dataset:
     """
     Make datetime features with sin and cos
 
@@ -282,13 +282,7 @@ def datetime_features_in_example(index: pd.DatetimeIndex) -> Datetime:
     dt_features["day_of_year"] /= 365
     dt_features = utils.sin_and_cos(dt_features)
 
-    datetime_dict = {}
-    for col_name, series in dt_features.iteritems():
-        datetime_dict[col_name] = series.values
-
-    datetime_dict["datetime_index"] = series.index.values
-
-    return Datetime(**datetime_dict)
+    return dt_features.to_xarray()
 
 
 def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_minutes):
@@ -324,8 +318,8 @@ def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_min
         - int(seq_length_30_minutes / 2) * delta_5
     )
 
-    t0_dt = utils.to_numpy(t0_dt)
-    time_5 = utils.to_numpy(time_5.T)
-    time_30 = utils.to_numpy(time_30.T)
+    t0_dt = utils.to_numpy(t0_dt).astype(np.int32)
+    time_5 = utils.to_numpy(time_5.T).astype(np.int32)
+    time_30 = utils.to_numpy(time_30.T).astype(np.int32)
 
     return t0_dt, time_5, time_30

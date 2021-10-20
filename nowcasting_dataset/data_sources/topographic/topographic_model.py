@@ -20,7 +20,7 @@ class Topographic(DataSourceOutput):
 
     @classmethod
     def model_validation(cls, v):
-        """ Check that all values are non negative """
+        """ Check that all values are non NaNs """
         assert (v.data != np.NaN).all(), f"Some topological data values are NaNs"
         return v
 

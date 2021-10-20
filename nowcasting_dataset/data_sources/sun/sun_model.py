@@ -34,7 +34,11 @@ class Sun(DataSourceOutput):
             v.azimuth <= 360
         ).all(), f"Some azimuth data values are greater than 360, {v.azimuth.max()}"
 
-        assert (0 <= v.elevation).all(), f"Some azimuth data values are lower 0"
-        assert (v.elevation <= 90).all(), f"Some azimuth data values are greater than 180"
+        assert (
+            -90 <= v.elevation
+        ).all(), f"Some elevation data values are lower -90, {v.elevation.min()}"
+        assert (
+            v.elevation <= 90
+        ).all(), f"Some elevation data values are greater than 90, {v.elevation.max()}"
 
         return v

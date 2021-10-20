@@ -1,6 +1,6 @@
 import tempfile
 import os
-
+from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.dataset.batch import Batch
 
 

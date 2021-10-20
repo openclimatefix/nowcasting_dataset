@@ -241,6 +241,8 @@ def create_gsp_pv_dataset(
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
 
+    data.__setitem__("data", data.data.clip(min=0))
+
     return data
 
 
@@ -274,6 +276,9 @@ def create_sun_dataset(
     data = convert_data_array_to_dataset(data_array)
     sun = data.rename({"data": "elevation"})
     sun["azimuth"] = data.data
+
+    sun.__setitem__("azimuth", sun.azimuth.clip(min=0, max=180))
+    sun.__setitem__("elevation", sun.elevation.clip(min=0, max=90))
 
     return sun
 

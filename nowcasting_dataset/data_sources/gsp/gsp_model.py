@@ -1,5 +1,6 @@
 """ Model for output of GSP data """
 import logging
+import numpy as np
 
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
@@ -15,4 +16,12 @@ class GSP(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("time", "id")
 
-    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are non NaNs """
+        assert (v.data != np.NaN).all(), f"Some gsp data values are NaNs"
+        assert (v.data != np.Inf).all(), f"Some gsp data values are Infinite"
+
+        assert (v.data >= 0).all(), f"Some gsp data values are below 0"
+
+        return v

@@ -187,8 +187,6 @@ class NWPDataSource(ZarrDataSource):
         """Resamples to 5 minutely."""
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
-        selected_data = selected_data - NWP_MEAN
-        selected_data = selected_data / NWP_STD
         selected_data = selected_data.resample({"target_time": "5T"})
         selected_data = selected_data.interpolate()
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))

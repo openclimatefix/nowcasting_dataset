@@ -66,7 +66,8 @@ class DataSource:
 
         self._history_duration = pd.Timedelta(self.history_minutes, unit="minutes")
         self._forecast_duration = pd.Timedelta(self.forecast_minutes, unit="minutes")
-        # Add sample_period_duration because neither history_duration not forecast_duration include t0.
+        # Add sample_period_duration because neither history_duration not forecast_duration
+        # include t0.
         self._total_seq_duration = (
             self._history_duration + self._forecast_duration + self.sample_period_duration
         )
@@ -112,13 +113,13 @@ class DataSource:
         Get Batch Data
 
         Args:
-            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also include data
-                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
+                include data for historic and future depending on `history_minutes` and
+                `future_minutes`.
             x_locations: x center batch locations
             y_locations: y center batch locations
 
-        Returns: Batch data
-
+        Returns: Batch data.
         """
         examples = []
         zipped = zip(t0_datetimes, x_locations, y_locations)
@@ -273,8 +274,8 @@ class ZarrDataSource(ImageDataSource):
         Get Example data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include data
-                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
+                data for historic and future depending on `history_minutes` and `future_minutes`.
             x_meters_center: x center batch locations
             y_meters_center: y center batch locations
 

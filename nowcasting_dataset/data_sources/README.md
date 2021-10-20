@@ -101,7 +101,6 @@ class NewDataSource(DataSourceOutput):
 
 ### Testing
 1. Create a test to check that new data source is loaded correctly.
-2. Create a script to make test data in `scritps/generate_data_for_tests`
+2. Create a script to make test data in `scripts/generate_data_for_tests`
 3. Create a function to make a randomly generated xr.Dataset for generating fake data in `nowcasting.dataset.fake.py` \
 and to batch fake function
-4. Re-run script to generate batch test data.

@@ -102,7 +102,12 @@ TODO
 
 ### Topographical data
 
-Make an account at the [USGS EarthExplorer](https://earthexplorer.usgs.gov/) website, create a region of the world to download data for, in our case, the spatial extant of the SEVIRI RSS image, and then download all the SRTM files that cover that area. There does not seem to be an automated way to do so, so this might take awhile.
+1. Make an account at the [USGS EarthExplorer](https://earthexplorer.usgs.gov/) website
+2. Create a region of the world to download data for, in our case, the spatial extant of the SEVIRI RSS image
+3. Select the data products you want, in this case SRTM elevation maps
+4. Download all the SRTM files that cover that area
+
+There does not seem to be an automated way to do this selecting and downloading, so this might take awhile.
 
 
 ## Configure `nowcasting_dataset` to point to the downloaded data

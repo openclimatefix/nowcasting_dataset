@@ -43,7 +43,6 @@ class TopographicDataSource(ImageDataSource):
     """Add topographic/elevation map features."""
 
     filename: str = None
-    normalize: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post init """
@@ -120,18 +119,15 @@ class TopographicDataSource(ImageDataSource):
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
     ) -> xr.DataArray:
         """
-        Post process the topographical data, removing an extra dim and optionally normalizing
+        Post process the topographical data, removing an extra dim
 
         Args:
             selected_data: DataArray containing the topographic data
             t0_dt: Unused
 
         Returns:
-            DataArray with optionally normalized data, and removed first dimension
+            DataArray  removed first dimension
         """
-        if self.normalize:
-            selected_data = selected_data - TOPO_MEAN
-            selected_data = selected_data / TOPO_STD
         # Shrink extra dims
         selected_data = selected_data.squeeze()
         return selected_data

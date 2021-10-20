@@ -51,15 +51,14 @@ and hopefully useful outside this module too.
 
 ## How to add a new data source
 
-This should give a checklist of general things to do when creating a new data source.
+Below is a checklist of general things to do when creating a new data source.
 1. Assuming that data can not be made on the fly, create script to make process data.
 
 2. Create folder in nowcasting/data_sources with the name of the new data source
 
 3. Create a file called `<name>_datasource.py`. This file should contain class which
-inherits `nowcasting_dataset.data_source.DataSource`
-
-4. This class will need `get_example` method. (there is also an option to use a `get_batch` method instead)
+inherits `nowcasting_dataset.data_source.DataSource`. This class will need `get_example` method.
+(there is also an option to use a `get_batch` method instead)
 ```python
 def get_example(
     self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -77,7 +76,7 @@ def get_example(
     """
 ```
 
-5. Create a file called `<name>_model.py` which a class with the name of the data soure. This class is an extension
+4. Create a file called `<name>_model.py` which a class with the name of the data soure. This class is an extension
 of an xr.Dataset with some pydantic validation
 ```python
 class NewDataSource(DataSourceOutput):
@@ -94,15 +93,11 @@ class NewDataSource(DataSourceOutput):
         return v
 
 ```
-6. Also in `<name>_model.py` create a pydantic model of the new data output which will be used for machine learning. The
-pydantic model is typically the data and coords of the xr.Dataset changed into `torch.Tensor`.
-Note this might move to `nowcatsing_dataloader` soon.
+6. Add to new data source `Batch` object.
 
-7. Add to new data source `Batch` object.
+7. Add new data source to `nowcasting.dataset.datamodule.NowcastingDataModule`.
 
-8. Add new data source to `nowcasting.dataset.datamodule.NowcastingDataModule`.
-
-9. Add configuration data to configuration model, for example where the raw data is loaded from.
+8. Add configuration data to configuration model, for example where the raw data is loaded from.
 
 ### Testing
 1. Create a test to check that new data source is loaded correctly.

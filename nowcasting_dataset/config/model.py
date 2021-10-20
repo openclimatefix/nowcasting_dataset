@@ -58,6 +58,35 @@ class Satellite(BaseModel):
     )
 
 
+class NWP(BaseModel):
+
+    nwp_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
+        description="The path which holds the NWP zarr.",
+    )
+
+
+class GSP(BaseModel):
+
+    gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
+
+
+class Topographic(BaseModel):
+
+    topographic_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
+        description="Path to the GeoTIFF Topographic data source",
+    )
+
+
+class Sun(BaseModel):
+
+    sun_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
+        description="Path to the Sun data source i.e Azimuth and Elevation",
+    )
+
+
 class InputData(BaseModel):
     """
     Input data model
@@ -69,22 +98,10 @@ class InputData(BaseModel):
 
     solar: Solar
     satellite: Satellite
-
-    nwp_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
-        description="The path which holds the NWP zarr.",
-    )
-
-    gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
-    topographic_filename: str = Field(
-        "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
-        description="Path to the GeoTIFF Topographic data source",
-    )
-
-    sun_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
-        description="Path to the Sun data source i.e Azimuth and Elevation",
-    )
+    nwp: NWP
+    gsp: GSP
+    topographic: Topographic
+    sun: Sun
 
 
 class OutputData(BaseModel):

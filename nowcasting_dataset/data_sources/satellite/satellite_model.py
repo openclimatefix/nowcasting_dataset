@@ -27,5 +27,5 @@ class Satellite(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non negative """
-        assert (v.data != np.NaN).all(), f"Some satellite data values are NaNs"
+        assert (~np.isnan(v.data)).all(), f"Some satellite data values are NaNs"
         return v

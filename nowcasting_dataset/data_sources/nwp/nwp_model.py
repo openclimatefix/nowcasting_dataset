@@ -24,5 +24,5 @@ class NWP(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are not NaNs """
-        assert (v.data != np.nan).all(), "Some nwp data values are NaNs"
+        assert (~np.isnan(v.data)).all(), "Some nwp data values are NaNs"
         return v

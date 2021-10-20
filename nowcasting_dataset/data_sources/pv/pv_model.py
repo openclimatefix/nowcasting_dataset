@@ -32,7 +32,7 @@ class PV(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (v.data != np.NaN).all(), f"Some pv data values are NaNs"
+        assert (~np.isnan(v.data)).all(), f"Some pv data values are NaNs"
         assert (v.data != np.Inf).all(), f"Some pv data values are Infinite"
 
         assert (v.data >= 0).all(), f"Some pv data values are below 0"

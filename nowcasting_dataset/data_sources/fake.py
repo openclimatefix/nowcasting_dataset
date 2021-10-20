@@ -277,7 +277,7 @@ def create_sun_dataset(
     sun = data.rename({"data": "elevation"})
     sun["azimuth"] = data.data
 
-    sun.__setitem__("azimuth", sun.azimuth.clip(min=0, max=180))
+    sun.__setitem__("azimuth", sun.azimuth.clip(min=0, max=360))
     sun.__setitem__("elevation", sun.elevation.clip(min=0, max=90))
 
     return sun

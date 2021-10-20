@@ -177,31 +177,34 @@ class DataSource:
         Returns:
           pd.DataFrame where each row represents a single time period.  The pd.DataFrame
           has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+
+        Raises:
+          NotImplementedError if this DataSource has no concept of a datetime index.
         """
+        datetimes = self.datetime_index()
+        return nd_time.get_contiguous_time_periods(
+            datetimes=datetimes,
+            min_seq_length=self._total_seq_length,
+            max_gap_duration=self.sample_period_duration,
+        )
 
-        # TODO: Use nd_time.get_contiguous_time_periods()
-        # See https://github.com/openclimatefix/nowcasting_dataset/issues/223
-        raise NotImplementedError()
-
-    def _get_time_slice(self, t0_dt: pd.Timestamp):
-        """Get a single timestep of data.  Must be overridden."""
-        raise NotImplementedError()
-
-    # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     def get_locations_for_batch(
         self, t0_datetimes: pd.DatetimeIndex
     ) -> Tuple[List[Number], List[Number]]:
-        """Find a valid geographical location for each t0_datetime.
+        """Find a valid geographical locations for each t0_datetime.
+
+        Should be overridden by DataSources which may be used to define the locations
+        for each batch.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
             Locations are in OSGB coordinates.
         """
-        # TODO: Do this properly, using PV locations!
-        locations = [20_000, 40_000, 500_000, 600_000, 100_000, 100_000, 250_000, 250_000]
+        raise NotImplementedError()
 
-        location = np.random.choice(locations, size=(len(t0_datetimes), 2))
-
-        return location[:, 0], location[:, 1]
+    # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
+    def _get_time_slice(self, t0_dt: pd.Timestamp):
+        """Get a single timestep of data.  Must be overridden."""
+        raise NotImplementedError()
 
     def get_example(
         self,

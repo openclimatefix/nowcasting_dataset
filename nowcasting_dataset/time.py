@@ -172,15 +172,20 @@ def get_start_datetimes(
 
 
 def get_contiguous_time_periods(
-    datetimes: pd.DatetimeIndex, min_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
+    datetimes: pd.DatetimeIndex,
+    min_seq_length: int,
+    max_gap_duration: pd.Timedelta = THIRTY_MINUTES,
 ) -> pd.DataFrame:
     """Returns a pd.DataFrame where each row records the boundary of a contiguous time periods.
 
     Args:
       datetimes: The pd.DatetimeIndex of the timeseries. Must be sorted.
-      min_seq_length: Sequences of min_seq_length or shorter will be discarded.
-      max_gap: If any pair of consecutive `datetimes` is more than `max_gap` apart, then this pair
-        of `datetimes` will be considered a "gap" between two contiguous sequences.
+      min_seq_length: Sequences of min_seq_length or shorter will be discarded.  Typically, this
+        would be set to the `total_seq_length` of each machine learning example.
+      max_gap_duration: If any pair of consecutive `datetimes` is more than `max_gap_duration`
+        apart, then this pair of `datetimes` will be considered a "gap" between two contiguous
+        sequences. Typically, `max_gap_duration` would be set to the sample period of
+        the timeseries.
 
     Returns:
       pd.DataFrame where each row represents a single time period.  The pd.DataFrame
@@ -193,7 +198,7 @@ def get_contiguous_time_periods(
     assert datetimes.is_unique
 
     # Find indices of gaps larger than max_gap:
-    gap_mask = np.diff(datetimes) > max_gap
+    gap_mask = np.diff(datetimes) > max_gap_duration
     gap_indices = np.argwhere(gap_mask)[:, 0]
 
     # gap_indicies are the indices into dt_index for the timestep immediately

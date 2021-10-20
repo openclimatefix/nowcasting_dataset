@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 
 import nowcasting_dataset.time as nd_time
-from nowcasting_dataset.consts import GSP_DATETIME_INDEX
 from nowcasting_dataset.dataset.datasets import NowcastingDataset
 from nowcasting_dataset.dataset.batch import Batch
 
@@ -56,16 +55,8 @@ def test_per_worker_init(dataset: NowcastingDataset):
 
 def test_get_batch(dataset: NowcastingDataset):
     dataset.per_worker_init(worker_id=1)
-    batch = dataset._get_batch()
-    assert isinstance(batch, Batch)
-    assert batch.satellite is not None
-    assert batch.satellite.data.shape == (
-        8,
-        2,
-        pytest.IMAGE_SIZE_PIXELS,
-        pytest.IMAGE_SIZE_PIXELS,
-        1,
-    )
+    with pytest.raises(NotImplementedError):
+        _ = dataset._get_batch()
 
 
 def test_get_batch_gsp(dataset_gsp: NowcastingDataset):

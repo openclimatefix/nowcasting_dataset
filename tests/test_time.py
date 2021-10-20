@@ -68,7 +68,7 @@ def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_length):
     freq = pd.Timedelta(5, unit="minutes")
     dt_index = pd.date_range("2010-01-01", "2010-01-02", freq=freq)
     periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
-        dt_index, min_seq_length=min_seq_length, max_gap=freq
+        dt_index, min_seq_length=min_seq_length, max_gap_duration=freq
     )
     correct_periods = pd.DataFrame([{"start_dt": dt_index[0], "end_dt": dt_index[-1]}])
     pd.testing.assert_frame_equal(periods, correct_periods)
@@ -81,7 +81,7 @@ def test_get_contiguous_time_periods_2_with_2_chunks(min_seq_length):
     dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq=freq)
     dt_index = dt_index1.union(dt_index2)
     periods: pd.DataFrame = nd_time.get_contiguous_time_periods(
-        dt_index, min_seq_length=min_seq_length, max_gap=freq
+        dt_index, min_seq_length=min_seq_length, max_gap_duration=freq
     )
     correct_periods = pd.DataFrame(
         [

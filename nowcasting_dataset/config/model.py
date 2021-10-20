@@ -38,7 +38,8 @@ class Git(BaseModel):
     )
 
 
-class Solar(BaseModel):
+class PV(BaseModel):
+    """ PV configuration model """
 
     solar_pv_data_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
@@ -51,6 +52,7 @@ class Solar(BaseModel):
 
 
 class Satellite(BaseModel):
+    """ Satellite configuration model """
 
     satellite_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
@@ -59,6 +61,7 @@ class Satellite(BaseModel):
 
 
 class NWP(BaseModel):
+    """ NWP configuration model """
 
     nwp_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
@@ -67,11 +70,13 @@ class NWP(BaseModel):
 
 
 class GSP(BaseModel):
+    """ GSP configuration model """
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
 
 
 class Topographic(BaseModel):
+    """ Topographic configuration model """
 
     topographic_filename: str = Field(
         "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
@@ -80,6 +85,7 @@ class Topographic(BaseModel):
 
 
 class Sun(BaseModel):
+    """ Sun configuration model """
 
     sun_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
@@ -96,7 +102,7 @@ class InputData(BaseModel):
     for gcp start with 'gs://'.
     """
 
-    solar: Solar
+    pv: PV
     satellite: Satellite
     nwp: NWP
     gsp: GSP

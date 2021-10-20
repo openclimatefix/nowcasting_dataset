@@ -128,10 +128,10 @@ def get_data_module():
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
-        history_minutes=config.process.history_minutes,  #: Number of minutes of history, not including t0.
-        forecast_minutes=config.process.forecast_minutes,  #: Number of minutes of forecast.
-        satellite_image_size_pixels=config.process.satellite_image_size_pixels,
-        nwp_image_size_pixels=config.process.nwp_image_size_pixels,
+        history_minutes=config.input_data.default_history_minutes,  #: Number of minutes of history, not including t0.
+        forecast_minutes=config.input_data.default_forecast_minutes,  #: Number of minutes of forecast.
+        satellite_image_size_pixels=config.input_data.satellite.satellite_image_size_pixels,
+        nwp_image_size_pixels=config.input_data.nwp.nwp_image_size_pixels,
         nwp_channels=NWP_VARIABLE_NAMES,
         sat_channels=SAT_VARIABLE_NAMES,
         pv_power_filename=PV_DATA_FILENAME,
@@ -140,7 +140,7 @@ def get_data_module():
         nwp_base_path=NWP_ZARR_PATH,
         gsp_filename=GSP_ZARR_PATH,
         topographic_filename=TOPO_TIFF_PATH,
-        sun_filename=config.input_data.sun_zarr_path,
+        sun_filename=config.input_data.sun.sun_zarr_path,
         pin_memory=False,  #: Passed to DataLoader.
         num_workers=num_workers,  #: Passed to DataLoader.
         prefetch_factor=8,  #: Passed to DataLoader.
@@ -150,7 +150,6 @@ def get_data_module():
         n_test_batches_per_epoch=1_008,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
-        normalise_sat=False,
         skip_n_train_batches=maximum_batch_id_train // num_workers,
         skip_n_validation_batches=maximum_batch_id_validation // num_workers,
         skip_n_test_batches=maximum_batch_id_test // num_workers,

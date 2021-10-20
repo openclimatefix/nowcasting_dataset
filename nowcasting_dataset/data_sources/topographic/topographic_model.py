@@ -18,7 +18,11 @@ class Topographic(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("x", "y")
 
-    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are non NaNs """
+        assert (v.data != np.NaN).all(), f"Some topological data values are NaNs"
+        return v
 
 
 class TopographicML(DataSourceOutputML):

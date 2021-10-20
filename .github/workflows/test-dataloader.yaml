@@ -14,5 +14,5 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: openclimatefix/nowcasting_dataloader
-          event-type: my-event
+          event-type: dataset-update
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

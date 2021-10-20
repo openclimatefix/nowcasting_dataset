@@ -13,6 +13,7 @@ from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
@@ -42,7 +43,6 @@ class TopographicDataSource(ImageDataSource):
     """Add topographic/elevation map features."""
 
     filename: str = None
-    normalize: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post init """
@@ -111,24 +111,23 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        return xr.Dataset({"data": selected_data})
+        topo_xd = convert_data_array_to_dataset(selected_data)
+
+        return Topographic(topo_xd)
 
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
     ) -> xr.DataArray:
         """
-        Post process the topographical data, removing an extra dim and optionally normalizing
+        Post process the topographical data, removing an extra dim
 
         Args:
             selected_data: DataArray containing the topographic data
             t0_dt: Unused
 
         Returns:
-            DataArray with optionally normalized data, and removed first dimension
+            DataArray  removed first dimension
         """
-        if self.normalize:
-            selected_data = selected_data - TOPO_MEAN
-            selected_data = selected_data / TOPO_STD
         # Shrink extra dims
         selected_data = selected_data.squeeze()
         return selected_data

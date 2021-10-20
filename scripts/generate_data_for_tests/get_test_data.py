@@ -9,14 +9,14 @@ import numcodecs
 import pandas as pd
 import xarray as xr
 
-import nowcasting_dataset
+import nowcasting_dataloader
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.dataset.batch import Batch
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
-local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
+local_path = os.path.dirname(nowcasting_dataloader.__file__) + "/.."
 PV_PATH = BUCKET / "PV/PVOutput.org"
 PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
 
@@ -82,7 +82,7 @@ nwp_data = nwp_data.sel(step=slice(nwp_data.step[0], nwp_data.step[4]))  # take 
 nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 
 # ### GSP data
-filename = "gs://solar-pv-nowcasting-data/PV/GSP/v1/pv_gsp.zarr"
+filename = "gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr"
 
 gsp_power = xr.open_dataset(filename, engine="zarr")
 gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
@@ -95,7 +95,6 @@ encoding = {
 }
 
 gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=encoding)
-
 
 # ### satellite
 
@@ -137,16 +136,3 @@ sun_xr["locations"] = sun_xr.locations.astype("str")
 
 # save to file
 sun_xr.to_zarr(f"{local_path}/tests/data/sun/test.zarr", mode="w")
-
-
-########
-# batch0.nc
-########
-
-c = Configuration()
-c.process.batch_size = 4
-c.process.nwp_channels = c.process.nwp_channels[0:1]
-c.process.sat_channels = c.process.sat_channels[0:1]
-
-f = Batch.fake(configuration=c)
-f.save_netcdf(batch_i=0, path=Path(f"{local_path}/tests/data/batch"))

@@ -18,45 +18,6 @@ _LOG = logging.getLogger(__name__)
 
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 
-# Means computed with
-# nwp_ds = NWPDataSource(...)
-# nwp_ds.open()
-# mean = nwp_ds.data.isel(init_time=slice(0, 10)).mean(
-#     dim=['step', 'x', 'init_time', 'y']).compute()
-NWP_MEAN = xr.DataArray(
-    data=[
-        2.8041010e02,
-        1.6854691e01,
-        6.7529683e-05,
-        8.1832832e01,
-        7.1233767e-03,
-        8.8566933e00,
-        4.3474598e04,
-        4.9820110e01,
-        4.8095409e01,
-        4.2833260e01,
-    ],
-    dims=["variable"],
-    coords={"variable": list(NWP_VARIABLE_NAMES)},
-).astype(np.float32)
-
-NWP_STD = xr.DataArray(
-    data=[
-        2.5812180e00,
-        4.1278820e01,
-        2.7507244e-04,
-        9.0967312e00,
-        1.4110464e-01,
-        4.3616886e00,
-        2.3853148e04,
-        3.8900299e01,
-        4.2830105e01,
-        4.2778091e01,
-    ],
-    dims=["variable"],
-    coords={"variable": list(NWP_VARIABLE_NAMES)},
-).astype(np.float32)
-
 
 @dataclass
 class NWPDataSource(ZarrDataSource):
@@ -182,7 +143,7 @@ class NWPDataSource(ZarrDataSource):
 
         output = join_list_data_array_to_batch_dataset(examples)
 
-        return output
+        return NWP(output)
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.filename, consolidated=self.consolidated)
@@ -226,11 +187,14 @@ class NWPDataSource(ZarrDataSource):
         """Resamples to 5 minutely."""
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
-        selected_data = selected_data - NWP_MEAN
-        selected_data = selected_data / NWP_STD
         selected_data = selected_data.resample({"target_time": "5T"})
         selected_data = selected_data.interpolate()
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
+        selected_data = selected_data.rename({"target_time": "time"})
+        selected_data = selected_data.rename({"variable": "channels"})
+
+        selected_data.data = selected_data.data.astype(np.float32)
+
         return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:

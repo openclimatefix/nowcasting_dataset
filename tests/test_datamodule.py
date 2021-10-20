@@ -100,7 +100,6 @@ def test_data_module(config_filename):
         n_validation_batches_per_epoch=200,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
-        normalise_sat=False,
         skip_n_train_batches=0,
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
@@ -119,24 +118,14 @@ def test_data_module(config_filename):
     assert batch.batch_size == config.process.batch_size
     assert type(batch) == Batch
 
-    # for key in list(Example.__annotations__.keys()):
-    #     assert key in batch[0].keys()
-    #
-    # seq_length_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
-    # seq_length_5_minutes = (
-    #     19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
-    # )
-
-    # for x in batch:
-    #     validate_example(
-    #         data=x,
-    #         n_nwp_channels=len(config.process.nwp_channels),
-    #         nwp_image_size=config.process.nwp_image_size_pixels,
-    #         n_sat_channels=len(config.process.sat_channels),
-    #         sat_image_size=config.process.satellite_image_size_pixels,
-    #         seq_length_30_minutes=seq_length_30_minutes,
-    #         seq_length_5_minutes=seq_length_5_minutes,
-    #     )
+    assert batch.satellite is not None
+    assert batch.nwp is not None
+    assert batch.sun is not None
+    assert batch.topographic is not None
+    assert batch.pv is not None
+    assert batch.gsp is not None
+    assert batch.metadata is not None
+    assert batch.datetime is not None
 
 
 def test_batch_to_batch_to_dataset():
@@ -165,7 +154,6 @@ def test_batch_to_batch_to_dataset():
         n_validation_batches_per_epoch=200,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
-        normalise_sat=False,
         skip_n_train_batches=0,
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,

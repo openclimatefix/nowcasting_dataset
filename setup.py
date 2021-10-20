@@ -10,7 +10,7 @@ install_requires = (this_directory / "requirements.txt").read_text().splitlines(
 
 setup(
     name="nowcasting_dataset",
-    version="0.2.1",
+    version="1.0.7",
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",
@@ -20,5 +20,7 @@ setup(
     extras_require={"torch": ["torch", "pytorch_lightning"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
+    package_data={"config": ["nowcasting_dataset/config/*.yaml"]},
+    include_package_data=True,
     packages=find_packages(),
 )

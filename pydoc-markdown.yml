@@ -1,0 +1,51 @@
+loaders:
+  - type: python
+    search_path: [nowcasting_dataset/]
+processors:
+  - type: filter
+  - type: smart
+  # - type: crossref
+renderer:
+  type: mkdocs
+  pages:
+    - title: Home
+      name: index
+      source: README.md
+    - title: API Documentation
+      children:
+        - title: Config
+          children:
+            - title: Overview
+              source: nowcasting_dataset/config/README.md
+            - title: API
+              contents: [config, config.*]
+        - title: Data sources
+          children:
+            - title: Overview
+              source: nowcasting_dataset/data_sources/README.md
+            - title: Datetime
+              contents: [data_sources.datetime, data_sources.datetime.*]
+            - title: Grid Supply Point (GSP)
+              contents: [data_sources.gsp, data_sources.gsp.*]
+            - title: Metadata
+              contents: [data_sources.metadata, data_sources.metadata.*]
+            - title: Numerical Weather Predictions (NWP)
+              contents: [data_sources.nwp, data_sources.nwp.*]
+            - title: Satellite
+              contents: [data_sources.satellite, data_sources.satellite.*]
+            - title: Sun
+              contents: [data_sources.sun, data_sources.sun.*]
+            - title: Topographic
+              contents: [data_sources.topographic, data_sources.topographic.*]
+        - title: Dataset
+          children:
+            - title: Overview
+              source: nowcasting_dataset/dataset/README.md
+            - title: API
+              contents: [dataset, dataset.*]
+        - title: Filesystem
+          contents: [filesystem, filesystem.*]
+  mkdocs_config:
+    site_name: Nowcasting Dataset
+    theme: readthedocs
+    repo_url: https://github.com/openclimatefix/nowcasting_dataset

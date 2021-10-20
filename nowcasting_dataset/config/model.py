@@ -1,6 +1,7 @@
 """ Configuration model for the dataset """
 from datetime import datetime
 from typing import Optional
+import logging
 
 import git
 from pathy import Pathy
@@ -108,7 +109,7 @@ class NWP(DataSourceMixin):
 class GSP(DataSourceMixin):
     """GSP configuration model"""
 
-    gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
+    gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr")
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
@@ -199,7 +200,7 @@ class OutputData(BaseModel):
     """Output data model"""
 
     filepath: str = Field(
-        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/",
+        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/",
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"
@@ -236,17 +237,19 @@ class Configuration(BaseModel):
         """Append base_path to all paths. Mostly used for testing."""
         base_path = Pathy(base_path)
         path_attrs = [
-            "solar_pv_data_filename",
-            "solar_pv_metadata_filename",
-            "satellite_zarr_path",
-            "nwp_zarr_path",
-            "gsp_zarr_path",
+            "pv.solar_pv_data_filename",
+            "pv.solar_pv_metadata_filename",
+            "satellite.satellite_zarr_path",
+            "nwp.nwp_zarr_path",
+            "gsp.gsp_zarr_path",
         ]
-        for attr_name in path_attrs:
-            path = getattr(self.input_data, attr_name)
+        for cls_and_attr_name in path_attrs:
+            cls_name, attribute = cls_and_attr_name.split(".")
+            cls = getattr(self.input_data, cls_name)
+            path = getattr(getattr(self.input_data, cls_name), attribute)
             path = base_path / path
-            setattr(self.input_data, attr_name, path)
-            print(path)
+            setattr(cls, attribute, path)
+            setattr(self.input_data, cls_name, cls)
 
 
 def set_git_commit(configuration: Configuration):

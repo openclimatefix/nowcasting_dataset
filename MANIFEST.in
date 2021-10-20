@@ -1,1 +1,1 @@
-include *.txt *.yaml
+include *.txt nowcasting_dataset/config/*.yaml

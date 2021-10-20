@@ -20,6 +20,7 @@ setup(
     extras_require={"torch": ["torch", "pytorch_lightning"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
-    package_data={"config": ["*.yaml"]},
+    package_data={"config": ["nowcasting_dataset/config/*.yaml"]},
+    include_package_data=True,
     packages=find_packages(),
 )

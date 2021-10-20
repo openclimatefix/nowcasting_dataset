@@ -1,11 +1,7 @@
 import tempfile
 import os
-import torch
-
-from nowcasting_dataset.dataset.batch import BatchML, Batch
 from nowcasting_dataset.config.model import Configuration
-
-from nowcasting_dataset.dataset.fake import FakeDataset
+from nowcasting_dataset.dataset.batch import Batch
 
 
 def test_model():
@@ -38,21 +34,3 @@ def test_model_load_from_netcdf():
         batch = Batch.load_netcdf(batch_idx=0, local_netcdf_path=dirpath)
 
         assert batch.satellite is not None
-
-
-def test_batch_to_batch_ml():
-
-    con = Configuration()
-    con.process.batch_size = 4
-
-    _ = BatchML.from_batch(batch=Batch.fake(configuration=con))
-
-
-def test_fake_dataset():
-    train = torch.utils.data.DataLoader(FakeDataset(configuration=Configuration()), batch_size=None)
-    i = iter(train)
-    x = next(i)
-
-    x = BatchML(**x)
-    # IT WORKS
-    assert type(x.satellite.data) == torch.Tensor

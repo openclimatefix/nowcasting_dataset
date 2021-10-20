@@ -127,25 +127,6 @@ def test_data_module(config_filename):
     assert batch.metadata is not None
     assert batch.datetime is not None
 
-    # for key in list(Example.__annotations__.keys()):
-    #     assert key in batch[0].keys()
-    #
-    # seq_length_30_minutes = 4  # 30 minutes history, 60 minutes in the future plus now, is 4)
-    # seq_length_5_minutes = (
-    #     19  # 30 minutes history (=6), 60 minutes in the future (=12) plus now, is 19)
-    # )
-
-    # for x in batch:
-    #     validate_example(
-    #         data=x,
-    #         n_nwp_channels=len(config.process.nwp_channels),
-    #         nwp_image_size=config.process.nwp_image_size_pixels,
-    #         n_sat_channels=len(config.process.sat_channels),
-    #         sat_image_size=config.process.satellite_image_size_pixels,
-    #         seq_length_30_minutes=seq_length_30_minutes,
-    #         seq_length_5_minutes=seq_length_5_minutes,
-    #     )
-
 
 def test_batch_to_batch_to_dataset():
     config = _get_config_with_test_paths("test.yaml")

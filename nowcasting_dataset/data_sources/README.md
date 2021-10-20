@@ -52,12 +52,12 @@ and hopefully useful outside this module too.
 ## How to add a new data source
 
 Below is a checklist of general things to do when creating a new data source.
-1. Assuming that data can not be made on the fly, create script to make process data.
+1. Assuming that data cannot be made on the fly, create script to process data.
 
 2. Create folder in nowcasting/data_sources with the name of the new data source
 
-3. Create a file called `<name>_datasource.py`. This file should contain class which
-inherits `nowcasting_dataset.data_source.DataSource`. This class will need `get_example` method.
+3. Create a file called `<name>_data_source.py`. This file should contain a class which
+inherits from `nowcasting_dataset.data_source.DataSource`. This class will need to implement the `get_example` method.
 (there is also an option to use a `get_batch` method instead)
 ```python
 def get_example(
@@ -76,7 +76,7 @@ def get_example(
     """
 ```
 
-4. Create a file called `<name>_model.py` which a class with the name of the data soure. This class is an extension
+4. Create a file called `<name>_model.py` which a class with the name of the data source. This class is an extension
 of an xr.Dataset with some pydantic validation
 ```python
 class NewDataSource(DataSourceOutput):
@@ -93,11 +93,11 @@ class NewDataSource(DataSourceOutput):
         return v
 
 ```
-6. Add to new data source `Batch` object.
+6. Add new data source to the `nowcasting_dataset.dataset.batch.Batch` class.
 
 7. Add new data source to `nowcasting.dataset.datamodule.NowcastingDataModule`.
 
-8. Add configuration data to configuration model, for example where the raw data is loaded from.
+8. Add configuration data to configuration model (`nowcasting_dataset/config/model.py`), for example where the raw data is loaded from.
 
 ### Testing
 1. Create a test to check that new data source is loaded correctly.

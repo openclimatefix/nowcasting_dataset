@@ -38,14 +38,7 @@ class Git(BaseModel):
     )
 
 
-class InputData(BaseModel):
-    """
-    Input data model
-
-    All paths must include the protocol prefix.  For local files,
-    it's sufficient to just start with a '/'.  For aws, start with 's3://',
-    for gcp start with 'gs://'.
-    """
+class Solar(BaseModel):
 
     solar_pv_data_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
@@ -56,10 +49,26 @@ class InputData(BaseModel):
         description="The CSV file describing each PV system.",
     )
 
+
+class Satellite(BaseModel):
+
     satellite_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
         description="The path which holds the satellite zarr.",
     )
+
+
+class InputData(BaseModel):
+    """
+    Input data model
+
+    All paths must include the protocol prefix.  For local files,
+    it's sufficient to just start with a '/'.  For aws, start with 's3://',
+    for gcp start with 'gs://'.
+    """
+
+    solar: Solar
+    satellite: Satellite
 
     nwp_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",

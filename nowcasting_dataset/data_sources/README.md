@@ -47,3 +47,60 @@ This inherits from 'datasource_output.DataSourceOutput'.
 
 `fake.py` has several function to create fake `Batch` data. This is useful for testing,
 and hopefully useful outside this module too.
+
+
+## How to add a new data source
+
+Below is a checklist of general things to do when creating a new data source.
+1. Assuming that data cannot be made on the fly, create script to process data.
+
+2. Create folder in nowcasting/data_sources with the name of the new data source
+
+3. Create a file called `<name>_data_source.py`. This file should contain a class which
+inherits from `nowcasting_dataset.data_source.DataSource`. This class will need to implement the `get_example` method.
+(there is also an option to use a `get_batch` method instead)
+```python
+def get_example(
+    self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+) -> NewDataSource:
+    """
+    Get a single example
+
+    Args:
+        t0_dt: Current datetime for the example, unused
+        x_meters_center: Center of the example in meters in the x direction in OSGB coordinates
+        y_meters_center: Center of the example in meters in the y direction in OSGB coordinates
+
+    Returns:
+        Example containing xxx data for the selected area
+    """
+```
+
+4. Create a file called `<name>_model.py` which a class with the name of the data source. This class is an extension
+of an xr.Dataset with some pydantic validation
+```python
+class NewDataSource(DataSourceOutput):
+    """ Class to store <name> data as a xr.Dataset with some validation """
+
+    # Use to store xr.Dataset data
+    __slots__ = ()
+    _expected_dimensions = ("x", "y")
+
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are not NaNs """
+        assert (v.data != np.nan).all(), "Some data values are NaNs"
+        return v
+
+```
+6. Add new data source to the `nowcasting_dataset.dataset.batch.Batch` class.
+
+7. Add new data source to `nowcasting.dataset.datamodule.NowcastingDataModule`.
+
+8. Add configuration data to configuration model (`nowcasting_dataset/config/model.py`), for example where the raw data is loaded from.
+
+### Testing
+1. Create a test to check that new data source is loaded correctly.
+2. Create a script to make test data in `scripts/generate_data_for_tests`
+3. Create a function to make a randomly generated xr.Dataset for generating fake data in `nowcasting.dataset.fake.py` \
+and to batch fake function

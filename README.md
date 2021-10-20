@@ -122,15 +122,6 @@ and modify `prepare_ml_data.py` to use your config file.
 Run [`scripts/prepare_ml_data.py`](https://github.com/openclimatefix/nowcasting_dataset/blob/main/scripts/prepare_ml_data.py)
 
 
-## Load prepared ML batches into an ML model
-
-`nowcasting_dataset.dataset.datasets.NetCDFDataset` is a PyTorch
-Dataset which loads the pre-prepared batches during ML training
-(although this will soon be moved to our separate
-[`nowcasting_dataloader`
-repository](https://github.com/openclimatefix/nowcasting_dataloader)).
-
-
 ## What exactly is in each batch?
 
 Please see the `data_sources/<modality>/<modality>_model.py` files

@@ -24,7 +24,6 @@ from nowcasting_dataset.dataset.xr_utils import (
     register_xr_data_array_to_tensor,
     register_xr_data_set_to_tensor,
 )
-from nowcasting_dataset.time import make_random_time_vectors
 from nowcasting_dataset.data_sources.fake import (
     datetime_fake,
     metadata_fake,
@@ -164,14 +163,14 @@ class Example(BaseModel):
     Note that this is currently not really used
     """
 
-    metadata: Optional[MetadataML]
-    satellite: Optional[SatelliteML]
-    topographic: Optional[TopographicML]
-    pv: Optional[PVML]
-    sun: Optional[SunML]
-    gsp: Optional[GSPML]
-    nwp: Optional[NWPML]
-    datetime: Optional[DatetimeML]
+    metadata: Optional[Metadata]
+    satellite: Optional[Satellite]
+    topographic: Optional[Topographic]
+    pv: Optional[PV]
+    sun: Optional[Sun]
+    gsp: Optional[GSP]
+    nwp: Optional[NWP]
+    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):

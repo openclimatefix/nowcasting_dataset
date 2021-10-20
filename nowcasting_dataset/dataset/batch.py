@@ -141,7 +141,6 @@ class Batch(BaseModel):
                         batch_i=batch_i,
                         path=path,
                     )
-                    # data_source.save_netcdf(batch_i=batch_i, path=path)
 
     @staticmethod
     def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):

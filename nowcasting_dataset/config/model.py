@@ -40,6 +40,7 @@ class Git(BaseModel):
 
 
 class DataSourceMixin(BaseModel):
+    """ Mixin class, to add forecast and history minutes """
 
     forecast_minutes: int = Field(
         None,

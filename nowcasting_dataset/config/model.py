@@ -5,14 +5,14 @@ from typing import Optional
 import git
 from pathy import Pathy
 from pydantic import BaseModel, Field
-from pydantic import validator
+from pydantic import validator, root_validator
 
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 
 
 class General(BaseModel):
-    """ General pydantic model """
+    """General pydantic model"""
 
     name: str = Field("example", description="The name of this configuration file.")
     description: str = Field(
@@ -29,7 +29,7 @@ class General(BaseModel):
 
 
 class Git(BaseModel):
-    """ Git model """
+    """Git model"""
 
     hash: str = Field(..., description="The git hash has for when a dataset is created.")
     message: str = Field(..., description="The git message has for when a dataset is created.")
@@ -38,8 +38,24 @@ class Git(BaseModel):
     )
 
 
-class PV(BaseModel):
-    """ PV configuration model """
+class DataSourceMixin(BaseModel):
+
+    forecast_minutes: int = Field(
+        None,
+        ge=0,
+        description="how many minutes to forecast in the future. "
+        "If set to None, the value is defaulted to InputData.default_forecast_minutes",
+    )
+    history_minutes: int = Field(
+        None,
+        ge=0,
+        description="how many historic minutes are used. "
+        "If set to None, the value is defaulted to InputData.default_history_minutes",
+    )
+
+
+class PV(DataSourceMixin):
+    """PV configuration model"""
 
     solar_pv_data_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
@@ -51,32 +67,42 @@ class PV(BaseModel):
     )
 
 
-class Satellite(BaseModel):
-    """ Satellite configuration model """
+class Satellite(DataSourceMixin):
+    """Satellite configuration model"""
 
     satellite_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
         description="The path which holds the satellite zarr.",
     )
 
+    sat_channels: tuple = Field(
+        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
+    )
 
-class NWP(BaseModel):
-    """ NWP configuration model """
+    satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
+
+
+class NWP(DataSourceMixin):
+    """NWP configuration model"""
 
     nwp_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
         description="The path which holds the NWP zarr.",
     )
 
+    nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
 
-class GSP(BaseModel):
-    """ GSP configuration model """
+    nwp_image_size_pixels: int = Field(64, description="the size of the nwp images")
+
+
+class GSP(DataSourceMixin):
+    """GSP configuration model"""
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
 
 
-class Topographic(BaseModel):
-    """ Topographic configuration model """
+class Topographic(DataSourceMixin):
+    """Topographic configuration model"""
 
     topographic_filename: str = Field(
         "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
@@ -84,8 +110,8 @@ class Topographic(BaseModel):
     )
 
 
-class Sun(BaseModel):
-    """ Sun configuration model """
+class Sun(DataSourceMixin):
+    """Sun configuration model"""
 
     sun_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
@@ -102,16 +128,59 @@ class InputData(BaseModel):
     for gcp start with 'gs://'.
     """
 
-    pv: PV
-    satellite: Satellite
-    nwp: NWP
-    gsp: GSP
-    topographic: Topographic
-    sun: Sun
+    pv: PV = PV()
+    satellite: Satellite = Satellite()
+    nwp: NWP = NWP()
+    gsp: GSP = GSP()
+    topographic: Topographic = Topographic()
+    sun: Sun = Sun()
+
+    default_forecast_minutes: int = Field(
+        60,
+        ge=0,
+        description="how many minutes to forecast in the future. "
+        "This is defaulted to all the data sources if theya re not set. ",
+    )
+    default_history_minutes: int = Field(
+        30,
+        ge=0,
+        description="how many historic minutes are used. "
+        "This is defaulted to all the data sources if theya re not set.",
+    )
+
+    @root_validator
+    def check_forecast_and_history_minutes(cls, values):
+        """
+        Set default history and forecast values, if needed.
+
+        Run through the different data sources and  if the forecast or history minutes are not set,
+        then set them to the default valyes
+        """
+
+        for data_source_name in ["pv", "nwp", "satellite", "gsp", "topographic", "sun"]:
+
+            if values[data_source_name].forecast_minutes is None:
+                values[data_source_name].forecast_minutes = values["default_forecast_minutes"]
+
+            if values[data_source_name].history_minutes is None:
+                values[data_source_name].history_minutes = values["default_history_minutes"]
+
+        return values
+
+    # add method to validate data sources
+    # @validator('pv', always=True)
+    # def name_must_contain_space(cls, v, values):
+    #     print(values)
+    #     print(v)
+    #     if (v.forecast_minutes is None) and ('default_forecast_minutes' in values.keys()):
+    #         v.forecast_minutes = values['default_forecast_minutes']
+    #     if (v.history_minutes is None) and ('default_history_minutes' in values.keys()):
+    #         v.history_minutes = values['default_history_minutes']
+    #     return v
 
 
 class OutputData(BaseModel):
-    """ Output data model """
+    """Output data model"""
 
     filepath: str = Field(
         "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/",
@@ -123,7 +192,7 @@ class OutputData(BaseModel):
 
 
 class Process(BaseModel):
-    """ Pydantic model of how the data is processed """
+    """Pydantic model of how the data is processed"""
 
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
     batch_size: int = Field(32, description="the number of examples per batch")
@@ -134,46 +203,12 @@ class Process(BaseModel):
             "  If 0 then write batches directly to output_data.filepath, not to a temp directory."
         ),
     )
-    forecast_minutes: int = Field(
-        60, ge=0, description="how many minutes to forecast in the future"
-    )
-    history_minutes: int = Field(30, ge=0, description="how many historic minutes are used")
-    satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
-    nwp_image_size_pixels: int = Field(64, description="the size of the nwp images")
 
-    sat_channels: tuple = Field(
-        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
-    )
-    nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
     local_temp_path: str = Field("~/temp/")
-
-    # TODO: Remove!
-    @property
-    def seq_length_30_minutes(self):
-        """ How many steps are there in 30 minute datasets """
-        return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
-
-    # TODO: Remove!
-    @property
-    def seq_length_5_minutes(self):
-        """ How many steps are there in 5 minute datasets """
-        return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
-
-    @validator("history_minutes")
-    def history_minutes_divide_by_30(cls, v):
-        """ Validate 'history_minutes' """
-        assert v % 30 == 0  # this means it also divides by 5
-        return v
-
-    @validator("forecast_minutes")
-    def forecast_minutes_divide_by_30(cls, v):
-        """ Validate 'forecast_minutes' """
-        assert v % 30 == 0  # this means it also divides by 5
-        return v
 
 
 class Configuration(BaseModel):
-    """ Configuration model for the dataset """
+    """Configuration model for the dataset"""
 
     general: General = General()
     input_data: InputData = InputData()

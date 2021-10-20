@@ -53,6 +53,16 @@ class DataSourceMixin(BaseModel):
         "If set to None, the value is defaulted to InputData.default_history_minutes",
     )
 
+    @property
+    def seq_length_30_minutes(self):
+        """ How many steps are there in 30 minute datasets """
+        return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
+
+    @property
+    def seq_length_5_minutes(self):
+        """ How many steps are there in 5 minute datasets """
+        return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
+
 
 class PV(DataSourceMixin):
     """PV configuration model"""
@@ -99,6 +109,18 @@ class GSP(DataSourceMixin):
     """GSP configuration model"""
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr")
+
+    @validator("history_minutes")
+    def history_minutes_divide_by_30(cls, v):
+        """ Validate 'history_minutes' """
+        assert v % 30 == 0  # this means it also divides by 5
+        return v
+
+    @validator("forecast_minutes")
+    def forecast_minutes_divide_by_30(cls, v):
+        """ Validate 'forecast_minutes' """
+        assert v % 30 == 0  # this means it also divides by 5
+        return v
 
 
 class Topographic(DataSourceMixin):
@@ -148,6 +170,11 @@ class InputData(BaseModel):
         "This is defaulted to all the data sources if theya re not set.",
     )
 
+    @property
+    def default_seq_length_5_minutes(self):
+        """ How many steps are there in 5 minute datasets """
+        return int((self.default_history_minutes + self.default_forecast_minutes) / 5 + 1)
+
     @root_validator
     def check_forecast_and_history_minutes(cls, values):
         """
@@ -166,17 +193,6 @@ class InputData(BaseModel):
                 values[data_source_name].history_minutes = values["default_history_minutes"]
 
         return values
-
-    # add method to validate data sources
-    # @validator('pv', always=True)
-    # def name_must_contain_space(cls, v, values):
-    #     print(values)
-    #     print(v)
-    #     if (v.forecast_minutes is None) and ('default_forecast_minutes' in values.keys()):
-    #         v.forecast_minutes = values['default_forecast_minutes']
-    #     if (v.history_minutes is None) and ('default_history_minutes' in values.keys()):
-    #         v.history_minutes = values['default_history_minutes']
-    #     return v
 
 
 class OutputData(BaseModel):

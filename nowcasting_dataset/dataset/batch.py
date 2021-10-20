@@ -90,34 +90,45 @@ class Batch(BaseModel):
     def fake(configuration: Configuration = Configuration()):
         """ Make fake batch object """
         batch_size = configuration.process.batch_size
-        seq_length_5 = configuration.process.seq_length_5_minutes
-        seq_length_30 = configuration.process.seq_length_30_minutes
-        image_size_pixels = configuration.process.satellite_image_size_pixels
+        satellite_image_size_pixels = configuration.input_data.satellite.satellite_image_size_pixels
+        nwp_image_size_pixels = configuration.input_data.nwp.nwp_image_size_pixels
 
         return Batch(
             batch_size=batch_size,
             satellite=satellite_fake(
                 batch_size=batch_size,
-                seq_length_5=seq_length_5,
-                satellite_image_size_pixels=image_size_pixels,
-                number_sat_channels=len(configuration.process.sat_channels),
+                seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
+                satellite_image_size_pixels=satellite_image_size_pixels,
+                number_sat_channels=len(configuration.input_data.satellite.sat_channels),
             ),
             nwp=nwp_fake(
                 batch_size=batch_size,
-                seq_length_5=seq_length_5,
-                image_size_pixels=image_size_pixels,
-                number_nwp_channels=len(configuration.process.nwp_channels),
+                seq_length_5=configuration.input_data.nwp.seq_length_5_minutes,
+                image_size_pixels=nwp_image_size_pixels,
+                number_nwp_channels=len(configuration.input_data.nwp.nwp_channels),
             ),
             metadata=metadata_fake(batch_size=batch_size),
             pv=pv_fake(
-                batch_size=batch_size, seq_length_5=seq_length_5, n_pv_systems_per_batch=128
+                batch_size=batch_size,
+                seq_length_5=configuration.input_data.pv.seq_length_5_minutes,
+                n_pv_systems_per_batch=128,
             ),
-            gsp=gsp_fake(batch_size=batch_size, seq_length_30=seq_length_30, n_gsp_per_batch=32),
-            sun=sun_fake(batch_size=batch_size, seq_length_5=seq_length_5),
+            gsp=gsp_fake(
+                batch_size=batch_size,
+                seq_length_30=configuration.input_data.gsp.seq_length_30_minutes,
+                n_gsp_per_batch=32,
+            ),
+            sun=sun_fake(
+                batch_size=batch_size,
+                seq_length_5=configuration.input_data.sun.seq_length_5_minutes,
+            ),
             topographic=topographic_fake(
-                batch_size=batch_size, image_size_pixels=image_size_pixels
+                batch_size=batch_size, image_size_pixels=satellite_image_size_pixels
             ),
-            datetime=datetime_fake(batch_size=batch_size, seq_length_5=seq_length_5),
+            datetime=datetime_fake(
+                batch_size=batch_size,
+                seq_length_5=configuration.input_data.default_seq_length_5_minutes,
+            ),
         )
 
     def save_netcdf(self, batch_i: int, path: Path):

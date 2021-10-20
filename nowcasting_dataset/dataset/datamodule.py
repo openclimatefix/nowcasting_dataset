@@ -48,7 +48,6 @@ class NowcastingDataModule(pl.LightningDataModule):
     forecast_minutes: int = 60  #: Number of minutes of forecast, not including t0.
     sat_filename: Union[str, Path] = consts.SAT_FILENAME
     sat_channels: Iterable[str] = ("HRV",)
-    normalise_sat: bool = True
     nwp_base_path: Optional[str] = None
     nwp_channels: Optional[Iterable[str]] = (
         "t",
@@ -119,7 +118,6 @@ class NowcastingDataModule(pl.LightningDataModule):
             channels=self.sat_channels,
             n_timesteps_per_batch=n_timesteps_per_batch,
             convert_to_numpy=self.convert_to_numpy,
-            normalise=self.normalise_sat,
         )
 
         self.data_sources = [self.sat_data_source]
@@ -185,7 +183,6 @@ class NowcastingDataModule(pl.LightningDataModule):
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
                 convert_to_numpy=self.convert_to_numpy,
-                normalize=self.normalise_sat,
             )
 
             self.data_sources.append(self.topo_data_source)

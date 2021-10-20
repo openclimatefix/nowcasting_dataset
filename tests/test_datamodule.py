@@ -100,7 +100,6 @@ def test_data_module(config_filename):
         n_validation_batches_per_epoch=200,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
-        normalise_sat=False,
         skip_n_train_batches=0,
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,
@@ -174,7 +173,6 @@ def test_batch_to_batch_to_dataset():
         n_validation_batches_per_epoch=200,
         collate_fn=lambda x: x,
         convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
-        normalise_sat=False,
         skip_n_train_batches=0,
         skip_n_validation_batches=0,
         train_validation_percentage_split=50,

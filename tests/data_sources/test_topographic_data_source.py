@@ -25,7 +25,6 @@ def test_get_example_2km(x, y, left, right, top, bottom):
         filename="tests/data/europe_dem_2km_osgb.tif",
         image_size_pixels=128,
         meters_per_pixel=size,
-        normalize=True,
         convert_to_numpy=True,
         forecast_minutes=300,
         history_minutes=10,
@@ -41,9 +40,6 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     assert np.isclose(right, topo_data.x.values[-1], atol=size)
     assert np.isclose(top, topo_data.y.values[0], atol=size)
     assert np.isclose(bottom, topo_data.y.values[-1], atol=size)
-    # Check normalization works
-    assert np.max(topo_data.data) <= 1.0
-    assert np.min(topo_data.data) >= -1.0
 
 
 @pytest.mark.skip("CD does not have access to GCS")
@@ -57,7 +53,6 @@ def test_get_example_gcs():
         filename=filename,
         image_size_pixels=128,
         meters_per_pixel=size,
-        normalize=True,
         convert_to_numpy=True,
         forecast_minutes=300,
         history_minutes=10,

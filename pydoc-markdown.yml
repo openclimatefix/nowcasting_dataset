@@ -48,4 +48,4 @@ renderer:
   mkdocs_config:
     site_name: Nowcasting Dataset
     theme: readthedocs
-    repo_url: https://github.com/openclimatefix/nowcasting-dataset
+    repo_url: https://github.com/openclimatefix/nowcasting_dataset

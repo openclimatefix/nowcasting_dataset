@@ -25,9 +25,9 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-start = datetime(2018, 1, 1, tzinfo=pytz.utc)
-end = datetime(2021, 1, 1, tzinfo=pytz.utc)
-gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v1"
+start = datetime(2016, 1, 1, tzinfo=pytz.utc)
+end = datetime(2021, 10, 1, tzinfo=pytz.utc)
+gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v2"
 
 config = {"start": start, "end": end, "gcp_path": gcp_path}
 
@@ -40,7 +40,6 @@ data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
 
 # pivot to index as datetime_gmt, and columns as gsp_id
 data_generation = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
-data_generation.columns = [str(col) for col in data_generation.columns]
 data_generation_xarray = xr.DataArray(
     data_generation, name="generation_mw", dims=["datetime_gmt", "gsp_id"]
 )
@@ -48,12 +47,12 @@ data_generation_xarray = xr.DataArray(
 data_capacity = data_df.pivot(
     index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp"
 )
-data_capacity.columns = [str(col) for col in data_capacity.columns]
 data_capacity_xarray = xr.DataArray(
     data_capacity, name="installedcapacity_mwp", dims=["datetime_gmt", "gsp_id"]
 )
 
 data_xarray = xr.merge([data_generation_xarray, data_capacity_xarray])
+data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
 
 # save config to file
 with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:
@@ -69,3 +68,10 @@ data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w", enco
 
 # upload to gcp
 upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)
+
+
+# # code to change 'generation_mw' to 'generation_normalised'
+# data_xarray = xr.open_dataset(gcp_path + '/pv_gsp.zarr', engine="zarr")
+# data_xarray.__setitem__('gsp_id', [int(gsp_id) for gsp_id in data_xarray.gsp_id])
+# data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
+# data_xarray.to_zarr(gcp_path + '/pv_gsp.zarr', mode="w", encoding=encoding)

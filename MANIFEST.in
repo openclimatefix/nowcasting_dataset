@@ -1,2 +1,1 @@
-include *.txt
-include *.yaml
+include *.txt *.yaml

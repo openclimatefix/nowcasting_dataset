@@ -9,7 +9,11 @@ from pydantic import BaseModel, Field
 from pydantic import validator, root_validator
 
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
-from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
+from nowcasting_dataset.consts import (
+    SAT_VARIABLE_NAMES,
+    DEFAULT_N_GSP_PER_EXAMPLE,
+    DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+)
 
 
 class General(BaseModel):
@@ -40,7 +44,7 @@ class Git(BaseModel):
 
 
 class DataSourceMixin(BaseModel):
-    """ Mixin class, to add forecast and history minutes """
+    """Mixin class, to add forecast and history minutes"""
 
     forecast_minutes: int = Field(
         None,
@@ -57,12 +61,12 @@ class DataSourceMixin(BaseModel):
 
     @property
     def seq_length_30_minutes(self):
-        """ How many steps are there in 30 minute datasets """
+        """How many steps are there in 30 minute datasets"""
         return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
 
     @property
     def seq_length_5_minutes(self):
-        """ How many steps are there in 5 minute datasets """
+        """How many steps are there in 5 minute datasets"""
         return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
 
 
@@ -76,6 +80,11 @@ class PV(DataSourceMixin):
     solar_pv_metadata_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
         description="The CSV file describing each PV system.",
+    )
+    n_gsp_per_example: int = Field(
+        DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+        description="The number of PV systems samples per example. "
+        "If there are less in the ROI then the data is padded with zeros. ",
     )
 
 
@@ -111,16 +120,21 @@ class GSP(DataSourceMixin):
     """GSP configuration model"""
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr")
+    n_gsp_per_example: int = Field(
+        DEFAULT_N_GSP_PER_EXAMPLE,
+        description="The number of GSP samples per example. "
+        "If there are less in the ROI then the data is padded with zeros. ",
+    )
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
-        """ Validate 'history_minutes' """
+        """Validate 'history_minutes'"""
         assert v % 30 == 0  # this means it also divides by 5
         return v
 
     @validator("forecast_minutes")
     def forecast_minutes_divide_by_30(cls, v):
-        """ Validate 'forecast_minutes' """
+        """Validate 'forecast_minutes'"""
         assert v % 30 == 0  # this means it also divides by 5
         return v
 
@@ -174,7 +188,7 @@ class InputData(BaseModel):
 
     @property
     def default_seq_length_5_minutes(self):
-        """ How many steps are there in 5 minute datasets """
+        """How many steps are there in 5 minute datasets"""
         return int((self.default_history_minutes + self.default_forecast_minutes) / 5 + 1)
 
     @root_validator

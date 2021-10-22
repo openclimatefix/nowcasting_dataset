@@ -164,8 +164,7 @@ class GSPDataSource(ImageDataSource):
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> GSP:
         """
-        Get data example from one time point (t0_dt) and for x and y coords (x_meters_center),
-        (y_meters_center).
+        Get data example from one time point (t0_dt) and for x and y coords.
 
         Get data at the location of x,y and get surrounding GSP power data also.
 
@@ -174,8 +173,7 @@ class GSPDataSource(ImageDataSource):
             x_meters_center: x location of center GSP.
             y_meters_center: y location of center GSP.
 
-        Returns: Dictionary with GSP data in it
-
+        Returns: Dictionary with GSP data in it.
         """
         logger.debug("Getting example data")
 
@@ -305,8 +303,10 @@ class GSPDataSource(ImageDataSource):
         gsp_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
         """
-        Find the GSP IDs for all the GSP within the geospatial region of interest,
-        defined by self.square.
+        Find the GSP IDs for all the GSP within the geospatial region of interest.
+
+
+        The geospatial region of interest is defined by self.square.
 
         Args:
             x_meters_center: center of area of interest (x coords)
@@ -314,7 +314,6 @@ class GSPDataSource(ImageDataSource):
             gsp_ids_with_data_for_timeslice: ids that are avialble for a specific time slice
 
         Returns: list of GSP ids that are in area of interest
-
         """
         logger.debug("Getting all gsp in ROI")
 

@@ -37,6 +37,7 @@ def test_get_daylight_datetime_index(
     with pytest.raises(RuntimeError):
         nowcasting_datamodule._get_t0_datetimes()
     nowcasting_datamodule.prepare_data()
+    nowcasting_datamodule.t0_datetime_freq = "5T"
     t0_datetimes = nowcasting_datamodule._get_t0_datetimes()
     assert isinstance(t0_datetimes, pd.DatetimeIndex)
     if not use_cloud_data:

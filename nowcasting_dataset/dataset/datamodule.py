@@ -78,7 +78,9 @@ class NowcastingDataModule(pl.LightningDataModule):
     pv_load_azimuth_and_elevation: bool = False
     split_method: SplitMethod = SplitMethod.DAY  # which split method should be used
     seed: Optional[int] = None  # seed used to make quasi random split data
-    t0_datetime_freq: str = "5T"  # Frequency of the t0 datetimes.
+    t0_datetime_freq: str = "30T"  # Frequency of the t0 datetimes.  For example, if set to "30T"
+    # then create examples with T0 datetimes at thirty minute intervals, at 00 and 30 minutes
+    # past the hour.
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip

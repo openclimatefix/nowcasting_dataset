@@ -22,13 +22,10 @@ from nowcasting_dataset.filesystem.utils import check_path_exists
 
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 
-# from nowcasting_dataset.dataset.batch import write_batch_locally
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
-from nowcasting_dataset.dataset.batch import Batch
 from pathy import Pathy
 from pathlib import Path
-import fsspec
 import torch
 import os
 import numpy as np
@@ -55,20 +52,20 @@ config = load_yaml_configuration(filename)
 config = set_git_commit(config)
 
 # Solar PV data
-PV_DATA_FILENAME = config.input_data.solar_pv_data_filename
-PV_METADATA_FILENAME = config.input_data.solar_pv_metadata_filename
+PV_DATA_FILENAME = config.input_data.pv.solar_pv_data_filename
+PV_METADATA_FILENAME = config.input_data.pv.solar_pv_metadata_filename
 
 # Satellite data
-SAT_ZARR_PATH = config.input_data.satellite_zarr_path
+SAT_ZARR_PATH = config.input_data.satellite.satellite_zarr_path
 
 # Numerical weather predictions
-NWP_ZARR_PATH = config.input_data.nwp_zarr_path
+NWP_ZARR_PATH = config.input_data.nwp.nwp_zarr_path
 
 # GSP data
-GSP_ZARR_PATH = config.input_data.gsp_zarr_path
+GSP_ZARR_PATH = config.input_data.gsp.gsp_zarr_path
 
 # Topographic data
-TOPO_TIFF_PATH = config.input_data.topographic_filename
+TOPO_TIFF_PATH = config.input_data.topographic.topographic_filename
 
 # Paths for output data.
 DST_NETCDF4_PATH = Pathy(config.output_data.filepath)

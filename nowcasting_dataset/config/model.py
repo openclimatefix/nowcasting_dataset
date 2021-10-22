@@ -177,13 +177,13 @@ class InputData(BaseModel):
         60,
         ge=0,
         description="how many minutes to forecast in the future. "
-        "This is defaulted to all the data sources if theya re not set. ",
+        "This sets the default for all the data sources if they are not set.",
     )
     default_history_minutes: int = Field(
         30,
         ge=0,
         description="how many historic minutes are used. "
-        "This is defaulted to all the data sources if theya re not set.",
+        "This sets the default for all the data sources if they are not set.",
     )
 
     @property
@@ -192,12 +192,12 @@ class InputData(BaseModel):
         return int((self.default_history_minutes + self.default_forecast_minutes) / 5 + 1)
 
     @root_validator
-    def check_forecast_and_history_minutes(cls, values):
+    def set_forecast_and_history_minutes(cls, values):
         """
         Set default history and forecast values, if needed.
 
         Run through the different data sources and  if the forecast or history minutes are not set,
-        then set them to the default valyes
+        then set them to the default values
         """
 
         for data_source_name in ["pv", "nwp", "satellite", "gsp", "topographic", "sun"]:

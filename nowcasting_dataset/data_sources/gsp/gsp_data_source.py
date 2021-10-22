@@ -40,6 +40,7 @@ class GSPDataSource(ImageDataSource):
 
     Even though GSP data isn't image data, `GSPDataSource` inherits from `ImageDataSource`
     so it can select Grid Supply Point regions within the geospatial region of interest.
+    The region of interest is defined by `image_size_pixels` and `meters_per_pixel`.
     """
 
     # filename of where the gsp data is stored

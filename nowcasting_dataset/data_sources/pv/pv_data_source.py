@@ -333,9 +333,10 @@ def load_solar_pv_data_from_gcs(
     Returns: Solar PV data
 
     """
-    gcs = gcsfs.GCSFileSystem(access="read_only")
+    if from_gcs:
+        gcs = gcsfs.GCSFileSystem(access="read_only")
 
-    logger.debug("Loading Solar PV Data from GCS")
+    logger.debug(f"Loading Solar PV Data {filename}")
 
     # It is possible to simplify the code below and do
     # xr.open_dataset(file, engine='h5netcdf')

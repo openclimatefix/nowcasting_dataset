@@ -38,7 +38,7 @@ import logging
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
-_LOG.setLevel(logging.INFO)
+_LOG.setLevel(logging.DEBUG)
 
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
@@ -105,7 +105,7 @@ def check_directories_exist():
 
 
 def get_data_module():
-    num_workers = 4
+    num_workers = 8
 
     # get the batch id already made
     maximum_batch_id_train = utils.get_maximum_batch_id(os.path.join(DST_TRAIN_PATH, "metadata"))
@@ -170,10 +170,12 @@ def iterate_over_dataloader_and_write_to_disk(
     for batch_i, batch in enumerate(dataloader):
         _LOG.info(f"Got batch {batch_i}")
 
-        batch.save_netcdf(batch_i=batch_i, path=local_output_path)
+        if batch is not None:
 
-        if UPLOAD_EVERY_N_BATCHES > 0 and batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
-            utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
+            batch.save_netcdf(batch_i=batch_i, path=local_output_path)
+
+            if UPLOAD_EVERY_N_BATCHES > 0 and batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
+                utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
 
     # Make sure we upload the last few batches, if necessary.
     if UPLOAD_EVERY_N_BATCHES > 0:

@@ -138,7 +138,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         self.batch_index += 1
         if self.batch_index < self.skip_batch_index:
             _LOG.debug(f"Skipping batch {self.batch_index}")
-            return []
+            return None
 
         t0_datetimes = self._get_t0_datetimes_for_batch()
         x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)

@@ -16,7 +16,6 @@ def test_nwp_data_source_init():
         filename=NWP_FILENAME,
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         n_timesteps_per_batch=8,
     )
 
@@ -26,7 +25,6 @@ def test_nwp_data_source_open():
         filename=NWP_FILENAME,
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         n_timesteps_per_batch=8,
         channels=["t"],
     )
@@ -39,7 +37,6 @@ def test_nwp_data_source_batch():
         filename=NWP_FILENAME,
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         n_timesteps_per_batch=8,
         channels=["t"],
     )
@@ -60,7 +57,6 @@ def test_nwp_get_contiguous_time_periods():
         filename=NWP_FILENAME,
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         n_timesteps_per_batch=8,
         channels=["t"],
     )

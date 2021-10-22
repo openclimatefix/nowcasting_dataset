@@ -15,7 +15,6 @@ def test_gsp_pv_data_source_init():
         end_dt=datetime(2019, 1, 2),
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,
     )
@@ -30,7 +29,6 @@ def test_gsp_pv_data_source_get_locations_for_batch():
         end_dt=datetime(2019, 1, 2),
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,
     )
@@ -59,7 +57,6 @@ def test_gsp_pv_data_source_get_example():
         end_dt=datetime(2019, 1, 2),
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,
     )
@@ -85,7 +82,6 @@ def test_gsp_pv_data_source_get_batch():
         history_minutes=30,
         forecast_minutes=60,
         sample_period_minutes=30,
-        convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,
     )

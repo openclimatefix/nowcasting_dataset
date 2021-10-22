@@ -29,7 +29,6 @@ class DataSource:
         Does NOT include t0.  If forecast_minutes = 0 then the example will end
         at t0.  If both history_minutes and forecast_minutes are 0, then the example
         will consist of a single timestep at t0.
-      convert_to_numpy: Whether or not to convert each example to numpy.
       sample_period_minutes: The time delta between each data point
 
     Attributes ending in `_length` are sequence lengths represented as integer numbers of timesteps.
@@ -38,7 +37,6 @@ class DataSource:
 
     history_minutes: int
     forecast_minutes: int
-    convert_to_numpy: bool
 
     def __post_init__(self):
         """ Post Init """

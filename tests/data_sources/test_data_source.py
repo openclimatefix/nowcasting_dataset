@@ -7,5 +7,4 @@ def test_image_data_source():
         meters_per_pixel=2000,
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
     )

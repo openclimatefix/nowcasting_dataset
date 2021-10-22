@@ -5,7 +5,6 @@ from nowcasting_dataset.data_sources.datetime.datetime_data_source import Dateti
 
 def test_datetime_source():
     datetime_source = DatetimeDataSource(
-        convert_to_numpy=True,
         forecast_minutes=300,
         history_minutes=10,
     )
@@ -15,7 +14,6 @@ def test_datetime_source():
 
 def test_datetime_source_batch():
     datetime_source = DatetimeDataSource(
-        convert_to_numpy=True,
         forecast_minutes=300,
         history_minutes=10,
     )

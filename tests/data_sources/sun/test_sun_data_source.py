@@ -5,17 +5,13 @@ import pandas as pd
 def test_init(test_data_folder):
     filename = test_data_folder + "/sun/test.zarr"
 
-    _ = SunDataSource(
-        filename=filename, history_minutes=30, forecast_minutes=60, convert_to_numpy=True
-    )
+    _ = SunDataSource(filename=filename, history_minutes=30, forecast_minutes=60)
 
 
 def test_get_example(test_data_folder):
     filename = test_data_folder + "/sun/test.zarr"
 
-    sun_data_source = SunDataSource(
-        filename=filename, history_minutes=30, forecast_minutes=60, convert_to_numpy=True
-    )
+    sun_data_source = SunDataSource(filename=filename, history_minutes=30, forecast_minutes=60)
 
     x = 256895.63164759654
     y = 666180.3018829626
@@ -30,9 +26,7 @@ def test_get_example(test_data_folder):
 def test_get_example_different_year(test_data_folder):
     filename = test_data_folder + "/sun/test.zarr"
 
-    sun_data_source = SunDataSource(
-        filename=filename, history_minutes=30, forecast_minutes=60, convert_to_numpy=True
-    )
+    sun_data_source = SunDataSource(filename=filename, history_minutes=30, forecast_minutes=60)
 
     x = 256895.63164759654
     y = 666180.3018829626

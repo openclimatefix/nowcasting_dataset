@@ -104,7 +104,6 @@ gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=e
 #                                  "all_zarr_int16_single_timestep.zarr",
 #                           history_length=6,
 #                           forecast_length=12,
-#                           convert_to_numpy=True,
 #                           image_size_pixels=64,
 #                           meters_per_pixel=2000,
 #                           n_timesteps_per_batch=32)

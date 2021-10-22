@@ -24,7 +24,6 @@ def test_get_example_and_batch():
     pv_data_source = PVDataSource(
         history_minutes=30,
         forecast_minutes=60,
-        convert_to_numpy=True,
         image_size_pixels=64,
         meters_per_pixel=2000,
         filename=PV_DATA_FILENAME,

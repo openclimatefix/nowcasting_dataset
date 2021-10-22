@@ -7,7 +7,6 @@ s = SatelliteDataSource(
     "all_zarr_int16_single_timestep.zarr",
     history_len=6,
     forecast_len=12,
-    convert_to_numpy=True,
     image_size_pixels=64,
     meters_per_pixel=2000,
     n_timesteps_per_batch=32,

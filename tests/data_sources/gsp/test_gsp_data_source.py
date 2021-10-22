@@ -81,7 +81,6 @@ def test_gsp_pv_data_source_get_batch():
         end_dt=datetime(2019, 1, 2),
         history_minutes=30,
         forecast_minutes=60,
-        sample_period_minutes=30,
         image_size_pixels=64,
         meters_per_pixel=2000,
     )

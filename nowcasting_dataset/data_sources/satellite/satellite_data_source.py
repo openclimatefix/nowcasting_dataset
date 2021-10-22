@@ -76,8 +76,9 @@ class SatelliteDataSource(ZarrDataSource):
         empty caches, and things are much slower!
 
         Args:
-            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also include data
-                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
+                include data for historic and future depending on `history_minutes` and
+                `future_minutes`.
             x_locations: x center batch locations
             y_locations: y center batch locations
 
@@ -137,7 +138,7 @@ class SatelliteDataSource(ZarrDataSource):
         """Returns a complete list of all available datetimes
 
         Args:
-            remove_night: If True then remove datetimes a night.
+            remove_night: If True then remove datetimes at night.
         """
         if self._data is None:
             sat_data = self._open_data()

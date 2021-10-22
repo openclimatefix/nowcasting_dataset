@@ -6,6 +6,8 @@ channels:
 dependencies:
   - python>=3.9
   - pip
+  - gitpython
+  - pydantic
 
   # Scientific Python
   - numpy
@@ -21,6 +23,8 @@ dependencies:
   - s3fs
   - fsspec
   - pathy
+  - boto3
+  - moto
 
   # Machine learning
   - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
@@ -30,6 +34,7 @@ dependencies:
   - pvlib
   - pyproj
   - rioxarray
+  - geopandas
 
   # Development tools
   - pytest
@@ -42,3 +47,4 @@ dependencies:
   - pip:
       - neptune-client[pytorch-lightning]
       - tilemapbase
+      - git+https://github.com/SheffieldSolar/PV_Live-API

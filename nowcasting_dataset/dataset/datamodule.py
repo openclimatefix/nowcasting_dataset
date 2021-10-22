@@ -151,8 +151,8 @@ class NowcastingDataModule(pl.LightningDataModule):
                 get_center=True,
             )
 
-            # put gsp data source at the start, so data is centered around GSP. This is the current approach,
-            # but in the future we may take a mix of GSP and PV data as the centroid
+            # put gsp data source at the start, so data is centered around GSP. This is the current
+            # approach, but in the future we may take a mix of GSP and PV data as the centroid.
             self.data_sources = [self.gsp_data_source] + self.data_sources
 
         # NWP data
@@ -356,7 +356,8 @@ class NowcastingDataModule(pl.LightningDataModule):
         Compute the intersection of the t0 datetimes available across all DataSources.
 
         Returns the intersection of the datetime indicies of all the data_sources,
-        filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night datetimes).
+        filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
+        datetimes).
         """
         logger.debug("Get the datetimes")
         self._check_has_prepared_data()
@@ -368,8 +369,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             try:
                 t0_datetimes = data_source.get_t0_datetimes()
             except NotImplementedError:
-                # data_source has no concept of a datetime index, so skip this data_source.
-                pass
+                pass  # Skip data_sources with no concept of time.
             else:
                 t0_datetime_indexes_for_all_data_sources.append(t0_datetimes)
         intersection_of_t0_datetimes = nd_time.intersection_of_datetimeindexes(

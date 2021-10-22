@@ -16,53 +16,6 @@ def test_select_daylight_datetimes():
     np.testing.assert_array_equal(daylight_datetimes, correct_daylight_datetimes)
 
 
-def test_intersection_of_datetimeindexes():
-    # Test with just one
-    index = pd.date_range("2010-01-01", "2010-01-02", freq="H")
-    intersection = nd_time.intersection_of_datetimeindexes([index])
-    np.testing.assert_array_equal(index, intersection)
-
-    # Test with two identical:
-    intersection = nd_time.intersection_of_datetimeindexes([index, index])
-    np.testing.assert_array_equal(index, intersection)
-
-    # Test with three with no intersection:
-    index2 = pd.date_range("2020-01-01", "2010-01-02", freq="H")
-    intersection = nd_time.intersection_of_datetimeindexes([index, index2])
-    assert len(intersection) == 0
-
-    # Test with three, with some intersection:
-    index3 = pd.date_range("2010-01-01 06:00", "2010-01-02 06:00", freq="H")
-    index4 = pd.date_range("2010-01-01 12:00", "2010-01-02 12:00", freq="H")
-    intersection = nd_time.intersection_of_datetimeindexes([index, index3, index4])
-    np.testing.assert_array_equal(
-        intersection, pd.date_range("2010-01-01 12:00", "2010-01-02", freq="H")
-    )
-
-
-# TODO: Delete this test.
-# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
-@pytest.mark.parametrize("total_seq_length", [2, 3, 12])
-def test_get_start_datetimes_1(total_seq_length):
-    dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
-    start_datetimes = nd_time.get_start_datetimes(dt_index1, total_seq_length=total_seq_length)
-    np.testing.assert_array_equal(start_datetimes, dt_index1[: 1 - total_seq_length])
-
-
-# TODO: Delete this test.
-# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
-@pytest.mark.parametrize("total_seq_length", [2, 3, 12])
-def test_get_start_datetimes_2(total_seq_length):
-    dt_index1 = pd.date_range("2010-01-01", "2010-01-02", freq="5 min")
-    dt_index2 = pd.date_range("2010-02-01", "2010-02-02", freq="5 min")
-    dt_index = dt_index1.union(dt_index2)
-    start_datetimes = nd_time.get_start_datetimes(dt_index, total_seq_length=total_seq_length)
-    correct_start_datetimes = dt_index1[: 1 - total_seq_length].union(
-        dt_index2[: 1 - total_seq_length]
-    )
-    np.testing.assert_array_equal(start_datetimes, correct_start_datetimes)
-
-
 @pytest.mark.parametrize("min_seq_length", [2, 3, 12])
 def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_length):
     freq = pd.Timedelta(5, unit="minutes")
@@ -101,46 +54,6 @@ def test_datetime_features_in_example():
             getattr(example, col_name),
             np.tile(getattr(example, col_name)[:24], reps=6),
         )
-
-
-@pytest.mark.parametrize("history_length", [2, 3, 12])
-@pytest.mark.parametrize("forecast_length", [2, 3, 12])
-def test_get_t0_datetimes(history_length, forecast_length):
-    index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="30T")
-    total_seq_length = history_length + forecast_length + 1
-    sample_period_duration = THIRTY_MINUTES
-    history_duration = sample_period_duration * history_length
-
-    t0_datetimes = nd_time.get_t0_datetimes(
-        datetimes=index,
-        total_seq_length=total_seq_length,
-        history_duration=history_duration,
-        max_gap=THIRTY_MINUTES,
-    )
-
-    assert len(t0_datetimes) == len(index) - history_length - forecast_length
-    assert t0_datetimes[0] == index[0] + timedelta(minutes=30 * history_length)
-    assert t0_datetimes[-1] == index[-1] - timedelta(minutes=30 * forecast_length)
-
-
-def test_get_t0_datetimes_night():
-    history_length = 6
-    forecast_length = 12
-    sample_period_duration = FIVE_MINUTES
-    index = pd.date_range("2020-06-15", "2020-06-15 22:15", freq=sample_period_duration)
-    total_seq_length = history_length + forecast_length + 1
-    history_duration = history_length * sample_period_duration
-
-    t0_datetimes = nd_time.get_t0_datetimes(
-        datetimes=index,
-        total_seq_length=total_seq_length,
-        history_duration=history_duration,
-        max_gap=sample_period_duration,
-    )
-
-    assert len(t0_datetimes) == len(index) - history_length - forecast_length
-    assert t0_datetimes[0] == index[0] + timedelta(minutes=5 * history_length)
-    assert t0_datetimes[-1] == index[-1] - timedelta(minutes=5 * forecast_length)
 
 
 def test_intersection_of_2_dataframes_of_periods():

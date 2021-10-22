@@ -55,17 +55,6 @@ def select_daylight_datetimes(
     return datetimes[mask]
 
 
-# TODO: Remove this function and its test(s).
-# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
-def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.DatetimeIndex:
-    """Get intersections of datetime indexes"""
-    assert len(indexes) > 0
-    intersection = indexes[0]
-    for index in indexes[1:]:
-        intersection = intersection.intersection(index)
-    return intersection
-
-
 def period_to_datetime_index(period: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
     """Return a DatetimeIndex from period['start_dt'] to period['end_dt'] at frequency freq."""
     return pd.date_range(period["start_dt"], period["end_dt"], freq=freq)
@@ -157,55 +146,6 @@ def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) ->
     return all_intersecting_periods.sort_values(by="start_dt").reset_index(drop=True)
 
 
-# TODO: Delete this and its tests!
-# TODO tracked on https://github.com/openclimatefix/nowcasting_dataset/issues/223
-def get_start_datetimes(
-    datetimes: pd.DatetimeIndex, total_seq_length: int, max_gap: pd.Timedelta = THIRTY_MINUTES
-) -> pd.DatetimeIndex:
-    """Returns a datetime index of valid start datetimes.
-
-    Valid start datetimes are those where there is certain to be
-    at least total_seq_length contiguous timesteps ahead.
-
-    For each contiguous_segment, remove the last total_seq_length datetimes,
-    and then check the resulting segment is large enough.
-
-    max_gap defines the threshold for what constitutes a 'gap' between
-    contiguous segments.
-
-    Throw away any timesteps in a sequence shorter than min_timesteps long.
-    """
-    assert len(datetimes) > 0
-    min_timesteps = total_seq_length * 2
-    assert min_timesteps > 1
-
-    gap_mask = np.diff(datetimes) > max_gap
-    gap_indices = np.argwhere(gap_mask)[:, 0]
-
-    # gap_indicies are the indices into dt_index for the timestep immediately
-    # *before* the gap.  e.g. if the datetimes at 12:00, 12:05, 18:00, 18:05
-    # then gap_indicies will be [1].  So we add 1 to gap_indices to get
-    # segment_boundaries, an index into dt_index which identifies the _start_
-    # of each segment.
-    segment_boundaries = gap_indices + 1
-
-    # Capture the last segment of dt_index.
-    segment_boundaries = np.concatenate((segment_boundaries, [len(datetimes)]))
-
-    start_dt_index = []
-    start_i = 0
-    for next_start_i in segment_boundaries:
-        n_timesteps = next_start_i - start_i
-        if n_timesteps >= min_timesteps:
-            end_i = next_start_i + 1 - total_seq_length
-            start_dt_index.append(datetimes[start_i:end_i])
-        start_i = next_start_i
-
-    assert len(start_dt_index) > 0
-
-    return pd.DatetimeIndex(np.concatenate(start_dt_index))
-
-
 def get_contiguous_time_periods(
     datetimes: pd.DatetimeIndex,
     min_seq_length: int,
@@ -261,36 +201,8 @@ def get_contiguous_time_periods(
     return pd.DataFrame(periods)
 
 
-def get_t0_datetimes(
-    datetimes: pd.DatetimeIndex,
-    total_seq_length: int,
-    history_duration: pd.Timedelta,
-    max_gap: pd.Timedelta = FIVE_MINUTES,
-) -> pd.DatetimeIndex:
-    """
-    Get T0 datetimes for ML learning batches. T0 refers to the time of the most recent observation.
-
-    Args:
-        datetimes: Datetimes of every valid timestep.
-        total_seq_length: Total sequence length (number of timesteps) of each example sequence.
-            total_seq_length = history_length + forecast_length + 1
-            (the plus 1 is because neither history_length nor forecast_length include t0).
-        history_duration: The duration of the history included in each example sequence.
-        max_gap: The maximum allowed gap in the datetimes for it to be valid.
-
-    Returns: T0 datetimes that identify valid, contiguous sequences at least total_seq_length long.
-    """
-    logger.debug("Getting t0 datetimes")
-
-    start_datetimes = get_start_datetimes(
-        datetimes=datetimes, total_seq_length=total_seq_length, max_gap=max_gap
-    )
-
-    logger.debug("Adding history duration to t0 datetimes")
-    t0_datetimes = start_datetimes + history_duration
-    return t0_datetimes
-
-
+# TODO: Delete this function and tests.
+# https://github.com/openclimatefix/nowcasting_dataset/issues/208
 def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     """
     Make datetime features, hour_of_day and day_of_year
@@ -307,6 +219,8 @@ def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
     return pd.DataFrame(features, index=index).astype(np.float32)
 
 
+# TODO: Delete this function and tests.
+# https://github.com/openclimatefix/nowcasting_dataset/issues/208
 def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.Dataset:
     """
     Make datetime features with sin and cos

@@ -377,8 +377,10 @@ class NowcastingDataModule(pl.LightningDataModule):
             t0_time_periods_for_all_data_sources
         )
 
+        # TODO: Allow user to configure the frequency using the config yaml file.
+        # https://github.com/openclimatefix/nowcasting_dataset/issues/277
         return nd_time.time_periods_to_datetimes(
-            time_periods=intersection_of_t0_time_periods, freq="5T"
+            time_periods=intersection_of_t0_time_periods, freq="30T"
         )
 
     def _check_has_prepared_data(self):

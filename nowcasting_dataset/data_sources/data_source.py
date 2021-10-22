@@ -161,30 +161,6 @@ class DataSource:
         # of a list of datetimes (e.g. for DatetimeDataSource).
         raise NotImplementedError()
 
-    # TODO: Remove this function (and any tests) after get_contiguous_time_periods() is implemented.
-    # See https://github.com/openclimatefix/nowcasting_dataset/issues/223
-    def get_t0_datetimes(self) -> pd.DatetimeIndex:
-        """Get all the valid t0 datetimes.
-
-        In each example timeseries, t0 is the datetime of the most recent observation.
-        t0 is used to specify the temporal location of each example.
-
-        Returns all t0 datetimes which identify valid, contiguous example timeseries.
-        In other words, this function returns all datetimes which come after at least
-        history_minutes of contiguous samples; and which have at least forecast_minutes of
-        contiguous data ahead.
-
-        Raises NotImplementedError if self.datetime_index() raises NotImplementedError,
-        which means that this DataSource doesn't have a concept of a list of datetimes.
-        """
-        all_datetimes = self.datetime_index()
-        return nd_time.get_t0_datetimes(
-            datetimes=all_datetimes,
-            total_seq_length=self._total_seq_length,
-            history_duration=self._history_duration,
-            max_gap=self.sample_period_duration,
-        )
-
     def get_contiguous_time_periods(self) -> pd.DataFrame:
         """Get all the time periods for which this DataSource has contiguous data.
 

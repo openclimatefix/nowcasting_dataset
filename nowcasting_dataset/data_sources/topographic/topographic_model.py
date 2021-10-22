@@ -2,6 +2,7 @@
 import logging
 
 import numpy as np
+from xarray.ufuncs import isnan, isinf
 from pydantic import Field, validator
 
 from nowcasting_dataset.consts import Array
@@ -21,5 +22,6 @@ class Topographic(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (v.data != np.NaN).all(), f"Some topological data values are NaNs"
+        assert (~isnan(v.data)).all(), f"Some topological data values are NaNs"
+        assert (~isinf(v.data)).all(), f"Some topological data values are Infinite"
         return v

@@ -234,9 +234,9 @@ class GSPDataSource(ImageDataSource):
         gsp["x_coords"] = gsp_x_coords
         gsp["y_coords"] = gsp_y_coords
 
-        # pad out so that there are always 32 gsp
+        # pad out so that there are always 32 gsp, fill with 0
         pad_n = self.n_gsp_per_example - len(gsp.id_index)
-        gsp = gsp.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)))
+        gsp = gsp.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
 
         gsp.__setitem__("id_index", range(self.n_gsp_per_example))
 

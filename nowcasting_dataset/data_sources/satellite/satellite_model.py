@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 import numpy as np
-import xarray as xr
+from xarray.ufuncs import isnan, isinf
 from pydantic import Field
 
 from nowcasting_dataset.consts import Array
@@ -27,5 +27,7 @@ class Satellite(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non negative """
-        assert (v.data != np.NaN).all(), f"Some satellite data values are NaNs"
+        assert (~isnan(v.data)).all(), f"Some satellite data values are NaNs"
+        assert (~isinf(v.data)).all(), f"Some satellite data values are Infinite"
+        assert (v.data != -1).all(), f"Some satellite data values are -1's"
         return v

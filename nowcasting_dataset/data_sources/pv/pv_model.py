@@ -2,6 +2,7 @@
 import logging
 
 import numpy as np
+from xarray.ufuncs import isnan, isinf
 from pydantic import Field, validator
 
 from nowcasting_dataset.consts import (
@@ -29,4 +30,12 @@ class PV(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("time", "id")
 
-    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+    @classmethod
+    def model_validation(cls, v):
+        """ Check that all values are non NaNs """
+        assert (~isnan(v.data)).all(), f"Some pv data values are NaNs"
+        assert (~isinf(v.data)).all(), f"Some pv data values are Infinite"
+
+        assert (v.data >= 0).all(), f"Some pv data values are below 0"
+
+        return v

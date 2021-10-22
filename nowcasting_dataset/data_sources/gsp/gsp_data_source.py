@@ -402,8 +402,11 @@ def load_solar_gsp_data(
     gsp_power = xr.open_dataset(filename, engine="zarr")
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
 
-    # only take generation data
-    gsp_power = gsp_power.generation_normalised
+    # make normalized data
+    # TODO nowcasting_dataset/issues/231 -move normalization to dataloader
+    gsp_power.__setitem__(
+        "generation_normalised", gsp_power.generation_mw / gsp_power.installedcapacity_mwp
+    )
 
     # make dataframe with index datetime_gmt and columns og gsp_id
     gsp_power_df = gsp_power.to_dataframe()

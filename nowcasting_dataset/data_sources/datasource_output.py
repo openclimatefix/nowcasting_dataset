@@ -91,9 +91,14 @@ def check_dataset_less_than(data: xr.Dataset, class_name: str, max_value: int):
         raise Exception(message)
 
 
-def check_dataset_not_equal(data: xr.Dataset, class_name: str, value: int):
+def check_dataset_not_equal(
+    data: xr.Dataset, class_name: str, value: int, raise_error: bool = True
+):
     """ Check data is not equal than a certain value """
     if (data == value).any():
         message = f"Some {class_name} data values are equal to {value}"
-        logger.error(message)
-        raise Exception(message)
+        if raise_error:
+            logger.error(message)
+            raise Exception(message)
+        else:
+            logger.warning(message)

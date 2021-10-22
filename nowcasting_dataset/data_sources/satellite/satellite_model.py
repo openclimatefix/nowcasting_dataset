@@ -32,5 +32,5 @@ class Satellite(DataSourceOutput):
         check_nan_and_inf(data=v.data, class_name="satellite")
         # TODO https://github.com/openclimatefix/nowcasting_dataset/issues/269
         # put this validation back in when issue is done
-        # check_dataset_not_equal(data=v.data, class_name="satellite", value=-1)
+        check_dataset_not_equal(data=v.data, class_name="satellite", value=-1, raise_error=False)
         return v

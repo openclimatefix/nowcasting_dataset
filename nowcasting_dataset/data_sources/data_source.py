@@ -29,7 +29,8 @@ class DataSource:
         Does NOT include t0.  If forecast_minutes = 0 then the example will end
         at t0.  If both history_minutes and forecast_minutes are 0, then the example
         will consist of a single timestep at t0.
-      sample_period_minutes: The time delta between each data point
+      sample_period_minutes: The time delta between each data point.  Note that this is set
+        using the sample_period_minutes property, so it can be overridden by child classes.
 
     Attributes ending in `_length` are sequence lengths represented as integer numbers of timesteps.
     Attributes ending in `_duration` are sequence durations represented as pd.Timedeltas.
@@ -40,7 +41,6 @@ class DataSource:
 
     def __post_init__(self):
         """ Post Init """
-        self.sample_period_minutes = self._get_sample_period_minutes()
         self.sample_period_duration = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
         # TODO: Do we still need all these different representations of sequence lengths?
@@ -77,12 +77,13 @@ class DataSource:
         return t0_dt + self._forecast_duration
 
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
-    def _get_sample_period_minutes(self):
+    @property
+    def sample_period_minutes(self) -> int:
         """
         This is the default sample period in minutes.
 
         This functions may be overwritten if
-        the sample period of the data source is not 5 minutes
+        the sample period of the data source is not 5 minutes.
         """
         logging.debug(
             "Getting sample_period_minutes default of 5 minutes. "

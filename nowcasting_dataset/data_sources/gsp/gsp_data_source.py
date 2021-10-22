@@ -32,10 +32,15 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GSPDataSource(ImageDataSource):
     """
-    Data source for GSP PV Data
+    Data source for GSP (Grid Supply Point) PV Data.
 
     30 mins data is taken from 'PV Live' from https://www.solar.sheffield.ac.uk/pvlive/
-    meta data is taken from ESO
+    meta data is taken from ESO.  PV Live estimates the total PV power generation for each
+    Grid Supply Point region.
+
+    Even though GSP data isn't image data, `GSPDataSource` inherits from `ImageDataSource`
+    so it can select Grid Supply Point regions within the geospatial region of interest.
+    The region of interest is defined by `image_size_pixels` and `meters_per_pixel`.
     """
 
     # filename of where the gsp data is stored
@@ -46,8 +51,6 @@ class GSPDataSource(ImageDataSource):
     end_dt: Optional[datetime] = None
     # the threshold where we only taken gsp's with a maximum power, above this value.
     threshold_mw: int = 20
-    # the frequency of the data
-    sample_period_minutes: int = 30
     # get the data for the gsp at the center too.
     # This can be turned off if the center of the bounding box is of a pv system
     get_center: bool = True
@@ -65,9 +68,10 @@ class GSPDataSource(ImageDataSource):
         self.rng = np.random.default_rng(seed=seed)
         self.load()
 
-    def _get_sample_period_minutes(self):
+    @property
+    def sample_period_minutes(self) -> int:
         """Override the default sample minutes"""
-        return self.sample_period_minutes
+        return 30
 
     def load(self):
         """
@@ -86,8 +90,8 @@ class GSPDataSource(ImageDataSource):
             self.filename, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
-        # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP where predicting the
-        # solar output will be harder.
+        # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP where
+        # predicting the solar output will be harder.
         self.gsp_power, self.metadata = drop_gsp_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
         )
@@ -110,8 +114,8 @@ class GSPDataSource(ImageDataSource):
         """
         Get x and y locations for a batch. Assume that all data is available for all GSP.
 
-        Random GSP are taken, and the locations of them are returned. This is useful as other datasources need to know
-        which x,y locations to get
+        Random GSP are taken, and the locations of them are returned. This is useful as other
+        datasources need to know which x,y locations to get.
 
         Args:
             t0_datetimes: list of datetimes that the batches locations have data for
@@ -139,9 +143,10 @@ class GSPDataSource(ImageDataSource):
             random_gsp_id = self.rng.choice(gsp_power.columns)
             meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
 
-            # Make sure there is only one. Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
-            # Further investigation on this may be needed, but going to ignore this for now.
-            #
+            # Make sure there is only one. Sometimes there are multiple gsp_ids at one location
+            # e.g. 'SELL_1'. Further investigation on this may be needed,
+            # but going to ignore this for now.  See this issue:
+            # https://github.com/openclimatefix/nowcasting_dataset/issues/272
             metadata_for_gsp = meta_data.iloc[0]
 
             # Get metadata for GSP
@@ -159,7 +164,7 @@ class GSPDataSource(ImageDataSource):
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> GSP:
         """
-        Get data example from one time point (t0_dt) and for x and y coords (x_meters_center), (y_meters_center).
+        Get data example from one time point (t0_dt) and for x and y coords.
 
         Get data at the location of x,y and get surrounding GSP power data also.
 
@@ -168,8 +173,7 @@ class GSPDataSource(ImageDataSource):
             x_meters_center: x location of center GSP.
             y_meters_center: y location of center GSP.
 
-        Returns: Dictionary with GSP data in it
-
+        Returns: Dictionary with GSP data in it.
         """
         logger.debug("Getting example data")
 
@@ -254,7 +258,8 @@ class GSPDataSource(ImageDataSource):
         Args:
             x_meters_center: the location of the gsp (x)
             y_meters_center: the location of the gsp (y)
-            gsp_ids_with_data_for_timeslice: List of gsp ids that are available for a certain timeslice
+            gsp_ids_with_data_for_timeslice: List of gsp ids that are available for a certain
+                timeslice.
 
         Returns: GSP id
         """
@@ -298,7 +303,9 @@ class GSPDataSource(ImageDataSource):
         gsp_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
         """
-        Find the GSP IDs for all the GSP within the geospatial region of interest, defined by self.square.
+        Find the GSP IDs for all the GSP within the geospatial region of interest.
+
+        The geospatial region of interest is defined by self.square.
 
         Args:
             x_meters_center: center of area of interest (x coords)
@@ -306,7 +313,6 @@ class GSPDataSource(ImageDataSource):
             gsp_ids_with_data_for_timeslice: ids that are avialble for a specific time slice
 
         Returns: list of GSP ids that are in area of interest
-
         """
         logger.debug("Getting all gsp in ROI")
 
@@ -398,7 +404,8 @@ def load_solar_gsp_data(
 
     """
     logger.debug(f"Loading Solar GSP Data from GCS {filename} from {start_dt} to {end_dt}")
-    # Open data - it may be quicker to open byte file first, but decided just to keep it like this at the moment
+    # Open data - it may be quicker to open byte file first, but decided just to keep it
+    # like this at the moment.
     gsp_power = xr.open_dataset(filename, engine="zarr")
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
 

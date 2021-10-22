@@ -2,6 +2,7 @@
 import logging
 
 import numpy as np
+from xarray.ufuncs import isnan, isinf
 from pydantic import Field, validator
 
 from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
@@ -23,11 +24,11 @@ class Sun(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (~np.isnan(v.elevation)).all(), f"Some elevation data values are NaNs"
-        assert (~np.isinf(v.elevation)).all(), f"Some elevation data values are Infinite"
+        assert (~isnan(v.elevation)).all(), f"Some elevation data values are NaNs"
+        assert (~isinf(v.elevation)).all(), f"Some elevation data values are Infinite"
 
-        assert (~np.isnan(v.azimuth)).all(), f"Some azimuth data values are NaNs"
-        assert (~np.isinf(v.azimuth)).all(), f"Some azimuth data values are Infinite"
+        assert (~isnan(v.azimuth)).all(), f"Some azimuth data values are NaNs"
+        assert (~isinf(v.azimuth)).all(), f"Some azimuth data values are Infinite"
 
         assert (0 <= v.azimuth).all(), f"Some azimuth data values are lower 0, {v.azimuth.min()}"
         assert (

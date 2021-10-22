@@ -31,7 +31,8 @@ def select_daylight_datetimes(
         ghi_threshold: Global horizontal irradiance threshold.
           (Watts per square meter?)
 
-    Returns: datetimes for which the global horizontal irradiance (GHI) is above ghi_threshold across all locations.
+    Returns: datetimes for which the global horizontal irradiance (GHI) is above ghi_threshold
+    across all locations.
 
     """
     ghi_for_all_locations = []
@@ -65,23 +66,30 @@ def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.Datet
     return intersection
 
 
+def period_to_datetime_index(period: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
+    """Return a DatetimeIndex from period['start_dt'] to period['end_dt'] at frequency freq."""
+    return pd.date_range(period["start_dt"], period["end_dt"], freq=freq)
+
+
 def time_periods_to_datetimes(time_periods: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
+    """Convert a DataFrame of time periods into a DatetimeIndex at a particular frequency.
+
+    See the docstring of intersection_of_2_dataframes_of_periods() for more details.
+    """
     assert len(time_periods) > 0
-    dt_indexes = []
-    for _, time_period in time_periods.iterrows():
-        dt_index = pd.date_range(time_period["start_dt"], time_period["end_dt"], freq=freq)
-        dt_indexes.append(dt_index)
-    if len(dt_indexes) == 1:
-        return dt_indexes[0]
-    else:
-        return dt_indexes[0].union_many(*dt_indexes[1:])
+    dt_index = period_to_datetime_index(time_periods.iloc[0], freq=freq)
+    for _, time_period in time_periods.iloc[1:].iterrows():
+        new_dt_index = period_to_datetime_index(time_period, freq=freq)
+        dt_index = dt_index.union(new_dt_index)
+    return dt_index
 
 
 def intersection_of_multiple_dataframes_of_periods(
     time_periods: list[pd.DataFrame],
 ) -> pd.DataFrame:
-    """
-    TODO
+    """Finds the intersection of a list of time periods.
+
+    See the docstring of intersection_of_2_dataframes_of_periods() for more details.
     """
     assert len(time_periods) > 0
     if len(time_periods) == 1:

@@ -205,3 +205,37 @@ def test_intersection_of_2_dataframes_of_periods():
         pd.testing.assert_frame_equal(
             nd_time.intersection_of_2_dataframes_of_periods(*test_case), empty_df
         )
+
+
+def test_intersection_of_multiple_dataframes_of_periods():
+    dt = pd.Timestamp("2020-01-01 00:00")
+
+    # a: |-----|
+    # b:  |---|
+    # c:   |-----|
+    # i:   |-|  # The correct intersection of a, b, c.
+    a = pd.DataFrame([{"start_dt": dt, "end_dt": dt.replace(hour=4)}])
+    b = pd.DataFrame([{"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=3)}])
+    c = pd.DataFrame([{"start_dt": dt.replace(hour=2), "end_dt": dt.replace(hour=5)}])
+
+    i = nd_time.intersection_of_multiple_dataframes_of_periods([a, b, c])
+    correct = pd.DataFrame([{"start_dt": dt.replace(hour=2), "end_dt": dt.replace(hour=3)}])
+    pd.testing.assert_frame_equal(i, correct)
+
+
+def test_time_periods_to_datetimes():
+    dt = pd.Timestamp("2020-01-01 00:00")
+    time_periods = pd.DataFrame(
+        [
+            {"start_dt": dt.replace(hour=1), "end_dt": dt.replace(hour=3)},
+            {"start_dt": dt.replace(hour=5), "end_dt": dt.replace(hour=10)},
+        ]
+    )
+
+    FREQ = "5T"
+    dt_index = nd_time.time_periods_to_datetimes(time_periods, freq=FREQ)
+
+    correct_dt_index = pd.date_range("2020-01-01 01:00", "2020-01-01 03:00", freq=FREQ).union(
+        pd.date_range("2020-01-01 05:00", "2020-01-01 10:00", freq=FREQ)
+    )
+    pd.testing.assert_index_equal(dt_index, correct_dt_index)

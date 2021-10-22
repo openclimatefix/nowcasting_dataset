@@ -355,7 +355,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         """
         Compute the intersection of the t0 datetimes available across all DataSources.
 
-        Returns the intersection of the datetime indicies of all the data_sources,
+        Returns the valid t0 datetimes, taking into consideration all DataSources,
         filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
         datetimes).
         """
@@ -376,9 +376,6 @@ class NowcastingDataModule(pl.LightningDataModule):
         intersection_of_t0_time_periods = nd_time.intersection_of_multiple_dataframes_of_periods(
             t0_time_periods_for_all_data_sources
         )
-
-        # Save memory.
-        del t0_time_periods_for_all_data_sources
 
         return nd_time.time_periods_to_datetimes(
             time_periods=intersection_of_t0_time_periods, freq="5T"

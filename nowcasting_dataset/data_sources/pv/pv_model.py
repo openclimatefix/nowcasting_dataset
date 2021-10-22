@@ -17,6 +17,7 @@ from nowcasting_dataset.consts import (
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
     check_nan_and_inf,
+    check_dataset_greater_than,
 )
 from nowcasting_dataset.time import make_random_time_vectors
 
@@ -36,9 +37,6 @@ class PV(DataSourceOutput):
         """ Check that all values are non NaNs """
         check_nan_and_inf(data=v.data, class_name="pv")
 
-        if (v.data < 0).any():
-            message = f"Some pv data values are below 0 {v.data.min()}"
-            logging.error(message)
-            raise Exception(message)
+        check_dataset_greater_than(data=v.azimuth, class_name="pv", min_value=0)
 
         return v

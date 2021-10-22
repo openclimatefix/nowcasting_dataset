@@ -9,6 +9,8 @@ from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_AN
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
     check_nan_and_inf,
+    check_dataset_greater_than,
+    check_dataset_less_than,
 )
 from nowcasting_dataset.time import make_random_time_vectors
 
@@ -28,16 +30,10 @@ class Sun(DataSourceOutput):
         check_nan_and_inf(data=v.elevation, class_name="sun elevation")
         check_nan_and_inf(data=v.azimuth, class_name="sun azimuth")
 
-        assert (0 <= v.azimuth).all(), f"Some azimuth data values are lower 0, {v.azimuth.min()}"
-        assert (
-            v.azimuth <= 360
-        ).all(), f"Some azimuth data values are greater than 360, {v.azimuth.max()}"
+        check_dataset_greater_than(data=v.azimuth, class_name="sun azimuth", min_value=0)
+        check_dataset_less_than(data=v.azimuth, class_name="sun azimuth", max_value=360)
 
-        assert (
-            -90 <= v.elevation
-        ).all(), f"Some elevation data values are lower -90, {v.elevation.min()}"
-        assert (
-            v.elevation <= 90
-        ).all(), f"Some elevation data values are greater than 90, {v.elevation.max()}"
+        check_dataset_greater_than(data=v.elevation, class_name="sun elevation", min_value=-90)
+        check_dataset_less_than(data=v.elevation, class_name="sun elevation", max_value=90)
 
         return v

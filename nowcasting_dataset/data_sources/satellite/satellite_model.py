@@ -11,6 +11,7 @@ from nowcasting_dataset.consts import Array
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
     check_nan_and_inf,
+    check_dataset_not_equal,
 )
 from nowcasting_dataset.time import make_random_time_vectors
 
@@ -29,5 +30,5 @@ class Satellite(DataSourceOutput):
     def model_validation(cls, v):
         """ Check that all values are non negative """
         check_nan_and_inf(data=v.data, class_name="satellite")
-        assert (v.data != -1).all(), f"Some satellite data values are -1's"
+        check_dataset_not_equal(data=v.data, class_name="satellite", value=-1)
         return v

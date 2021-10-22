@@ -73,3 +73,27 @@ def check_nan_and_inf(data: xr.Dataset, class_name: str):
         message = f"Some {class_name} data values are Infinite"
         logger.error(message)
         raise Exception(message)
+
+
+def check_dataset_greater_than(data: xr.Dataset, class_name: str, min_value: int):
+    """ Check data is greater than a certain value """
+    if (data < min_value).any():
+        message = f"Some {class_name} data values are less than {min_value}"
+        logger.error(message)
+        raise Exception(message)
+
+
+def check_dataset_less_than(data: xr.Dataset, class_name: str, max_value: int):
+    """ Check data is less than a certain value """
+    if (data > max_value).any():
+        message = f"Some {class_name} data values are less than {max_value}"
+        logger.error(message)
+        raise Exception(message)
+
+
+def check_dataset_not_equal(data: xr.Dataset, class_name: str, value: int):
+    """ Check data is not equal than a certain value """
+    if (data == value).any():
+        message = f"Some {class_name} data values are equal to {value}"
+        logger.error(message)
+        raise Exception(message)

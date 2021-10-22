@@ -5,6 +5,7 @@ from xarray.ufuncs import isnan, isinf
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
     check_nan_and_inf,
+    check_dataset_greater_than,
 )
 from nowcasting_dataset.time import make_random_time_vectors
 
@@ -21,6 +22,6 @@ class GSP(DataSourceOutput):
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
         check_nan_and_inf(data=v.data, class_name="gsp")
-        assert (v.data >= 0).all(), f"Some gsp data values are below 0 {v.data.min()}"
+        check_dataset_greater_than(data=v.data, class_name="gsp", min_value=0)
 
         return v

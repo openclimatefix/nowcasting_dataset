@@ -37,6 +37,6 @@ class PV(DataSourceOutput):
         """ Check that all values are non NaNs """
         check_nan_and_inf(data=v.data, class_name="pv")
 
-        check_dataset_greater_than(data=v.azimuth, class_name="pv", min_value=0)
+        check_dataset_greater_than(data=v.data, class_name="pv", min_value=0)
 
         return v

@@ -380,7 +380,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             t0_time_periods_for_all_data_sources
         )
 
-        t0_datetimes = nd_time.time_periods_to_datetimes(
+        t0_datetimes = nd_time.time_periods_to_datetime_index(
             time_periods=intersection_of_t0_time_periods, freq=self.t0_datetime_freq
         )
 

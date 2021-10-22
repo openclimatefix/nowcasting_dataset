@@ -136,7 +136,7 @@ def test_intersection_of_multiple_dataframes_of_periods():
     pd.testing.assert_frame_equal(i, correct)
 
 
-def test_time_periods_to_datetimes():
+def test_time_periods_to_datetime_index():
     dt = pd.Timestamp("2020-01-01 00:00")
     time_periods = pd.DataFrame(
         [
@@ -146,7 +146,7 @@ def test_time_periods_to_datetimes():
     )
 
     FREQ = "5T"
-    dt_index = nd_time.time_periods_to_datetimes(time_periods, freq=FREQ)
+    dt_index = nd_time.time_periods_to_datetime_index(time_periods, freq=FREQ)
 
     correct_dt_index = pd.date_range("2020-01-01 01:00", "2020-01-01 03:00", freq=FREQ).union(
         pd.date_range("2020-01-01 05:00", "2020-01-01 10:00", freq=FREQ)

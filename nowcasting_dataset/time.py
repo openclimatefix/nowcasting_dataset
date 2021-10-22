@@ -55,20 +55,20 @@ def select_daylight_datetimes(
     return datetimes[mask]
 
 
-def period_to_datetime_index(period: pd.Series, freq: str) -> pd.DatetimeIndex:
+def single_period_to_datetime_index(period: pd.Series, freq: str) -> pd.DatetimeIndex:
     """Return a DatetimeIndex from period['start_dt'] to period['end_dt'] at frequency freq."""
     return pd.date_range(period["start_dt"], period["end_dt"], freq=freq)
 
 
-def time_periods_to_datetimes(time_periods: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
+def time_periods_to_datetime_index(time_periods: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
     """Convert a DataFrame of time periods into a DatetimeIndex at a particular frequency.
 
     See the docstring of intersection_of_2_dataframes_of_periods() for more details.
     """
     assert len(time_periods) > 0
-    dt_index = period_to_datetime_index(time_periods.iloc[0], freq=freq)
+    dt_index = single_period_to_datetime_index(time_periods.iloc[0], freq=freq)
     for _, time_period in time_periods.iloc[1:].iterrows():
-        new_dt_index = period_to_datetime_index(time_period, freq=freq)
+        new_dt_index = single_period_to_datetime_index(time_period, freq=freq)
         dt_index = dt_index.union(new_dt_index)
     return dt_index
 

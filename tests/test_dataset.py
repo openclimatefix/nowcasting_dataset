@@ -9,7 +9,7 @@ from nowcasting_dataset.dataset.batch import Batch
 
 def _get_t0_datetimes(data_source, freq) -> pd.DatetimeIndex:
     t0_periods = data_source.get_contiguous_t0_time_periods()
-    t0_datetimes = nd_time.time_periods_to_datetimes(t0_periods, freq=freq)
+    t0_datetimes = nd_time.time_periods_to_datetime_index(t0_periods, freq=freq)
     return t0_datetimes
 
 

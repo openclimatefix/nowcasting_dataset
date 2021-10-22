@@ -2,12 +2,13 @@ general:
   cloud: gcp
   description: example configuration
   name: example
+git: null
 input_data:
   default_forecast_minutes: 60
   default_history_minutes: 30
   gsp:
     forecast_minutes: 60
-    gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr
+    gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v0/pv_gsp.zarr
     history_minutes: 30
   nwp:
     forecast_minutes: 60
@@ -57,7 +58,7 @@ input_data:
     history_minutes: 30
     topographic_filename: gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif
 output_data:
-  filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/
+  filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v5/
 process:
   batch_size: 32
   local_temp_path: ~/temp/

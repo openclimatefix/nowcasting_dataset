@@ -151,8 +151,8 @@ class NowcastingDataModule(pl.LightningDataModule):
                 get_center=True,
             )
 
-            # put gsp data source at the start, so data is centered around GSP. This is the current approach,
-            # but in the future we may take a mix of GSP and PV data as the centroid
+            # put gsp data source at the start, so data is centered around GSP. This is the current
+            # approach, but in the future we may take a mix of GSP and PV data as the centroid.
             self.data_sources = [self.gsp_data_source] + self.data_sources
 
         # NWP data

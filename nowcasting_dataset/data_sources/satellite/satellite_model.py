@@ -30,5 +30,7 @@ class Satellite(DataSourceOutput):
     def model_validation(cls, v):
         """ Check that all values are non negative """
         check_nan_and_inf(data=v.data, class_name="satellite")
+        # TODO https://github.com/openclimatefix/nowcasting_dataset/issues/269
+        # put this validation back in when issue is done
         # check_dataset_not_equal(data=v.data, class_name="satellite", value=-1)
         return v

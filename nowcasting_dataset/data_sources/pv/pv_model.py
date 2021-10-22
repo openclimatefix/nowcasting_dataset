@@ -39,6 +39,6 @@ class PV(DataSourceOutput):
         if (v.data < 0).any():
             message = f"Some pv data values are below 0 {v.data.min()}"
             logging.error(message)
-            assert Exception(message)
+            raise Exception(message)
 
         return v

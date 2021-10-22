@@ -67,9 +67,9 @@ def check_nan_and_inf(data: xr.Dataset, class_name: str):
     if isnan(data).any():
         message = f"Some {class_name} data values are NaNs"
         logger.error(message)
-        assert Exception(message)
+        raise Exception(message)
 
     if isinf(data).any():
         message = f"Some {class_name} data values are Infinite"
         logger.error(message)
-        assert Exception(message)
+        raise Exception(message)

@@ -165,7 +165,7 @@ def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:
       filename: Cloud URL or local path.  If GCP URL, must start with 'gs://'
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
-    _LOG.debug("Opening satellite data: %s", filename)
+    _LOG.info("Opening satellite data: %s", filename)
 
     # We load using chunks=None so xarray *doesn't* use Dask to
     # load the Zarr chunks from disk.  Using Dask to load the data

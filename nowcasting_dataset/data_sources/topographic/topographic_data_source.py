@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import rioxarray
 import xarray as xr
+import logging
 from rasterio.warp import Resampling
 
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
@@ -14,6 +15,9 @@ from nowcasting_dataset.data_sources.topographic.topographic_model import Topogr
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+
+logger = logging.getLogger(__name__)
+
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"
@@ -51,6 +55,8 @@ class TopographicDataSource(ImageDataSource):
             image_size_pixels,
             image_size_pixels,
         )
+
+        logger.info(f"Loading Topological data {self.filename}")
 
         with OpenData(file_name=self.filename) as filename:
             self._data = rioxarray.open_rasterio(

@@ -223,7 +223,7 @@ def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
     Returns: nwp data
 
     """
-    _LOG.debug("Opening NWP data: %s", filename)
+    _LOG.info("Opening NWP data: %s", filename)
     utils.set_fsspec_for_multiprocess()
     nwp = xr.open_dataset(filename, engine="zarr", consolidated=consolidated, mode="r", chunks=None)
 

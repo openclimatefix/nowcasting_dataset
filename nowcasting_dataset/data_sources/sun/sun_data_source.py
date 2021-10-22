@@ -7,12 +7,15 @@ from typing import List, Tuple, Union, Optional
 
 import numpy as np
 import pandas as pd
+import logging
 import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -78,6 +81,8 @@ class SunDataSource(DataSource):
         return Sun(sun)
 
     def _load(self):
+
+        logger.info(f"Loading Sun data from {self.filename}")
 
         self.azimuth, self.elevation = load_from_zarr(
             filename=self.filename, start_dt=self.start_dt, end_dt=self.end_dt

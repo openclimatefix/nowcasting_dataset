@@ -22,6 +22,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install git+https://github.com/SheffieldSolar/PV_Live-API
           pip install -e .[torch]
+          pip install pytest-xdist
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -30,4 +31,4 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
-          pytest -s --cov=nowcasting_dataset
+          pytest -s --cov=nowcasting_dataset -n 2

@@ -146,7 +146,6 @@ def get_data_module():
         n_validation_batches_per_epoch=1_008,
         n_test_batches_per_epoch=1_008,
         collate_fn=lambda x: x,
-        convert_to_numpy=False,  #: Leave data as Pandas / Xarray for pre-preparing.
         skip_n_train_batches=maximum_batch_id_train // num_workers,
         skip_n_validation_batches=maximum_batch_id_validation // num_workers,
         skip_n_test_batches=maximum_batch_id_test // num_workers,

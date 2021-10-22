@@ -55,16 +55,13 @@ def sat_data_source(sat_filename: Path):
         forecast_minutes=5,
         channels=("HRV",),
         n_timesteps_per_batch=2,
-        convert_to_numpy=True,
     )
 
 
 @pytest.fixture
 def general_data_source():
 
-    return MetadataDataSource(
-        history_minutes=0, forecast_minutes=5, object_at_center="GSP", convert_to_numpy=True
-    )
+    return MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
 
 
 @pytest.fixture
@@ -75,7 +72,6 @@ def gsp_data_source():
         filename=Path(__file__).parent.absolute() / "tests" / "data" / "gsp" / "test.zarr",
         history_minutes=0,
         forecast_minutes=30,
-        convert_to_numpy=True,
     )
 
 

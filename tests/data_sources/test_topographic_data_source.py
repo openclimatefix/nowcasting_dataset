@@ -25,7 +25,6 @@ def test_get_example_2km(x, y, left, right, top, bottom):
         filename="tests/data/europe_dem_2km_osgb.tif",
         image_size_pixels=128,
         meters_per_pixel=size,
-        convert_to_numpy=True,
         forecast_minutes=300,
         history_minutes=10,
     )
@@ -53,7 +52,6 @@ def test_get_example_gcs():
         filename=filename,
         image_size_pixels=128,
         meters_per_pixel=size,
-        convert_to_numpy=True,
         forecast_minutes=300,
         history_minutes=10,
     )

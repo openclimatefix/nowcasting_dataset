@@ -305,7 +305,6 @@ class GSPDataSource(ImageDataSource):
         """
         Find the GSP IDs for all the GSP within the geospatial region of interest.
 
-
         The geospatial region of interest is defined by self.square.
 
         Args:

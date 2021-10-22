@@ -65,6 +65,33 @@ def intersection_of_datetimeindexes(indexes: List[pd.DatetimeIndex]) -> pd.Datet
     return intersection
 
 
+def time_periods_to_datetimes(time_periods: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
+    assert len(time_periods) > 0
+    dt_indexes = []
+    for _, time_period in time_periods.iterrows():
+        dt_index = pd.date_range(time_period["start_dt"], time_period["end_dt"], freq=freq)
+        dt_indexes.append(dt_index)
+    if len(dt_indexes) == 1:
+        return dt_indexes[0]
+    else:
+        return dt_indexes[0].union_many(*dt_indexes[1:])
+
+
+def intersection_of_multiple_dataframes_of_periods(
+    time_periods: list[pd.DataFrame],
+) -> pd.DataFrame:
+    """
+    TODO
+    """
+    assert len(time_periods) > 0
+    if len(time_periods) == 1:
+        return time_periods[0]
+    intersection = intersection_of_2_dataframes_of_periods(time_periods[0], time_periods[1])
+    for time_period in time_periods[2:]:
+        intersection = intersection_of_2_dataframes_of_periods(intersection, time_period)
+    return intersection
+
+
 def intersection_of_2_dataframes_of_periods(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
     """Finds the intersection of two pd.DataFrames of time periods.
 

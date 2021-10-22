@@ -359,31 +359,30 @@ class NowcastingDataModule(pl.LightningDataModule):
         filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
         datetimes).
         """
-        logger.debug("Get the datetimes")
+        logger.debug("Get the intersection of time periods across all DataSources.")
         self._check_has_prepared_data()
 
-        # Get the intersection of datetimes from all data sources.
-        t0_datetime_indexes_for_all_data_sources = []
+        # Get the intersection of t0 time periods from all data sources.
+        t0_time_periods_for_all_data_sources = []
         for data_source in self.data_sources:
-            logger.debug(f"Getting t0 datetimes for {type(data_source).__name__}")
+            logger.debug(f"Getting t0 time periods for {type(data_source).__name__}")
             try:
-                t0_datetimes = data_source.get_t0_datetimes()
+                t0_time_periods = data_source.get_contiguous_t0_time_periods()
             except NotImplementedError:
                 pass  # Skip data_sources with no concept of time.
             else:
-                t0_datetime_indexes_for_all_data_sources.append(t0_datetimes)
-        intersection_of_t0_datetimes = nd_time.intersection_of_datetimeindexes(
-            t0_datetime_indexes_for_all_data_sources
+                t0_time_periods_for_all_data_sources.append(t0_time_periods)
+
+        intersection_of_t0_time_periods = nd_time.intersection_of_multiple_dataframes_of_periods(
+            t0_time_periods_for_all_data_sources
         )
 
         # Save memory.
-        del t0_datetimes, t0_datetime_indexes_for_all_data_sources
+        del t0_time_periods_for_all_data_sources
 
-        # Sanity check.
-        assert len(intersection_of_t0_datetimes) > 2
-        assert utils.is_monotonically_increasing(intersection_of_t0_datetimes)
-
-        return intersection_of_t0_datetimes
+        return nd_time.time_periods_to_datetimes(
+            time_periods=intersection_of_t0_time_periods, freq="5T"
+        )
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

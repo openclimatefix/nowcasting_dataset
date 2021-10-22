@@ -32,10 +32,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GSPDataSource(ImageDataSource):
     """
-    Data source for GSP PV Data
+    Data source for GSP (Grid Supply Point) PV Data.
 
     30 mins data is taken from 'PV Live' from https://www.solar.sheffield.ac.uk/pvlive/
-    meta data is taken from ESO
+    meta data is taken from ESO.  PV Live estimates the total PV power generation for each
+    Grid Supply Point region.
+
+    Even though GSP data isn't image data, `GSPDataSource` inherits from `ImageDataSource`
+    so it can select Grid Supply Point regions within the geospatial region of interest.
     """
 
     # filename of where the gsp data is stored

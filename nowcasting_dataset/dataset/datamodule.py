@@ -78,6 +78,7 @@ class NowcastingDataModule(pl.LightningDataModule):
     pv_load_azimuth_and_elevation: bool = False
     split_method: SplitMethod = SplitMethod.DAY  # which split method should be used
     seed: Optional[int] = None  # seed used to make quasi random split data
+    t0_datetime_freq: str = "5T"  # Frequency of the t0 datetimes.
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
@@ -379,9 +380,13 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         # TODO: Allow user to configure the frequency using the config yaml file.
         # https://github.com/openclimatefix/nowcasting_dataset/issues/277
-        return nd_time.time_periods_to_datetimes(
-            time_periods=intersection_of_t0_time_periods, freq="30T"
+        t0_datetimes = nd_time.time_periods_to_datetimes(
+            time_periods=intersection_of_t0_time_periods, freq=self.t0_datetime_freq
         )
+
+        # Align to the nearest t0_datetime_freq.  For example, if t0_datetime_freq is '5T'
+        # then ensure the minutes past the hour are exactly divisible by 5.
+        return t0_datetimes.round(self.t0_datetime_freq)
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

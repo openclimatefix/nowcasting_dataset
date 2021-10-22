@@ -55,7 +55,7 @@ def select_daylight_datetimes(
     return datetimes[mask]
 
 
-def period_to_datetime_index(period: pd.DataFrame, freq: str) -> pd.DatetimeIndex:
+def period_to_datetime_index(period: pd.Series, freq: str) -> pd.DatetimeIndex:
     """Return a DatetimeIndex from period['start_dt'] to period['end_dt'] at frequency freq."""
     return pd.date_range(period["start_dt"], period["end_dt"], freq=freq)
 

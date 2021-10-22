@@ -8,6 +8,7 @@ from pydantic import Field, validator
 from nowcasting_dataset.consts import Array, SUN_AZIMUTH_ANGLE, SUN_ELEVATION_ANGLE
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
+    check_nan_and_inf,
 )
 from nowcasting_dataset.time import make_random_time_vectors
 
@@ -24,11 +25,8 @@ class Sun(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (~isnan(v.elevation)).all(), f"Some elevation data values are NaNs"
-        assert (~isinf(v.elevation)).all(), f"Some elevation data values are Infinite"
-
-        assert (~isnan(v.azimuth)).all(), f"Some azimuth data values are NaNs"
-        assert (~isinf(v.azimuth)).all(), f"Some azimuth data values are Infinite"
+        check_nan_and_inf(data=v.elevation, class_name="sun elevation")
+        check_nan_and_inf(data=v.azimuth, class_name="sun azimuth")
 
         assert (0 <= v.azimuth).all(), f"Some azimuth data values are lower 0, {v.azimuth.min()}"
         assert (

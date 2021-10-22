@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 from typing import List
 
+import xarray as xr
+from xarray.ufuncs import isnan, isinf
 import numpy as np
 from pydantic import BaseModel, Field
 
@@ -57,3 +59,16 @@ def pad_nans(array, pad_width) -> np.ndarray:
     """Pad nans with nans"""
     array = array.astype(np.float32)
     return np.pad(array, pad_width, constant_values=np.NaN)
+
+
+def check_nan_and_inf(data: xr.Data, class_name: str):
+
+    if isnan(data).any():
+        message = f"Some {class_name} data values are NaNs"
+        logger.error(message)
+        assert (~isnan(data)).all(), message
+
+    if isinf(data).any():
+        message = f"Some {class_name} data values are Infinite"
+        logger.error(message)
+        assert (~isinf(data)).all(), message

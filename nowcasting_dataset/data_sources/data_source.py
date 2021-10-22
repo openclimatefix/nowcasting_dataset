@@ -76,6 +76,24 @@ class DataSource:
     def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
         return t0_dt + self._forecast_duration
 
+    def get_contiguous_t0_time_periods(self) -> pd.DataFrame:
+        """Get all time periods which contain valid t0 datetimes.
+
+        `t0` is the datetime of the most recent observation.
+
+        Returns:
+          pd.DataFrame where each row represents a single time period.  The pd.DataFrame
+          has two columns: `start_dt` and `end_dt` (where 'dt' is short for 'datetime').
+
+        Raises:
+          NotImplementedError if this DataSource has no concept of a datetime index.
+        """
+        contiguous_time_periods = self.get_contiguous_time_periods()
+        contiguous_time_periods["start_dt"] += self._history_duration
+        contiguous_time_periods["end_dt"] -= self._forecast_duration
+        assert (contiguous_time_periods["start_dt"] <= contiguous_time_periods["end_dt"]).all()
+        return contiguous_time_periods
+
     # ************* METHODS THAT CAN BE OVERRIDDEN ****************************
     @property
     def sample_period_minutes(self) -> int:

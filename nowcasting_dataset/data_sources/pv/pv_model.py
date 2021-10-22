@@ -36,6 +36,9 @@ class PV(DataSourceOutput):
         """ Check that all values are non NaNs """
         check_nan_and_inf(data=v.data, class_name="pv")
 
-        assert (v.data >= 0).all(), f"Some pv data values are below 0"
+        if (v.data < 0).any():
+            message = f"Some pv data values are below 0 {v.data.min()}"
+            logging.error(message)
+            assert Exception(message)
 
         return v

@@ -61,14 +61,15 @@ def pad_nans(array, pad_width) -> np.ndarray:
     return np.pad(array, pad_width, constant_values=np.NaN)
 
 
-def check_nan_and_inf(data: xr.Data, class_name: str):
+def check_nan_and_inf(data: xr.Dataset, class_name: str):
+    """ Check that all values are non NaNs and not infinite"""
 
     if isnan(data).any():
         message = f"Some {class_name} data values are NaNs"
         logger.error(message)
-        assert (~isnan(data)).all(), message
+        assert Exception(message)
 
     if isinf(data).any():
         message = f"Some {class_name} data values are Infinite"
         logger.error(message)
-        assert (~isinf(data)).all(), message
+        assert Exception(message)

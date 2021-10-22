@@ -46,8 +46,6 @@ class GSPDataSource(ImageDataSource):
     end_dt: Optional[datetime] = None
     # the threshold where we only taken gsp's with a maximum power, above this value.
     threshold_mw: int = 20
-    # the frequency of the data
-    sample_period_minutes: int = 30
     # get the data for the gsp at the center too.
     # This can be turned off if the center of the bounding box is of a pv system
     get_center: bool = True
@@ -65,9 +63,10 @@ class GSPDataSource(ImageDataSource):
         self.rng = np.random.default_rng(seed=seed)
         self.load()
 
-    def _get_sample_period_minutes(self):
+    @property
+    def sample_period_minutes(self) -> int:
         """Override the default sample minutes"""
-        return self.sample_period_minutes
+        return 30
 
     def load(self):
         """

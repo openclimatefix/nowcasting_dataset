@@ -4,8 +4,8 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union, Optional, Iterable, Dict, Callable
-import pandas as pd
 
+import pandas as pd
 import torch
 
 from nowcasting_dataset import consts

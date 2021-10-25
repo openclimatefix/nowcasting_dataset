@@ -363,7 +363,8 @@ class NowcastingDataModule(pl.LightningDataModule):
     def _get_t0_datetimes_across_all_data_sources(self) -> pd.DatetimeIndex:
         """See DataSourceList.get_t0_datetimes_across_all_data_sources.
 
-        This method will be deleted as part of implementing #213."""
+        This method will be deleted as part of implementing #213.
+        """
         return self.data_sources.get_t0_datetimes_across_all_data_sources(
             freq=self.t0_datetime_freq
         )

@@ -15,10 +15,6 @@ from nowcasting_dataset.dataset.xr_utils import make_dim_index
 class DatetimeDataSource(DataSource):
     """ Add hour_of_day_{sin, cos} and day_of_year_{sin, cos} features. """
 
-    def __post_init__(self):
-        """ Post init """
-        super().__post_init__()
-
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Datetime:
@@ -44,13 +40,3 @@ class DatetimeDataSource(DataSource):
         datetime_xr_dataset = make_dim_index(datetime_xr_dataset)
 
         return Datetime(datetime_xr_dataset)
-
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
-        """ This method is not needed for DatetimeDataSource """
-        raise NotImplementedError()
-
-    def datetime_index(self) -> pd.DatetimeIndex:
-        """ This method is not needed for DatetimeDataSource """
-        raise NotImplementedError()

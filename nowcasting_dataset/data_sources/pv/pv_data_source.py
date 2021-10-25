@@ -276,9 +276,7 @@ class PVDataSource(ImageDataSource):
 
         return PV(pv)
 
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.

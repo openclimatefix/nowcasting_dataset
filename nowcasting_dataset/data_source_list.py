@@ -1,23 +1,34 @@
 """DataSourceList class."""
 
+import numpy as np
 import pandas as pd
 import logging
 
 import nowcasting_dataset.time as nd_time
+from nowcasting_dataset.dataset.split.split import SplitMethod, split_data, SplitName
 
 logger = logging.getLogger(__name__)
 
 
 class DataSourceList(list):
-    """Hold a list of DataSource objects."""
+    """Hold a list of DataSource objects.
+
+    The first DataSource in the list is used to compute the geospatial locations of each example.
+    """
 
     def get_t0_datetimes_across_all_data_sources(self, freq: str) -> pd.DatetimeIndex:
         """
-        Compute the intersection of the t0 datetimes available across all `data_sources`.
+        Compute the intersection of the t0 datetimes available across all DataSources.
 
-        Returns the valid t0 datetimes, taking into consideration all DataSources,
-        filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
-        datetimes).
+        Args:
+            freq: The Pandas frequency string. The returned DatetimeIndex will be at this frequency,
+                and every datetime will be aligned to this frequency.  For example, if
+                freq='5 minutes' then every datetime will be at 00, 05, ..., 55 minutes
+                past the hour.
+
+        Returns:  Valid t0 datetimes, taking into consideration all DataSources,
+            filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
+            datetimes).
         """
         logger.debug("Get the intersection of time periods across all DataSources.")
 
@@ -42,39 +53,48 @@ class DataSourceList(list):
 
         return t0_datetimes
 
-    """
-    def compute_and_save_positions_of_each_example_of_each_split(
-            self,
-            split_method: SplitMethod,
-            n_examples_per_split: dict[SplitMethod, int],
-            dst_path: Path
-    ) -> None:
+    def sample_position_of_every_example_of_every_split(
+        self,
+        t0_datetimes: pd.DatetimeIndex,
+        split_method: SplitMethod,
+        n_examples_per_split: dict[SplitMethod, int],
+    ) -> dict[SplitName, pd.DataFrame]:
+        """
         Computes the geospatial and temporal position of each training example.
 
-        Finds the time periods available across all data_sources.
+        Computes the intersection of the time periods available across all data_sources.
+
+        The first data_source in this DataSourceList defines the geospatial locations of
+        each example.
 
         Args:
-            data_sources: A list of DataSources.  The first data_source is used to define the geospatial
-                location of each example.
-            split_method: The method used to split the available data into train, validation, and test.
+            t0_datetimes: All available t0 datetimes.  Can be computed with
+                `DataSourceList.get_t0_datetimes_across_all_data_sources()`
+            split_method: The method used to split data into train, validation, and test.
             n_examples_per_split: The number of examples requested for each split.
-            dst_path: The destination path.  This is where the CSV files will be saved into.
-                CSV files will be saved into dst_path / split_method / 'positions_of_each_example.csv'.
 
-        # Get intersection of all available t0_datetimes.  Current done by NowcastingDataModule._get_datetimes():
-        # github.com/openclimatefix/nowcasting_dataset/blob/main/nowcasting_dataset/dataset/datamodule.py#L364
-        t0_datetimes_for_all_data_sources = [data_source.get_t0_datetimes() for data_source in data_sources]
-        intersection_of_t0_datetimes = nd_time.intersection_of_datetimeindexes(t0_datetimes_for_all_data_sources)
+        Returns:
+            A dict where the keys are a SplitName, and the values are a pd.DataFrame.
+            Each row of each DataFrame specifies the position of each example, using
+            columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
+        """
+        # Split t0_datetimes into train, test and validation sets.
+        t0_datetimes_per_split = split_data(datetimes=t0_datetimes, method=split_method)
+        t0_datetimes_per_split = t0_datetimes_per_split._asdict()
 
-        # Split t0_datetimes into train, test and validation sets (being careful to ensure each group is
-        # at least `total_seq_duration` apart).  Currently done by NowcastingDataModule._split_data():
-        # github.com/openclimatefix/nowcasting_dataset/blob/main/nowcasting_dataset/dataset/datamodule.py#L315
-        t0_datetimes_per_split: dict[SplitName, pd.DatetimeIndex] = split_datetimes(
-            intersection_of_t0_datetimes, method=split_method)
+        data_source_which_defines_geo_position = self[0]
 
+        positions_per_split: dict[SplitName, pd.DataFrame] = {}
         for split_name, t0_datetimes_for_split in t0_datetimes_per_split.items():
             n_examples = n_examples_per_split[split_name]
-            positions = compute_positions_of_each_example(t0_datetimes_for_split, data_source, n_examples)
-            filename = dst_path / split_name / 'positions_of_each_example.csv'
-            positions.to_csv(filename)
-        """
+            shuffled_t0_datetimes = np.random.choice(t0_datetimes_for_split, shape=n_examples)
+            x_locations, y_locations = data_source_which_defines_geo_position.get_locations(
+                shuffled_t0_datetimes
+            )
+            positions_per_split[split_name] = {
+                "t0_datetime_UTC": shuffled_t0_datetimes,
+                "x_center_OSGB": x_locations,
+                "y_center_OSGB": y_locations,
+            }
+
+        return positions_per_split

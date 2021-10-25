@@ -108,17 +108,15 @@ class GSPDataSource(ImageDataSource):
         """
         return self.gsp_power.index
 
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """
-        Get x and y locations for a batch. Assume that all data is available for all GSP.
+        Get x and y locations. Assume that all data is available for all GSP.
 
         Random GSP are taken, and the locations of them are returned. This is useful as other
         datasources need to know which x,y locations to get.
 
         Args:
-            t0_datetimes: list of datetimes that the batches locations have data for
+            t0_datetimes: list of available t0 datetimes.
 
         Returns: list of x and y locations
 
@@ -266,7 +264,7 @@ class GSPDataSource(ImageDataSource):
         logger.debug("Getting Central GSP")
 
         # If x_meters_center and y_meters_center have been chosen
-        # by {}.get_locations_for_batch() then we just have
+        # by {}.get_locations() then we just have
         # to find the gsp_ids at that exact location.  This is
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.

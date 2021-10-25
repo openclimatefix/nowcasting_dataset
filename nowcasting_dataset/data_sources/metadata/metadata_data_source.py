@@ -19,10 +19,6 @@ class MetadataDataSource(DataSource):
 
     object_at_center: str = "GSP"
 
-    def __post_init__(self):
-        """Post init"""
-        super().__post_init__()
-
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Metadata:
@@ -44,6 +40,8 @@ class MetadataDataSource(DataSource):
         else:
             object_at_center_label = 0
 
+        # TODO: data_dict is unused in this function.  Is that a bug?
+        # https://github.com/openclimatefix/nowcasting_dataset/issues/279
         data_dict = dict(
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),
@@ -68,13 +66,3 @@ class MetadataDataSource(DataSource):
             data[v] = getattr(d, v)
 
         return Metadata(data)
-
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
-        """This method is not needed for MetadataDataSource"""
-        raise NotImplementedError()
-
-    def datetime_index(self) -> pd.DatetimeIndex:
-        """This method is not needed for MetadataDataSource"""
-        raise NotImplementedError()

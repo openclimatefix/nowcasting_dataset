@@ -78,14 +78,11 @@ class SunDataSource(DataSource):
         return Sun(sun)
 
     def _load(self):
-
         self.azimuth, self.elevation = load_from_zarr(
             filename=self.filename, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """ Sun data should not be used to get batch locations """
         raise NotImplementedError("Sun data should not be used to get batch locations")
 

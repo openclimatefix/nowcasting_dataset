@@ -14,7 +14,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
-from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
+from nowcasting_dataset.dataset.split.split import split_data, SplitMethod, SplitName
 from nowcasting_dataset.data_source_list import DataSourceList
 
 
@@ -315,9 +315,13 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         logger.debug(f"Got all start times, there are {len(self.t0_datetimes):,d}")
 
-        self.train_t0_datetimes, self.val_t0_datetimes, self.test_t0_datetimes = split_data(
+        data_after_splitting = split_data(
             datetimes=self.t0_datetimes, method=self.split_method, seed=self.seed
         )
+
+        self.train_t0_datetimes = data_after_splitting.train
+        self.val_t0_datetimes = data_after_splitting.validation
+        self.test_t0_datetimes = data_after_splitting.test
 
         logger.debug(
             f"Split data done, train has {len(self.train_t0_datetimes):,d}, "

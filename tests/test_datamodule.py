@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-import xarray as xr
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
@@ -32,13 +31,9 @@ def test_prepare_data(nowcasting_datamodule: datamodule.NowcastingDataModule):
 def test_get_daylight_datetime_index(
     nowcasting_datamodule: datamodule.NowcastingDataModule, use_cloud_data: bool
 ):
-    # Check it throws RuntimeError if we try running
-    # _get_daylight_datetime_index() before running prepare_data():
-    with pytest.raises(RuntimeError):
-        nowcasting_datamodule._get_t0_datetimes()
     nowcasting_datamodule.prepare_data()
     nowcasting_datamodule.t0_datetime_freq = "5T"
-    t0_datetimes = nowcasting_datamodule._get_t0_datetimes()
+    t0_datetimes = nowcasting_datamodule._get_t0_datetimes_across_all_data_sources()
     assert isinstance(t0_datetimes, pd.DatetimeIndex)
     if not use_cloud_data:
         # The testing sat_data.zarr has contiguous data from 12:05 to 18:00.

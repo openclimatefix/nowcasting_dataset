@@ -5,7 +5,6 @@ from dataclasses import dataclass, InitVar
 from numbers import Number
 from typing import List, Tuple, Iterable
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 

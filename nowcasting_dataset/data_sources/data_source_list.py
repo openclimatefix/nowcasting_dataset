@@ -53,11 +53,11 @@ class DataSourceList(list):
 
         return t0_datetimes
 
-    def sample_spatial_and_temporal_positions_for_examples(
+    def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetimes: pd.DatetimeIndex, n_examples: int
     ) -> pd.DataFrame:
         """
-        Computes the geospatial and temporal position of each training example.
+        Computes the geospatial and temporal locations for each training example.
 
         The first data_source in this DataSourceList defines the geospatial locations of
         each example.

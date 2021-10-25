@@ -62,8 +62,6 @@ class DataSourceList(list):
         """
         Computes the geospatial and temporal position of each training example.
 
-        Computes the intersection of the time periods available across all data_sources.
-
         The first data_source in this DataSourceList defines the geospatial locations of
         each example.
 
@@ -91,10 +89,12 @@ class DataSourceList(list):
             x_locations, y_locations = data_source_which_defines_geo_position.get_locations(
                 shuffled_t0_datetimes
             )
-            positions_per_split[split_name] = {
-                "t0_datetime_UTC": shuffled_t0_datetimes,
-                "x_center_OSGB": x_locations,
-                "y_center_OSGB": y_locations,
-            }
+            positions_per_split[split_name] = pd.DataFrame(
+                {
+                    "t0_datetime_UTC": shuffled_t0_datetimes,
+                    "x_center_OSGB": x_locations,
+                    "y_center_OSGB": y_locations,
+                }
+            )
 
         return positions_per_split

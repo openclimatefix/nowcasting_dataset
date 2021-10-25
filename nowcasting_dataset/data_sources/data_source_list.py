@@ -53,12 +53,9 @@ class DataSourceList(list):
 
         return t0_datetimes
 
-    def sample_position_of_every_example_of_every_split(
-        self,
-        t0_datetimes: pd.DatetimeIndex,
-        split_method: SplitMethod,
-        n_examples_per_split: dict[SplitName, int],
-    ) -> dict[SplitName, pd.DataFrame]:
+    def sample_spatial_and_temporal_positions_for_examples(
+        self, t0_datetimes: pd.DatetimeIndex, n_examples: int
+    ) -> pd.DataFrame:
         """
         Computes the geospatial and temporal position of each training example.
 
@@ -68,33 +65,21 @@ class DataSourceList(list):
         Args:
             t0_datetimes: All available t0 datetimes.  Can be computed with
                 `DataSourceList.get_t0_datetimes_across_all_data_sources()`
-            split_method: The method used to split data into train, validation, and test.
-            n_examples_per_split: The number of examples requested for each split.
+            n_examples: The number of examples requested.
 
         Returns:
-            A dict where the keys are a SplitName, and the values are a pd.DataFrame.
-            Each row of each DataFrame specifies the position of each example, using
+            Each row of each the DataFrame specifies the position of each example, using
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
-        # Split t0_datetimes into train, test and validation sets.
-        t0_datetimes_per_split = split_data(datetimes=t0_datetimes, method=split_method)
-        t0_datetimes_per_split = t0_datetimes_per_split._asdict()
-
         data_source_which_defines_geo_position = self[0]
-
-        positions_per_split: dict[SplitName, pd.DataFrame] = {}
-        for split_name, t0_datetimes_for_split in t0_datetimes_per_split.items():
-            n_examples = n_examples_per_split[split_name]
-            shuffled_t0_datetimes = np.random.choice(t0_datetimes_for_split, shape=n_examples)
-            x_locations, y_locations = data_source_which_defines_geo_position.get_locations(
-                shuffled_t0_datetimes
-            )
-            positions_per_split[split_name] = pd.DataFrame(
-                {
-                    "t0_datetime_UTC": shuffled_t0_datetimes,
-                    "x_center_OSGB": x_locations,
-                    "y_center_OSGB": y_locations,
-                }
-            )
-
-        return positions_per_split
+        shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
+        x_locations, y_locations = data_source_which_defines_geo_position.get_locations(
+            shuffled_t0_datetimes
+        )
+        return pd.DataFrame(
+            {
+                "t0_datetime_UTC": shuffled_t0_datetimes,
+                "x_center_OSGB": x_locations,
+                "y_center_OSGB": y_locations,
+            }
+        )

@@ -39,7 +39,10 @@ class SplitName(Enum):
     TEST = "test"
 
 
-SplitData = namedtuple(typename="SplitData", field_names=["train", "validation", "test"])
+SplitData = namedtuple(
+    typename="SplitData",
+    field_names=[SplitName.TRAIN.value, SplitName.VALIDATION.value, SplitName.TEST.value],
+)
 
 
 def split_data(

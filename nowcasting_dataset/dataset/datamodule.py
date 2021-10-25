@@ -14,8 +14,8 @@ from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
-from nowcasting_dataset.dataset.split.split import split_data, SplitMethod, SplitName
-from nowcasting_dataset.data_source_list import DataSourceList
+from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
+from nowcasting_dataset.data_sources.data_source_list import DataSourceList
 
 
 with warnings.catch_warnings():

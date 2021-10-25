@@ -14,6 +14,7 @@ import xarray as xr
 
 from nowcasting_dataset.consts import Array
 
+
 logger = logging.getLogger(__name__)
 
 

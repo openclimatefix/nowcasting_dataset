@@ -34,11 +34,9 @@ def test_get_example_and_batch():
         load_from_gcs=False,
     )
 
-    x_locations, y_locations = pv_data_source.get_locations_for_batch(pv_data_source.pv_power.index)
+    x_locations, y_locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
 
-    example = pv_data_source.get_example(
-        pv_data_source.pv_power.index[0], x_locations[0], y_locations[0]
-    )
+    _ = pv_data_source.get_example(pv_data_source.pv_power.index[0], x_locations[0], y_locations[0])
 
     batch = pv_data_source.get_batch(
         pv_data_source.pv_power.index[6:11], x_locations[0:10], y_locations[0:10]

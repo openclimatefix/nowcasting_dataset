@@ -3,6 +3,7 @@
 import logging
 from enum import Enum
 from typing import List, Tuple, Union, Optional
+from collections import namedtuple
 
 import pandas as pd
 
@@ -30,6 +31,20 @@ class SplitMethod(Enum):
     DAY_RANDOM_TEST_DATE = "day_random_test_date"
 
 
+class SplitName(Enum):
+    """The name for each data split."""
+
+    TRAIN = "train"
+    VALIDATION = "validation"
+    TEST = "test"
+
+
+SplitData = namedtuple(
+    typename="SplitData",
+    field_names=[SplitName.TRAIN.value, SplitName.VALIDATION.value, SplitName.TEST.value],
+)
+
+
 def split_data(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     method: SplitMethod,
@@ -39,7 +54,7 @@ def split_data(
     ),
     train_validation_test_datetime_split: Optional[List[pd.Timestamp]] = None,
     seed: int = 1234,
-) -> (List[pd.Timestamp], List[pd.Timestamp], List[pd.Timestamp]):
+) -> SplitData:
     """
     Split the date using various different methods
 
@@ -165,4 +180,10 @@ def split_data(
     else:
         raise ValueError(f"{method} for splitting day is not implemented")
 
-    return train_datetimes, validation_datetimes, test_datetimes
+    logger.debug(
+        f"Split data done, train has {len(train_datetimes):,d}, "
+        f"validation has {len(validation_datetimes):,d}, "
+        f"test has {len(test_datetimes):,d} t0 datetimes."
+    )
+
+    return SplitData(train=train_datetimes, validation=validation_datetimes, test=test_datetimes)

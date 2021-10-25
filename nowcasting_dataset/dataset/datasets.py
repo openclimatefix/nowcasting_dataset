@@ -141,7 +141,7 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
             return []
 
         t0_datetimes = self._get_t0_datetimes_for_batch()
-        x_locations, y_locations = self._get_locations_for_batch(t0_datetimes)
+        x_locations, y_locations = self._get_locations(t0_datetimes)
 
         examples = {}
         n_threads = len(self.data_sources)
@@ -179,10 +179,8 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
         t0_datetimes = np.tile(t0_datetimes, reps=self.n_samples_per_timestep)
         return pd.DatetimeIndex(t0_datetimes)
 
-    def _get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
-        return self.data_sources[0].get_locations_for_batch(t0_datetimes)
+    def _get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+        return self.data_sources[0].get_locations(t0_datetimes)
 
 
 def worker_init_fn(worker_id):

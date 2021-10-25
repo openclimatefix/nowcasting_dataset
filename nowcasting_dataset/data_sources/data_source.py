@@ -5,7 +5,6 @@ from dataclasses import dataclass, InitVar
 from numbers import Number
 from typing import List, Tuple, Iterable
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -181,13 +180,10 @@ class DataSource:
             max_gap_duration=self.sample_period_duration,
         )
 
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical locations for each t0_datetime.
 
-        Should be overridden by DataSources which may be used to define the locations
-        for each batch.
+        Should be overridden by DataSources which may be used to define the locations.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
             Locations are in OSGB coordinates.

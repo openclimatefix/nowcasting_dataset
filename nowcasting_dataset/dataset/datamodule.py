@@ -10,13 +10,13 @@ import torch
 
 from nowcasting_dataset import consts
 from nowcasting_dataset import data_sources
-from nowcasting_dataset import time as nd_time
-from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
 from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
+from nowcasting_dataset.data_sources.data_source_list import DataSourceList
+
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -207,6 +207,8 @@ class NowcastingDataModule(pl.LightningDataModule):
             )
         )
 
+        self.data_sources = DataSourceList(self.data_sources)
+
     def setup(self, stage="fit"):
         """Split data, etc.
 
@@ -309,13 +311,17 @@ class NowcastingDataModule(pl.LightningDataModule):
         logger.debug("Going to split data")
 
         self._check_has_prepared_data()
-        self.t0_datetimes = self._get_t0_datetimes()
+        self.t0_datetimes = self._get_t0_datetimes_across_all_data_sources()
 
         logger.debug(f"Got all start times, there are {len(self.t0_datetimes):,d}")
 
-        self.train_t0_datetimes, self.val_t0_datetimes, self.test_t0_datetimes = split_data(
+        data_after_splitting = split_data(
             datetimes=self.t0_datetimes, method=self.split_method, seed=self.seed
         )
+
+        self.train_t0_datetimes = data_after_splitting.train
+        self.val_t0_datetimes = data_after_splitting.validation
+        self.test_t0_datetimes = data_after_splitting.test
 
         logger.debug(
             f"Split data done, train has {len(self.train_t0_datetimes):,d}, "
@@ -354,37 +360,14 @@ class NowcastingDataModule(pl.LightningDataModule):
             batch_sampler=None,
         )
 
-    def _get_t0_datetimes(self) -> pd.DatetimeIndex:
+    def _get_t0_datetimes_across_all_data_sources(self) -> pd.DatetimeIndex:
+        """See DataSourceList.get_t0_datetimes_across_all_data_sources.
+
+        This method will be deleted as part of implementing #213.
         """
-        Compute the intersection of the t0 datetimes available across all DataSources.
-
-        Returns the valid t0 datetimes, taking into consideration all DataSources,
-        filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
-        datetimes).
-        """
-        logger.debug("Get the intersection of time periods across all DataSources.")
-        self._check_has_prepared_data()
-
-        # Get the intersection of t0 time periods from all data sources.
-        t0_time_periods_for_all_data_sources = []
-        for data_source in self.data_sources:
-            logger.debug(f"Getting t0 time periods for {type(data_source).__name__}")
-            try:
-                t0_time_periods = data_source.get_contiguous_t0_time_periods()
-            except NotImplementedError:
-                pass  # Skip data_sources with no concept of time.
-            else:
-                t0_time_periods_for_all_data_sources.append(t0_time_periods)
-
-        intersection_of_t0_time_periods = nd_time.intersection_of_multiple_dataframes_of_periods(
-            t0_time_periods_for_all_data_sources
+        return self.data_sources.get_t0_datetimes_across_all_data_sources(
+            freq=self.t0_datetime_freq
         )
-
-        t0_datetimes = nd_time.time_periods_to_datetime_index(
-            time_periods=intersection_of_t0_time_periods, freq=self.t0_datetime_freq
-        )
-
-        return t0_datetimes
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

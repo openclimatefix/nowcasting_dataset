@@ -56,8 +56,18 @@ def select_daylight_datetimes(
 
 
 def single_period_to_datetime_index(period: pd.Series, freq: str) -> pd.DatetimeIndex:
-    """Return a DatetimeIndex from period['start_dt'] to period['end_dt'] at frequency freq."""
-    return pd.date_range(period["start_dt"], period["end_dt"], freq=freq)
+    """Return a DatetimeIndex from period['start_dt'] to period['end_dt'] at frequency freq.
+
+    Before computing the date_range, this function first takes the ceiling of the
+    start_dt (at frequency `freq`); and takes the floor of end_dt.  For example,
+    if `freq` is '5 minutes' and `start_dt` is 12:03, then the ceiling of `start_dt`
+    will be 12:05.  This is done so that all the returned datetimes are aligned to `freq`
+    (e.g. if `freq` is '5 minutes' then every returned datetime will be at 00, 05, ..., 55
+    minutes past the hour.
+    """
+    start_dt = period["start_dt"].ceil(freq)
+    end_dt = period["end_dt"].floor(freq)
+    return pd.date_range(start_dt, end_dt, freq=freq)
 
 
 def time_periods_to_datetime_index(time_periods: pd.DataFrame, freq: str) -> pd.DatetimeIndex:

@@ -384,9 +384,7 @@ class NowcastingDataModule(pl.LightningDataModule):
             time_periods=intersection_of_t0_time_periods, freq=self.t0_datetime_freq
         )
 
-        # Align to the nearest t0_datetime_freq.  For example, if t0_datetime_freq is '5T'
-        # then ensure the minutes past the hour are exactly divisible by 5.
-        return t0_datetimes.round(self.t0_datetime_freq)
+        return t0_datetimes
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

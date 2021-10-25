@@ -57,7 +57,7 @@ class DataSourceList(list):
         self,
         t0_datetimes: pd.DatetimeIndex,
         split_method: SplitMethod,
-        n_examples_per_split: dict[SplitMethod, int],
+        n_examples_per_split: dict[SplitName, int],
     ) -> dict[SplitName, pd.DataFrame]:
         """
         Computes the geospatial and temporal position of each training example.

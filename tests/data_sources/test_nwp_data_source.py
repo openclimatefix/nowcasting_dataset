@@ -66,3 +66,19 @@ def test_nwp_get_contiguous_time_periods():
         [{"start_dt": pd.Timestamp("2019-01-01 00:00"), "end_dt": pd.Timestamp("2019-01-02 02:00")}]
     )
     pd.testing.assert_frame_equal(contiguous_time_periods, correct_time_periods)
+
+
+def test_nwp_get_contiguous_t0_time_periods():
+    nwp = NWPDataSource(
+        filename=NWP_FILENAME,
+        history_minutes=30,
+        forecast_minutes=60,
+        n_timesteps_per_batch=8,
+        channels=["t"],
+    )
+
+    contiguous_time_periods = nwp.get_contiguous_t0_time_periods()
+    correct_time_periods = pd.DataFrame(
+        [{"start_dt": pd.Timestamp("2019-01-01 00:30"), "end_dt": pd.Timestamp("2019-01-02 01:00")}]
+    )
+    pd.testing.assert_frame_equal(contiguous_time_periods, correct_time_periods)

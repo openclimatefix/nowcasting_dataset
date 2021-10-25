@@ -78,6 +78,9 @@ class NowcastingDataModule(pl.LightningDataModule):
     pv_load_azimuth_and_elevation: bool = False
     split_method: SplitMethod = SplitMethod.DAY  # which split method should be used
     seed: Optional[int] = None  # seed used to make quasi random split data
+    t0_datetime_freq: str = "30T"  # Frequency of the t0 datetimes.  For example, if set to "30T"
+    # then create examples with T0 datetimes at thirty minute intervals, at 00 and 30 minutes
+    # past the hour.
 
     skip_n_train_batches: int = 0  # number of train batches to skip
     skip_n_validation_batches: int = 0  # number of validation batches to skip
@@ -355,35 +358,33 @@ class NowcastingDataModule(pl.LightningDataModule):
         """
         Compute the intersection of the t0 datetimes available across all DataSources.
 
-        Returns the intersection of the datetime indicies of all the data_sources,
+        Returns the valid t0 datetimes, taking into consideration all DataSources,
         filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
         datetimes).
         """
-        logger.debug("Get the datetimes")
+        logger.debug("Get the intersection of time periods across all DataSources.")
         self._check_has_prepared_data()
 
-        # Get the intersection of datetimes from all data sources.
-        t0_datetime_indexes_for_all_data_sources = []
+        # Get the intersection of t0 time periods from all data sources.
+        t0_time_periods_for_all_data_sources = []
         for data_source in self.data_sources:
-            logger.debug(f"Getting t0 datetimes for {type(data_source).__name__}")
+            logger.debug(f"Getting t0 time periods for {type(data_source).__name__}")
             try:
-                t0_datetimes = data_source.get_t0_datetimes()
+                t0_time_periods = data_source.get_contiguous_t0_time_periods()
             except NotImplementedError:
                 pass  # Skip data_sources with no concept of time.
             else:
-                t0_datetime_indexes_for_all_data_sources.append(t0_datetimes)
-        intersection_of_t0_datetimes = nd_time.intersection_of_datetimeindexes(
-            t0_datetime_indexes_for_all_data_sources
+                t0_time_periods_for_all_data_sources.append(t0_time_periods)
+
+        intersection_of_t0_time_periods = nd_time.intersection_of_multiple_dataframes_of_periods(
+            t0_time_periods_for_all_data_sources
         )
 
-        # Save memory.
-        del t0_datetimes, t0_datetime_indexes_for_all_data_sources
+        t0_datetimes = nd_time.time_periods_to_datetime_index(
+            time_periods=intersection_of_t0_time_periods, freq=self.t0_datetime_freq
+        )
 
-        # Sanity check.
-        assert len(intersection_of_t0_datetimes) > 2
-        assert utils.is_monotonically_increasing(intersection_of_t0_datetimes)
-
-        return intersection_of_t0_datetimes
+        return t0_datetimes
 
     def _check_has_prepared_data(self):
         if not self.has_prepared_data:

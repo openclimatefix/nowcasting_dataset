@@ -7,12 +7,16 @@ from nowcasting_dataset.dataset.datasets import NowcastingDataset
 from nowcasting_dataset.dataset.batch import Batch
 
 
+def _get_t0_datetimes(data_source, freq) -> pd.DatetimeIndex:
+    t0_periods = data_source.get_contiguous_t0_time_periods()
+    t0_datetimes = nd_time.time_periods_to_datetime_index(t0_periods, freq=freq)
+    return t0_datetimes
+
+
 @pytest.fixture
 def dataset(sat_data_source, general_data_source):
-    all_datetimes = sat_data_source.datetime_index()
-    t0_datetimes = nd_time.get_t0_datetimes(
-        datetimes=all_datetimes, total_seq_length=2, history_duration=pd.Timedelta(0)
-    )
+    t0_datetimes = _get_t0_datetimes(sat_data_source, freq="5T")
+
     return NowcastingDataset(
         batch_size=8,
         n_batches_per_epoch_per_worker=64,
@@ -24,13 +28,7 @@ def dataset(sat_data_source, general_data_source):
 
 @pytest.fixture
 def dataset_gsp(gsp_data_source, general_data_source):
-    all_datetimes = gsp_data_source.datetime_index()
-    t0_datetimes = nd_time.get_t0_datetimes(
-        datetimes=all_datetimes,
-        total_seq_length=2,
-        history_duration=pd.Timedelta(0),
-        max_gap=nd_time.THIRTY_MINUTES,
-    )
+    t0_datetimes = _get_t0_datetimes(gsp_data_source, freq="30T")
 
     return NowcastingDataset(
         batch_size=8,

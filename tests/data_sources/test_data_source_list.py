@@ -33,3 +33,6 @@ def test_from_config():
     config = nd_utils.get_config_with_test_paths("test.yaml")
     data_source_list = DataSourceList.from_config(config.input_data)
     assert len(data_source_list) == 6
+    assert isinstance(
+        data_source_list.data_source_which_defines_geospatial_locations, GSPDataSource
+    )

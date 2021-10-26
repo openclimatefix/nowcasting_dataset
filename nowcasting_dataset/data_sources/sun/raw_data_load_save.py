@@ -96,14 +96,14 @@ def get_azimuth_and_elevation(
     return azimuth.round(2), elevation.round(2)
 
 
-def save_to_zarr(azimuth: pd.DataFrame, elevation: pd.DataFrame, filename: Union[str, Path]):
+def save_to_zarr(azimuth: pd.DataFrame, elevation: pd.DataFrame, zarr_path: Union[str, Path]):
     """
     Save azimuth and elevation to zarr file
 
     Args:
         azimuth: data to be saved
         elevation: data to be saved
-        filename: the file name where it should be save, can be local of gcs
+        zarr_path: the file name where it should be save, can be local of gcs
 
     """
     # change pandas dataframe to xr Dataset
@@ -121,11 +121,11 @@ def save_to_zarr(azimuth: pd.DataFrame, elevation: pd.DataFrame, filename: Union
     }
 
     # save to file
-    merged_ds.to_zarr(filename, mode="w", encoding=encoding)
+    merged_ds.to_zarr(zarr_path, mode="w", encoding=encoding)
 
 
 def load_from_zarr(
-    filename: Union[str, Path],
+    zarr_path: Union[str, Path],
     start_dt: Optional[datetime.datetime] = None,
     end_dt: Optional[datetime.datetime] = None,
 ) -> (pd.DataFrame, pd.DataFrame):
@@ -133,7 +133,7 @@ def load_from_zarr(
     Load sun data
 
     Args:
-        filename: the filename to be loaded, can be local or gcs
+        zarr_path: the zarr_path to be loaded, can be local or gcs
         start_dt: optional start datetime. Both start and end need to be set to be used.
         end_dt: optional end datetime. Both start and end need to be set to be used.
 
@@ -148,7 +148,7 @@ def load_from_zarr(
     # in the first 'with' block, and delete the second 'with' block.
     # But that takes 1 minute to load the data, where as loading into memory
     # first and then loading from memory takes 23 seconds!
-    sun = xr.open_dataset(filename, engine="zarr")
+    sun = xr.open_dataset(zarr_path, engine="zarr")
 
     if (start_dt is not None) and (end_dt is not None):
         sun = sun.sel(datetime_gmt=slice(start_dt, end_dt))

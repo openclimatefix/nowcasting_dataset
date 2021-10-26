@@ -23,6 +23,7 @@ NetCDFDataset- torch.utils.data.Dataset: Use for loading pre-made batches
 NowcastingDataset - torch.utils.data.IterableDataset: Dataset for making batches
 """
 
+# TODO: Can we get rid of SAT_MEAN and SAT_STD? See issue #231
 SAT_MEAN = xr.DataArray(
     data=[
         93.23458,

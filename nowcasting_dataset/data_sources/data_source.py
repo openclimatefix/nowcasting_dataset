@@ -250,7 +250,11 @@ class ZarrDataSource(ImageDataSource):
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
         if self.n_timesteps_per_batch is None:
-            raise ValueError("n_timesteps_per_batch must be set!")
+            # Using hacky default for now.  The whole concept of n_timesteps_per_batch
+            # will be removed when #213 is completed.
+            # TODO: Remove n_timesteps_per_batch when #213 is completed!
+            self.n_timesteps_per_batch = 16
+            logger.warning("n_timesteps_per_batch is not set!  Using default!")
 
     @property
     def data(self):

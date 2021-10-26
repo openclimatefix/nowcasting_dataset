@@ -5,7 +5,9 @@ import pandas as pd
 import logging
 
 import nowcasting_dataset.time as nd_time
-from nowcasting_dataset.dataset.split.split import SplitMethod, split_data, SplitName
+import nowcasting_dataset.utils as nd_utils
+from nowcasting_dataset.config import model
+from nowcasting_dataset import data_sources
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +15,65 @@ logger = logging.getLogger(__name__)
 class DataSourceList(list):
     """Hold a list of DataSource objects.
 
-    The first DataSource in the list is used to compute the geospatial locations of each example.
+    Attrs:
+      data_source_which_defines_geospatial_locations: The DataSource used to compute the
+        geospatial locations of each example.
     """
+
+    @classmethod
+    def from_config(cls, config_for_all_data_sources: model.InputData):
+        """Create a DataSource List from an InputData configuration object.
+
+        For each key in each DataSource's configuration object, the string `<data_source_name>_`
+        is removed from the key before passing to the DataSource constructor.  This allows us to
+        have verbose field names in the configuration YAML files, whilst also using standard
+        constructor arguments for DataSources.
+        """
+        data_source_name_to_class = {
+            "pv": data_sources.PVDataSource,
+            "satellite": data_sources.SatelliteDataSource,
+            "nwp": data_sources.NWPDataSource,
+            "gsp": data_sources.GSPDataSource,
+            "topographic": data_sources.TopographicDataSource,
+            "sun": data_sources.SunDataSource,
+        }
+        data_source_list = cls([])
+        for data_source_name, data_source_class in data_source_name_to_class.items():
+            logger.debug(f"Creating {data_source_name} DataSource object.")
+            config_for_data_source = getattr(config_for_all_data_sources, data_source_name)
+            if config_for_data_source is None:
+                logger.info(f"No configuration found for {data_source_name}.")
+                continue
+            config_for_data_source = config_for_data_source.dict()
+
+            # Strip `<data_source_name>_` from the config option field names.
+            config_for_data_source = nd_utils.remove_regex_pattern_from_keys(
+                config_for_data_source, pattern_to_remove=f"^{data_source_name}_"
+            )
+
+            try:
+                data_source = data_source_class(**config_for_data_source)
+            except Exception:
+                logger.exception(f"Exception whilst instantiating {data_source_name}!")
+                raise
+            data_source_list.append(data_source)
+            if (
+                data_source_name
+                == config_for_all_data_sources.data_source_which_defines_geospatial_locations
+            ):
+                data_source_list.data_source_which_defines_geospatial_locations = data_source
+                logger.info(
+                    f"DataSource {data_source_name} set as"
+                    " data_source_which_defines_geospatial_locations"
+                )
+
+        try:
+            _ = data_source_list.data_source_which_defines_geospatial_locations
+        except AttributeError:
+            logger.warning(
+                "No DataSource configured as data_source_which_defines_geospatial_locations!"
+            )
+        return data_source_list
 
     def get_t0_datetimes_across_all_data_sources(self, freq: str) -> pd.DatetimeIndex:
         """
@@ -71,9 +130,18 @@ class DataSourceList(list):
             Each row of each the DataFrame specifies the position of each example, using
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
-        data_source_which_defines_geo_position = self[0]
+        # This code is for backwards-compatibility with code which expects the first DataSource
+        # in the list to be used to define which DataSource defines the spatial location.
+        # TODO: Remove this try block after implementing issue #213.
+        try:
+            data_source_which_defines_geospatial_locations = (
+                self.data_source_which_defines_geospatial_locations
+            )
+        except AttributeError:
+            data_source_which_defines_geospatial_locations = self[0]
+
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
-        x_locations, y_locations = data_source_which_defines_geo_position.get_locations(
+        x_locations, y_locations = data_source_which_defines_geospatial_locations.get_locations(
             shuffled_t0_datetimes
         )
         return pd.DataFrame(

@@ -50,7 +50,7 @@ def sat_filename(use_cloud_data: bool) -> Path:
 def sat_data_source(sat_filename: Path):
     return SatelliteDataSource(
         image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
-        filename=sat_filename,
+        zarr_path=sat_filename,
         history_minutes=0,
         forecast_minutes=5,
         channels=("HRV",),
@@ -60,7 +60,6 @@ def sat_data_source(sat_filename: Path):
 
 @pytest.fixture
 def general_data_source():
-
     return MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
 
 
@@ -69,7 +68,7 @@ def gsp_data_source():
     return GSPDataSource(
         image_size_pixels=16,
         meters_per_pixel=2000,
-        filename=Path(__file__).parent.absolute() / "tests" / "data" / "gsp" / "test.zarr",
+        zarr_path=Path(__file__).parent.absolute() / "tests" / "data" / "gsp" / "test.zarr",
         history_minutes=0,
         forecast_minutes=30,
     )

@@ -5,6 +5,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+import re
+import os
 import fsspec.asyn
 import gcsfs
 import numpy as np
@@ -12,8 +14,9 @@ import pandas as pd
 import torch
 import xarray as xr
 
+import nowcasting_dataset
 from nowcasting_dataset.consts import Array
-
+from nowcasting_dataset.config import load, model
 
 logger = logging.getLogger(__name__)
 
@@ -178,3 +181,28 @@ class OpenData:
     def __exit__(self, type, value, traceback):
         """ Close temporary file """
         self.temp_file.close()
+
+
+def remove_regex_pattern_from_keys(d: dict, pattern_to_remove: str, **regex_compile_kwargs) -> dict:
+    """Remove `pattern_to_remove` from all keys in `d`.
+
+    Return a new dict with the same values as `d`, but where the key names
+    have had `pattern_to_remove` removed.
+    """
+    new_dict = {}
+    regex = re.compile(pattern_to_remove, **regex_compile_kwargs)
+    for old_key, value in d.items():
+        new_key = regex.sub(string=old_key, repl="")
+        new_dict[new_key] = value
+    return new_dict
+
+
+def get_config_with_test_paths(config_filename: str) -> model.Configuration:
+    """Sets the base paths to point to the testing data in this repository."""
+    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
+
+    # load configuration, this can be changed to a different filename as needed
+    filename = os.path.join(local_path, "tests", "config", config_filename)
+    config = load.load_yaml_configuration(filename)
+    config.set_base_path(local_path)
+    return config

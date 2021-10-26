@@ -43,14 +43,14 @@ def test_save():
     )
 
     with tempfile.TemporaryDirectory() as fp:
-        save_to_zarr(azimuth=azimuth, elevation=elevation, filename=fp)
+        save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path=fp)
 
 
 def test_load(test_data_folder):
 
-    filename = test_data_folder + "/sun/test.zarr"
+    zarr_path = test_data_folder + "/sun/test.zarr"
 
-    azimuth, elevation = load_from_zarr(filename=filename)
+    azimuth, elevation = load_from_zarr(zarr_path=zarr_path)
 
     assert type(azimuth) == pd.DataFrame
     assert type(elevation) == pd.DataFrame

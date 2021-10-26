@@ -43,8 +43,8 @@ class GSPDataSource(ImageDataSource):
     The region of interest is defined by `image_size_pixels` and `meters_per_pixel`.
     """
 
-    # filename of where the gsp data is stored
-    filename: Union[str, Path]
+    # zarr_path of where the gsp data is stored
+    zarr_path: Union[str, Path]
     # start datetime, this can be None
     start_dt: Optional[datetime] = None
     # end datetime, this can be None
@@ -87,7 +87,7 @@ class GSPDataSource(ImageDataSource):
 
         # load gsp data from file / gcp
         self.gsp_power = load_solar_gsp_data(
-            self.filename, start_dt=self.start_dt, end_dt=self.end_dt
+            self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
         # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP where
@@ -386,7 +386,7 @@ def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, thre
 
 
 def load_solar_gsp_data(
-    filename: Union[str, Path],
+    zarr_path: Union[str, Path],
     start_dt: Optional[datetime] = None,
     end_dt: Optional[datetime] = None,
 ) -> pd.DataFrame:
@@ -394,17 +394,17 @@ def load_solar_gsp_data(
     Load solar PV GSP data
 
     Args:
-        filename:  filename of file to be loaded, can put 'gs://' files in here too
+        zarr_path:  zarr_path of file to be loaded, can put 'gs://' files in here too
         start_dt: the start datetime, which to trim the data to
         end_dt: the end datetime, which to trim the data to
 
     Returns: dataframe of pv data
 
     """
-    logger.debug(f"Loading Solar GSP Data from GCS {filename} from {start_dt} to {end_dt}")
+    logger.debug(f"Loading Solar GSP Data from GCS {zarr_path} from {start_dt} to {end_dt}")
     # Open data - it may be quicker to open byte file first, but decided just to keep it
     # like this at the moment.
-    gsp_power = xr.open_dataset(filename, engine="zarr")
+    gsp_power = xr.open_dataset(zarr_path, engine="zarr")
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
 
     # make normalized data

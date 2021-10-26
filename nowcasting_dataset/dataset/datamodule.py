@@ -112,7 +112,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         n_timesteps_per_batch = self.batch_size // self.n_samples_per_timestep
 
         self.sat_data_source = data_sources.SatelliteDataSource(
-            filename=self.sat_filename,
+            zarr_path=self.sat_filename,
             image_size_pixels=self.satellite_image_size_pixels,
             meters_per_pixel=self.meters_per_pixel,
             history_minutes=self.history_minutes,
@@ -144,7 +144,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         if self.gsp_filename is not None:
             self.gsp_data_source = GSPDataSource(
-                filename=self.gsp_filename,
+                zarr_path=self.gsp_filename,
                 start_dt=sat_datetimes[0],
                 end_dt=sat_datetimes[-1],
                 history_minutes=self.history_minutes,
@@ -161,7 +161,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         # NWP data
         if self.nwp_base_path is not None:
             self.nwp_data_source = data_sources.NWPDataSource(
-                filename=self.nwp_base_path,
+                zarr_path=self.nwp_base_path,
                 image_size_pixels=self.nwp_image_size_pixels,
                 meters_per_pixel=self.meters_per_pixel,
                 history_minutes=self.history_minutes,
@@ -187,7 +187,7 @@ class NowcastingDataModule(pl.LightningDataModule):
         # Sun data
         if self.sun_filename is not None:
             self.sun_data_source = SunDataSource(
-                filename=self.sun_filename,
+                zarr_path=self.sun_filename,
                 history_minutes=self.history_minutes,
                 forecast_minutes=self.forecast_minutes,
             )

@@ -53,8 +53,8 @@ config = load_yaml_configuration(filename)
 config = set_git_commit(config)
 
 # Solar PV data
-PV_DATA_FILENAME = config.input_data.pv.solar_pv_data_filename
-PV_METADATA_FILENAME = config.input_data.pv.solar_pv_metadata_filename
+PV_DATA_FILENAME = config.input_data.pv.pv_filename
+PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filename
 
 # Satellite data
 SAT_ZARR_PATH = config.input_data.satellite.satellite_zarr_path

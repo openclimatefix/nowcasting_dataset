@@ -8,12 +8,12 @@ from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
 PATH = os.path.dirname(nowcasting_dataset.__file__)
 
 # Solar PV data (test data)
-NWP_FILENAME = f"{PATH}/../tests/data/nwp_data/test.zarr"
+NWP_ZARR_PATH = f"{PATH}/../tests/data/nwp_data/test.zarr"
 
 
 def test_nwp_data_source_init():
     _ = NWPDataSource(
-        filename=NWP_FILENAME,
+        zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
         n_timesteps_per_batch=8,
@@ -22,7 +22,7 @@ def test_nwp_data_source_init():
 
 def test_nwp_data_source_open():
     nwp = NWPDataSource(
-        filename=NWP_FILENAME,
+        zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
         n_timesteps_per_batch=8,
@@ -34,7 +34,7 @@ def test_nwp_data_source_open():
 
 def test_nwp_data_source_batch():
     nwp = NWPDataSource(
-        filename=NWP_FILENAME,
+        zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
         n_timesteps_per_batch=8,
@@ -54,7 +54,7 @@ def test_nwp_data_source_batch():
 
 def test_nwp_get_contiguous_time_periods():
     nwp = NWPDataSource(
-        filename=NWP_FILENAME,
+        zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
         n_timesteps_per_batch=8,
@@ -70,7 +70,7 @@ def test_nwp_get_contiguous_time_periods():
 
 def test_nwp_get_contiguous_t0_time_periods():
     nwp = NWPDataSource(
-        filename=NWP_FILENAME,
+        zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
         n_timesteps_per_batch=8,

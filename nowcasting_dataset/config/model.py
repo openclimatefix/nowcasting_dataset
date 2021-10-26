@@ -179,6 +179,12 @@ class InputData(BaseModel):
         description="how many historic minutes are used. "
         "This sets the default for all the data sources if they are not set.",
     )
+    data_source_which_defines_geospatial_locations: str = Field(
+        "gsp",
+        description=(
+            "The name of the DataSource which will define the geospatial position of each example."
+        ),
+    )
 
     @property
     def default_seq_length_5_minutes(self):

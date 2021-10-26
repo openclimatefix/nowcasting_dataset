@@ -80,9 +80,9 @@ def test_data_module(config_filename):
         satellite_image_size_pixels=config.input_data.satellite.satellite_image_size_pixels,
         nwp_image_size_pixels=config.input_data.nwp.nwp_image_size_pixels,
         nwp_channels=config.input_data.nwp.nwp_channels[0:1],
-        sat_channels=config.input_data.satellite.sat_channels,  # reduced for test data
-        pv_power_filename=config.input_data.pv.solar_pv_data_filename,
-        pv_metadata_filename=config.input_data.pv.solar_pv_metadata_filename,
+        sat_channels=config.input_data.satellite.satellite_channels,  # reduced for test data
+        pv_power_filename=config.input_data.pv.pv_filename,
+        pv_metadata_filename=config.input_data.pv.pv_metadata_filename,
         sat_filename=config.input_data.satellite.satellite_zarr_path,
         nwp_base_path=config.input_data.nwp.nwp_zarr_path,
         gsp_filename=config.input_data.gsp.gsp_zarr_path,
@@ -133,9 +133,9 @@ def test_batch_to_batch_to_dataset():
         satellite_image_size_pixels=config.input_data.satellite.satellite_image_size_pixels,
         nwp_image_size_pixels=config.input_data.nwp.nwp_image_size_pixels,
         nwp_channels=config.input_data.nwp.nwp_channels[0:1],
-        sat_channels=config.input_data.satellite.sat_channels,  # reduced for test data
-        pv_power_filename=config.input_data.pv.solar_pv_data_filename,
-        pv_metadata_filename=config.input_data.pv.solar_pv_metadata_filename,
+        sat_channels=config.input_data.satellite.satellite_channels,  # reduced for test data
+        pv_power_filename=config.input_data.pv.pv_filename,
+        pv_metadata_filename=config.input_data.pv.pv_metadata_filename,
         sat_filename=config.input_data.satellite.satellite_zarr_path,
         nwp_base_path=config.input_data.nwp.nwp_zarr_path,
         gsp_filename=config.input_data.gsp.gsp_zarr_path,

@@ -144,7 +144,7 @@ class NowcastingDataModule(pl.LightningDataModule):
 
         if self.gsp_filename is not None:
             self.gsp_data_source = GSPDataSource(
-                filename=self.gsp_filename,
+                zarr_path=self.gsp_filename,
                 start_dt=sat_datetimes[0],
                 end_dt=sat_datetimes[-1],
                 history_minutes=self.history_minutes,

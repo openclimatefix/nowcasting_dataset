@@ -9,7 +9,7 @@ def test_sample_spatial_and_temporal_locations_for_examples():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 
     gsp = GSPDataSource(
-        filename=f"{local_path}/tests/data/gsp/test.zarr",
+        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
         start_dt=datetime(2019, 1, 1),
         end_dt=datetime(2019, 1, 2),
         history_minutes=30,

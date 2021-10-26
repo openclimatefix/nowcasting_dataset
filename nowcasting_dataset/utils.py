@@ -178,3 +178,11 @@ class OpenData:
     def __exit__(self, type, value, traceback):
         """ Close temporary file """
         self.temp_file.close()
+
+
+def remove_string_from_keys(d: dict, string_to_remove: str) -> dict:
+    new_dict = {}
+    for key, value in d.items():
+        new_key = key.replace(string_to_remove, "")
+        new_dict[new_key] = value
+    return new_dict

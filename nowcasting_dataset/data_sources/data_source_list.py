@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 
 import nowcasting_dataset.time as nd_time
+import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset.config import model
 from nowcasting_dataset import data_sources
 
@@ -21,7 +22,13 @@ class DataSourceList(list):
 
     @classmethod
     def from_config(cls, config_for_all_data_sources: model.InputData):
-        """Create a DataSource List from an InputData configuration object."""
+        """Create a DataSource List from an InputData configuration object.
+
+        For each key in each DataSource's configuration object, the string `<data_source_name>_`
+        is removed from the key before passing to the DataSource constructor.  This allows us to
+        have verbose field names in the configuration YAML files, whilst also using standard
+        constructor arguments for DataSources.
+        """
         data_source_name_to_class = {
             "pv": data_sources.PVDataSource,
             "satellite": data_sources.SatelliteDataSource,
@@ -37,6 +44,13 @@ class DataSourceList(list):
             if config_for_data_source is None:
                 logger.info(f"No configuration found for {data_source_name}.")
                 continue
+            config_for_data_source = config_for_data_source.dict()
+
+            # Strip `<data_source_name>_` from the config option field names.
+            config_for_data_source = nd_utils.remove_string_from_keys(
+                config_for_data_source, string_to_remove=data_source_name + "_"
+            )
+
             data_source = data_source_class(**config_for_data_source)
             data_source_list.append(data_source)
             if (

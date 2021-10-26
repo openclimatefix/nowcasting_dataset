@@ -78,11 +78,11 @@ class DataSourceMixin(BaseModel):
 class PV(DataSourceMixin):
     """PV configuration model"""
 
-    solar_pv_data_filename: str = Field(
+    pv_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
         description=("The NetCDF file holding the solar PV power timeseries."),
     )
-    solar_pv_metadata_filename: str = Field(
+    pv_metadata_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
         description="The CSV file describing each PV system.",
     )
@@ -101,7 +101,7 @@ class Satellite(DataSourceMixin):
         description="The path which holds the satellite zarr.",
     )
 
-    sat_channels: tuple = Field(
+    satellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"
     )
 
@@ -280,8 +280,8 @@ class Configuration(BaseModel):
         """Append base_path to all paths. Mostly used for testing."""
         base_path = Pathy(base_path)
         path_attrs = [
-            "pv.solar_pv_data_filename",
-            "pv.solar_pv_metadata_filename",
+            "pv.pv_filename",
+            "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",

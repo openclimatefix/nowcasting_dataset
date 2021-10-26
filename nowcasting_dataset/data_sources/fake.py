@@ -112,7 +112,7 @@ def satellite_fake(
     batch_size=32,
     seq_length_5=19,
     satellite_image_size_pixels=64,
-    number_sat_channels=7,
+    number_satellite_channels=7,
 ) -> Satellite:
     """ Create fake data """
     # make batch of arrays
@@ -120,7 +120,7 @@ def satellite_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
-            number_channels=number_sat_channels,
+            number_channels=number_satellite_channels,
         )
         for _ in range(batch_size)
     ]

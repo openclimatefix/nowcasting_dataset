@@ -1,4 +1,9 @@
-""" Configuration model for the dataset """
+""" Configuration model for the dataset
+
+All paths must include the protocol prefix.  For local files,
+it's sufficient to just start with a '/'.  For aws, start with 's3://',
+for gcp start with 'gs://'.
+"""
 from datetime import datetime
 from typing import Optional
 
@@ -152,11 +157,7 @@ class Sun(DataSourceMixin):
 
 class InputData(BaseModel):
     """
-    Input data model
-
-    All paths must include the protocol prefix.  For local files,
-    it's sufficient to just start with a '/'.  For aws, start with 's3://',
-    for gcp start with 'gs://'.
+    Input data model.
     """
 
     pv: PV = PV()

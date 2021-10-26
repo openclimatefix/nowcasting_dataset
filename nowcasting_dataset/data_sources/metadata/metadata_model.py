@@ -8,4 +8,4 @@ class Metadata(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("t0_dt",)
 
-    # TODO: A dd validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+    # TODO: Add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233

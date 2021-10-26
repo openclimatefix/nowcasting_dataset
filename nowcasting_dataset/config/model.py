@@ -1,8 +1,15 @@
-""" Configuration model for the dataset
+""" Configuration model for the dataset.
 
 All paths must include the protocol prefix.  For local files,
 it's sufficient to just start with a '/'.  For aws, start with 's3://',
 for gcp start with 'gs://'.
+
+This file is mostly about _configuring_ the DataSources.
+
+Separate Pydantic models in
+`nowcasting_dataset/data_sources/<data_source_name>/<data_source_name>_model.py`
+are used to validate the values of the data itself.
+
 """
 from datetime import datetime
 from typing import Optional

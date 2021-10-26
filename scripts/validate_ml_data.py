@@ -4,7 +4,7 @@ from pathlib import Path
 
 import nowcasting_dataset
 import torch
-from nowcasting_dataset.config.load import load_configuration_from_gcs, load_yaml_configuration
+from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
 from nowcasting_dataset.dataset.validate import ValidatorDataset
 from nowcasting_dataset.cloud.utils import get_maximum_batch_id
@@ -17,7 +17,6 @@ logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
 # load configuration, this can be changed to a different filename as needed
 filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
-config = load_configuration_from_gcs(gcp_dir="prepared_ML_training_data/v5/")
 config = load_yaml_configuration(filename=filename)
 
 DST_NETCDF4_PATH = config.output_data.filepath

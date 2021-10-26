@@ -50,7 +50,7 @@ def sat_filename(use_cloud_data: bool) -> Path:
 def sat_data_source(sat_filename: Path):
     return SatelliteDataSource(
         image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
-        filename=sat_filename,
+        zarr_path=sat_filename,
         history_minutes=0,
         forecast_minutes=5,
         channels=("HRV",),

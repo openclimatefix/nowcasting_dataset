@@ -47,11 +47,15 @@ class DataSourceList(list):
             config_for_data_source = config_for_data_source.dict()
 
             # Strip `<data_source_name>_` from the config option field names.
-            config_for_data_source = nd_utils.remove_string_from_keys(
-                config_for_data_source, string_to_remove=data_source_name + "_"
+            config_for_data_source = nd_utils.remove_regex_pattern_from_keys(
+                config_for_data_source, pattern_to_remove=f"^{data_source_name}_"
             )
 
-            data_source = data_source_class(**config_for_data_source)
+            try:
+                data_source = data_source_class(**config_for_data_source)
+            except Exception:
+                logger.exception(f"Exception whilst instantiating {data_source_name}!")
+                raise
             data_source_list.append(data_source)
             if (
                 data_source_name

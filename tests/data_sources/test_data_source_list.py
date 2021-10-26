@@ -3,6 +3,7 @@ import nowcasting_dataset
 import os
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.data_source_list import DataSourceList
+import nowcasting_dataset.utils as nd_utils
 
 
 def test_sample_spatial_and_temporal_locations_for_examples():
@@ -26,3 +27,8 @@ def test_sample_spatial_and_temporal_locations_for_examples():
 
     assert locations.columns.to_list() == ["t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB"]
     assert len(locations) == 10
+
+
+def test_from_config():
+    config = nd_utils.get_config_with_test_paths("test.yaml")
+    data_source_list = DataSourceList.from_config(config.input_data)

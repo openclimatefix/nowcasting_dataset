@@ -6,13 +6,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import nowcasting_dataset
-from nowcasting_dataset.config.load import load_yaml_configuration
-
 from nowcasting_dataset.dataset import datamodule
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.dataset.batch import Batch
+import nowcasting_dataset.utils as nd_utils
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -56,22 +54,11 @@ def test_setup(nowcasting_datamodule: datamodule.NowcastingDataModule):
     nowcasting_datamodule.setup()
 
 
-def _get_config_with_test_paths(config_filename: str):
-    """Sets the base paths to point to the testing data in this repository."""
-    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
-
-    # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, "tests", "config", config_filename)
-    config = load_yaml_configuration(filename)
-    config.set_base_path(local_path)
-    return config
-
-
 @pytest.mark.parametrize("config_filename", ["test.yaml", "nwp_size_test.yaml"])
 def test_data_module(config_filename):
 
     # load configuration, this can be changed to a different filename as needed
-    config = _get_config_with_test_paths(config_filename)
+    config = nd_utils.get_config_with_test_paths(config_filename)
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,
@@ -124,7 +111,7 @@ def test_data_module(config_filename):
 
 
 def test_batch_to_batch_to_dataset():
-    config = _get_config_with_test_paths("test.yaml")
+    config = nd_utils.get_config_with_test_paths("test.yaml")
 
     data_module = NowcastingDataModule(
         batch_size=config.process.batch_size,

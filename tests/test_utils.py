@@ -34,8 +34,18 @@ def test_get_netcdf_filename():
     assert utils.get_netcdf_filename(10, add_hash=True) == "77eb6f_10.nc"
 
 
-def test_remove_string_from_keys():
-    d = {"satellite_zarr_path": "/a/b/c/foo.zarr", "bar": "baz", "satellite_channels": ["HRV"]}
-    correct = {"zarr_path": "/a/b/c/foo.zarr", "bar": "baz", "channels": ["HRV"]}
-    new_dict = utils.remove_string_from_keys(d, string_to_remove="satellite_")
+def test_remove_regex_pattern_from_keys():
+    d = {
+        "satellite_zarr_path": "/a/b/c/foo.zarr",
+        "bar": "baz",
+        "satellite_channels": ["HRV"],
+        "n_satellite_per_batch": 4,
+    }
+    correct = {
+        "zarr_path": "/a/b/c/foo.zarr",
+        "bar": "baz",
+        "channels": ["HRV"],
+        "n_satellite_per_batch": 4,
+    }
+    new_dict = utils.remove_regex_pattern_from_keys(d, pattern_to_remove=r"^satellite_")
     assert new_dict == correct

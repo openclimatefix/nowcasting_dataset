@@ -10,7 +10,6 @@ def configuration():
     con = Configuration()
     con.input_data = InputData.set_all_to_defaults()
     con.process.batch_size = 4
-    con.input_data.set_all_to_defaults()
     return con
 
 

@@ -1,7 +1,6 @@
 """ Configuration model for the dataset """
 from datetime import datetime
 from typing import Optional
-import logging
 
 import git
 from pathy import Pathy
@@ -21,25 +20,19 @@ class General(BaseModel):
 
     name: str = Field("example", description="The name of this configuration file.")
     description: str = Field(
-        "example configuration", description="Description of this confgiruation file"
-    )
-    cloud: str = Field(
-        "gcp",
-        description=(
-            "local, gcp, or aws.  Deprecated.  Will be removed when issue"
-            " https://github.com/openclimatefix/nowcasting_dataset/issues/153"
-            " is implemented"
-        ),
+        "example configuration", description="Description of this configuration file"
     )
 
 
 class Git(BaseModel):
     """Git model"""
 
-    hash: str = Field(..., description="The git hash has for when a dataset is created.")
-    message: str = Field(..., description="The git message has for when a dataset is created.")
+    hash: str = Field(
+        ..., description="The git hash of nowcasting_dataset when a dataset is created."
+    )
+    message: str = Field(..., description="The git message for when a dataset is created.")
     committed_date: datetime = Field(
-        ..., description="The git datestamp has for when a dataset is created."
+        ..., description="The git datestamp for when a dataset is created."
     )
 
 
@@ -55,7 +48,7 @@ class DataSourceMixin(BaseModel):
     history_minutes: int = Field(
         None,
         ge=0,
-        description="how many historic minutes are used. "
+        description="how many historic minutes to use. "
         "If set to None, the value is defaulted to InputData.default_history_minutes",
     )
 

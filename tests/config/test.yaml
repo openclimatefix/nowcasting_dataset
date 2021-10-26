@@ -1,5 +1,4 @@
 general:
-  cloud: gcp
   description: example configuration
   name: example
 git: null

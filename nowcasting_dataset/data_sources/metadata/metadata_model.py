@@ -1,14 +1,5 @@
 """ Model for output of general/metadata data, useful for a batch """
-from typing import Union
-
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutput,
-)
-
-from nowcasting_dataset.time import make_random_time_vectors
-
-
-# seems to be a pandas dataseries
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 
 class Metadata(DataSourceOutput):
@@ -17,4 +8,4 @@ class Metadata(DataSourceOutput):
     __slots__ = ()
     _expected_dimensions = ("t0_dt",)
 
-    # todo add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233
+    # TODO: Add validation here - https://github.com/openclimatefix/nowcasting_dataset/issues/233

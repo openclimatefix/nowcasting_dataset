@@ -79,7 +79,7 @@ class PV(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
         description="The CSV file describing each PV system.",
     )
-    n_gsp_per_example: int = Field(
+    n_pv_systems_per_example: int = Field(
         DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
         description="The number of PV systems samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
@@ -160,12 +160,12 @@ class InputData(BaseModel):
     Input data model.
     """
 
-    pv: PV = PV()
-    satellite: Satellite = Satellite()
-    nwp: NWP = NWP()
-    gsp: GSP = GSP()
-    topographic: Topographic = Topographic()
-    sun: Sun = Sun()
+    pv: Optional[PV] = None
+    satellite: Optional[Satellite] = None
+    nwp: Optional[NWP] = None
+    gsp: Optional[GSP] = None
+    topographic: Optional[Topographic] = None
+    sun: Optional[Sun] = None
 
     default_forecast_minutes: int = Field(
         60,
@@ -194,8 +194,14 @@ class InputData(BaseModel):
         then set them to the default values
         """
 
-        for data_source_name in ["pv", "nwp", "satellite", "gsp", "topographic", "sun"]:
+        ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
+        enabled_data_sources = [
+            data_source_name
+            for data_source_name in ALL_DATA_SOURCE_NAMES
+            if values[data_source_name] is not None
+        ]
 
+        for data_source_name in enabled_data_sources:
             if values[data_source_name].forecast_minutes is None:
                 values[data_source_name].forecast_minutes = values["default_forecast_minutes"]
 
@@ -203,6 +209,21 @@ class InputData(BaseModel):
                 values[data_source_name].history_minutes = values["default_history_minutes"]
 
         return values
+
+    @classmethod
+    def set_all_to_defaults(cls):
+        """Returns an InputData instance with all fields set to their default values.
+
+        Used for unittests.
+        """
+        return cls(
+            pv=PV(),
+            satellite=Satellite(),
+            nwp=NWP(),
+            gsp=GSP(),
+            topographic=Topographic(),
+            sun=Sun(),
+        )
 
 
 class OutputData(BaseModel):

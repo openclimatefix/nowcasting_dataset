@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-"""Pre-prepares batches of data on Google Cloud Storage.
+"""Pre-prepares batches of data.
 
 Usage:
 
-First, manually create the GCS directories given by the constants
+First, manually create the directories given by the constants
 DST_TRAIN_PATH and DST_VALIDATION_PATH, and create the
 LOCAL_TEMP_PATH.  Note that all files will be deleted from
 LOCAL_TEMP_PATH when this script starts up.
 
-Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548 PV systems, for about 1 year
+Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548 PV systems,
+for about 1 year.
 
 """
 from nowcasting_dataset.filesystem import utils
@@ -75,7 +76,6 @@ DST_TEST_PATH = DST_NETCDF4_PATH / "test"
 LOCAL_TEMP_PATH = Path(config.process.local_temp_path).expanduser()
 
 UPLOAD_EVERY_N_BATCHES = config.process.upload_every_n_batches
-CLOUD = config.general.cloud  # either gcp or aws
 
 # Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
 # https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999/2

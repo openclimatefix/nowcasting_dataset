@@ -12,6 +12,7 @@ dask
 pvlib
 pyproj
 pytest
+pytest-cov
 flake8
 neptune-client
 pydantic

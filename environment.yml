@@ -38,6 +38,8 @@ dependencies:
   - flake8
   - black
   - pre-commit
+  - jedi
+  - mypy
 
   - pip:
       - neptune-client[pytorch-lightning]

@@ -13,6 +13,8 @@ pvlib
 pyproj
 pytest
 pytest-cov
+jedi
+mypy
 flake8
 neptune-client
 pydantic

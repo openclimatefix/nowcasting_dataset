@@ -1,46 +1,68 @@
-"""DataSourceList class."""
+"""Manager class."""
 
 import numpy as np
 import pandas as pd
 import logging
+from typing import Optional
+from pathlib import Path
 
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
-from nowcasting_dataset.config import model
 from nowcasting_dataset import data_sources
+from nowcasting_dataset import config
+from nowcasting_dataset.filesystem import utils as nd_fs_utils
 
 logger = logging.getLogger(__name__)
 
 
-class DataSourceList(list):
-    """Hold a list of DataSource objects.
+# TODO: Check paths exist (just for the selected data sources)
+
+MAP_DATA_SOURCE_NAME_TO_CLASS = {
+    "pv": data_sources.PVDataSource,
+    "satellite": data_sources.SatelliteDataSource,
+    "nwp": data_sources.NWPDataSource,
+    "gsp": data_sources.GSPDataSource,
+    "topographic": data_sources.TopographicDataSource,
+    "sun": data_sources.SunDataSource,
+}
+ALL_DATA_SOURCE_NAMES = tuple(MAP_DATA_SOURCE_NAME_TO_CLASS.keys())
+
+
+class Manager:
+    """Initialise and manage a dict of DataSource objects.
 
     Attrs:
-      data_source_which_defines_geospatial_locations: The DataSource used to compute the
+      config: Configuration object.
+      data_sources: dict[str, DataSource]
+      data_source_which_defines_geospatial_locations: DataSource: The DataSource used to compute the
         geospatial locations of each example.
     """
 
-    @classmethod
-    def from_config(cls, config_for_all_data_sources: model.InputData):
-        """Create a DataSource List from an InputData configuration object.
+    def __init__(self):
+        self.config = None
+        self.data_sources = {}
+        self.data_source_which_defines_geospatial_locations = None
+
+    def load_yaml_configuration(self, filename: str):
+        logger.debug(f"Loading YAML configuration file {filename}")
+        self.config = config.load_yaml_configuration(filename)
+        self.config = config.set_git_commit(self.config)
+        self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
+        self.local_temp_path = Path(self.config.process.local_temp_path).expanduser()
+
+    def initialise_data_sources(
+        self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
+    ):
+        """Initialise DataSources specified in the InputData configuration.
 
         For each key in each DataSource's configuration object, the string `<data_source_name>_`
         is removed from the key before passing to the DataSource constructor.  This allows us to
         have verbose field names in the configuration YAML files, whilst also using standard
         constructor arguments for DataSources.
         """
-        data_source_name_to_class = {
-            "pv": data_sources.PVDataSource,
-            "satellite": data_sources.SatelliteDataSource,
-            "nwp": data_sources.NWPDataSource,
-            "gsp": data_sources.GSPDataSource,
-            "topographic": data_sources.TopographicDataSource,
-            "sun": data_sources.SunDataSource,
-        }
-        data_source_list = cls([])
-        for data_source_name, data_source_class in data_source_name_to_class.items():
+        for data_source_name in names_of_selected_data_sources:
             logger.debug(f"Creating {data_source_name} DataSource object.")
-            config_for_data_source = getattr(config_for_all_data_sources, data_source_name)
+            config_for_data_source = getattr(self.config.input_data, data_source_name)
             if config_for_data_source is None:
                 logger.info(f"No configuration found for {data_source_name}.")
                 continue
@@ -51,29 +73,51 @@ class DataSourceList(list):
                 config_for_data_source, pattern_to_remove=f"^{data_source_name}_"
             )
 
+            data_source_class = DATA_SOURCE_NAME_TO_CLASS[data_source_name]
             try:
                 data_source = data_source_class(**config_for_data_source)
             except Exception:
                 logger.exception(f"Exception whilst instantiating {data_source_name}!")
                 raise
-            data_source_list.append(data_source)
-            if (
-                data_source_name
-                == config_for_all_data_sources.data_source_which_defines_geospatial_locations
-            ):
-                data_source_list.data_source_which_defines_geospatial_locations = data_source
-                logger.info(
-                    f"DataSource {data_source_name} set as"
-                    " data_source_which_defines_geospatial_locations"
-                )
+            self.data_sources[data_source_name] = data_source
 
+        # Set data_source_which_defines_geospatial_locations:
         try:
-            _ = data_source_list.data_source_which_defines_geospatial_locations
-        except AttributeError:
-            logger.warning(
+            self.data_source_which_defines_geospatial_locations = self.data_sources[
+                self.config.input_data.data_source_which_defines_geospatial_locations
+            ]
+        except KeyError:
+            logger.error(
                 "No DataSource configured as data_source_which_defines_geospatial_locations!"
             )
-        return data_source_list
+        else:
+            logger.info(
+                f"DataSource {data_source_name} set as"
+                " data_source_which_defines_geospatial_locations"
+            )
+
+    def make_destination_paths(self):
+        # TODO: Make dst_path/{train,validation,test}/<data_source_name>
+        raise NotImplementedError()  # TODO!
+
+    def check_paths_exist(self):
+        """Loop through all self.data_sources.
+
+        For each self.data_source:
+          Check the input directories exist.
+          Check the output directories exist.
+
+        Check the temp directory exists (if needed).
+
+        Raises a FileNotFoundError on the first non-existent path.
+        """
+        # TODO: implement a check_directories_exist() method in each DataSource?
+        for data_source in self.data_sources.values():
+            data_source.check_paths_exist()
+
+        if self.config.save_batches_locally_and_upload:
+            nd_fs_utils.check_path_exists(self.local_temp_path)
+            nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
     def get_t0_datetimes_across_all_data_sources(self, freq: str) -> pd.DatetimeIndex:
         """

@@ -78,10 +78,10 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
 
 
 def check_path_exists(path: Union[str, Path]):
-    """Raises a RuntimeError if `path` does not exist in the local filesystem."""
+    """Raises a FileNotFoundError if `path` does not exist."""
     filesystem = fsspec.open(path).fs
     if not filesystem.exists(path):
-        raise RuntimeError(f"{path} does not exist!")
+        raise FileNotFoundError(f"{path} does not exist!")
 
 
 def rename_file(remote_file: str, new_filename: str):

@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import logging
-from typing import Optional
+from typing import Optional, Union
 from pathlib import Path
 
 import nowcasting_dataset.time as nd_time
@@ -49,6 +49,7 @@ class Manager:
         self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
         self.local_temp_path = Path(self.config.process.local_temp_path).expanduser()
+        logger.debug(f"config={self.config}")
 
     def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
@@ -96,7 +97,7 @@ class Manager:
                 " data_source_which_defines_geospatial_locations"
             )
 
-    def make_destination_paths(self):
+    def make_destination_paths_if_necessary(self):
         # TODO: Make dst_path/{train,validation,test}/<data_source_name>
         raise NotImplementedError()  # TODO!
 
@@ -119,7 +120,14 @@ class Manager:
             nd_fs_utils.check_path_exists(self.local_temp_path)
             nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
-    def get_t0_datetimes_across_all_data_sources(self, freq: str) -> pd.DatetimeIndex:
+    def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(self):
+        t0_datetimes = self.get_t0_datetimes_across_all_data_sources(
+            freq=self.config.process.t0_datetime_frequency
+        )
+
+    def get_t0_datetimes_across_all_data_sources(
+        self, freq: Union[str, pd.Timedelta]
+    ) -> pd.DatetimeIndex:
         """
         Compute the intersection of the t0 datetimes available across all DataSources.
 

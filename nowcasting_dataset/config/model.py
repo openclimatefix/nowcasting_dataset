@@ -13,7 +13,7 @@ are used to validate the values of the data itself.
 """
 from datetime import datetime
 from typing import Optional
-
+import pandas as pd
 import git
 from pathy import Pathy
 from pydantic import BaseModel, Field
@@ -263,7 +263,20 @@ class Process(BaseModel):
     """Pydantic model of how the data is processed"""
 
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
-    batch_size: int = Field(32, description="the number of examples per batch")
+    batch_size: int = Field(32, description="The number of examples per batch")
+    t0_datetime_frequency: pd.Timedelta = Field(
+        pd.Timedelta("5 minutes"),
+        description=(
+            "The temporal frequency at which t0 datetimes will be sampled."
+            "  Can be any string that `pandas.Timedelta()` understands."
+            "  For example, if this is set to '5 minutes', then, for each example, the t0 datetime"
+            " could be at 0, 5, ..., 55 minutes past the hour.  If there are DataSources with a"
+            " lower sample rate (e.g. half-hourly) then these lower-sample-rate DataSources will"
+            " still produce valid examples.  For example, if a half-hourly DataSource is asked for"
+            " an example with t0=12:05, history_minutes=60, forecast_minutes=60, then it will"
+            " return data at 11:30, 12:00, 12:30, and 13:00."
+        ),
+    )
     upload_every_n_batches: int = Field(
         16,
         description=(

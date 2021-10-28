@@ -54,9 +54,9 @@ def main(config_filename: str, data_source: list[str], overwrite: bool):
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
-    manager.make_destination_paths_if_necessary()
-    manager.check_paths_exist()
-    # TODO: Check if the spatial_and_temporal_locations_of_each_example.csv files exist. If not, create these files.
+    # manager.make_destination_paths_if_necessary()
+    # manager.check_paths_exist()
+    manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     # TODO: If not overwrite, for each DataSource, get the maximum_batch_id already on disk.
     # TODO: Load spatial_and_temporal_locations_of_each_example.csv files
     # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to create, and whether to utils.upload_and_delete_local_files()

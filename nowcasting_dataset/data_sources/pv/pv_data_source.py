@@ -9,7 +9,7 @@ from numbers import Number
 from pathlib import Path
 from typing import List, Tuple, Union, Optional
 
-import gcsfs
+import fsspec
 import numpy as np
 import pandas as pd
 import torch
@@ -64,7 +64,7 @@ class PVDataSource(ImageDataSource):
 
     def _load_metadata(self):
 
-        logger.debug("Loading Metadata")
+        logger.debug(f"Loading PV metadata from {self.metadata_filename}")
 
         pv_metadata = pd.read_csv(self.metadata_filename, index_col="system_id")
         pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
@@ -90,14 +90,9 @@ class PVDataSource(ImageDataSource):
 
     def _load_pv_power(self):
 
-        logger.debug("Loading PV Power data")
+        logger.debug(f"Loading PV Power data from {self.filename}")
 
-        if "gs://" not in str(self.filename):
-            self.load_from_gcs = False
-
-        pv_power = load_solar_pv_data_from_gcs(
-            self.filename, start_dt=self.start_dt, end_dt=self.end_dt, from_gcs=self.load_from_gcs
-        )
+        pv_power = load_solar_pv_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
         # A bit of hand-crafted cleaning
         if 30248 in pv_power.columns:
@@ -111,7 +106,8 @@ class PVDataSource(ImageDataSource):
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
-        # TODO: Cubic interpolation?
+        # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
+        # doesn't need all the data to be perfectly aligned).
         pv_power = pv_power.resample("5T").interpolate(method="time", limit=3)
         pv_power.dropna(axis="index", how="all", inplace=True)
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
@@ -124,10 +120,6 @@ class PVDataSource(ImageDataSource):
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
-
-        selected_pv_azimuth_angle = None
-        selected_pv_elevation_angle = None
-
         return selected_pv_power
 
     def _get_central_pv_system_id(
@@ -317,40 +309,30 @@ class PVDataSource(ImageDataSource):
         return self.pv_power.index
 
 
-# TODO: Enable this function to load from any compute environment. See issue #286.
-def load_solar_pv_data_from_gcs(
+def load_solar_pv_data(
     filename: Union[str, Path],
     start_dt: Optional[datetime.datetime] = None,
     end_dt: Optional[datetime.datetime] = None,
-    from_gcs: bool = True,
 ) -> pd.DataFrame:
     """
-    Load solar pv data from gcs (although there is an option to load from local - for testing)
+    Load solar pv data from any compute environment.
 
     Args:
         filename: filename of file to be loaded
         start_dt: the start datetime, which to trim the data to
         end_dt: the end datetime, which to trim the data to
-        from_gcs: option to laod from gcs, or form local file
 
     Returns: Solar PV data
-
     """
-    gcs = gcsfs.GCSFileSystem(access="read_only")
-
-    logger.debug("Loading Solar PV Data from GCS")
+    logger.debug(f"Loading Solar PV Data from {filename} from {start_dt} to {end_dt}.")
 
     # It is possible to simplify the code below and do
     # xr.open_dataset(file, engine='h5netcdf')
     # in the first 'with' block, and delete the second 'with' block.
     # But that takes 1 minute to load the data, where as loading into memory
     # first and then loading from memory takes 23 seconds!
-    if from_gcs:
-        with gcs.open(filename, mode="rb") as file:
-            file_bytes = file.read()
-    else:
-        with open(filename, mode="rb") as file:
-            file_bytes = file.read()
+    with fsspec.open(filename, mode="rb") as file:
+        file_bytes = file.read()
 
     with io.BytesIO(file_bytes) as file:
         pv_power = xr.open_dataset(file, engine="h5netcdf")

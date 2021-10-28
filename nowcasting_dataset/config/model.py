@@ -19,12 +19,14 @@ from pathy import Pathy
 from pydantic import BaseModel, Field
 from pydantic import validator, root_validator
 
-from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
+# nowcasting_dataset imports
 from nowcasting_dataset.consts import (
+    NWP_VARIABLE_NAMES,
     SAT_VARIABLE_NAMES,
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
 )
+from nowcasting_dataset.dataset.split import split
 
 
 IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
@@ -276,6 +278,12 @@ class Process(BaseModel):
             " still produce valid examples.  For example, if a half-hourly DataSource is asked for"
             " an example with t0=12:05, history_minutes=60, forecast_minutes=60, then it will"
             " return data at 11:30, 12:00, 12:30, and 13:00."
+        ),
+    )
+    split_method: split.SplitMethod = Field(
+        split.SplitMethod.DAY,
+        description=(
+            "The method used to split the t0 datetimes into train, validation and test sets."
         ),
     )
     upload_every_n_batches: int = Field(

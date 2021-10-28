@@ -11,6 +11,7 @@ import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS, ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.dataset.split import split
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,9 @@ class Manager:
         t0_datetimes = self.get_t0_datetimes_across_all_data_sources(
             freq=self.config.process.t0_datetime_frequency
         )
+        split_t0_datetimes = split.split_data(
+            datetimes=t0_datetimes, method=self.config.process.split_method
+        )
 
     def _locations_csv_file_exists(self) -> bool:
         "Check if filepath/train/spatial_and_temporal_locations_of_each_example.csv exists"
@@ -202,20 +206,11 @@ class Manager:
             Each row of each the DataFrame specifies the position of each example, using
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
-        # This code is for backwards-compatibility with code which expects the first DataSource
-        # in the list to be used to define which DataSource defines the spatial location.
-        # TODO: Remove this try block after implementing issue #213.
-        try:
-            data_source_which_defines_geospatial_locations = (
-                self.data_source_which_defines_geospatial_locations
-            )
-        except AttributeError:
-            data_source_which_defines_geospatial_locations = self[0]
-
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
-        x_locations, y_locations = data_source_which_defines_geospatial_locations.get_locations(
-            shuffled_t0_datetimes
-        )
+        (
+            x_locations,
+            y_locations,
+        ) = self.data_source_which_defines_geospatial_locations.get_locations(shuffled_t0_datetimes)
         return pd.DataFrame(
             {
                 "t0_datetime_UTC": shuffled_t0_datetimes,

@@ -39,6 +39,7 @@ class SplitName(Enum):
     TEST = "test"
 
 
+# Create a namedtuple for storing split t0 datetimes.
 SplitData = namedtuple(
     typename="SplitData",
     field_names=[SplitName.TRAIN.value, SplitName.VALIDATION.value, SplitName.TEST.value],
@@ -185,5 +186,10 @@ def split_data(
         f"validation has {len(validation_datetimes):,d}, "
         f"test has {len(test_datetimes):,d} t0 datetimes."
     )
+
+    # Check there's no overlap.
+    assert len(train_datetimes.intersection(validation_datetimes)) == 0
+    assert len(train_datetimes.intersection(test_datetimes)) == 0
+    assert len(test_datetimes.intersection(validation_datetimes)) == 0
 
     return SplitData(train=train_datetimes, validation=validation_datetimes, test=test_datetimes)

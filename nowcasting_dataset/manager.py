@@ -37,6 +37,8 @@ class Manager:
         self.config = config.load_yaml_configuration(filename)
         self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
+
+        # TODO: This should probably be done in the Pydantic model.
         self.local_temp_path = Path(self.config.process.local_temp_path).expanduser()
         logger.debug(f"config={self.config}")
 
@@ -78,15 +80,19 @@ class Manager:
             ]
         except KeyError:
             logger.error(
-                "No DataSource configured as data_source_which_defines_geospatial_locations!"
+                "input_data.data_source_which_defines_geospatial_locations="
+                f"{self.config.input_data.data_source_which_defines_geospatial_locations}"
+                " is not a member of the DataSources, so cannot set"
+                " self.data_source_which_defines_geospatial_locations!"
+                f" The available DataSources are: {list(self.data_sources.keys())}"
             )
         else:
             logger.info(
-                f"DataSource {data_source_name} set as"
-                " data_source_which_defines_geospatial_locations"
+                f"DataSource `{data_source_name}` set as"
+                " data_source_which_defines_geospatial_locations."
             )
 
-    def make_destination_paths_if_necessary(self):
+    def make_directories_if_necessary(self):
         filesystem = fsspec.open(self.config.output_data.filepath).fs
         for split_name in split.SplitName:
             for data_source_name in self.data_sources.keys():
@@ -94,23 +100,10 @@ class Manager:
                 logger.info(f"Making {path} if necessary...")
                 filesystem.mkdirs(path, exist_ok=True)
 
-    def check_paths_exist(self):
-        """Loop through all self.data_sources.
-
-        For each self.data_source:
-          Check the input directories exist.
-          Check the output directories exist.
-
-        Check the temp directory exists (if needed).
-
-        Raises a FileNotFoundError on the first non-existent path.
-        """
-        # TODO: implement a check_directories_exist() method in each DataSource?
-        for data_source in self.data_sources.values():
-            data_source.check_paths_exist()
-
-        if self.config.save_batches_locally_and_upload:
-            nd_fs_utils.check_path_exists(self.local_temp_path)
+        if self.save_batches_locally_and_upload:
+            logger.info(f"Making {self.local_temp_path} if necessary...")
+            filesystem.mkdirs(self.local_temp_path, exist_ok=True)
+            logger.info(f"Deleting all files in {self.local_temp_path}...")
             nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
     def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(self):

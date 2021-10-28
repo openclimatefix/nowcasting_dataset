@@ -19,7 +19,7 @@ from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 class SunDataSource(DataSource):
     """Add azimuth and elevation angles of the sun."""
 
-    filename: Union[str, Path]
+    zarr_path: Union[str, Path]
     start_dt: Optional[datetime] = None
     end_dt: Optional[datetime] = None
 
@@ -79,7 +79,7 @@ class SunDataSource(DataSource):
 
     def _load(self):
         self.azimuth, self.elevation = load_from_zarr(
-            filename=self.filename, start_dt=self.start_dt, end_dt=self.end_dt
+            zarr_path=self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:

@@ -25,10 +25,10 @@ class SatelliteDataSource(ZarrDataSource):
     """
     Satellite Data Source
 
-    filename: Must start with 'gs://' if on GCP.
+    zarr_path: Must start with 'gs://' if on GCP.
     """
 
-    filename: str = None
+    zarr_path: str = None
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
@@ -58,7 +58,7 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._data.sel(variable=list(self.channels))
 
     def _open_data(self) -> xr.DataArray:
-        return open_sat_data(filename=self.filename, consolidated=self.consolidated)
+        return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
     def get_batch(
         self,
@@ -156,17 +156,17 @@ class SatelliteDataSource(ZarrDataSource):
         return datetime_index
 
 
-def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:
+def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """Lazily opens the Zarr store.
 
     Adds 1 minute to the 'time' coordinates, so the timestamps
     are at 00, 05, ..., 55 past the hour.
 
     Args:
-      filename: Cloud URL or local path.  If GCP URL, must start with 'gs://'
+      zarr_path: Cloud URL or local path.  If GCP URL, must start with 'gs://'
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
-    _LOG.debug("Opening satellite data: %s", filename)
+    _LOG.debug("Opening satellite data: %s", zarr_path)
 
     # We load using chunks=None so xarray *doesn't* use Dask to
     # load the Zarr chunks from disk.  Using Dask to load the data
@@ -174,7 +174,7 @@ def open_sat_data(filename: str, consolidated: bool) -> xr.DataArray:
     # about a million chunks.
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
     dataset = xr.open_dataset(
-        filename, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
     )
 
     data_array = dataset["stacked_eumetsat_data"]

@@ -1,8 +1,15 @@
-""" Configuration model for the dataset
+""" Configuration model for the dataset.
 
 All paths must include the protocol prefix.  For local files,
 it's sufficient to just start with a '/'.  For aws, start with 's3://',
 for gcp start with 'gs://'.
+
+This file is mostly about _configuring_ the DataSources.
+
+Separate Pydantic models in
+`nowcasting_dataset/data_sources/<data_source_name>/<data_source_name>_model.py`
+are used to validate the values of the data itself.
+
 """
 from datetime import datetime
 from typing import Optional
@@ -17,6 +24,10 @@ from nowcasting_dataset.consts import (
     NWP_VARIABLE_NAMES,
     SAT_VARIABLE_NAMES,
 )
+
+
+IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
+METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
 
 
 class General(BaseModel):
@@ -70,11 +81,11 @@ class DataSourceMixin(BaseModel):
 class PV(DataSourceMixin):
     """PV configuration model"""
 
-    solar_pv_data_filename: str = Field(
+    pv_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
         description=("The NetCDF file holding the solar PV power timeseries."),
     )
-    solar_pv_metadata_filename: str = Field(
+    pv_metadata_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
         description="The CSV file describing each PV system.",
     )
@@ -83,6 +94,8 @@ class PV(DataSourceMixin):
         description="The number of PV systems samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
     )
+    pv_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    pv_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class Satellite(DataSourceMixin):
@@ -92,12 +105,11 @@ class Satellite(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
         description="The path which holds the satellite zarr.",
     )
-
-    sat_channels: tuple = Field(
+    satellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"
     )
-
-    satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
+    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class NWP(DataSourceMixin):
@@ -107,10 +119,9 @@ class NWP(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
         description="The path which holds the NWP zarr.",
     )
-
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
-
-    nwp_image_size_pixels: int = Field(64, description="the size of the nwp images")
+    nwp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    nwp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class GSP(DataSourceMixin):
@@ -122,6 +133,8 @@ class GSP(DataSourceMixin):
         description="The number of GSP samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
     )
+    gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
@@ -143,6 +156,8 @@ class Topographic(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
         description="Path to the GeoTIFF Topographic data source",
     )
+    topographic_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    topographic_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class Sun(DataSourceMixin):
@@ -177,6 +192,12 @@ class InputData(BaseModel):
         ge=0,
         description="how many historic minutes are used. "
         "This sets the default for all the data sources if they are not set.",
+    )
+    data_source_which_defines_geospatial_locations: str = Field(
+        "gsp",
+        description=(
+            "The name of the DataSource which will define the geospatial position of each example."
+        ),
     )
 
     @property
@@ -266,8 +287,8 @@ class Configuration(BaseModel):
         """Append base_path to all paths. Mostly used for testing."""
         base_path = Pathy(base_path)
         path_attrs = [
-            "pv.solar_pv_data_filename",
-            "pv.solar_pv_metadata_filename",
+            "pv.pv_filename",
+            "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",

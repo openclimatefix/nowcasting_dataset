@@ -13,19 +13,15 @@ from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 
 _LOG = logging.getLogger(__name__)
-
-from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 
 
 @dataclass
 class NWPDataSource(ZarrDataSource):
     """
     NWP Data Source (Numerical Weather Predictions)
-
-    Args (for init):
-      filename: The base path in which we find '2018_1-6', etc.
 
     Attributes:
       _data: xr.DataArray of Numerical Weather Predictions, opened by open().
@@ -47,7 +43,7 @@ class NWPDataSource(ZarrDataSource):
             hcc   : High-level cloud cover in %.
     """
 
-    filename: str = None
+    zarr_path: str = None
     channels: Optional[Iterable[str]] = NWP_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 2
     meters_per_pixel: InitVar[int] = 2_000
@@ -146,7 +142,7 @@ class NWPDataSource(ZarrDataSource):
         return NWP(output)
 
     def _open_data(self) -> xr.DataArray:
-        return open_nwp(self.filename, consolidated=self.consolidated)
+        return open_nwp(self.zarr_path, consolidated=self.consolidated)
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         """
@@ -212,20 +208,22 @@ class NWPDataSource(ZarrDataSource):
         return resampler.ffill(limit=11).dropna().index
 
 
-def open_nwp(filename: str, consolidated: bool) -> xr.Dataset:
+def open_nwp(zarr_path: str, consolidated: bool) -> xr.Dataset:
     """
     Open The NWP data
 
     Args:
-        filename: filename must start with 'gs://' if it's on GCP.
+        zarr_path: zarr_path must start with 'gs://' if it's on GCP.
         consolidated: consolidate the zarr file?
 
     Returns: nwp data
 
     """
-    _LOG.debug("Opening NWP data: %s", filename)
+    _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
-    nwp = xr.open_dataset(filename, engine="zarr", consolidated=consolidated, mode="r", chunks=None)
+    nwp = xr.open_dataset(
+        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+    )
 
     # Sanity check.
     # TODO: Replace this with

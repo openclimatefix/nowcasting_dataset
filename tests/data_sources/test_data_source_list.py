@@ -4,13 +4,14 @@ from datetime import datetime
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.data_source_list import DataSourceList
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+import nowcasting_dataset.utils as nd_utils
 
 
 def test_sample_spatial_and_temporal_locations_for_examples():
     local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 
     gsp = GSPDataSource(
-        filename=f"{local_path}/tests/data/gsp/test.zarr",
+        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
         start_dt=datetime(2019, 1, 1),
         end_dt=datetime(2019, 1, 2),
         history_minutes=30,
@@ -27,3 +28,12 @@ def test_sample_spatial_and_temporal_locations_for_examples():
 
     assert locations.columns.to_list() == ["t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB"]
     assert len(locations) == 10
+
+
+def test_from_config():
+    config = nd_utils.get_config_with_test_paths("test.yaml")
+    data_source_list = DataSourceList.from_config(config.input_data)
+    assert len(data_source_list) == 6
+    assert isinstance(
+        data_source_list.data_source_which_defines_geospatial_locations, GSPDataSource
+    )

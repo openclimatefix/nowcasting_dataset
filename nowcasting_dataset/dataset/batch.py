@@ -97,7 +97,9 @@ class Batch(BaseModel):
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
                 satellite_image_size_pixels=satellite_image_size_pixels,
-                number_sat_channels=len(configuration.input_data.satellite.sat_channels),
+                number_satellite_channels=len(
+                    configuration.input_data.satellite.satellite_channels
+                ),
             ),
             nwp=nwp_fake(
                 batch_size=batch_size,

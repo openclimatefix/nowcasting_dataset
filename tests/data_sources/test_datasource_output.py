@@ -51,7 +51,7 @@ def test_pv():
 def test_satellite():
 
     s = satellite_fake(
-        batch_size=4, seq_length_5=13, satellite_image_size_pixels=64, number_sat_channels=7
+        batch_size=4, seq_length_5=13, satellite_image_size_pixels=64, number_satellite_channels=7
     )
 
     assert s.x is not None

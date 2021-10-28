@@ -27,7 +27,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PVDataSource(ImageDataSource):
-    """ PV Data Source """
+    """PV Data Source.
+
+    This inherits from ImageDataSource so PVDataSource can select a geospatial region of interest
+    defined by image_size_pixels and meters_per_pixel.
+    """
 
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
@@ -311,6 +315,7 @@ class PVDataSource(ImageDataSource):
         return self.pv_power.index
 
 
+# TODO: Enable this function to load from any compute environment. See issue #286.
 def load_solar_pv_data_from_gcs(
     filename: Union[str, Path],
     start_dt: Optional[datetime.datetime] = None,

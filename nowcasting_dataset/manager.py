@@ -141,12 +141,19 @@ class Manager:
             filtered by daylight hours (SatelliteDataSource.datetime_index() removes the night
             datetimes).
         """
-        logger.debug("Get the intersection of time periods across all DataSources.")
+        logger.debug(
+            f"Getting the intersection of time periods across all DataSources at freq={freq}..."
+        )
+        if set(self.data_sources.keys()) != set(ALL_DATA_SOURCE_NAMES):
+            logger.warning(
+                "Computing available t0 datetimes using less than all available DataSources!"
+                " Are you sure you mean to do this?!"
+            )
 
         # Get the intersection of t0 time periods from all data sources.
         t0_time_periods_for_all_data_sources = []
-        for data_source in self:
-            logger.debug(f"Getting t0 time periods for {type(data_source).__name__}")
+        for data_source_name, data_source in self.data_sources.items():
+            logger.debug(f"Getting t0 time periods for {data_source_name}")
             try:
                 t0_time_periods = data_source.get_contiguous_t0_time_periods()
             except NotImplementedError:
@@ -161,7 +168,10 @@ class Manager:
         t0_datetimes = nd_time.time_periods_to_datetime_index(
             time_periods=intersection_of_t0_time_periods, freq=freq
         )
-
+        logger.debug(
+            f"Found {len(t0_datetimes):,d} datetimes."
+            f"  From {t0_datetimes[0]} to {t0_datetimes[-1]}."
+        )
         return t0_datetimes
 
     def sample_spatial_and_temporal_locations_for_examples(

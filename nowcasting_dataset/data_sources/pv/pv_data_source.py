@@ -264,7 +264,7 @@ class PVDataSource(ImageDataSource):
         pv["x_coords"] = x_coords
         pv["y_coords"] = y_coords
 
-        # pad out so that there are always 32 gsp, pad with zeros
+        # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id_index)
         pv = pv.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
 

@@ -35,7 +35,10 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
         "If you want to process just a subset of the DataSources in the config file, then enter"
         " the names of those DataSources using the --data_source option.  Enter one name per"
         " --data_source option.  You can use --data_source multiple times.  For example:"
-        " --data_source nwp --data_source satellite."
+        " --data_source nwp --data_source satellite.  Note that only these DataSources"
+        " always be used when computing the available datetime periods across all the"
+        " DataSources, so be very careful about setting --data_source when creating the"
+        " spatial_and_temporal_locations_of_each_example.csv files!"
     ),
 )
 @click.option(

@@ -13,29 +13,26 @@ Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548
 for about 1 year.
 
 """
-from nowcasting_dataset.filesystem import utils
-
-import nowcasting_dataset
-from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.config.save import save_yaml_configuration
-from nowcasting_dataset.config.model import set_git_commit
-from nowcasting_dataset.filesystem.utils import check_path_exists
-
-from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
-
-from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
-from pathy import Pathy
-from pathlib import Path
-import torch
+import logging
 import os
-import numpy as np
+from pathlib import Path
 from typing import Union
 
 import neptune.new as neptune
+import numpy as np
+import torch
 from neptune.new.integrations.python_logger import NeptuneHandler
+from pathy import Pathy
 
-import logging
+import nowcasting_dataset
+from nowcasting_dataset.config.load import load_yaml_configuration
+from nowcasting_dataset.config.model import set_git_commit
+from nowcasting_dataset.config.save import save_yaml_configuration
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
+from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
+from nowcasting_dataset.filesystem import utils
+from nowcasting_dataset.filesystem.utils import check_path_exists
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")

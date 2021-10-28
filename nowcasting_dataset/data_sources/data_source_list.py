@@ -1,14 +1,14 @@
 """DataSourceList class."""
 
+import logging
+
 import numpy as np
 import pandas as pd
-import logging
 
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset.config import model
 from nowcasting_dataset import data_sources
-
 logger = logging.getLogger(__name__)
 
 

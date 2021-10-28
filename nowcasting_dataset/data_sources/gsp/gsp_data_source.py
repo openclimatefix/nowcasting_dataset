@@ -7,23 +7,20 @@ from dataclasses import dataclass
 from datetime import datetime
 from numbers import Number
 from pathlib import Path
-from typing import Union, Optional, Tuple, List
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
 import xarray as xr
 
-from nowcasting_dataset.consts import (
-    DEFAULT_N_GSP_PER_EXAMPLE,
-)
+from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
-
 from nowcasting_dataset.utils import scale_to_0_to_1
 
 logger = logging.getLogger(__name__)

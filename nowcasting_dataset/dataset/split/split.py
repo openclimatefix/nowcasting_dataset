@@ -1,13 +1,13 @@
 """ Function to split datasets up """
 
 import logging
-from enum import Enum
-from typing import List, Tuple, Union, Optional
 from collections import namedtuple
+from enum import Enum
+from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 
-from nowcasting_dataset.dataset.split.method import split_method, split_by_dates
+from nowcasting_dataset.dataset.split.method import split_by_dates, split_method
 from nowcasting_dataset.dataset.split.model import (
     TrainValidationTestSpecific,
     default_train_test_validation_specific,

@@ -1,6 +1,8 @@
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
+
 from nowcasting_dataset.config.model import Configuration, InputData
 from nowcasting_dataset.dataset.batch import Batch
 

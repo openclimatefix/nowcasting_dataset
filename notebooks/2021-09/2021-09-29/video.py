@@ -1,13 +1,14 @@
 # Idea is to make a GSP video using Sheffield solar data for one day
-import pandas as pd
-
-from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
-from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
-from datetime import datetime
-from nowcasting_dataset.geospatial import WGS84_CRS
-import logging
-import plotly.graph_objects as go
 import json
+import logging
+from datetime import datetime
+
+import pandas as pd
+import plotly.graph_objects as go
+
+from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
+from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
+from nowcasting_dataset.geospatial import WGS84_CRS
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)

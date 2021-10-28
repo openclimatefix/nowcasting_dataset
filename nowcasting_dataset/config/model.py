@@ -16,14 +16,13 @@ from typing import Optional
 
 import git
 from pathy import Pathy
-from pydantic import BaseModel, Field
-from pydantic import validator, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
-from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 from nowcasting_dataset.consts import (
-    SAT_VARIABLE_NAMES,
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+    NWP_VARIABLE_NAMES,
+    SAT_VARIABLE_NAMES,
 )
 
 

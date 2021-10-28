@@ -3,20 +3,28 @@ from __future__ import annotations
 
 import logging
 import os
+from concurrent import futures
 from pathlib import Path
 from typing import Optional, Union
-from concurrent import futures
 
 import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
+from nowcasting_dataset.data_sources.fake import (
+    datetime_fake,
+    gsp_fake,
+    metadata_fake,
+    nwp_fake,
+    pv_fake,
+    satellite_fake,
+    sun_fake,
+    topographic_fake,
+)
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
-from nowcasting_dataset.data_sources.nwp.nwp_model import (
-    NWP,
-)
+from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
@@ -24,16 +32,6 @@ from nowcasting_dataset.data_sources.topographic.topographic_model import Topogr
 from nowcasting_dataset.dataset.xr_utils import (
     register_xr_data_array_to_tensor,
     register_xr_data_set_to_tensor,
-)
-from nowcasting_dataset.data_sources.fake import (
-    datetime_fake,
-    metadata_fake,
-    gsp_fake,
-    pv_fake,
-    satellite_fake,
-    sun_fake,
-    topographic_fake,
-    nwp_fake,
 )
 
 _LOG = logging.getLogger(__name__)

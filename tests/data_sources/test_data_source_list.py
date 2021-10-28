@@ -1,8 +1,9 @@
-from datetime import datetime
-import nowcasting_dataset
 import os
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from datetime import datetime
+
+import nowcasting_dataset
 from nowcasting_dataset.data_sources.data_source_list import DataSourceList
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 import nowcasting_dataset.utils as nd_utils
 
 

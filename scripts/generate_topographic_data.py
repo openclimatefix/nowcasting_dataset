@@ -4,13 +4,15 @@ single representation of the area in NetCDF and GeoTIFF formats
 
 The SRTM files can be downloaded from NASA, and are in CRS EPSG:4326
 """
-import os.path
 import glob
+import os.path
+
 import rasterio
+import rioxarray
 from rasterio.merge import merge
 from rasterio.warp import Resampling
+
 from nowcasting_dataset.geospatial import OSGB
-import rioxarray
 
 dst_crs = OSGB
 

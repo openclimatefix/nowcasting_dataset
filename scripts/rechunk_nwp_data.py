@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-import xarray as xr
-from pathlib import Path
-import numcodecs
-import gcsfs
-import rechunker
-import zarr
-from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
 import os
-import numpy as np
+from pathlib import Path
 
+import gcsfs
+import numcodecs
+import numpy as np
+import rechunker
+import xarray as xr
+import zarr
+
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
 
 BUCKET = Path("solar-pv-nowcasting-data")
 NWP_PATH = BUCKET / "NWP/UK_Met_Office/"

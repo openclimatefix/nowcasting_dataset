@@ -8,24 +8,11 @@ from pathlib import Path
 
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
-from nowcasting_dataset import data_sources
 from nowcasting_dataset import config
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
+from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS, ALL_DATA_SOURCE_NAMES
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: Check paths exist (just for the selected data sources)
-
-MAP_DATA_SOURCE_NAME_TO_CLASS = {
-    "pv": data_sources.PVDataSource,
-    "satellite": data_sources.SatelliteDataSource,
-    "nwp": data_sources.NWPDataSource,
-    "gsp": data_sources.GSPDataSource,
-    "topographic": data_sources.TopographicDataSource,
-    "sun": data_sources.SunDataSource,
-}
-ALL_DATA_SOURCE_NAMES = tuple(MAP_DATA_SOURCE_NAME_TO_CLASS.keys())
 
 
 class Manager:
@@ -121,9 +108,30 @@ class Manager:
             nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
     def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(self):
+        if self._locations_csv_file_exists():
+            return
+        logger.info(
+            "spatial_and_temporal_locations_of_each_example.csv does not exist so will create..."
+        )
         t0_datetimes = self.get_t0_datetimes_across_all_data_sources(
             freq=self.config.process.t0_datetime_frequency
         )
+
+    def _locations_csv_file_exists(self) -> bool:
+        "Check if filepath/train/spatial_and_temporal_locations_of_each_example.csv exists"
+        filename = (
+            self.config.output_data.filepath
+            / "train"
+            / "spatial_and_temporal_locations_of_each_example.csv"
+        )
+        try:
+            nd_fs_utils.check_path_exists(filename)
+        except FileNotFoundError:
+            logging.info(f"{filename} does not exist!")
+            return False
+        else:
+            logger.info(f"{filename} exists!")
+            return True
 
     def get_t0_datetimes_across_all_data_sources(
         self, freq: Union[str, pd.Timedelta]
@@ -157,7 +165,8 @@ class Manager:
             try:
                 t0_time_periods = data_source.get_contiguous_t0_time_periods()
             except NotImplementedError:
-                pass  # Skip data_sources with no concept of time.
+                # Skip data_sources with no concept of time.
+                logger.debug(f"Skipping {data_source_name} because it has not concept of datetime.")
             else:
                 t0_time_periods_for_all_data_sources.append(t0_time_periods)
 
@@ -169,7 +178,8 @@ class Manager:
             time_periods=intersection_of_t0_time_periods, freq=freq
         )
         logger.debug(
-            f"Found {len(t0_datetimes):,d} datetimes."
+            f"Found {len(t0_datetimes):,d} datetimes at freq=`{freq}` across"
+            f" DataSources={list(self.data_sources.keys())}."
             f"  From {t0_datetimes[0]} to {t0_datetimes[-1]}."
         )
         return t0_datetimes

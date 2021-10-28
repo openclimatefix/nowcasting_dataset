@@ -8,7 +8,8 @@ from pathy import Pathy
 
 # nowcasting_dataset imports
 import nowcasting_dataset
-from nowcasting_dataset.manager import Manager, ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.manager import Manager
+from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
 from nowcasting_dataset import utils
 
 # Set up logging.

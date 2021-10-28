@@ -214,7 +214,8 @@ class InputData(BaseModel):
         Run through the different data sources and  if the forecast or history minutes are not set,
         then set them to the default values
         """
-
+        # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
+        # but that causes a circular import.
         ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
         enabled_data_sources = [
             data_source_name
@@ -250,8 +251,8 @@ class InputData(BaseModel):
 class OutputData(BaseModel):
     """Output data model"""
 
-    filepath: str = Field(
-        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/",
+    filepath: Pathy = Field(
+        Pathy("gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/"),
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"

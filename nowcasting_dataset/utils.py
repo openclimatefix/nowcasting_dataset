@@ -1,4 +1,5 @@
 """ utils functions """
+from functools import wraps
 import hashlib
 import logging
 import tempfile
@@ -206,3 +207,14 @@ def get_config_with_test_paths(config_filename: str) -> model.Configuration:
     config = load.load_yaml_configuration(filename)
     config.set_base_path(local_path)
     return config
+
+
+def arg_logger(func):
+    """A function decorator to log all the args and kwargs passed into a function."""
+    # Adapted from https://stackoverflow.com/a/23983263/732596
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        logger.debug(f"Arguments passed into function `{func.__name__}`: {locals()}")
+        return func(*args, **kwargs)
+
+    return inner_func

@@ -2,12 +2,14 @@
 
 """Pre-prepares batches of data.
 """
-
 import logging
 import click
 from pathy import Pathy
+
+# nowcasting_dataset imports
 import nowcasting_dataset
 from nowcasting_dataset.manager import Manager, ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset import utils
 
 # Set up logging.
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
@@ -46,18 +48,16 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
         " existing batches."
     ),
 )
+@utils.arg_logger
 def main(config_filename: str, data_source: list[str], overwrite: bool):
     """Generate pre-prepared batches of data."""
-    logger.info(f"config_filename={config_filename}")
-    logger.info(f"data_sources={data_source}")
-    logger.info(f"overwrite={overwrite}")
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
-    manager.make_destination_paths()
+    manager.make_destination_paths_if_necessary()
     manager.check_paths_exist()
-    # TODO: If not overwrite, for each DataSource, get the maximum_batch_id already on disk.
     # TODO: Check if the spatial_and_temporal_locations_of_each_example.csv files exist. If not, create these files.
+    # TODO: If not overwrite, for each DataSource, get the maximum_batch_id already on disk.
     # TODO: Load spatial_and_temporal_locations_of_each_example.csv files
     # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to create, and whether to utils.upload_and_delete_local_files()
     # TODO: Wait for all processes to complete.

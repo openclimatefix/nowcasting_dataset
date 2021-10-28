@@ -73,7 +73,7 @@ class Manager:
                 config_for_data_source, pattern_to_remove=f"^{data_source_name}_"
             )
 
-            data_source_class = DATA_SOURCE_NAME_TO_CLASS[data_source_name]
+            data_source_class = MAP_DATA_SOURCE_NAME_TO_CLASS[data_source_name]
             try:
                 data_source = data_source_class(**config_for_data_source)
             except Exception:

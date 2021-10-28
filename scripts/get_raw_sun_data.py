@@ -16,15 +16,17 @@
 ############
 
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
+
 import pandas as pd
-import os
+
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
-    save_to_zarr,
     get_azimuth_and_elevation,
+    save_to_zarr,
 )
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 

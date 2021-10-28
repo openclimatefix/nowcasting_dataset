@@ -1,11 +1,12 @@
 """DataSourceList class."""
 
-import numpy as np
-import pandas as pd
 import logging
 
+import numpy as np
+import pandas as pd
+
 import nowcasting_dataset.time as nd_time
-from nowcasting_dataset.dataset.split.split import SplitMethod, split_data, SplitName
+from nowcasting_dataset.dataset.split.split import SplitMethod, SplitName, split_data
 
 logger = logging.getLogger(__name__)
 

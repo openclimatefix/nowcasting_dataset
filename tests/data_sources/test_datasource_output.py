@@ -1,11 +1,11 @@
 from nowcasting_dataset.data_sources.fake import (
+    datetime_fake,
+    gsp_fake,
+    nwp_fake,
+    pv_fake,
+    satellite_fake,
     sun_fake,
     topographic_fake,
-    gsp_fake,
-    datetime_fake,
-    nwp_fake,
-    satellite_fake,
-    pv_fake,
 )
 
 

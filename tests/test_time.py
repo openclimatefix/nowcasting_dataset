@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset import time as nd_time
-from nowcasting_dataset.time import THIRTY_MINUTES, FIVE_MINUTES
+from nowcasting_dataset.time import FIVE_MINUTES, THIRTY_MINUTES
 
 
 def test_select_daylight_datetimes():

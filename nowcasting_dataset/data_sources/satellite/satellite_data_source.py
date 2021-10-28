@@ -1,7 +1,7 @@
 """ Satellite Data Source """
 import logging
 from concurrent import futures
-from dataclasses import dataclass, InitVar
+from dataclasses import InitVar, dataclass
 from numbers import Number
 from typing import Iterable, Optional
 
@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
-import nowcasting_dataset.time as nd_time
 
 _LOG = logging.getLogger("nowcasting_dataset")
 

@@ -1,9 +1,9 @@
 """  General Data Source Class """
 import itertools
 import logging
-from dataclasses import dataclass, InitVar
+from dataclasses import InitVar, dataclass
 from numbers import Number
-from typing import List, Tuple, Iterable
+from typing import Iterable, List, Tuple
 
 import pandas as pd
 import xarray as xr

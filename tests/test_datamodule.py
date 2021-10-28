@@ -8,11 +8,10 @@ import pytest
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
-
 from nowcasting_dataset.dataset import datamodule
+from nowcasting_dataset.dataset.batch import Batch
 from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
 from nowcasting_dataset.dataset.split.split import SplitMethod
-from nowcasting_dataset.dataset.batch import Batch
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")

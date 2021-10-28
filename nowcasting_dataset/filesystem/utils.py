@@ -1,7 +1,7 @@
 """ General utils functions """
 import logging
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
 import fsspec
 

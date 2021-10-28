@@ -1,8 +1,9 @@
-from datetime import datetime
-import nowcasting_dataset
 import os
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from datetime import datetime
+
+import nowcasting_dataset
 from nowcasting_dataset.data_sources.data_source_list import DataSourceList
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 
 
 def test_sample_spatial_and_temporal_locations_for_examples():

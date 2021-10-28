@@ -1,5 +1,6 @@
 """ Model for Sun features """
-from xarray.ufuncs import isnan, isinf
+from xarray.ufuncs import isinf, isnan
+
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 

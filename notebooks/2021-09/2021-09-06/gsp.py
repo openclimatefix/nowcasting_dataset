@@ -1,5 +1,6 @@
 import json
 from urllib.request import urlopen
+
 import geopandas as gpd
 import plotly.graph_objects as go
 

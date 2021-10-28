@@ -1,9 +1,10 @@
+import itertools
 import json
 from urllib.request import urlopen
+
 import geopandas as gpd
-import plotly.graph_objects as go
 import numpy as np
-import itertools
+import plotly.graph_objects as go
 
 WGS84_CRS = "EPSG:4326"
 

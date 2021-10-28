@@ -1,8 +1,5 @@
 """ Model for output of datetime data """
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutput,
-)
-
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.utils import coord_to_range
 
 

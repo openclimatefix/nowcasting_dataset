@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-from nowcasting_dataset import consts
-import pandas as pd
 from pathlib import Path
+
 import numcodecs
+import pandas as pd
 import xarray as xr
 
+from nowcasting_dataset import consts
 
 START = pd.Timestamp("2019-01-01T12:00")
 END = pd.Timestamp("2019-01-01T18:00")

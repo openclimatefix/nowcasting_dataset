@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from numbers import Number
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
+from typing import List, Optional, Tuple, Union
 
 import gcsfs
 import numpy as np
@@ -16,9 +16,7 @@ import torch
 import xarray as xr
 
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.consts import (
-    DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-)
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset

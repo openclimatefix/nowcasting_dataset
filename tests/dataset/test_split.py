@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset.dataset.split.model import TrainValidationTestSpecific
-from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
+from nowcasting_dataset.dataset.split.split import SplitMethod, split_data
 
 
 def test_split_same():

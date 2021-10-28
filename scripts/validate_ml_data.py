@@ -2,12 +2,13 @@ import logging
 import os
 from pathlib import Path
 
-import nowcasting_dataset
 import torch
+
+import nowcasting_dataset
+from nowcasting_dataset.cloud.utils import get_maximum_batch_id
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
 from nowcasting_dataset.dataset.validate import ValidatorDataset
-from nowcasting_dataset.cloud.utils import get_maximum_batch_id
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")

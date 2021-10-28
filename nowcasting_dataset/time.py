@@ -2,12 +2,12 @@
 import logging
 import random
 import warnings
-from typing import Iterable, Tuple, List, Dict
+from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 import pvlib
+import xarray as xr
 
 from nowcasting_dataset import geospatial, utils
 

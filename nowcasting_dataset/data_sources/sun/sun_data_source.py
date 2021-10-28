@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from numbers import Number
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd

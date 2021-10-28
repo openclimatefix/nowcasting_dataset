@@ -1,7 +1,7 @@
 """ NWP Data Source """
 import logging
 from concurrent import futures
-from dataclasses import dataclass, InitVar
+from dataclasses import InitVar, dataclass
 from numbers import Number
 from typing import Iterable, Optional
 

@@ -12,16 +12,18 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+import os
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
-import os
+import pandas as pd
+
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
-    save_to_zarr,
     get_azimuth_and_elevation,
+    save_to_zarr,
 )
 
 # set up

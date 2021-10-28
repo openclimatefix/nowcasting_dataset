@@ -1,9 +1,9 @@
 import os
+
 import pandas as pd
 
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
-
 
 PATH = os.path.dirname(nowcasting_dataset.__file__)
 

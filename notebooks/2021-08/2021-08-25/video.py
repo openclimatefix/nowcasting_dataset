@@ -1,11 +1,12 @@
 import os
-from nowcasting_dataset.dataset import NetCDFDataset, SAT_MEAN, SAT_STD
-import plotly.graph_objects as go
-import plotly
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
+
 import cv2
+import numpy as np
+import pandas as pd
+import plotly
+import plotly.graph_objects as go
+
+from nowcasting_dataset.dataset import SAT_MEAN, SAT_STD, NetCDFDataset
 
 DATA_PATH = "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v4/"
 TEMP_PATH = ""
@@ -40,6 +41,7 @@ print(y_min, y_max)
 
 # get satellite image, currently from https://github.com/openclimatefix/py-staticmaps
 import staticmaps
+
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 bottom_left = osgb_to_lat_lon(x=x_min, y=y_min)

@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 from typing import Optional, Union
 from pathlib import Path
+import fsspec
 
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
@@ -86,8 +87,12 @@ class Manager:
             )
 
     def make_destination_paths_if_necessary(self):
-        # TODO: Make dst_path/{train,validation,test}/<data_source_name>
-        raise NotImplementedError()  # TODO!
+        filesystem = fsspec.open(self.config.output_data.filepath).fs
+        for split_name in split.SplitName:
+            for data_source_name in self.data_sources.keys():
+                path = self.config.output_data.filepath / split_name.value / data_source_name
+                logger.info(f"Making {path} if necessary...")
+                filesystem.mkdirs(path, exist_ok=True)
 
     def check_paths_exist(self):
         """Loop through all self.data_sources.
@@ -120,14 +125,30 @@ class Manager:
         split_t0_datetimes = split.split_data(
             datetimes=t0_datetimes, method=self.config.process.split_method
         )
+        for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
+            n_batches = getattr(self.config.process, f"n_{split_name}_batches")
+            n_examples = n_batches * self.config.process.batch_size
+            logger.debug(
+                f"Creating {n_batches:,d} batches x {self.config.process.batch_size:,d} examples"
+                f" per batch = {n_examples:,d} examples for {split_name}."
+            )
+            df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
+                t0_datetimes=datetimes_for_split, n_examples=n_examples
+            )
+            output_filename = self._filename_of_locations_csv_file(split_name)
+            logger.debug(f"Writing {output_filename}")
+            df_of_locations.to_csv(output_filename)
+
+    def _filename_of_locations_csv_file(self, split_name: str) -> Path:
+        return (
+            self.config.output_data.filepath
+            / split_name
+            / "spatial_and_temporal_locations_of_each_example.csv"
+        )
 
     def _locations_csv_file_exists(self) -> bool:
         "Check if filepath/train/spatial_and_temporal_locations_of_each_example.csv exists"
-        filename = (
-            self.config.output_data.filepath
-            / "train"
-            / "spatial_and_temporal_locations_of_each_example.csv"
-        )
+        filename = self._filename_of_locations_csv_file(split_name=split.SplitName.TRAIN.value)
         try:
             nd_fs_utils.check_path_exists(filename)
         except FileNotFoundError:
@@ -207,6 +228,7 @@ class Manager:
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
+        # TODO: Speed this up by splitting the shuffled_t0_datetimes across multiple processors.
         (
             x_locations,
             y_locations,

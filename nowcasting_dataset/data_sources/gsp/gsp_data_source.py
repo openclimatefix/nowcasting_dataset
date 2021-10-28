@@ -121,13 +121,12 @@ class GSPDataSource(ImageDataSource):
         Returns: list of x and y locations
 
         """
-        logger.debug("Getting locations for the batch")
-
         # Pick a random GSP for each t0_datetime, and then grab
         # their geographical location.
         x_locations = []
         y_locations = []
 
+        # TODO: Issue 305: Speed up this function by removing this for loop?
         for t0_dt in t0_datetimes:
 
             # Choose start and end times
@@ -141,20 +140,14 @@ class GSPDataSource(ImageDataSource):
             random_gsp_id = self.rng.choice(gsp_power.columns)
             meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
 
-            # Make sure there is only one. Sometimes there are multiple gsp_ids at one location
-            # e.g. 'SELL_1'. Further investigation on this may be needed,
-            # but going to ignore this for now.  See this issue:
-            # https://github.com/openclimatefix/nowcasting_dataset/issues/272
+            # Make sure there is only one GSP.
+            # Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
+            # TODO: Issue #272: Further investigation on multiple GSPs may be needed.
             metadata_for_gsp = meta_data.iloc[0]
 
             # Get metadata for GSP
             x_locations.append(metadata_for_gsp.location_x)
             y_locations.append(metadata_for_gsp.location_y)
-
-            logger.debug(
-                f"Found locations for GSP id {random_gsp_id} of {metadata_for_gsp.location_x} and "
-                f"{metadata_for_gsp.location_y}"
-            )
 
         return x_locations, y_locations
 

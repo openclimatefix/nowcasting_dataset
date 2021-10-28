@@ -40,8 +40,8 @@ class SplitName(Enum):
 
 
 # Create a namedtuple for storing split t0 datetimes.
-SplitData = namedtuple(
-    typename="SplitData",
+SplitDateTimes = namedtuple(
+    typename="SplitDateTimes",
     field_names=[SplitName.TRAIN.value, SplitName.VALIDATION.value, SplitName.TEST.value],
 )
 
@@ -55,7 +55,7 @@ def split_data(
     ),
     train_validation_test_datetime_split: Optional[List[pd.Timestamp]] = None,
     seed: int = 1234,
-) -> SplitData:
+) -> SplitDateTimes:
     """
     Split the date using various different methods
 
@@ -181,15 +181,20 @@ def split_data(
     else:
         raise ValueError(f"{method} for splitting day is not implemented")
 
-    logger.debug(
-        f"Split data done, train has {len(train_datetimes):,d}, "
-        f"validation has {len(validation_datetimes):,d}, "
-        f"test has {len(test_datetimes):,d} t0 datetimes."
-    )
-
-    # Check there's no overlap.
+    # Sanity check!
     assert len(train_datetimes.intersection(validation_datetimes)) == 0
     assert len(train_datetimes.intersection(test_datetimes)) == 0
     assert len(test_datetimes.intersection(validation_datetimes)) == 0
+    assert train_datetimes.unique
+    assert validation_datetimes.unique
+    assert test_datetimes.unique
 
-    return SplitData(train=train_datetimes, validation=validation_datetimes, test=test_datetimes)
+    split_datetimes = SplitDateTimes(
+        train=train_datetimes, validation=validation_datetimes, test=test_datetimes
+    )
+
+    logger.debug("Split data done!")
+    for split_name, dt in split_datetimes._asdict().items():
+        logger.debug(f"{split_name} has {len(dt):,d} datetimes, from {dt[0]} to {dt[-1]}")
+
+    return split_datetimes

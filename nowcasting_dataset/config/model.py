@@ -286,6 +286,9 @@ class Process(BaseModel):
             "The method used to split the t0 datetimes into train, validation and test sets."
         ),
     )
+    n_train_batches: int = 250
+    n_validation_batches: int = 10
+    n_test_batches: int = 10
     upload_every_n_batches: int = Field(
         16,
         description=(

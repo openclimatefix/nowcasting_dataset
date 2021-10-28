@@ -13,7 +13,7 @@ from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
 from nowcasting_dataset import utils
 
 # Set up logging.
-logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
+logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s at %(pathname)s#L%(lineno)d")
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 logger = logging.getLogger("nowcasting_dataset")
 logger.setLevel(logging.DEBUG)
@@ -43,7 +43,7 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
     ),
 )
 @click.option(
-    "--overwrite",
+    "--overwrite_batches",
     default=False,
     help=(
         "Overwrite any existing batches in the destination directory, for the selected"
@@ -53,12 +53,12 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
     ),
 )
 @utils.arg_logger
-def main(config_filename: str, data_source: list[str], overwrite: bool):
+def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     """Generate pre-prepared batches of data."""
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
-    # manager.make_destination_paths_if_necessary()
+    manager.make_destination_paths_if_necessary()
     # manager.check_paths_exist()
     manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     # TODO: If not overwrite, for each DataSource, get the maximum_batch_id already on disk.

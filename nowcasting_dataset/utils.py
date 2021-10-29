@@ -1,13 +1,13 @@
 """ utils functions """
-from functools import wraps
 import hashlib
 import logging
+import os
+import re
 import tempfile
+from functools import wraps
 from pathlib import Path
 from typing import Optional
 
-import re
-import os
 import fsspec.asyn
 import gcsfs
 import numpy as np
@@ -16,8 +16,8 @@ import torch
 import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.consts import Array
 from nowcasting_dataset.config import load, model
+from nowcasting_dataset.consts import Array
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +105,8 @@ def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
 
     """
     filename = f"{batch_idx}.nc"
-    # Remove 'hash' at the moment. In the future could has the configuration file, and use this to make sure we are
-    # saving and loading the same thing
+    # In the future we could hash the configuration file, and use this to
+    # make sure we are saving and loading the same thing.
     if add_hash:
         hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
         filename = f"{hash_of_filename[0:6]}_{filename}"
@@ -152,7 +152,7 @@ def coord_to_range(
 
 
 class OpenData:
-    """ General method to open a file, but if from GCS, the file is downloaded to a temp file first """
+    """Open a file, but if from GCS, the file is downloaded to a temp file first."""
 
     def __init__(self, file_name):
         """ Check file is there, and create temporary file """

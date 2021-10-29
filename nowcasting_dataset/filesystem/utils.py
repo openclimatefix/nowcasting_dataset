@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Union
 
 import fsspec
+from pathy import Pathy
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -18,38 +19,39 @@ def upload_and_delete_local_files(dst_path: str, local_path: Path):
     delete_all_files_in_temp_path(local_path)
 
 
-def get_maximum_batch_id(path: str):
+def get_maximum_batch_id(path: str) -> int:
     """
     Get the last batch ID. Works with GCS, AWS, and local.
 
     Args:
-        path: the path folder to look in.  Begin with 'gs://' for GCS. Begin with 's3://' for
-              AWS S3.
+        path: The path folder to look in.
+              Begin with 'gs://' for GCS. Begin with 's3://' for AWS S3.
+              Supports wildcards *, **, ?, and [..].
 
-    Returns: the maximum batch id of data in `path`.
+    Returns: The maximum batch id of data in `path`.
+
+    Raises FileNotFoundError if `path` does not exist.
     """
     _LOG.debug(f"Looking for maximum batch id in {path}")
 
     filesystem = fsspec.open(path).fs
     if not filesystem.exists(path):
-        _LOG.debug(f"{path} does not exists")
-        return None
+        msg = f"{path} does not exists"
+        _LOG.warning(msg)
+        raise FileNotFoundError(msg)
 
     filenames = get_all_filenames_in_path(path=path)
 
-    # just take filename
-    filenames = [filename.split("/")[-1] for filename in filenames]
+    # if there is no files, return 0
+    if len(filenames) == 0:
+        _LOG.debug(f"Did not find any files in {path}")
+        return 0
 
-    # remove suffix
-    filenames = [filename.split(".")[0] for filename in filenames]
+    # just take the stem (the filename without the suffix and without the path)
+    stems = [filename.stem for filename in filenames]
 
     # change to integer
-    batch_indexes = [int(filename) for filename in filenames if len(filename) > 0]
-
-    # if there is no files, return None
-    if len(batch_indexes) == 0:
-        _LOG.debug(f"Did not find any files in {path}")
-        return None
+    batch_indexes = [int(stem) for stem in stems if len(stem) > 0]
 
     # get the maximum batch id
     maximum_batch_id = max(batch_indexes)
@@ -98,17 +100,18 @@ def rename_file(remote_file: str, new_filename: str):
     filesystem.mv(remote_file, new_filename)
 
 
-def get_all_filenames_in_path(path: Union[str, Path]) -> List[str]:
+def get_all_filenames_in_path(path: Union[str, Path]) -> List[Pathy]:
     """
-    Get all the files names from one folder in gcp
+    Get all the files names from one folder.
 
     Args:
-        path: the path that we should look in
+        path: The path that we should look in.  Supports wildcards *, ?, and [..].
 
-    Returns: a list of files names represented as strings.
+    Returns: A list of filenames represented as Pathy objects.
     """
     filesystem = fsspec.open(path).fs
-    return filesystem.ls(path)
+    filename_strings = filesystem.glob(path)
+    return [Pathy(filename) for filename in filename_strings]
 
 
 def download_to_local(remote_filename: str, local_filename: str):

@@ -31,14 +31,17 @@ class Manager:
       data_sources: dict[str, DataSource]
       data_source_which_defines_geospatial_locations: DataSource: The DataSource used to compute the
         geospatial locations of each example.
+      save_batches_locally_and_upload: bool: Set to True by `load_yaml_configuration()` if
+        `config.process.upload_every_n_batches > 0`.
+      local_temp_path: Path: `config.process.local_temp_path` with `~` expanded.
     """
 
-    def __init__(self):  # noqa: D107
+    def __init__(self) -> None:  # noqa: D107
         self.config = None
         self.data_sources = {}
         self.data_source_which_defines_geospatial_locations = None
 
-    def load_yaml_configuration(self, filename: str):
+    def load_yaml_configuration(self, filename: str) -> None:
         """Load YAML config from `filename`."""
         logger.debug(f"Loading YAML configuration file {filename}")
         self.config = config.load_yaml_configuration(filename)
@@ -51,7 +54,7 @@ class Manager:
 
     def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
-    ):
+    ) -> None:
         """Initialise DataSources specified in the InputData configuration.
 
         For each key in each DataSource's configuration object, the string `<data_source_name>_`
@@ -99,7 +102,7 @@ class Manager:
                 " data_source_which_defines_geospatial_locations."
             )
 
-    def make_directories_if_necessary(self):
+    def make_directories_if_necessary(self) -> None:
         """Make dirs: `<output_data.filepath> / <split_name> / <data_source_name>`.
 
         Also make `local_temp_path` if necessary.
@@ -119,7 +122,9 @@ class Manager:
             logger.info(f"Deleting all files in {self.local_temp_path}...")
             nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
-    def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(self):
+    def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(
+        self,
+    ) -> None:
         """Creates CSV files specifying the locations of each example if those files don't exist yet.
 
         Creates one file per split, in this location:
@@ -255,3 +260,32 @@ class Manager:
                 "y_center_OSGB": y_locations,
             }
         )
+
+    def _get_first_batches_to_create(
+        self, overwrite_batches: bool
+    ) -> dict[split.SplitName, dict[str, int]]:
+        """For each SplitName & for each DataSource name, return the first batch ID to create."""
+        # Initialise to zero:
+        first_batches_to_create: dict[split.SplitName, dict[str, int]] = {}
+        for split_name in split.SplitName:
+            first_batches_to_create[split_name] = {
+                data_source_name: 0 for data_source_name in self.data_sources
+            }
+
+        if overwrite_batches:
+            return first_batches_to_create
+
+        # If we're not overwriting batches then find the last batch on disk.
+        for split_name in split.SplitName:
+            for data_source_name in self.data_sources:
+                path = (
+                    self.config.output_data.filepath / split_name.value / data_source_name / "*.nc"
+                )
+                max_batch_id_on_disk = nd_fs_utils.get_maximum_batch_id(path)
+                first_batches_to_create[split_name][data_source_name] = max_batch_id_on_disk + 1
+
+        return first_batches_to_create
+
+    def create_batches(self, overwrite_batches: bool) -> None:
+        """Create batches (if necessary)."""
+        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)  # noqa: F841

@@ -65,6 +65,7 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     # TODO: Load spatial_and_temporal_locations_of_each_example.csv files
     # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to create,
     #       and whether to utils.upload_and_delete_local_files()
+    manager.create_batches(overwrite_batches)
     # TODO: Wait for all processes to complete.
     # TODO: save_yaml_configuration(config)
     # TODO: Validate ML data.

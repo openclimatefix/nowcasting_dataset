@@ -129,18 +129,18 @@ def test_download():  # noqa: D103
         local_path = Path(tmpdirname)
 
         # add fake file to dir
-        path_and_filename_1 = os.path.join(local_path, file1)
+        path_and_filename_1 = local_path / file1
         with open(path_and_filename_1, "w"):
             pass
 
         # add fake file to dir
-        os.mkdir(f"{tmpdirname}/test_dir")
-        _ = os.path.join(local_path, file2)
-        with open(os.path.join(local_path, file2), "w"):
+        os.mkdir(local_path / "test_dir")
+        path_and_filename_2 = local_path / file2
+        with open(path_and_filename_2, "w"):
             pass
 
         # run function
-        path_and_filename_3 = os.path.join(local_path, file3)
+        path_and_filename_3 = local_path / file3
         download_to_local(remote_filename=path_and_filename_1, local_filename=path_and_filename_3)
 
         # check the object are not there

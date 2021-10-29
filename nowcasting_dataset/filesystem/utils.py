@@ -53,7 +53,7 @@ def get_maximum_batch_id(path: Pathy) -> int:
         _LOG.warning(msg)
         raise FileNotFoundError(msg)
 
-    filenames = get_all_filenames_in_path(path=path)
+    filenames = filesystem.glob(path)
 
     # if there is no files, return 0
     if len(filenames) == 0:
@@ -61,6 +61,7 @@ def get_maximum_batch_id(path: Pathy) -> int:
         return 0
 
     # just take the stem (the filename without the suffix and without the path)
+    filenames = [Pathy(filename) for filename in filenames]
     stems = [filename.stem for filename in filenames]
 
     # change to integer
@@ -83,8 +84,8 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
     _LOG.info(f"Deleting {len(filenames)} files from {path}.")
 
     if delete_dirs:
-        for file in filenames:
-            filesystem.rm(file, recursive=True)
+        for filename in filenames:
+            filesystem.rm(str(filename), recursive=True)
     else:
         # loop over folder structure, but only delete files
         for root, dirs, files in filesystem.walk(path):
@@ -113,18 +114,17 @@ def rename_file(remote_file: str, new_filename: str):
     filesystem.mv(remote_file, new_filename)
 
 
-def get_all_filenames_in_path(path: Union[str, Path]) -> List[Pathy]:
+def get_all_filenames_in_path(path: Union[str, Path]) -> List[str]:
     """
     Get all the files names from one folder.
 
     Args:
-        path: The path that we should look in.  Supports wildcards *, ?, and [..].
+        path: The path that we should look in.
 
-    Returns: A list of filenames represented as Pathy objects.
+    Returns: A list of filenames represented as strings.
     """
     filesystem = get_filesystem(path)
-    filename_strings = filesystem.glob(path)
-    return [Pathy(filename) for filename in filename_strings]
+    return filesystem.ls(path)
 
 
 def download_to_local(remote_filename: str, local_filename: str):
@@ -136,6 +136,10 @@ def download_to_local(remote_filename: str, local_filename: str):
         local_filename: the local filename
     """
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
+
+    # Check the inputs are strings
+    remote_filename = str(remote_filename)
+    local_filename = str(local_filename)
 
     filesystem = get_filesystem(remote_filename)
     filesystem.get(remote_filename, local_filename)

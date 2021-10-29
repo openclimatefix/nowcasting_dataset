@@ -86,8 +86,7 @@ class NWPDataSource(ZarrDataSource):
 
         Note that this function does *not* resample from hourly to 5 minutely.
         Resampling would be very expensive if done on the whole geographical
-        extent of the NWP data!  So resampling is done in
-        _post_process_example().
+        extent of the NWP data!
 
         Args:
             t0_dt: the time slice is around t0_dt.
@@ -113,7 +112,9 @@ class NWPDataSource(ZarrDataSource):
         selected["target_time"] = init_time + selected.step
         return selected
 
-    def _post_process_example(self, selected_data: xr.DataArray) -> xr.DataArray:
+    def _post_process_example(
+        self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
+    ) -> xr.DataArray:
         selected_data = selected_data.rename({"target_time": "time"})
         selected_data = selected_data.rename({"variable": "channels"})
         return selected_data

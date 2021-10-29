@@ -185,9 +185,11 @@ def split_data(
         raise ValueError(f"{method} for splitting day is not implemented")
 
     # Sanity check!
-    assert len(train_datetimes.intersection(validation_datetimes)) == 0
-    assert len(train_datetimes.intersection(test_datetimes)) == 0
-    assert len(test_datetimes.intersection(validation_datetimes)) == 0
+    if method != SplitMethod.SAME:
+        assert len(train_datetimes.intersection(validation_datetimes)) == 0
+        assert len(train_datetimes.intersection(test_datetimes)) == 0
+        assert len(test_datetimes.intersection(validation_datetimes)) == 0
+
     assert train_datetimes.unique
     assert validation_datetimes.unique
     assert test_datetimes.unique

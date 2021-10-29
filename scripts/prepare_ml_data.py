@@ -59,10 +59,8 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
-    manager.make_directories_if_necessary()
     manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     manager.create_batches(overwrite_batches)
-    # TODO: Wait for all processes to complete.
     # TODO: save_yaml_configuration(config)
     # TODO: Validate ML data.
 

@@ -4,10 +4,11 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-import fsspec
+import futures
 import numpy as np
 import pandas as pd
 
+# nowcasting_dataset imports
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
@@ -101,26 +102,6 @@ class Manager:
                 f"DataSource `{data_source_name}` set as"
                 " data_source_which_defines_geospatial_locations."
             )
-
-    def make_directories_if_necessary(self) -> None:
-        """Make dirs: `<output_data.filepath> / <split_name> / <data_source_name>`.
-
-        Also make `local_temp_path` if necessary.
-
-        Works on any compute environment.
-        """
-        filesystem = fsspec.open(self.config.output_data.filepath).fs
-        for split_name in split.SplitName:
-            for data_source_name in self.data_sources.keys():
-                path = self.config.output_data.filepath / split_name.value / data_source_name
-                logger.info(f"Making {path} if necessary...")
-                filesystem.mkdirs(path, exist_ok=True)
-
-        if self.save_batches_locally_and_upload:
-            logger.info(f"Making {self.local_temp_path} if necessary...")
-            filesystem.mkdirs(self.local_temp_path, exist_ok=True)
-            logger.info(f"Deleting all files in {self.local_temp_path}...")
-            nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
     def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(
         self,
@@ -316,6 +297,10 @@ class Manager:
     def create_batches(self, overwrite_batches: bool) -> None:
         """Create batches (if necessary).
 
+        Make dirs: `<output_data.filepath> / <split_name> / <data_source_name>`.
+
+        Also make `local_temp_path` if necessary.
+
         Args:
           overwrite_batches: If True then start from batch 0, regardless of which batches have
             previously been written to disk. If False then check which batches have previously been
@@ -335,7 +320,7 @@ class Manager:
                 return
 
         # Load locations for each example off disk.
-        locations_for_each_example_for_each_split: dict[split.SplitName, pd.DataFrame] = {}
+        locations_for_each_example_of_each_split: dict[split.SplitName, pd.DataFrame] = {}
         for split_name in splits_which_need_more_batches:
             filename = self._filename_of_locations_csv_file(split_name.value)
             logger.info(f"Loading {filename}.")
@@ -345,7 +330,51 @@ class Manager:
             locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
                 locations_for_each_example["t0_datetime_UTC"]
             )
-            locations_for_each_example_for_each_split[split_name] = locations_for_each_example
+            locations_for_each_example_of_each_split[split_name] = locations_for_each_example
 
-        # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to
+        # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().
+        # TODO: Split this up into separate functions!!!
+        n_data_sources = len(self.data_sources)
+        for split_name in splits_which_need_more_batches:
+            locations_for_split = locations_for_each_example_of_each_split[split_name]
+            with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
+                future_create_batches_jobs = []
+                for worker_id, (data_source_name, data_source) in enumerate(
+                    self.data_sources.items()
+                ):
+                    # Get indexes of first batch and example; and subset locations_for_split.
+                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
+                    idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
+                    locations = locations_for_split.loc[idx_of_first_example:]
+
+                    # Get paths.
+                    dst_path = (
+                        self.config.output_data.filepath / split_name.value / data_source_name
+                    )
+                    temp_path = (
+                        self.temp_path / split_name.value / data_source_name / f"worker_{worker_id}"
+                    )
+
+                    # Make folders.
+                    nd_fs_utils.makedirs(dst_path, exist_ok=True)
+                    if self.save_batches_locally_and_upload:
+                        nd_fs_utils.makedirs(temp_path, exist_ok=True)
+
+                    # Submit data_source.create_batches task to the worker process.
+                    future = executor.submit(
+                        data_source.create_batches,
+                        spatial_and_temporal_locations_of_each_example=locations,
+                        idx_of_first_batch=idx_of_first_batch,
+                        batch_size=self.config.process.batch_size,
+                        dst_path=dst_path,
+                        temp_path=temp_path,
+                        upload_every_n_batches=self.config.process.upload_every_n_batches,
+                    )
+                    future_create_batches_jobs.append(future)
+
+                # Wait for all futures to finish:
+                for future in future_create_batches_jobs:
+                    # Call exception() to propagate any exceptions raised by the worker process into
+                    # the main process, and to wait for the worker to finish.
+                    future.exception()

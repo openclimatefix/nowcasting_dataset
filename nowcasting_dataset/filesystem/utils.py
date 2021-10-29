@@ -146,8 +146,16 @@ def upload_one_file(
     filesystem.put(local_filename, remote_filename)
 
 
-def make_folder(path: Union[str, Path]):
-    """ Make folder """
+def makedirs(path: Union[str, Path], exist_ok: bool = True) -> None:
+    """Recursively make directories
+
+    Creates directory at path and any intervening required directories.
+
+    Raises exception if, for instance, the path already exists but is a file.
+
+    Args:
+        path: The path to create.
+        exist_ok: If False then raise an exception if `path` already exists.
+    """
     filesystem = fsspec.open(path).fs
-    if not filesystem.exists(path):
-        filesystem.mkdir(path)
+    filesystem.mkdir(path, exist_ok=exist_ok)

@@ -19,6 +19,8 @@ def upload_and_delete_local_files(dst_path: str, local_path: Path):
     delete_all_files_in_temp_path(local_path)
 
 
+# TODO: Issue #308: Use leading zeros in batch filenames, then we can sort the filename strings
+# and take the last one, instead of converting all filenames to ints!
 def get_maximum_batch_id(path: str) -> int:
     """
     Get the last batch ID. Works with GCS, AWS, and local.

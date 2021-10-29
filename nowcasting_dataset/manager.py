@@ -146,7 +146,7 @@ class Manager:
             datetimes=t0_datetimes, method=self.config.process.split_method
         )
         for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
-            n_batches = getattr(self.config.process, f"n_{split_name}_batches")
+            n_batches = self._get_n_batches_for_split_name(split_name)
             n_examples = n_batches * self.config.process.batch_size
             logger.debug(
                 f"Creating {n_batches:,d} batches x {self.config.process.batch_size:,d} examples"
@@ -158,6 +158,9 @@ class Manager:
             output_filename = self._filename_of_locations_csv_file(split_name)
             logger.debug(f"Writing {output_filename}")
             df_of_locations.to_csv(output_filename)
+
+    def _get_n_batches_for_split_name(self, split_name: str) -> int:
+        return getattr(self.config.process, f"n_{split_name}_batches")
 
     def _filename_of_locations_csv_file(self, split_name: str) -> Path:
         return (
@@ -286,6 +289,63 @@ class Manager:
 
         return first_batches_to_create
 
+    def _check_if_more_batches_are_required_for_split(
+        self,
+        split_name: split.SplitName,
+        first_batches_to_create: dict[split.SplitName, dict[str, int]],
+    ) -> bool:
+        """Returns True if batches still need to be created for any DataSource."""
+        n_batches_requested = self._get_n_batches_for_split_name(split_name.value)
+        for data_source_name in self.data_sources:
+            if first_batches_to_create[split_name][data_source_name] < n_batches_requested:
+                return True
+        return False
+
+    def _find_splits_which_need_more_batches(
+        self, first_batches_to_create: dict[split.SplitName, dict[str, int]]
+    ) -> list[split.SplitName]:
+        """Returns list of SplitNames which need more batches to be produced."""
+        splits_which_need_more_batches = []
+        for split_name in split.SplitName:
+            if self._check_if_more_batches_are_required_for_split(
+                split_name, first_batches_to_create
+            ):
+                splits_which_need_more_batches.append(split_name)
+        return splits_which_need_more_batches
+
     def create_batches(self, overwrite_batches: bool) -> None:
-        """Create batches (if necessary)."""
-        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)  # noqa: F841
+        """Create batches (if necessary).
+
+        Args:
+          overwrite_batches: If True then start from batch 0, regardless of which batches have
+            previously been written to disk. If False then check which batches have previously been
+            written to disk, and only create any batches which have not yet been written to disk.
+        """
+        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)
+
+        # Check if there's any work to do.
+        if overwrite_batches:
+            splits_which_need_more_batches = [split_name for split_name in split.SplitName]
+        else:
+            splits_which_need_more_batches = self._find_splits_which_need_more_batches(
+                first_batches_to_create
+            )
+            if len(splits_which_need_more_batches) == 0:
+                logger.info("All batches have already been created!  No work to do!")
+                return
+
+        # Load locations for each example off disk.
+        locations_for_each_example_for_each_split: dict[split.SplitName, pd.DataFrame] = {}
+        for split_name in splits_which_need_more_batches:
+            filename = self._filename_of_locations_csv_file(split_name.value)
+            logger.info(f"Loading {filename}.")
+            locations_for_each_example = pd.read_csv(filename)
+            # Converting to datetimes is much faster using `pd.to_datetime()` than
+            # passing `parse_datetimes` into `pd.read_csv()`.
+            locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
+                locations_for_each_example["t0_datetime_UTC"]
+            )
+            locations_for_each_example_for_each_split[split_name] = locations_for_each_example
+
+        # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to
+        # create, and whether to utils.upload_and_delete_local_files().

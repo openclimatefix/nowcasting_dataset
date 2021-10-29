@@ -336,6 +336,7 @@ class Manager:
         # create, and whether to utils.upload_and_delete_local_files().
         # TODO: Split this up into separate functions!!!
         n_data_sources = len(self.data_sources)
+        nd_utils.set_fsspec_for_multiprocess()
         for split_name in splits_which_need_more_batches:
             locations_for_split = locations_for_each_example_of_each_split[split_name]
             with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:

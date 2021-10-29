@@ -10,14 +10,12 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset.time as nd_time
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger("nowcasting_dataset")
-
-
-from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 
 
 @dataclass
@@ -139,6 +137,43 @@ class SatelliteDataSource(ZarrDataSource):
 
         Args:
             remove_night: If True then remove datetimes at night.
+                We're interested in forecasting solar power generation, so we
+                don't care about nighttime data :)
+
+                In the UK in summer, the sun rises first in the north east, and
+                sets last in the north west [1].  In summer, the north gets more
+                hours of sunshine per day.
+
+                In the UK in winter, the sun rises first in the south east, and
+                sets last in the south west [2].  In winter, the south gets more
+                hours of sunshine per day.
+
+                |                        | Summer | Winter |
+                |           ---:         |  :---: |  :---: |
+                | Sun rises first in     | N.E.   | S.E.   |
+                | Sun sets last in       | N.W.   | S.W.   |
+                | Most hours of sunlight | North  | South  |
+
+                Before training, we select timesteps which have at least some
+                sunlight.  We do this by computing the clearsky global horizontal
+                irradiance (GHI) for the four corners of the satellite imagery,
+                and for all the timesteps in the dataset.  We only use timesteps
+                where the maximum global horizontal irradiance across all four
+                corners is above some threshold.
+
+                The 'clearsky solar irradiance' is the amount of sunlight we'd
+                expect on a clear day at a specific time and location. The SI unit
+                of irradiance is watt per square meter.  The 'global horizontal
+                irradiance' (GHI) is the total sunlight that would hit a
+                horizontal surface on the surface of the Earth.  The GHI is the
+                sum of the direct irradiance (sunlight which takes a direct path
+                from the Sun to the Earth's surface) and the diffuse horizontal
+                irradiance (the sunlight scattered from the atmosphere).  For more
+                info, see: https://en.wikipedia.org/wiki/Solar_irradiance
+
+        References:
+          1. [Video of June 2019](https://www.youtube.com/watch?v=IOp-tj-IJpk)
+          2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
         if self._data is None:
             sat_data = self._open_data()

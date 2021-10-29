@@ -353,14 +353,17 @@ class Manager:
                     dst_path = (
                         self.config.output_data.filepath / split_name.value / data_source_name
                     )
-                    temp_path = (
-                        self.temp_path / split_name.value / data_source_name / f"worker_{worker_id}"
+                    local_temp_path = (
+                        self.local_temp_path
+                        / split_name.value
+                        / data_source_name
+                        / f"worker_{worker_id}"
                     )
 
                     # Make folders.
                     nd_fs_utils.makedirs(dst_path, exist_ok=True)
                     if self.save_batches_locally_and_upload:
-                        nd_fs_utils.makedirs(temp_path, exist_ok=True)
+                        nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
 
                     # Submit data_source.create_batches task to the worker process.
                     future = executor.submit(
@@ -369,7 +372,7 @@ class Manager:
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
                         dst_path=dst_path,
-                        temp_path=temp_path,
+                        local_temp_path=local_temp_path,
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
                     future_create_batches_jobs.append(future)

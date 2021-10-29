@@ -32,7 +32,7 @@ def get_filesystem(path: Union[str, Path]) -> fsspec.AbstractFileSystem:
 
 # TODO: Issue #308: Use leading zeros in batch filenames, then we can sort the filename strings
 # and take the last one, instead of converting all filenames to ints!
-def get_maximum_batch_id(path: str) -> int:
+def get_maximum_batch_id(path: Pathy) -> int:
     """
     Get the last batch ID. Works with GCS, AWS, and local.
 
@@ -48,8 +48,8 @@ def get_maximum_batch_id(path: str) -> int:
     _LOG.debug(f"Looking for maximum batch id in {path}")
 
     filesystem = get_filesystem(path)
-    if not filesystem.exists(path):
-        msg = f"{path} does not exists"
+    if not filesystem.exists(path.parent):
+        msg = f"{path.parent} does not exists"
         _LOG.warning(msg)
         raise FileNotFoundError(msg)
 
@@ -169,4 +169,4 @@ def makedirs(path: Union[str, Path], exist_ok: bool = True) -> None:
         exist_ok: If False then raise an exception if `path` already exists.
     """
     filesystem = get_filesystem(path)
-    filesystem.mkdir(path, exist_ok=exist_ok)
+    filesystem.makedirs(path, exist_ok=exist_ok)

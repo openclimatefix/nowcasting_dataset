@@ -131,7 +131,7 @@ class DataSource:
         idx_of_first_batch: int,
         batch_size: int,
         dst_path: Path,
-        temp_path: Path,
+        local_temp_path: Path,
         upload_every_n_batches: int,
     ) -> None:
         """Create multiple batches and save them to disk.
@@ -146,7 +146,7 @@ class DataSource:
           idx_of_first_batch: The batch number of the first batch to create.
           batch_size: The number of examples per batch.
           dst_path: The final destination path for the batches.  Must exist.
-          temp_path: The local temporary path.  This is only required when dst_path is a
+          local_temp_path: The local temporary path.  This is only required when dst_path is a
             cloud storage bucket, so files must first be created on the VM's local disk in temp_path
             and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
           upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
@@ -163,8 +163,8 @@ class DataSource:
         # Figure out where to write batches to:
         save_batches_locally_and_upload = upload_every_n_batches > 0
         if save_batches_locally_and_upload:
-            nd_fs_utils.delete_all_files_in_temp_path(temp_path)
-        path_to_write_to = temp_path if save_batches_locally_and_upload else dst_path
+            nd_fs_utils.delete_all_files_in_temp_path(local_temp_path)
+        path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
 
         # Loop round each batch:
         examples_for_batch = spatial_and_temporal_locations_of_each_example.iloc[:batch_size]

@@ -133,6 +133,8 @@ class DataSource:
     ) -> None:
         """Create multiple batches and save them to disk.
 
+        Safe to call from worker processes.
+
         Args:
           spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
             the spatial and temporal location of an example.  The number of rows must be
@@ -152,6 +154,8 @@ class DataSource:
         assert batch_size > 0
         assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
         assert upload_every_n_batches >= 0
+
+        self.open()
 
         # Figure out where to write batches to:
         save_batches_locally_and_upload = upload_every_n_batches > 0

@@ -8,6 +8,7 @@ import rioxarray
 import xarray as xr
 from rasterio.warp import Resampling
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
@@ -21,6 +22,7 @@ from nowcasting_dataset.utils import OpenData
 # data = out.read(masked=True)
 # print(np.mean(data))
 # print(np.std(data))
+# TODO: Issue #321:  Remove these normalisation variables?
 TOPO_MEAN = xr.DataArray(
     data=[
         365.486887,
@@ -63,6 +65,10 @@ class TopographicDataSource(ImageDataSource):
         # Distance between pixels, giving their spatial extant, in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
         self._meters_per_pixel = meters_per_pixel
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.filename)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number

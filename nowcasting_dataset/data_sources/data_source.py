@@ -5,7 +5,7 @@ from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Union
 
 import pandas as pd
 import xarray as xr
@@ -47,7 +47,8 @@ class DataSource:
     forecast_minutes: int
 
     def __post_init__(self):
-        """ Post Init """
+        """Post Init"""
+        self.check_input_paths_exist()
         self.sample_period_duration = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
         # TODO: Do we still need all these different representations of sequence lengths?
@@ -122,6 +123,13 @@ class DataSource:
         underlying data source cannot be forked (like Zarr).
 
         Data sources which can be forked safely should call open() from __init__().
+        """
+        pass
+
+    def check_input_paths_exist(self) -> None:
+        """Check any input paths exist.  Raise FileNotFoundError if not.
+
+        Can be overridden by child classes.
         """
         pass
 
@@ -312,13 +320,20 @@ class ZarrDataSource(ImageDataSource):
       channels: The Zarr parameters to load.
     """
 
-    channels: Iterable[str]
+    # zarr_path and channels must be set.  But dataclasses complains about defining a non-default
+    # argument after a default argument if we remove the ` = None`.
+    zarr_path: Union[Path, str] = None
+    channels: Iterable[str] = None
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
 
     @property
     def data(self):

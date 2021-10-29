@@ -16,13 +16,8 @@ _LOG = logging.getLogger("nowcasting_dataset")
 
 @dataclass
 class SatelliteDataSource(ZarrDataSource):
-    """
-    Satellite Data Source
+    """Satellite Data Source."""
 
-    zarr_path: Must start with 'gs://' if on GCP.
-    """
-
-    zarr_path: str = None
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000

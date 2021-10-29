@@ -15,6 +15,7 @@ import pandas as pd
 import torch
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
@@ -51,6 +52,11 @@ class PVDataSource(ImageDataSource):
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        for filename in [self.filename, self.metadata_filename]:
+            nd_fs_utils.check_path_exists(filename)
 
     def load(self):
         """

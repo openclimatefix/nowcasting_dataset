@@ -14,6 +14,7 @@ import pandas as pd
 import torch
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
@@ -64,6 +65,10 @@ class GSPDataSource(ImageDataSource):
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
 
     @property
     def sample_period_minutes(self) -> int:

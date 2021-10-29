@@ -11,9 +11,9 @@ from rasterio.warp import Resampling
 from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 # Means computed with
 # out_fp = "europe_dem_1km.tif"

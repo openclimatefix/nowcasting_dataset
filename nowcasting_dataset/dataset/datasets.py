@@ -3,7 +3,7 @@ import logging
 from concurrent import futures
 from dataclasses import dataclass
 from numbers import Number
-from typing import List, Tuple, Callable
+from typing import Callable, List, Tuple
 
 import numpy as np
 import pandas as pd

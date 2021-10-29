@@ -1,4 +1,4 @@
-from nowcasting_dataset.square import Square, BoundingBox
+from nowcasting_dataset.square import BoundingBox, Square
 
 
 def test_init():

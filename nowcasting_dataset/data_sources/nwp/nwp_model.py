@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import logging
 
-from xarray.ufuncs import isnan, isinf
+from xarray.ufuncs import isinf, isnan
 
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutput,
-)
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)

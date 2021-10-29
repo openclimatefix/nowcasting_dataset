@@ -1,5 +1,6 @@
-from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 import pandas as pd
+
+from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 
 
 def test_init(test_data_folder):

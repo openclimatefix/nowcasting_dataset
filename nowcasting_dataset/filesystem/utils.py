@@ -1,7 +1,7 @@
 """ General utils functions """
 import logging
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
 import fsspec
 
@@ -23,7 +23,8 @@ def get_maximum_batch_id(path: str):
     Get the last batch ID. Works with GCS, AWS, and local.
 
     Args:
-        path: the path folder to look in.  Begin with 'gs://' for GCS. Begin with 's3://' for AWS S3.
+        path: the path folder to look in.  Begin with 'gs://' for GCS. Begin with 's3://' for
+              AWS S3.
 
     Returns: the maximum batch id of data in `path`.
     """

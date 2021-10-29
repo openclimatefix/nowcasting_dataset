@@ -4,7 +4,7 @@ import logging
 import time
 from concurrent import futures
 from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import numcodecs
 import pandas as pd

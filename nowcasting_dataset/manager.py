@@ -1,20 +1,26 @@
 """Manager class."""
 
+import logging
+from pathlib import Path
+from typing import Optional, Union
+
+import fsspec
 import numpy as np
 import pandas as pd
-import logging
-from typing import Optional, Union
-from pathlib import Path
-import fsspec
 
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
-from nowcasting_dataset.filesystem import utils as nd_fs_utils
-from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS, ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.dataset.split import split
+from nowcasting_dataset.filesystem import utils as nd_fs_utils
 
 logger = logging.getLogger(__name__)
+
+
+SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME = (
+    "spatial_and_temporal_locations_of_each_example.csv"
+)
 
 
 class Manager:
@@ -27,12 +33,13 @@ class Manager:
         geospatial locations of each example.
     """
 
-    def __init__(self):
+    def __init__(self):  # noqa: D107
         self.config = None
         self.data_sources = {}
         self.data_source_which_defines_geospatial_locations = None
 
     def load_yaml_configuration(self, filename: str):
+        """Load YAML config from `filename`."""
         logger.debug(f"Loading YAML configuration file {filename}")
         self.config = config.load_yaml_configuration(filename)
         self.config = config.set_git_commit(self.config)
@@ -93,6 +100,12 @@ class Manager:
             )
 
     def make_directories_if_necessary(self):
+        """Make dirs: `<output_data.filepath> / <split_name> / <data_source_name>`.
+
+        Also make `local_temp_path` if necessary.
+
+        Works on any compute environment.
+        """
         filesystem = fsspec.open(self.config.output_data.filepath).fs
         for split_name in split.SplitName:
             for data_source_name in self.data_sources.keys():
@@ -107,10 +120,19 @@ class Manager:
             nd_fs_utils.delete_all_files_in_temp_path(path=self.local_temp_path)
 
     def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(self):
+        """Creates CSV files specifying the locations of each example if those files don't exist yet.
+
+        Creates one file per split, in this location:
+
+        `<output_data.filepath> / <split_name> / spatial_and_temporal_locations_of_each_example.csv`
+
+        Works on any compute environment.
+        """
         if self._locations_csv_file_exists():
             return
         logger.info(
-            "spatial_and_temporal_locations_of_each_example.csv does not exist so will create..."
+            f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME} does not exist so"
+            " will create..."
         )
         t0_datetimes = self.get_t0_datetimes_across_all_data_sources(
             freq=self.config.process.t0_datetime_frequency
@@ -136,11 +158,11 @@ class Manager:
         return (
             self.config.output_data.filepath
             / split_name
-            / "spatial_and_temporal_locations_of_each_example.csv"
+            / SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
         )
 
     def _locations_csv_file_exists(self) -> bool:
-        "Check if filepath/train/spatial_and_temporal_locations_of_each_example.csv exists"
+        """Check if filepath/train/spatial_and_temporal_locations_of_each_example.csv exists."""
         filename = self._filename_of_locations_csv_file(split_name=split.SplitName.TRAIN.value)
         try:
             nd_fs_utils.check_path_exists(filename)

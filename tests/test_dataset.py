@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 
 import nowcasting_dataset.time as nd_time
-from nowcasting_dataset.dataset.datasets import NowcastingDataset
 from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.dataset.datasets import NowcastingDataset
 
 
 def _get_t0_datetimes(data_source, freq) -> pd.DatetimeIndex:

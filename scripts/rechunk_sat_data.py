@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import xarray as xr
 from pathlib import Path
-import numcodecs
-import gcsfs
-import rechunker
-import zarr
 
+import gcsfs
+import numcodecs
+import rechunker
+import xarray as xr
+import zarr
 
 BUCKET = Path("solar-pv-nowcasting-data")
 SAT_PATH = BUCKET / "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/"

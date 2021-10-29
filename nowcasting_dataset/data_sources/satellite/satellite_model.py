@@ -1,6 +1,8 @@
 """ Model for output of satellite data """
 from __future__ import annotations
-from xarray.ufuncs import isnan, isinf
+
+from xarray.ufuncs import isinf, isnan
+
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 

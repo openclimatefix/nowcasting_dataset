@@ -3,20 +3,18 @@ import logging
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, Optional, Iterable, Dict, Callable
+from typing import Callable, Dict, Iterable, Optional, Union
 
 import pandas as pd
 import torch
 
-from nowcasting_dataset import consts
-from nowcasting_dataset import data_sources
+from nowcasting_dataset import consts, data_sources
+from nowcasting_dataset.data_sources.data_source_list import DataSourceList
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset import datasets
-from nowcasting_dataset.dataset.split.split import split_data, SplitMethod
-from nowcasting_dataset.data_sources.data_source_list import DataSourceList
-
+from nowcasting_dataset.dataset.split.split import SplitMethod, split_data
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)

@@ -10,8 +10,8 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.nwp.nwp_data_source import open_nwp, NWP_VARIABLE_NAMES
 from nowcasting_dataset.config.model import Configuration
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES, open_nwp
 from nowcasting_dataset.dataset.batch import Batch
 
 # set up

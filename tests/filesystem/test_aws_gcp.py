@@ -1,15 +1,15 @@
 import os
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
-from datetime import datetime
 import pytest
 
 from nowcasting_dataset.filesystem.utils import (
-    upload_and_delete_local_files,
-    get_all_filenames_in_path,
     delete_all_files_in_temp_path,
     download_to_local,
+    get_all_filenames_in_path,
+    upload_and_delete_local_files,
     upload_one_file,
 )
 

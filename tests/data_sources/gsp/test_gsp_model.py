@@ -1,7 +1,8 @@
 import os
 import tempfile
-import pytest
+
 import numpy as np
+import pytest
 
 from nowcasting_dataset.data_sources.fake import gsp_fake
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP

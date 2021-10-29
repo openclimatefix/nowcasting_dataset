@@ -4,7 +4,7 @@
 2. pydantic exentions model of xr.Dataset
 3. xr array and xr dataset --> to torch functions
 """
-from typing import List, Any
+from typing import Any, List
 
 import numpy as np
 import torch

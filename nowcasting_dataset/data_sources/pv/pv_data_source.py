@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from numbers import Number
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
+from typing import List, Optional, Tuple, Union
 
 import fsspec
 import numpy as np
@@ -16,9 +16,7 @@ import torch
 import xarray as xr
 
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.consts import (
-    DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-)
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
@@ -198,8 +196,8 @@ class PVDataSource(ImageDataSource):
         Get Example data for PV data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include data
-                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
+                data for historic and future depending on 'history_minutes' and 'future_minutes'.
             x_meters_center: x center batch locations
             y_meters_center: y center batch locations
 
@@ -226,7 +224,11 @@ class PVDataSource(ImageDataSource):
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
 
-        pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
+        # TODO: Issue #302. pv_system_row_number is assigned to but never used.
+        # That may indicate a bug?
+        pv_system_row_number = np.flatnonzero(  # noqa: F841
+            self.pv_metadata.index.isin(all_pv_system_ids)
+        )
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
 

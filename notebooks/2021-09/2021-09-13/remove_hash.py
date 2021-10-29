@@ -1,6 +1,6 @@
-from nowcasting_dataset.filesystem.gcp import get_all_filenames_in_path, rename_file
 import random
 
+from nowcasting_dataset.filesystem.gcp import get_all_filenames_in_path, rename_file
 
 # batch files are save with hash id and then batch and we want to remove the hashing
 # {xxxxxx}_{batch_idx}.nc is the format of the file

@@ -13,21 +13,20 @@ are used to validate the values of the data itself.
 """
 from datetime import datetime
 from typing import Optional
-import pandas as pd
+
 import git
+import pandas as pd
 from pathy import Pathy
-from pydantic import BaseModel, Field
-from pydantic import validator, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 # nowcasting_dataset imports
 from nowcasting_dataset.consts import (
-    NWP_VARIABLE_NAMES,
-    SAT_VARIABLE_NAMES,
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+    NWP_VARIABLE_NAMES,
+    SAT_VARIABLE_NAMES,
 )
 from nowcasting_dataset.dataset.split import split
-
 
 IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
 METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
@@ -105,7 +104,7 @@ class Satellite(DataSourceMixin):
     """Satellite configuration model"""
 
     satellite_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
         description="The path which holds the satellite zarr.",
     )
     satellite_channels: tuple = Field(
@@ -119,7 +118,7 @@ class NWP(DataSourceMixin):
     """NWP configuration model"""
 
     nwp_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
+        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",  # noqa: E501
         description="The path which holds the NWP zarr.",
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")

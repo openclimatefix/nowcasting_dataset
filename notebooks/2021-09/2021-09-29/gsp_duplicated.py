@@ -1,12 +1,12 @@
+import json
+
+import plotly.graph_objects as go
+
 from nowcasting_dataset.data_sources.gsp.eso import (
     get_gsp_metadata_from_eso,
     get_gsp_shape_from_eso,
 )
-import plotly.graph_objects as go
-import json
-
 from nowcasting_dataset.geospatial import WGS84_CRS
-
 
 # Seem to have 2 different GSP shape files, #Hams Hall, Melksham, Iron Acton, Axminster
 s = get_gsp_shape_from_eso(join_duplicates=False)

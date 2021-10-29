@@ -3,14 +3,15 @@
 """Pre-prepares batches of data.
 """
 import logging
+
 import click
 from pathy import Pathy
 
 # nowcasting_dataset imports
 import nowcasting_dataset
-from nowcasting_dataset.manager import Manager
-from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
 from nowcasting_dataset import utils
+from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.manager import Manager
 
 # Set up logging.
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s at %(pathname)s#L%(lineno)d")
@@ -62,7 +63,8 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     # TODO: If not overwrite, for each DataSource, get the maximum_batch_id already on disk.
     # TODO: Load spatial_and_temporal_locations_of_each_example.csv files
-    # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to create, and whether to utils.upload_and_delete_local_files()
+    # TODO: Fire up a separate process for each DataSource, and pass it a list of batches to create,
+    #       and whether to utils.upload_and_delete_local_files()
     # TODO: Wait for all processes to complete.
     # TODO: save_yaml_configuration(config)
     # TODO: Validate ML data.

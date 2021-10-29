@@ -6,17 +6,20 @@ from numbers import Number
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
+import futures
 import pandas as pd
 import xarray as xr
 
-import nowcasting_dataset.filesystem.utils as nd_fs_utils
-
 # nowcasting_dataset imports
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import join_dataset_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import (
+    join_dataset_to_batch_dataset,
+    join_list_data_array_to_batch_dataset,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -310,20 +313,12 @@ class ZarrDataSource(ImageDataSource):
     """
 
     channels: Iterable[str]
-    #: Mustn't be None, but cannot have a non-default arg in this position :)
-    n_timesteps_per_batch: int = None
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
-        if self.n_timesteps_per_batch is None:
-            # Using hacky default for now.  The whole concept of n_timesteps_per_batch
-            # will be removed when #213 is completed.
-            # TODO: Remove n_timesteps_per_batch when #213 is completed!
-            self.n_timesteps_per_batch = 16
-            logger.warning("n_timesteps_per_batch is not set!  Using default!")
 
     @property
     def data(self):
@@ -378,7 +373,42 @@ class ZarrDataSource(ImageDataSource):
         # rename 'variable' to 'channels'
         selected_data = selected_data.rename({"variable": "channels"})
 
-        return selected_data
+        return selected_data.load()
+
+    def get_batch(
+        self,
+        t0_datetimes: pd.DatetimeIndex,
+        x_locations: Iterable[Number],
+        y_locations: Iterable[Number],
+    ) -> DataSourceOutput:
+        """
+        Get batch data
+
+        Args:
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
+                include data for historic and future depending on `history_minutes` and
+                `future_minutes`.
+            x_locations: x center batch locations
+            y_locations: y center batch locations
+
+        Returns: Batch data
+
+        """
+        zipped = list(zip(t0_datetimes, x_locations, y_locations))
+        batch_size = len(t0_datetimes)
+
+        with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+            future_examples = []
+            for coords in zipped:
+                t0_datetime, x_location, y_location = coords
+                future_example = executor.submit(
+                    self.get_example, t0_datetime, x_location, y_location
+                )
+                future_examples.append(future_example)
+            examples = [future_example.result() for future_example in future_examples]
+
+        output = join_list_data_array_to_batch_dataset(examples)
+        return self._dataset_to_data_source_output(output)
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:
         """
@@ -414,4 +444,7 @@ class ZarrDataSource(ImageDataSource):
         raise NotImplementedError()
 
     def _open_data(self) -> xr.DataArray:
+        raise NotImplementedError()
+
+    def _dataset_to_data_source_output(output: xr.Dataset) -> DataSourceOutput:
         raise NotImplementedError()

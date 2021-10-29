@@ -1,3 +1,4 @@
+"""Notebook"""
 from datetime import datetime
 
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
@@ -9,7 +10,6 @@ s = SatelliteDataSource(
     forecast_len=12,
     image_size_pixels=64,
     meters_per_pixel=2000,
-    n_timesteps_per_batch=32,
 )
 
 s.open()

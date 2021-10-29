@@ -1,3 +1,4 @@
+"""Get test data."""
 import io
 import os
 import time
@@ -10,9 +11,7 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES, open_nwp
-from nowcasting_dataset.dataset.batch import Batch
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
@@ -100,13 +99,13 @@ gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=e
 
 # ### satellite
 
-# s = SatelliteDataSource(filename="gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/"
+# s = SatelliteDataSource(filename="gs://solar-pv-nowcasting-data/satellite/"
+#                                  "EUMETSAT/SEVIRI_RSS/OSGB36/"
 #                                  "all_zarr_int16_single_timestep.zarr",
 #                           history_length=6,
 #                           forecast_length=12,
 #                           image_size_pixels=64,
-#                           meters_per_pixel=2000,
-#                           n_timesteps_per_batch=32)
+#                           meters_per_pixel=2000)
 #
 # s.open()
 # start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")

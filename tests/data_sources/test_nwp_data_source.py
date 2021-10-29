@@ -1,3 +1,4 @@
+# noqa: D100
 import os
 
 import pandas as pd
@@ -11,33 +12,30 @@ PATH = os.path.dirname(nowcasting_dataset.__file__)
 NWP_ZARR_PATH = f"{PATH}/../tests/data/nwp_data/test.zarr"
 
 
-def test_nwp_data_source_init():
+def test_nwp_data_source_init():  # noqa: D103
     _ = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
-        n_timesteps_per_batch=8,
     )
 
 
-def test_nwp_data_source_open():
+def test_nwp_data_source_open():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
-        n_timesteps_per_batch=8,
         channels=["t"],
     )
 
     nwp.open()
 
 
-def test_nwp_data_source_batch():
+def test_nwp_data_source_batch():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
-        n_timesteps_per_batch=8,
         channels=["t"],
     )
 
@@ -52,12 +50,11 @@ def test_nwp_data_source_batch():
     assert batch.data.shape == (4, 1, 19, 2, 2)
 
 
-def test_nwp_get_contiguous_time_periods():
+def test_nwp_get_contiguous_time_periods():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
-        n_timesteps_per_batch=8,
         channels=["t"],
     )
 
@@ -68,12 +65,11 @@ def test_nwp_get_contiguous_time_periods():
     pd.testing.assert_frame_equal(contiguous_time_periods, correct_time_periods)
 
 
-def test_nwp_get_contiguous_t0_time_periods():
+def test_nwp_get_contiguous_t0_time_periods():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
         history_minutes=30,
         forecast_minutes=60,
-        n_timesteps_per_batch=8,
         channels=["t"],
     )
 

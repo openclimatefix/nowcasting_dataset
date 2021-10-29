@@ -3,12 +3,17 @@ import itertools
 import logging
 from dataclasses import InitVar, dataclass
 from numbers import Number
+from pathlib import Path
 from typing import Iterable, List, Tuple
 
 import pandas as pd
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
+
+# nowcasting_dataset imports
 import nowcasting_dataset.time as nd_time
+import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import join_dataset_to_batch_dataset
@@ -99,8 +104,7 @@ class DataSource:
         """
         This is the default sample period in minutes.
 
-        This functions may be overwritten if
-        the sample period of the data source is not 5 minutes.
+        This functions may be overwritten if the sample period of the data source is not 5 minutes.
         """
         logging.debug(
             "Getting sample_period_minutes default of 5 minutes. "
@@ -112,12 +116,78 @@ class DataSource:
         """Open the data source, if necessary.
 
         Called from each worker process.  Useful for data sources where the
-        underlying data source cannot be forked (like Zarr on GCP!).
+        underlying data source cannot be forked (like Zarr).
 
-        Data sources which can be forked safely should call open()
-        from __init__().
+        Data sources which can be forked safely should call open() from __init__().
         """
         pass
+
+    def create_batches(
+        self,
+        spatial_and_temporal_locations_of_each_example: pd.DataFrame,
+        idx_of_first_batch: int,
+        batch_size: int,
+        dst_path: Path,
+        temp_path: Path,
+        upload_every_n_batches: int,
+    ) -> None:
+        """Create multiple batches and save them to disk.
+
+        Args:
+          spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
+            the spatial and temporal location of an example.  The number of rows must be
+            an exact multiple of `batch_size`.
+            Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
+          idx_of_first_batch: The batch number of the first batch to create.
+          batch_size: The number of examples per batch.
+          dst_path: The final destination path for the batches.  Must exist.
+          temp_path: The local temporary path.  This is only required when dst_path is a
+            cloud storage bucket, so files must first be created on the VM's local disk in temp_path
+            and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
+          upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
+            of batches have been created.  If 0 then will write directly to dst_path.
+        """
+        # Sanity checks:
+        assert idx_of_first_batch >= 0
+        assert batch_size > 0
+        assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
+        assert upload_every_n_batches >= 0
+
+        # Figure out where to write batches to:
+        save_batches_locally_and_upload = upload_every_n_batches > 0
+        if save_batches_locally_and_upload:
+            nd_fs_utils.delete_all_files_in_temp_path(temp_path)
+        path_to_write_to = temp_path if save_batches_locally_and_upload else dst_path
+
+        # Loop round each batch:
+        examples_for_batch = spatial_and_temporal_locations_of_each_example.iloc[:batch_size]
+        n_batches_processed = 0
+        while not examples_for_batch.empty:
+            # Generate batch.
+            batch = self.get_batch(
+                t0_datetimes=examples_for_batch.t0_datetime_UTC,
+                x_locations=examples_for_batch.x_center_OSGB,
+                y_locations=examples_for_batch.y_center_OSGB,
+            )
+
+            # Save batch to disk.
+            batch_idx = idx_of_first_batch + n_batches_processed
+            netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
+            batch.to_netcdf(netcdf_filename)
+
+            # Upload if necessary.
+            if (
+                save_batches_locally_and_upload
+                and n_batches_processed > 0
+                and n_batches_processed % upload_every_n_batches == 0
+            ):
+                nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+
+            n_batches_processed += 1
+
+        # Upload last few batches, if necessary:
+        if save_batches_locally_and_upload:
+            nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
     def get_batch(
         self,
@@ -141,14 +211,9 @@ class DataSource:
         zipped = zip(t0_datetimes, x_locations, y_locations)
         for t0_datetime, x_location, y_location in zipped:
             output: xr.Dataset = self.get_example(t0_datetime, x_location, y_location)
-
             examples.append(output)
 
-        # could add option here, to save each data source using
-        # 1. # DataSourceOutput.to_xr_dataset() to make it a dataset
-        # 2. DataSourceOutput.save_netcdf(), save to netcdf
-
-        # get the name of the cls, this could be one of the data sources like Sun
+        # Get the DataSource class, this could be one of the data sources like Sun
         cls = examples[0].__class__
 
         # join the examples together, and cast them to the cls, so that validation can occur

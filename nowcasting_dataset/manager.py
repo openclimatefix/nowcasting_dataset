@@ -343,7 +343,7 @@ class Manager:
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
-                    # Get indexes of first batch and example; and subset locations_for_split.
+                    # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
                     idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
                     locations = locations_for_split.loc[idx_of_first_example:]

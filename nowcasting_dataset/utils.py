@@ -1,11 +1,9 @@
 """ utils functions """
-import hashlib
 import logging
 import os
 import re
 import tempfile
 from functools import wraps
-from pathlib import Path
 from typing import Optional
 
 import fsspec.asyn
@@ -35,6 +33,7 @@ def set_fsspec_for_multiprocess() -> None:
     fsspec.asyn.loop[0] = None
 
 
+# TODO: Issue #170. Is this this function still used?
 def is_monotonically_increasing(a: Array) -> bool:
     """ Check the array is monotonically increasing """
     # TODO: Can probably replace with pd.Index.is_monotonic_increasing()
@@ -46,12 +45,14 @@ def is_monotonically_increasing(a: Array) -> bool:
     return np.all(np.diff(a) > 0)
 
 
+# TODO: Issue #170. Is this this function still used?
 def is_unique(a: Array) -> bool:
     """ Check array has unique values """
     # TODO: Can probably replace with pd.Index.is_unique()
     return len(a) == len(np.unique(a))
 
 
+# TODO: Issue #170. Is this this function still used?
 def scale_to_0_to_1(a: Array) -> Array:
     """Scale to the range [0, 1]."""
     a = a - a.min()
@@ -61,6 +62,7 @@ def scale_to_0_to_1(a: Array) -> Array:
     return a
 
 
+# TODO: Issue #170. Is this this function still used?
 def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
     """
     For every column in df, creates cols for sin and cos of that col.
@@ -94,26 +96,13 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
-    """Generate full filename, excluding path.
-
-    Filename includes the first 6 digits of the MD5 hash of the filename,
-    as recommended by Google Cloud in order to distribute data across
-    multiple back-end servers.
-
-    Add option to turn on and off hashing
-
-    """
-    filename = f"{batch_idx}.nc"
-    # In the future we could hash the configuration file, and use this to
-    # make sure we are saving and loading the same thing.
-    if add_hash:
-        hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
-        filename = f"{hash_of_filename[0:6]}_{filename}"
-
-    return filename
+def get_netcdf_filename(batch_idx: int) -> str:
+    """Generate full filename, excluding path."""
+    assert 0 <= batch_idx < 1e6
+    return f"{batch_idx:06d}.nc"
 
 
+# TODO: Issue #170. Is this this function still used?
 def to_numpy(value):
     """ Change generic data to numpy"""
     if isinstance(value, xr.DataArray):

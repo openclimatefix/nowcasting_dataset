@@ -14,9 +14,20 @@ def upload_and_delete_local_files(dst_path: str, local_path: Path):
     Upload an entire folder and delete local files to either AWS or GCP
     """
     _LOG.info("Uploading!")
-    filesystem = fsspec.open(dst_path).fs
+    filesystem = get_filesystem(dst_path)
     filesystem.put(str(local_path), dst_path, recursive=True)
     delete_all_files_in_temp_path(local_path)
+
+
+def get_filesystem(path: Union[str, Path]) -> fsspec.AbstractFileSystem:
+    r"""Get the fsspect FileSystem from a path.
+
+    For example, if `path` starts with `gs:\\` then return a fsspec.GCSFileSystem.
+
+    It is safe for `path` to include wildcards in the final filename.
+    """
+    path = Pathy(path)
+    return fsspec.open(path.parent).fs
 
 
 # TODO: Issue #308: Use leading zeros in batch filenames, then we can sort the filename strings
@@ -36,7 +47,7 @@ def get_maximum_batch_id(path: str) -> int:
     """
     _LOG.debug(f"Looking for maximum batch id in {path}")
 
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     if not filesystem.exists(path):
         msg = f"{path} does not exists"
         _LOG.warning(msg)
@@ -66,7 +77,7 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
     """
     Delete all the files in a temporary path. Option to delete the folders or not
     """
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     filenames = get_all_filenames_in_path(path=path)
 
     _LOG.info(f"Deleting {len(filenames)} files from {path}.")
@@ -84,7 +95,7 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
 
 def check_path_exists(path: Union[str, Path]):
     """Raises a FileNotFoundError if `path` does not exist."""
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     if not filesystem.exists(path):
         raise FileNotFoundError(f"{path} does not exist!")
 
@@ -98,7 +109,7 @@ def rename_file(remote_file: str, new_filename: str):
         new_filename: What the file should be renamed too
 
     """
-    filesystem = fsspec.open(remote_file).fs
+    filesystem = get_filesystem(remote_file)
     filesystem.mv(remote_file, new_filename)
 
 
@@ -111,7 +122,7 @@ def get_all_filenames_in_path(path: Union[str, Path]) -> List[Pathy]:
 
     Returns: A list of filenames represented as Pathy objects.
     """
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     filename_strings = filesystem.glob(path)
     return [Pathy(filename) for filename in filename_strings]
 
@@ -126,7 +137,7 @@ def download_to_local(remote_filename: str, local_filename: str):
     """
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
 
-    filesystem = fsspec.open(remote_filename).fs
+    filesystem = get_filesystem(remote_filename)
     filesystem.get(remote_filename, local_filename)
 
 
@@ -142,7 +153,7 @@ def upload_one_file(
         local_filename: the local file name
 
     """
-    filesystem = fsspec.open(remote_filename).fs
+    filesystem = get_filesystem(remote_filename)
     filesystem.put(local_filename, remote_filename)
 
 
@@ -157,5 +168,5 @@ def makedirs(path: Union[str, Path], exist_ok: bool = True) -> None:
         path: The path to create.
         exist_ok: If False then raise an exception if `path` already exists.
     """
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     filesystem.mkdir(path, exist_ok=exist_ok)

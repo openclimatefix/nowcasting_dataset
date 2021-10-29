@@ -14,6 +14,7 @@ import torch
 import xarray as xr
 
 import nowcasting_dataset
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.config import load, model
 from nowcasting_dataset.consts import Array
 
@@ -147,7 +148,7 @@ class OpenData:
         """ Check file is there, and create temporary file """
         self.file_name = file_name
 
-        filesystem = fsspec.open(file_name).fs
+        filesystem = nd_fs_utils.get_filesystem(file_name)
         if not filesystem.exists(file_name):
             raise RuntimeError(f"{file_name} does not exist!")
 
@@ -159,7 +160,7 @@ class OpenData:
         1. if from gcs, download the file to temporary file, and return the temporary file name
         2. if local, return local file name
         """
-        fs = fsspec.open(self.file_name).fs
+        fs = nd_fs_utils.get_filesystem(self.file_name)
         if type(fs) == gcsfs.GCSFileSystem:
             fs.get_file(self.file_name, self.temp_file.name)
             filename = self.temp_file.name

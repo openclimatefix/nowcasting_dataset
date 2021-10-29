@@ -1,10 +1,10 @@
 """Manager class."""
 
 import logging
+from concurrent import futures
 from pathlib import Path
 from typing import Optional, Union
 
-import futures
 import numpy as np
 import pandas as pd
 

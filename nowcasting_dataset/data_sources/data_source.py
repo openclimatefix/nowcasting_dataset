@@ -1,12 +1,12 @@
 """  General Data Source Class """
 import itertools
 import logging
+from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
-import futures
 import pandas as pd
 import xarray as xr
 

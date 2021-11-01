@@ -28,9 +28,9 @@ class OpticalFlowDataSource(ZarrDataSource):
     """
 
     zarr_path: str = None
+    previous_timestep_for_flow: int = 1
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
-    previous_timestep_for_flow: int = 1
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init """

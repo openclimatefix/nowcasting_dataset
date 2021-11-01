@@ -29,7 +29,7 @@ class DataSourceOutput(PydanticXArrayDataSet):
 
     def save_netcdf(self, batch_i: int, path: Path):
         """
-        Save batch to netcdf file
+        Save batch to netcdf file in path/<DataSourceOutputName>/.
 
         Args:
             batch_i: the batch id, used to make the filename

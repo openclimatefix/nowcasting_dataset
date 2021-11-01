@@ -25,7 +25,7 @@ SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME = (
 
 
 class Manager:
-    """Initialise and manage a dict of DataSource objects.
+    """The Manager initialises and manage a dict of DataSource objects.
 
     Attrs:
       config: Configuration object.

@@ -117,6 +117,7 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
+        # TODO: Issue #318: Coordinates should be changed just before creating a batch.
         topo_xd = convert_data_array_to_dataset(selected_data)
 
         return Topographic(topo_xd)

@@ -4,7 +4,6 @@ import logging
 from xarray.ufuncs import isinf, isnan
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +17,8 @@ class GSP(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (~isnan(v.data)).all(), f"Some gsp data values are NaNs"
-        assert (~isinf(v.data)).all(), f"Some gsp data values are Infinite"
-        assert (v.data >= 0).all(), f"Some gsp data values are below 0 {v.data.min()}"
+        assert (~isnan(v.data)).all(), "Some gsp data values are NaNs"
+        assert (~isinf(v.data)).all(), "Some gsp data values are Infinite"
+        assert (v.data >= 0).all(), "Some gsp data values are below 0 {v.data.min()}"
 
         return v

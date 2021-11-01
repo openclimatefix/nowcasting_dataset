@@ -16,7 +16,7 @@ import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
 
 logger = logging.getLogger(__name__)
 
@@ -245,7 +245,8 @@ class DataSource:
         # Get the DataSource class, this could be one of the data sources like Sun
         cls = examples[0].__class__
 
-        print("\n\nSHAPE", examples[0].shape)
+        # Set the coords to be indices before joining into a batch
+        examples = [make_dim_index(example) for example in examples]
 
         # join the examples together, and cast them to the cls, so that validation can occur
         return cls(join_list_dataset_to_batch_dataset(examples))

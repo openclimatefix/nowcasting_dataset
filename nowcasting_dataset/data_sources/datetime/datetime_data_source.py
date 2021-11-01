@@ -1,7 +1,6 @@
 """ Datetime DataSource - add hour and year features """
 from dataclasses import dataclass
 from numbers import Number
-from typing import List, Tuple
 
 import pandas as pd
 

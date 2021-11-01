@@ -20,7 +20,9 @@ def load_pv_gsp_raw_data_from_pvlive(
     start: datetime, end: datetime, number_of_gsp: int = None, normalize_data: bool = True
 ) -> pd.DataFrame:
     """
-    Load raw pv gsp data from pvlive. Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
+    Load raw pv gsp data from pvlive.
+
+    Note that each gsp is loaded separately. Also the data is loaded in 30 day chunks.
 
     Args:
         start: the start date for gsp data to load
@@ -37,14 +39,16 @@ def load_pv_gsp_raw_data_from_pvlive(
     # setup pv Live class, although here we are getting historic data
     pvl = PVLive()
 
-    # set the first chunk of data, note that 30 day chunks are used except if the end time is smaller than that
+    # set the first chunk of data, note that 30 day chunks are used except if the end time is
+    # smaller than that
     first_start_chunk = start
     first_end_chunk = min([first_start_chunk + CHUNK_DURATION, end])
 
     gsp_data_df = []
     logger.debug(f"Will be getting data for {len(gsp_ids)} gsp ids")
     # loop over gsp ids
-    # limit the total number of concurrent tasks to be 4, so that we don't hit the pvlive api too much
+    # limit the total number of concurrent tasks to be 4, so that we don't hit the pvlive api
+    # too much
     future_tasks = []
     with futures.ThreadPoolExecutor(max_workers=4) as executor:
         for gsp_id in gsp_ids:
@@ -53,8 +57,8 @@ def load_pv_gsp_raw_data_from_pvlive(
             start_chunk = first_start_chunk
             end_chunk = first_end_chunk
 
-            # loop over 30 days chunks (nice to see progress instead of waiting a long time for one command - this might
-            # not be the fastest)
+            # loop over 30 days chunks (nice to see progress instead of waiting a long time for
+            # one command - this might not be the fastest)
             while start_chunk <= end:
                 logger.debug(f"Getting data for gsp id {gsp_id} from {start_chunk} to {end_chunk}")
 
@@ -77,7 +81,7 @@ def load_pv_gsp_raw_data_from_pvlive(
                 if end_chunk > end:
                     end_chunk = end
 
-        logger.debug(f"Getting results")
+        logger.debug("Getting results")
         # Collect results from each thread.
         for task in tqdm(future_tasks):
             one_chunk_one_gsp_gsp_data_df = task.result()

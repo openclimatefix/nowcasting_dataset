@@ -1,7 +1,6 @@
 """ Datetime DataSource - add hour and year features """
 from dataclasses import dataclass
 from numbers import Number
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -42,7 +41,7 @@ class MetadataDataSource(DataSource):
 
         # TODO: data_dict is unused in this function.  Is that a bug?
         # https://github.com/openclimatefix/nowcasting_dataset/issues/279
-        data_dict = dict(
+        data_dict = dict(  # noqa: F841
             t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
             x_meters_center=np.array(x_meters_center),
             y_meters_center=np.array(y_meters_center),

@@ -72,7 +72,7 @@ def get_azimuth_and_elevation(
                 )
                 names.append(name)
 
-        logger.debug(f"Getting results")
+        logger.debug("Getting results")
 
         # Collect results from each thread.
         for future_azimuth_and_elevation, name in tqdm(future_azimuth_and_elevation_per_location):

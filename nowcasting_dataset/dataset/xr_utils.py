@@ -40,7 +40,8 @@ def convert_data_array_to_dataset(data_xarray):
     return make_dim_index(dataset=data)
 
 
-# TODO: Issue #318: Maybe rename this function... sure what's best right now!  :)
+# TODO: Issue #318: Maybe rename this function... maybe to coord_to_range()?
+# Not sure what's best right now!  :)
 def make_dim_index(dataset: xr.Dataset) -> xr.Dataset:
     """Reindex dims so that it can be merged with batch.
 

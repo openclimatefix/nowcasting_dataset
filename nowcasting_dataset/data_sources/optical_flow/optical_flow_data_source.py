@@ -30,6 +30,7 @@ class OpticalFlowDataSource(ZarrDataSource):
     zarr_path: str = None
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
+    previous_timestep_for_flow: InitVar[int] = 1
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init """
@@ -159,25 +160,58 @@ class OpticalFlowDataSource(ZarrDataSource):
         selected_data = selected_data.rename({"variable": "channels"})
 
         # Compute optical flow for the timesteps
-        # Get Optical Flow for the pre-t0 time, and applying the t0-1 to t0 optical flow for
-        # forecast steps in the future
+        # Get Optical Flow for the pre-t0 time, and applying the t0-previous_timesteps_per_flow to
+        # t0 optical flow for forecast steps in the future
+        # Creates a pyramid of optical flows for all timesteps up to t0, and apply predictions
+        # for all future timesteps for each of them
+        # Compute optical flow per channel, as it might be different
+
 
         return selected_data
 
-    def _compute_optical_flow(self, sat_data: np.ndarray, timestep: int) -> np.ndarray:
+    def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp, previous_timestamp: pd.Timestamp):
+        """
+        Compute and return optical flow predictions for the example
+
+        Args:
+            satellite_data: Satellite DataArray
+            t0_dt: t0 timestamp
+
+        Returns:
+            The xr.DataArray with the optical flow predictions for t0 to forecast horizon
+        """
+
+        prediction_dictionary = {}
+
+        for channel in satellite_data.coords["channels"]:
+            channel_images = satellite_data.sel(channel=channel)
+            t0_image = channel_images.sel(time=t0_dt).values
+            previous_image = channel_images.sel(time=previous_timestamp).values
+            optical_flow = self._compute_optical_flow(t0_image, previous_image)
+            # Do predictions now
+            predictions = []
+            # Number of timesteps before t0
+            # TODO Fix this, number of future steps
+            for prediction_timestep in range(9):
+                flow = optical_flow * prediction_timestep
+                warped_image = self._remap_image(t0_image, flow)
+                predictions.append(warped_image)
+            prediction_dictionary[channel] = predictions
+        # TODO Convert to xr.DataArray
+        return prediction_dictionary
+
+
+    def _compute_optical_flow(self, t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
         """
         Args:
-            sat_data: uint8 numpy array of shape (num_timesteps, height, width)
-            timestep: The timestep to process.
+            satellite_data: uint8 numpy array of shape (num_timesteps, height, width)
 
         Returns:
             optical flow field
         """
-        prev_img = sat_data[timestep]
-        next_img = sat_data[timestep + 1]
         return cv2.calcOpticalFlowFarneback(
-            prev=prev_img,
-            next=next_img,
+            prev=previous_image,
+            next=t0_image,
             flow=None,
             pyr_scale=0.5,
             levels=2,

@@ -1,6 +1,7 @@
 """ Various DataSources """
 from nowcasting_dataset.data_sources.data_source import DataSource  # noqa: F401
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.optical_flow.optical_flow_data_source import OpticalFlowDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
 from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource

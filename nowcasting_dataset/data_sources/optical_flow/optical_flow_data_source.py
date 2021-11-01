@@ -30,7 +30,7 @@ class OpticalFlowDataSource(ZarrDataSource):
     zarr_path: str = None
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
-    previous_timestep_for_flow: InitVar[int] = 1
+    previous_timestep_for_flow: int = 1
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init """
@@ -165,11 +165,26 @@ class OpticalFlowDataSource(ZarrDataSource):
         # Creates a pyramid of optical flows for all timesteps up to t0, and apply predictions
         # for all future timesteps for each of them
         # Compute optical flow per channel, as it might be different
-
+        selected_data = self._compute_and_return_optical_flow(selected_data, t0_dt = t0_dt)
 
         return selected_data
 
-    def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp, previous_timestamp: pd.Timestamp):
+    def _compute_previous_timestep(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp) -> pd.Timestamp:
+        """
+        Get timestamp of previous
+
+        Args:
+            satellite_data:
+            t0_dt:
+
+        Returns:
+
+        """
+        satellite_data = satellite_data.where(satellite_data.time <= t0_dt, drop = True)
+        return satellite_data.isel(time=-self.previous_timestep_for_flow).values
+
+
+    def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp):
         """
         Compute and return optical flow predictions for the example
 
@@ -182,7 +197,8 @@ class OpticalFlowDataSource(ZarrDataSource):
         """
 
         prediction_dictionary = {}
-
+        # Get the previous timestamp
+        previous_timestamp = self._compute_previous_timestep(satellite_data, t0_dt = t0_dt)
         for channel in satellite_data.coords["channels"]:
             channel_images = satellite_data.sel(channel=channel)
             t0_image = channel_images.sel(time=t0_dt).values

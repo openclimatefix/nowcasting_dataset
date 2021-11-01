@@ -11,48 +11,50 @@ import torch
 import xarray as xr
 
 
+# TODO: This function is only used in fake.py for testing.
+# Maybe we should move this function to fake.py?
 def join_list_data_array_to_batch_dataset(image_data_arrays: List[xr.DataArray]) -> xr.Dataset:
     """ Join a list of data arrays to a dataset byt expanding dims """
     image_data_arrays = [
         convert_data_array_to_dataset(image_data_arrays[i]) for i in range(len(image_data_arrays))
     ]
 
-    return join_dataset_to_batch_dataset(image_data_arrays)
+    return join_list_dataset_to_batch_dataset(image_data_arrays)
 
 
-def join_dataset_to_batch_dataset(image_data_arrays: List[xr.Dataset]) -> xr.Dataset:
-    """ Join a list of data arrays to a dataset byt expanding dims """
-    image_data_arrays = [
-        image_data_arrays[i].expand_dims(dim="example").assign_coords(example=("example", [i]))
-        for i in range(len(image_data_arrays))
-    ]
+def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset:
+    """ Join a list of data sets to a dataset byt expanding dims """
 
-    return xr.concat(image_data_arrays, dim="example")
+    new_datasets = []
+    for i, dataset in enumerate(datasets):
+        new_dataset = dataset.expand_dims(dim="example").assign_coords(example=("example", [i]))
+        new_dataset = make_dim_index(new_dataset)
+        new_datasets.append(new_dataset)
+
+    return xr.concat(new_datasets, dim="example")
 
 
-def convert_data_array_to_dataset(data_xarray):
+def convert_data_array_to_dataset(data_xarray: xr.DataArray) -> xr.Dataset:
     """ Convert data array to dataset. Reindex dim so that it can be merged with batch"""
     data = xr.Dataset({"data": data_xarray})
-
     return make_dim_index(data_xarray_dataset=data)
 
 
-def make_dim_index(data_xarray_dataset: xr.Dataset) -> xr.Dataset:
-    """ Reindex dataset dims so that it can be merged with batch"""
+def make_dim_index(dataset: xr.Dataset) -> xr.Dataset:
+    """Reindex dims so that it can be merged with batch.
 
-    dims = data_xarray_dataset.dims
+    For each dimension in dataset, change the coords to 0.. len(original_coords),
+    and save the original coordinates in a new DataArray called `<dim_name>_coords`.
+    """
 
-    for dim in dims:
-        coord = data_xarray_dataset[dim]
-        data_xarray_dataset[dim] = np.arange(len(coord))
+    dims = dataset.dims
 
-        data_xarray_dataset = data_xarray_dataset.rename({dim: f"{dim}_index"})
+    for dim_name in dims:
+        original_coords = dataset[dim_name]
+        dataset[dim_name] = np.arange(len(original_coords))
+        dataset[f"{dim_name}_coords"] = xr.DataArray(original_coords, dims=[dim_name])
 
-        data_xarray_dataset[dim] = xr.DataArray(
-            coord, coords=data_xarray_dataset[f"{dim}_index"].coords, dims=[f"{dim}_index"]
-        )
-
-    return data_xarray_dataset
+    return dataset
 
 
 class PydanticXArrayDataSet(xr.Dataset):
@@ -64,7 +66,7 @@ class PydanticXArrayDataSet(xr.Dataset):
 
     _expected_dimensions = ()  # Subclasses should set this.
 
-    # xarray doesnt support sub classing at the moment - https://github.com/pydata/xarray/issues/3980
+    # xarray doesnt support sub classing at the moment: https://github.com/pydata/xarray/issues/3980
     __slots__ = ()
 
     @classmethod
@@ -95,7 +97,8 @@ class PydanticXArrayDataSet(xr.Dataset):
         ), (
             f"{cls.__name__}.dims is wrong! "
             f"{cls.__name__}.dims is {v.dims}. "
-            f"But we expected {cls._expected_dimensions}. Note that '_index' is removed, and 'example' is ignored"
+            f"But we expected {cls._expected_dimensions}."
+            " Note that '_index' is removed, and 'example' is ignored"
         )
         return v
 

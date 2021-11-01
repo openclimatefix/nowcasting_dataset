@@ -41,7 +41,7 @@ def test_nwp_data_source_batch():  # noqa: D103
 
     nwp.open()
 
-    t0_datetimes = nwp._data.init_time[2:10].values
+    t0_datetimes = nwp._data.init_time[2:6].values
     x = nwp._data.x[0:4].values
     y = nwp._data.y[0:4].values
 

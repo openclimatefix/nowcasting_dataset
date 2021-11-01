@@ -10,7 +10,6 @@ import xarray as xr
 from nowcasting_dataset import utils
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 
 _LOG = logging.getLogger(__name__)
 
@@ -77,9 +76,6 @@ class NWPDataSource(ZarrDataSource):
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.zarr_path, consolidated=self.consolidated)
 
-    def _dataset_to_data_source_output(output: xr.Dataset) -> NWP:
-        NWP(output)
-
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         """
         Select the numerical weather predictions for a single time slice.
@@ -115,8 +111,15 @@ class NWPDataSource(ZarrDataSource):
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
     ) -> xr.DataArray:
-        selected_data = selected_data.rename({"target_time": "time"})
-        selected_data = selected_data.rename({"variable": "channels"})
+        """Resamples to 5 minutely."""
+        start_dt = self._get_start_dt(t0_dt)
+        end_dt = self._get_end_dt(t0_dt)
+        selected_data = selected_data.resample({"target_time": "5T"})
+        selected_data = selected_data.interpolate()
+        selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
+        selected_data = selected_data.rename({"target_time": "time", "variable": "channels"})
+        selected_data.data = selected_data.data.astype(np.float32)
+
         return selected_data
 
     def datetime_index(self) -> pd.DatetimeIndex:

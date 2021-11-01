@@ -1,3 +1,4 @@
+"""Test config."""
 import os
 import tempfile
 from datetime import datetime
@@ -30,6 +31,8 @@ def test_yaml_load():
     assert isinstance(config, Configuration)
 
 
+# TODO: Issue #316: Remove save_yaml_configuration() and this test.
+@pytest.mark.skip("This test will be removed when issue #316 is implemented")
 def test_yaml_save():
     """
     Check a configuration can be saved to a yaml file
@@ -88,7 +91,7 @@ def test_load_to_gcs():
     Check that configuration can be loaded to gcs
     """
     config = load_yaml_configuration(
-        filename="gs://solar-pv-nowcasting-data/prepared_ML_training_data/v-default/configuration.yaml"
+        filename="gs://solar-pv-nowcasting-data/prepared_ML_training_data/v-default/configuration.yaml"  # noqa: E501
     )
 
     assert isinstance(config, Configuration)

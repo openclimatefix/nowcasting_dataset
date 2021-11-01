@@ -25,6 +25,8 @@ class OpticalFlowDataSource(ZarrDataSource):
     Optical Flow Data Source, computing flow between Satellite data
 
     zarr_path: Must start with 'gs://' if on GCP.
+
+    Pads image size to allow for cropping out NaN values
     """
 
     zarr_path: str = None
@@ -33,13 +35,13 @@ class OpticalFlowDataSource(ZarrDataSource):
     meters_per_pixel: InitVar[int] = 2_000
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        """ Post Init  Add 16 pixels to each side of the image"""
+        super().__post_init__(image_size_pixels+32, meters_per_pixel)
         self._cache = {}
         self._shape_of_example = (
             self._total_seq_length,
-            image_size_pixels,
-            image_size_pixels,
+            image_size_pixels+32,
+            image_size_pixels+32,
             2,
         )
 
@@ -211,6 +213,7 @@ class OpticalFlowDataSource(ZarrDataSource):
             for prediction_timestep in range(9):
                 flow = optical_flow * prediction_timestep
                 warped_image = self._remap_image(t0_image, flow)
+                # TODO Crop out center of the flow to match the desired shape
                 predictions.append(warped_image)
             prediction_dictionary[channel] = predictions
         # TODO Convert to xr.DataArray

@@ -114,6 +114,21 @@ class Satellite(DataSourceMixin):
     satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
+class OpticalFlow(DataSourceMixin):
+    """Satellite configuration model"""
+
+    satellite_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        description="The path which holds the satellite zarr.",
+        )
+    satellite_channels: tuple = Field(
+        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
+        )
+    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    previous_timestep_to_use: int = 1
+
+
 class NWP(DataSourceMixin):
     """NWP configuration model"""
 
@@ -178,6 +193,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
+    optical_flow: Optional[OpticalFlow] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -217,7 +233,7 @@ class InputData(BaseModel):
         """
         # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
         # but that causes a circular import.
-        ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
+        ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun", "optical_flow")
         enabled_data_sources = [
             data_source_name
             for data_source_name in ALL_DATA_SOURCE_NAMES
@@ -246,6 +262,7 @@ class InputData(BaseModel):
             gsp=GSP(),
             topographic=Topographic(),
             sun=Sun(),
+            optical_flow=OpticalFlow(),
         )
 
 

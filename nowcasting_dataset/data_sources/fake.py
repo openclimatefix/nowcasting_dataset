@@ -14,6 +14,7 @@ from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.dataset.xr_utils import (
     convert_data_array_to_dataset,
     join_list_data_array_to_batch_dataset,
@@ -117,6 +118,29 @@ def satellite_fake(
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return Satellite(xr_dataset)
+
+
+def optical_flow_fake(
+        batch_size=32,
+        seq_length_5=19,
+        satellite_image_size_pixels=64,
+        number_satellite_channels=7,
+        ) -> OpticalFlow:
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length_5=seq_length_5,
+            image_size_pixels=satellite_image_size_pixels,
+            number_channels=number_satellite_channels,
+            )
+        for _ in range(batch_size)
+        ]
+
+    # make dataset
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
+
+    return OpticalFlow(xr_dataset)
 
 
 def sun_fake(batch_size, seq_length_5):

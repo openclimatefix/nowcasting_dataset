@@ -61,6 +61,9 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
+    # TODO: Issue 323: maybe don't allow
+    # create_files_specifying_spatial_and_temporal_locations_of_each_example to be run if a subset
+    # of data_sources is passed in at the command line.
     manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     manager.create_batches(overwrite_batches)
     # TODO: Issue #316: save_yaml_configuration(config)

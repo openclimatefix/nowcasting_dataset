@@ -32,15 +32,6 @@ conda activate nowcasting_dataset
 pip install -e .
 ```
 
-Note you can install the [pytorch](https://github.com/pytorch/pytorch)
-and [pytorch_lightning](https://github.com/PyTorchLightning/pytorch-lightning) using
-```shell
-pip install -e .[torch]
-```
-but it is only used to create a dataloader for machine learning models, and will not be necessary
-soon (when the dataloader is moved to `nowcasting_dataloader`).
-
-
 ### `pip`
 
 A (probably older) version is also available through `pip install nowcasting-dataset`

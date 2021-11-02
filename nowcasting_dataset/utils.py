@@ -9,7 +9,6 @@ import fsspec.asyn
 import gcsfs
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
 import nowcasting_dataset
@@ -117,8 +116,6 @@ def to_numpy(value):
         value = np.int32(value.timestamp())
     elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
         value = value.astype("datetime64[s]").astype(np.int32)
-    elif isinstance(value, torch.Tensor):
-        value = value.numpy()
 
     return value
 

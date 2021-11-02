@@ -83,8 +83,7 @@ def nwp_fake(
     # make dataset
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
-    xr_dataset = xr_dataset.rename({"time": "target_time"})
-    xr_dataset["init_time"] = xr_dataset.target_time[:, 0]
+    xr_dataset["init_time"] = xr_dataset.time[:, 0]
 
     return NWP(xr_dataset)
 

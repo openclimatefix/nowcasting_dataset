@@ -182,9 +182,23 @@ class OpticalFlowDataSource(ZarrDataSource):
         Returns:
 
         """
-        satellite_data = satellite_data.where(satellite_data.time <= t0_dt, drop = True)
+        satellite_data = satellite_data.where(satellite_data.time < t0_dt, drop = True)
         return satellite_data.isel(time=-self.previous_timestep_for_flow).values
 
+    def _get_number_future_timesteps(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp) -> \
+            int:
+        """
+        Get number of future timestamps
+
+        Args:
+            satellite_data:
+            t0_dt:
+
+        Returns:
+
+        """
+        satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop = True)
+        return len(satellite_data.coords['time'])
 
     def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp):
         """
@@ -209,11 +223,9 @@ class OpticalFlowDataSource(ZarrDataSource):
             # Do predictions now
             predictions = []
             # Number of timesteps before t0
-            # TODO Fix this, number of future steps
-            for prediction_timestep in range(9):
+            for prediction_timestep in range(self._get_number_future_timesteps(satellite_data, t0_dt)):
                 flow = optical_flow * prediction_timestep
                 warped_image = self._remap_image(t0_image, flow)
-                # TODO Crop out center of the flow to match the desired shape
                 warped_image = crop_center(warped_image, self._square.size_pixels,
                                            self._square.size_pixels)
                 predictions.append(warped_image)

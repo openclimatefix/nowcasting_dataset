@@ -10,7 +10,6 @@ from typing import Iterable, List, Tuple, Union
 import pandas as pd
 import xarray as xr
 
-# nowcasting_dataset imports
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
@@ -134,6 +133,7 @@ class DataSource:
         """
         pass
 
+    # TODO: Issue #319: Standardise parameter names.
     def create_batches(
         self,
         spatial_and_temporal_locations_of_each_example: pd.DataFrame,
@@ -166,6 +166,11 @@ class DataSource:
         assert batch_size > 0
         assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
         assert upload_every_n_batches >= 0
+        assert spatial_and_temporal_locations_of_each_example.columns == [
+            "t0_datetime_UTC",
+            "x_center_OSGB",
+            "y_center_OSGB",
+        ]
 
         self.open()
 
@@ -175,15 +180,24 @@ class DataSource:
             nd_fs_utils.delete_all_files_in_temp_path(local_temp_path)
         path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
 
+        # Split locations per example into batches:
+        n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
+        locations_for_batches = []
+        for batch_idx in range(n_batches):
+            start_example_idx = batch_idx * batch_size
+            end_example_idx = (batch_idx + 1) * batch_size
+            locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
+                start_example_idx:end_example_idx
+            ]
+            locations_for_batches.append(locations_for_batch)
+
         # Loop round each batch:
-        examples_for_batch = spatial_and_temporal_locations_of_each_example.iloc[:batch_size]
-        n_batches_processed = 0
-        while not examples_for_batch.empty:
+        for n_batches_processed, locations_for_batch in enumerate(locations_for_batches):
             # Generate batch.
             batch = self.get_batch(
-                t0_datetimes=examples_for_batch.t0_datetime_UTC,
-                x_locations=examples_for_batch.x_center_OSGB,
-                y_locations=examples_for_batch.y_center_OSGB,
+                t0_datetimes=locations_for_batch.t0_datetime_UTC,
+                x_locations=locations_for_batch.x_center_OSGB,
+                y_locations=locations_for_batch.y_center_OSGB,
             )
 
             # Save batch to disk.
@@ -199,12 +213,11 @@ class DataSource:
             ):
                 nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
-            n_batches_processed += 1
-
         # Upload last few batches, if necessary:
         if save_batches_locally_and_upload:
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
+    # TODO: Issue #319: Standardise parameter names.
     def get_batch(
         self,
         t0_datetimes: pd.DatetimeIndex,
@@ -277,6 +290,7 @@ class DataSource:
             max_gap_duration=self.sample_period_duration,
         )
 
+    # TODO: Issue #319: Standardise parameter names.
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical locations for each t0_datetime.
 
@@ -288,10 +302,12 @@ class DataSource:
         raise NotImplementedError()
 
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
+    # TODO: Issue #319: Standardise parameter names.
     def _get_time_slice(self, t0_dt: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden."""
         raise NotImplementedError()
 
+    # TODO: Issue #319: Standardise parameter names.
     def get_example(
         self,
         t0_dt: pd.Timestamp,  #: Datetime of "now": The most recent obs.

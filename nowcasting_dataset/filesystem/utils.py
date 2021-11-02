@@ -48,7 +48,7 @@ def get_maximum_batch_id(path: Pathy) -> int:
 
     filesystem = get_filesystem(path)
     if not filesystem.exists(path.parent):
-        msg = f"{path.parent} does not exists"
+        msg = f"{path.parent} does not exist"
         _LOG.warning(msg)
         raise FileNotFoundError(msg)
 

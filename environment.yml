@@ -26,9 +26,6 @@ dependencies:
   - boto3
   - moto
 
-  # Machine learning
-  - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
-
   # PV & Geospatial
   - pvlib
   - pyproj

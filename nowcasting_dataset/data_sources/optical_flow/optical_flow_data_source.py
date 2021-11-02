@@ -214,6 +214,8 @@ class OpticalFlowDataSource(ZarrDataSource):
                 flow = optical_flow * prediction_timestep
                 warped_image = self._remap_image(t0_image, flow)
                 # TODO Crop out center of the flow to match the desired shape
+                warped_image = crop_center(warped_image, self._square.size_pixels,
+                                           self._square.size_pixels)
                 predictions.append(warped_image)
             prediction_dictionary[channel] = predictions
         # TODO Convert to xr.DataArray
@@ -339,3 +341,21 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # TODO Remove this as new Zarr already has the time fixed
     data_array["time"] = data_array.time + pd.Timedelta("1 minute")
     return data_array
+
+
+def crop_center(img,cropx,cropy):
+    """
+    Crop center of numpy image
+
+    Args:
+        img:
+        cropx:
+        cropy:
+
+    Returns:
+
+    """
+    y,x = img.shape
+    startx = x//2-(cropx//2)
+    starty = y//2-(cropy//2)
+    return img[starty:starty+cropy,startx:startx+cropx]

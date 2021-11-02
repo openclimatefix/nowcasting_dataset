@@ -30,6 +30,8 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
 
     assert locations.columns.to_list() == ["t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB"]
     assert len(locations) == 10
+    assert (t0_datetimes[0] <= locations["t0_datetime_UTC"]).all()
+    assert (t0_datetimes[-1] >= locations["t0_datetime_UTC"]).all()
 
 
 def test_load_yaml_configuration():  # noqa: D103
@@ -40,3 +42,6 @@ def test_load_yaml_configuration():  # noqa: D103
     manager.initialise_data_sources()
     assert len(manager.data_sources) == 6
     assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
+
+
+# TODO: Issue #322: Test the other Manager methods!

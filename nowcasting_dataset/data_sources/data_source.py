@@ -14,6 +14,7 @@ import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
 
@@ -166,11 +167,9 @@ class DataSource:
         assert batch_size > 0
         assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
         assert upload_every_n_batches >= 0
-        assert spatial_and_temporal_locations_of_each_example.columns == [
-            "t0_datetime_UTC",
-            "x_center_OSGB",
-            "y_center_OSGB",
-        ]
+        assert spatial_and_temporal_locations_of_each_example.columns.to_tuple() == (
+            SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
+        )
 
         self.open()
 
@@ -193,6 +192,9 @@ class DataSource:
 
         # Loop round each batch:
         for n_batches_processed, locations_for_batch in enumerate(locations_for_batches):
+            batch_idx = idx_of_first_batch + n_batches_processed
+            logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
+
             # Generate batch.
             batch = self.get_batch(
                 t0_datetimes=locations_for_batch.t0_datetime_UTC,
@@ -201,7 +203,6 @@ class DataSource:
             )
 
             # Save batch to disk.
-            batch_idx = idx_of_first_batch + n_batches_processed
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
             batch.to_netcdf(netcdf_filename)
 

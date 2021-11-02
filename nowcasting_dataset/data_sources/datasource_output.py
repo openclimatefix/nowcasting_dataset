@@ -7,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 
-# nowcasting_dataset imports
 from nowcasting_dataset.dataset.xr_utils import PydanticXArrayDataSet
 from nowcasting_dataset.filesystem.utils import makedirs
 from nowcasting_dataset.utils import get_netcdf_filename

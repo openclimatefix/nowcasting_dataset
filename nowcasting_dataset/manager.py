@@ -12,16 +12,15 @@ import pandas as pd
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
+from nowcasting_dataset.consts import (
+    SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES,
+    SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
+)
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 
 logger = logging.getLogger(__name__)
-
-
-SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME = (
-    "spatial_and_temporal_locations_of_each_example.csv"
-)
 
 
 class Manager:
@@ -49,7 +48,7 @@ class Manager:
         self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
 
-        # TODO: This should probably be done in the Pydantic model.
+        # TODO: Issue #320: This could be done in the Pydantic model?
         self.local_temp_path = Path(self.config.process.local_temp_path).expanduser()
         logger.debug(f"config={self.config}")
 
@@ -117,6 +116,9 @@ class Manager:
         Works on any compute environment.
         """
         if self._locations_csv_file_exists():
+            logger.info(
+                f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME} already exists!"
+            )
             return
         logger.info(
             f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME} does not exist so"
@@ -252,7 +254,11 @@ class Manager:
     def _get_first_batches_to_create(
         self, overwrite_batches: bool
     ) -> dict[split.SplitName, dict[str, int]]:
-        """For each SplitName & for each DataSource name, return the first batch ID to create."""
+        """For each SplitName & for each DataSource name, return the first batch ID to create.
+
+        For example, the returned_dict[SplitName.TRAIN]['gsp'] tells us the first batch_idx to
+        create for the training set for the GSPDataSource.
+        """
         # Initialise to zero:
         first_batches_to_create: dict[split.SplitName, dict[str, int]] = {}
         for split_name in split.SplitName:
@@ -329,6 +335,9 @@ class Manager:
             filename = self._filename_of_locations_csv_file(split_name.value)
             logger.info(f"Loading {filename}.")
             locations_for_each_example = pd.read_csv(filename)
+            assert locations_for_each_example.columns.to_tuple() == (
+                SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
+            )
             # Converting to datetimes is much faster using `pd.to_datetime()` than
             # passing `parse_datetimes` into `pd.read_csv()`.
             locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
@@ -338,7 +347,7 @@ class Manager:
 
         # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().
-        # TODO: Split this up into separate functions!!!
+        # TODO: Issue 321: Split this up into separate functions!!!
         n_data_sources = len(self.data_sources)
         nd_utils.set_fsspec_for_multiprocess()
         for split_name in splits_which_need_more_batches:

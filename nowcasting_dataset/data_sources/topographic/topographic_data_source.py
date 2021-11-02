@@ -2,40 +2,17 @@
 from dataclasses import dataclass
 from numbers import Number
 
-import numpy as np
 import pandas as pd
 import rioxarray
 import xarray as xr
 from rasterio.warp import Resampling
 
-from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
-
-# Means computed with
-# out_fp = "europe_dem_1km.tif"
-# out = rasterio.open(out_fp)
-# data = out.read(masked=True)
-# print(np.mean(data))
-# print(np.std(data))
-TOPO_MEAN = xr.DataArray(
-    data=[
-        365.486887,
-    ],
-    dims=["variable"],
-    coords={"variable": [TOPOGRAPHIC_DATA]},
-).astype(np.float32)
-
-TOPO_STD = xr.DataArray(
-    data=[
-        478.841369,
-    ],
-    dims=["variable"],
-    coords={"variable": [TOPOGRAPHIC_DATA]},
-).astype(np.float32)
 
 
 @dataclass
@@ -63,6 +40,10 @@ class TopographicDataSource(ImageDataSource):
         # Distance between pixels, giving their spatial extant, in meters
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
         self._meters_per_pixel = meters_per_pixel
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.filename)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -111,6 +92,7 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
+        # TODO: Issue #318: Coordinates should be changed just before creating a batch.
         topo_xd = convert_data_array_to_dataset(selected_data)
 
         return Topographic(topo_xd)

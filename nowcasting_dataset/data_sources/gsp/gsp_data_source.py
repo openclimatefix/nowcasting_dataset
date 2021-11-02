@@ -14,6 +14,7 @@ import pandas as pd
 import torch
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
@@ -64,6 +65,10 @@ class GSPDataSource(ImageDataSource):
         seed = torch.initial_seed()
         self.rng = np.random.default_rng(seed=seed)
         self.load()
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
 
     @property
     def sample_period_minutes(self) -> int:
@@ -118,13 +123,12 @@ class GSPDataSource(ImageDataSource):
         Returns: list of x and y locations
 
         """
-        logger.debug("Getting locations for the batch")
-
         # Pick a random GSP for each t0_datetime, and then grab
         # their geographical location.
         x_locations = []
         y_locations = []
 
+        # TODO: Issue 305: Speed up this function by removing this for loop?
         for t0_dt in t0_datetimes:
 
             # Choose start and end times
@@ -138,20 +142,14 @@ class GSPDataSource(ImageDataSource):
             random_gsp_id = self.rng.choice(gsp_power.columns)
             meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
 
-            # Make sure there is only one. Sometimes there are multiple gsp_ids at one location
-            # e.g. 'SELL_1'. Further investigation on this may be needed,
-            # but going to ignore this for now.  See this issue:
-            # https://github.com/openclimatefix/nowcasting_dataset/issues/272
+            # Make sure there is only one GSP.
+            # Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
+            # TODO: Issue #272: Further investigation on multiple GSPs may be needed.
             metadata_for_gsp = meta_data.iloc[0]
 
             # Get metadata for GSP
             x_locations.append(metadata_for_gsp.location_x)
             y_locations.append(metadata_for_gsp.location_y)
-
-            logger.debug(
-                f"Found locations for GSP id {random_gsp_id} of {metadata_for_gsp.location_x} and "
-                f"{metadata_for_gsp.location_y}"
-            )
 
         return x_locations, y_locations
 
@@ -398,7 +396,7 @@ def load_solar_gsp_data(
     Returns: dataframe of pv data
 
     """
-    logger.debug(f"Loading Solar GSP Data from GCS {zarr_path} from {start_dt} to {end_dt}")
+    logger.debug(f"Loading Solar GSP Data from {zarr_path} from {start_dt} to {end_dt}")
     # Open data - it may be quicker to open byte file first, but decided just to keep it
     # like this at the moment.
     gsp_power = xr.open_dataset(zarr_path, engine="zarr")

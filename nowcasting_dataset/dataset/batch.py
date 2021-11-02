@@ -33,6 +33,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     register_xr_data_array_to_tensor,
     register_xr_data_set_to_tensor,
 )
+from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
@@ -165,7 +166,7 @@ class Batch(BaseModel):
             for data_source_name in data_sources_names:
 
                 local_netcdf_filename = os.path.join(
-                    local_netcdf_path, data_source_name, f"{batch_idx}.nc"
+                    local_netcdf_path, data_source_name, get_netcdf_filename(batch_idx)
                 )
 
                 # submit task

@@ -7,8 +7,8 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
@@ -28,6 +28,10 @@ class SunDataSource(DataSource):
         super().__post_init__()
         self._load()
 
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
+
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> Sun:
@@ -42,7 +46,8 @@ class SunDataSource(DataSource):
         Returns: Dictionary of azimuth and elevation data
         """
         # all sun data is from 2019, analaysis showed over the timescale we are interested in the
-        # elevation and azimuth angles change by < 1 degree, so to save data, we just use data form 2019
+        # elevation and azimuth angles change by < 1 degree, so to save data, we just use data
+        # from 2019.
         t0_dt = t0_dt.replace(year=2019)
 
         start_dt = self._get_start_dt(t0_dt)
@@ -59,9 +64,11 @@ class SunDataSource(DataSource):
         ]
         # lets make sure there is atleast one
         assert len(location) > 0
-        # Take the first location, and x and y coordinates are the first and center entries in this array
+        # Take the first location, and x and y coordinates are the first and center entries in
+        # this array.
         location = location[0]
-        # make name of column to pull data from. The columns name will be about something like '22222.555,3333.6666'
+        # make name of column to pull data from. The columns name will be about
+        # something like '22222.555,3333.6666'
         name = x_y_to_name(x=location[0], y=location[1])
 
         del x_meters_center, y_meters_center

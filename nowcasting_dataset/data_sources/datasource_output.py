@@ -4,13 +4,11 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import List
 
 import numpy as np
-from pydantic import BaseModel, Field
 
 from nowcasting_dataset.dataset.xr_utils import PydanticXArrayDataSet
-from nowcasting_dataset.filesystem.utils import make_folder
+from nowcasting_dataset.filesystem.utils import makedirs
 from nowcasting_dataset.utils import get_netcdf_filename
 
 logger = logging.getLogger(__name__)
@@ -30,7 +28,7 @@ class DataSourceOutput(PydanticXArrayDataSet):
 
     def save_netcdf(self, batch_i: int, path: Path):
         """
-        Save batch to netcdf file
+        Save batch to netcdf file in path/<DataSourceOutputName>/.
 
         Args:
             batch_i: the batch id, used to make the filename
@@ -43,8 +41,8 @@ class DataSourceOutput(PydanticXArrayDataSet):
         # make folder
         folder = os.path.join(path, name)
         if batch_i == 0:
-            # only need to make the folder once, or check that there folder is there once
-            make_folder(path=folder)
+            # only need to make the folder once, or check that the folder is there once
+            makedirs(path=folder)
 
         # make file
         local_filename = os.path.join(folder, filename)

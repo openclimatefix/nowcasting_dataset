@@ -39,8 +39,9 @@ class SplitName(Enum):
     TEST = "test"
 
 
-SplitData = namedtuple(
-    typename="SplitData",
+# Create a namedtuple for storing split t0 datetimes.
+SplitDateTimes = namedtuple(
+    typename="SplitDateTimes",
     field_names=[SplitName.TRAIN.value, SplitName.VALIDATION.value, SplitName.TEST.value],
 )
 
@@ -54,7 +55,7 @@ def split_data(
     ),
     train_validation_test_datetime_split: Optional[List[pd.Timestamp]] = None,
     seed: int = 1234,
-) -> SplitData:
+) -> SplitDateTimes:
     """
     Split the date using various different methods
 
@@ -133,9 +134,11 @@ def split_data(
         if method == SplitMethod.DAY_RANDOM_TEST_YEAR:
             # This method splits
             # 1. test set to be in one year, using 'train_test_validation_specific'
-            # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
+            # 2. train and validation by random day, using 'train_test_validation_split' on ratio
+            #    how to split it.
             #
-            # This allows us to create a test set for 2021, and train and validation for random days not in 2021
+            # This allows us to create a test set for 2021, and train and validation for
+            # random days not in 2021.
 
             # create test set
             train_datetimes, validation_datetimes, test_datetimes = split_method(
@@ -149,10 +152,11 @@ def split_data(
         elif method == SplitMethod.DAY_RANDOM_TEST_DATE:
             # This method splits
             # 1. test set from one date onwards
-            # 2. train and validation by random day, using 'train_test_validation_split' on ratio how to split it
+            # 2. train and validation by random day, using 'train_test_validation_split' on ratio
+            #    how to split it.
             #
-            # This allows us to create a test set from a specfic date e.g. 2020-07-01, and train and validation
-            # for random days before that date
+            # This allows us to create a test set from a specfic date e.g. 2020-07-01, and train
+            # and validation for random days before that date.
 
             # create test set
             train_datetimes, validation_datetimes, test_datetimes = split_by_dates(
@@ -180,10 +184,22 @@ def split_data(
     else:
         raise ValueError(f"{method} for splitting day is not implemented")
 
-    logger.debug(
-        f"Split data done, train has {len(train_datetimes):,d}, "
-        f"validation has {len(validation_datetimes):,d}, "
-        f"test has {len(test_datetimes):,d} t0 datetimes."
+    # Sanity check!
+    if method != SplitMethod.SAME:
+        assert len(train_datetimes.intersection(validation_datetimes)) == 0
+        assert len(train_datetimes.intersection(test_datetimes)) == 0
+        assert len(test_datetimes.intersection(validation_datetimes)) == 0
+
+    assert train_datetimes.unique
+    assert validation_datetimes.unique
+    assert test_datetimes.unique
+
+    split_datetimes = SplitDateTimes(
+        train=train_datetimes, validation=validation_datetimes, test=test_datetimes
     )
 
-    return SplitData(train=train_datetimes, validation=validation_datetimes, test=test_datetimes)
+    logger.debug("Split data done!")
+    for split_name, dt in split_datetimes._asdict().items():
+        logger.debug(f"{split_name} has {len(dt):,d} datetimes, from {dt[0]} to {dt[-1]}")
+
+    return split_datetimes

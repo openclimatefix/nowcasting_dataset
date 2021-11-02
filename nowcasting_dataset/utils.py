@@ -1,12 +1,10 @@
 """ utils functions """
-import hashlib
 import logging
-import tempfile
-from pathlib import Path
-from typing import Optional
-
-import re
 import os
+import re
+import tempfile
+from functools import wraps
+
 import fsspec.asyn
 import gcsfs
 import numpy as np
@@ -15,8 +13,9 @@ import torch
 import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.consts import Array
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.config import load, model
+from nowcasting_dataset.consts import Array
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +33,7 @@ def set_fsspec_for_multiprocess() -> None:
     fsspec.asyn.loop[0] = None
 
 
+# TODO: Issue #170. Is this this function still used?
 def is_monotonically_increasing(a: Array) -> bool:
     """ Check the array is monotonically increasing """
     # TODO: Can probably replace with pd.Index.is_monotonic_increasing()
@@ -45,12 +45,14 @@ def is_monotonically_increasing(a: Array) -> bool:
     return np.all(np.diff(a) > 0)
 
 
+# TODO: Issue #170. Is this this function still used?
 def is_unique(a: Array) -> bool:
     """ Check array has unique values """
     # TODO: Can probably replace with pd.Index.is_unique()
     return len(a) == len(np.unique(a))
 
 
+# TODO: Issue #170. Is this this function still used?
 def scale_to_0_to_1(a: Array) -> Array:
     """Scale to the range [0, 1]."""
     a = a - a.min()
@@ -60,6 +62,7 @@ def scale_to_0_to_1(a: Array) -> Array:
     return a
 
 
+# TODO: Issue #170. Is this this function still used?
 def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
     """
     For every column in df, creates cols for sin and cos of that col.
@@ -93,26 +96,13 @@ def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
-    """Generate full filename, excluding path.
-
-    Filename includes the first 6 digits of the MD5 hash of the filename,
-    as recommended by Google Cloud in order to distribute data across
-    multiple back-end servers.
-
-    Add option to turn on and off hashing
-
-    """
-    filename = f"{batch_idx}.nc"
-    # Remove 'hash' at the moment. In the future could has the configuration file, and use this to make sure we are
-    # saving and loading the same thing
-    if add_hash:
-        hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
-        filename = f"{hash_of_filename[0:6]}_{filename}"
-
-    return filename
+def get_netcdf_filename(batch_idx: int) -> str:
+    """Generate full filename, excluding path."""
+    assert 0 <= batch_idx < 1e6
+    return f"{batch_idx:06d}.nc"
 
 
+# TODO: Issue #170. Is this this function still used?
 def to_numpy(value):
     """ Change generic data to numpy"""
     if isinstance(value, xr.DataArray):
@@ -133,31 +123,14 @@ def to_numpy(value):
     return value
 
 
-def coord_to_range(
-    da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
-) -> xr.DataArray:
-    """
-    TODO
-
-    TODO: Actually, I think this is over-complicated?  I think we can
-    just strip off the 'coord' from the dimension.
-
-    """
-    coord = da[dim]
-    da[dim] = np.arange(len(coord), dtype=dtype)
-    if prefix is not None:
-        da[f"{prefix}_{dim}_coords"] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
-    return da
-
-
 class OpenData:
-    """ General method to open a file, but if from GCS, the file is downloaded to a temp file first """
+    """Open a file, but if from GCS, the file is downloaded to a temp file first."""
 
     def __init__(self, file_name):
         """ Check file is there, and create temporary file """
         self.file_name = file_name
 
-        filesystem = fsspec.open(file_name).fs
+        filesystem = nd_fs_utils.get_filesystem(file_name)
         if not filesystem.exists(file_name):
             raise RuntimeError(f"{file_name} does not exist!")
 
@@ -169,7 +142,7 @@ class OpenData:
         1. if from gcs, download the file to temporary file, and return the temporary file name
         2. if local, return local file name
         """
-        fs = fsspec.open(self.file_name).fs
+        fs = nd_fs_utils.get_filesystem(self.file_name)
         if type(fs) == gcsfs.GCSFileSystem:
             fs.get_file(self.file_name, self.temp_file.name)
             filename = self.temp_file.name
@@ -206,3 +179,16 @@ def get_config_with_test_paths(config_filename: str) -> model.Configuration:
     config = load.load_yaml_configuration(filename)
     config.set_base_path(local_path)
     return config
+
+
+def arg_logger(func):
+    """A function decorator to log all the args and kwargs passed into a function."""
+    # Adapted from https://stackoverflow.com/a/23983263/732596
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        logger.debug(
+            f"Arguments passed into function `{func.__name__}`:" f" args={args}; kwargs={kwargs}"
+        )
+        return func(*args, **kwargs)
+
+    return inner_func

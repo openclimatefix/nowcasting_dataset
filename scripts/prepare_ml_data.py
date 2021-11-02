@@ -2,207 +2,73 @@
 
 """Pre-prepares batches of data.
 
-Usage:
-
-First, manually create the directories given by the constants
-DST_TRAIN_PATH and DST_VALIDATION_PATH, and create the
-LOCAL_TEMP_PATH.  Note that all files will be deleted from
-LOCAL_TEMP_PATH when this script starts up.
-
-Currently caluclating azimuth and elevation angles, takes about 15 mins for 2548 PV systems,
-for about 1 year.
-
+Please run `./prepare_ml_data.py --help` for full details!
 """
 import logging
-import os
-from pathlib import Path
-from typing import Union
 
-import neptune.new as neptune
-import numpy as np
-import torch
-from neptune.new.integrations.python_logger import NeptuneHandler
+import click
 from pathy import Pathy
 
+# nowcasting_dataset imports
 import nowcasting_dataset
-from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.config.model import set_git_commit
-from nowcasting_dataset.config.save import save_yaml_configuration
-from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES
-from nowcasting_dataset.data_sources.satellite.satellite_data_source import SAT_VARIABLE_NAMES
-from nowcasting_dataset.dataset.datamodule import NowcastingDataModule
-from nowcasting_dataset.filesystem import utils
-from nowcasting_dataset.filesystem.utils import check_path_exists
+from nowcasting_dataset import utils
+from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.manager import Manager
 
-logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
-_LOG = logging.getLogger("nowcasting_dataset")
-_LOG.setLevel(logging.INFO)
-
+# Set up logging.
+logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s at %(pathname)s#L%(lineno)d")
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
+logger = logging.getLogger("nowcasting_dataset")
+logger.setLevel(logging.DEBUG)
 
-ENABLE_NEPTUNE_LOGGING = False
-
-# load configuration, this can be changed to a different filename as needed.
-# TODO: Pass this in as a command-line argument.
-# See https://github.com/openclimatefix/nowcasting_dataset/issues/171
-filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "on_premises.yaml")
-config = load_yaml_configuration(filename)
-config = set_git_commit(config)
-
-# Solar PV data
-PV_DATA_FILENAME = config.input_data.pv.pv_filename
-PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filename
-
-# Satellite data
-SAT_ZARR_PATH = config.input_data.satellite.satellite_zarr_path
-
-# Numerical weather predictions
-NWP_ZARR_PATH = config.input_data.nwp.nwp_zarr_path
-
-# GSP data
-GSP_ZARR_PATH = config.input_data.gsp.gsp_zarr_path
-
-# Topographic data
-TOPO_TIFF_PATH = config.input_data.topographic.topographic_filename
-
-# Paths for output data.
-DST_NETCDF4_PATH = Pathy(config.output_data.filepath)
-DST_TRAIN_PATH = DST_NETCDF4_PATH / "train"
-DST_VALIDATION_PATH = DST_NETCDF4_PATH / "validation"
-DST_TEST_PATH = DST_NETCDF4_PATH / "test"
-LOCAL_TEMP_PATH = Path(config.process.local_temp_path).expanduser()
-
-UPLOAD_EVERY_N_BATCHES = config.process.upload_every_n_batches
-
-# Necessary to avoid "RuntimeError: receieved 0 items of ancdata".  See:
-# https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999/2
-torch.multiprocessing.set_sharing_strategy("file_system")
-
-np.random.seed(config.process.seed)
+default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" / "on_premises.yaml"
 
 
-def check_directories_exist():
-    _LOG.info("Checking if all paths exist...")
-    for path in [
-        PV_DATA_FILENAME,
-        PV_METADATA_FILENAME,
-        SAT_ZARR_PATH,
-        NWP_ZARR_PATH,
-        GSP_ZARR_PATH,
-        TOPO_TIFF_PATH,
-        DST_TRAIN_PATH,
-        DST_VALIDATION_PATH,
-        DST_TEST_PATH,
-    ]:
-        check_path_exists(path)
-
-    if UPLOAD_EVERY_N_BATCHES > 0:
-        check_path_exists(LOCAL_TEMP_PATH)
-    _LOG.info("Success!  All paths exist!")
-
-
-def get_data_module():
-    num_workers = 4
-
-    # get the batch id already made
-    maximum_batch_id_train = utils.get_maximum_batch_id(os.path.join(DST_TRAIN_PATH, "metadata"))
-    maximum_batch_id_validation = utils.get_maximum_batch_id(
-        os.path.join(DST_VALIDATION_PATH, "metadata")
-    )
-    maximum_batch_id_test = utils.get_maximum_batch_id(os.path.join(DST_TEST_PATH, "metadata"))
-
-    if maximum_batch_id_train is None:
-        maximum_batch_id_train = 0
-
-    if maximum_batch_id_validation is None:
-        maximum_batch_id_validation = 0
-
-    if maximum_batch_id_test is None:
-        maximum_batch_id_test = 0
-
-    data_module = NowcastingDataModule(
-        batch_size=config.process.batch_size,
-        history_minutes=config.input_data.default_history_minutes,  #: Number of minutes of history, not including t0.
-        forecast_minutes=config.input_data.default_forecast_minutes,  #: Number of minutes of forecast.
-        satellite_image_size_pixels=config.input_data.satellite.satellite_image_size_pixels,
-        nwp_image_size_pixels=config.input_data.nwp.nwp_image_size_pixels,
-        nwp_channels=NWP_VARIABLE_NAMES,
-        sat_channels=SAT_VARIABLE_NAMES,
-        pv_power_filename=PV_DATA_FILENAME,
-        pv_metadata_filename=PV_METADATA_FILENAME,
-        sat_filename=SAT_ZARR_PATH,
-        nwp_base_path=NWP_ZARR_PATH,
-        gsp_filename=GSP_ZARR_PATH,
-        topographic_filename=TOPO_TIFF_PATH,
-        sun_filename=config.input_data.sun.sun_zarr_path,
-        pin_memory=False,  #: Passed to DataLoader.
-        num_workers=num_workers,  #: Passed to DataLoader.
-        prefetch_factor=8,  #: Passed to DataLoader.
-        n_samples_per_timestep=8,  #: Passed to NowcastingDataset
-        n_training_batches_per_epoch=25_008,  # Add pre-fetch factor!
-        n_validation_batches_per_epoch=1_008,
-        n_test_batches_per_epoch=1_008,
-        collate_fn=lambda x: x,
-        skip_n_train_batches=maximum_batch_id_train // num_workers,
-        skip_n_validation_batches=maximum_batch_id_validation // num_workers,
-        skip_n_test_batches=maximum_batch_id_test // num_workers,
-        seed=config.process.seed,
-    )
-    _LOG.info("prepare_data()")
-    data_module.prepare_data()
-    _LOG.info("setup()")
-    data_module.setup()
-    return data_module
-
-
-def iterate_over_dataloader_and_write_to_disk(
-    dataloader: torch.utils.data.DataLoader, dst_path: Union[Pathy, Path]
-):
-    _LOG.info("Getting first batch")
-    if UPLOAD_EVERY_N_BATCHES > 0:
-        local_output_path = LOCAL_TEMP_PATH
-    else:
-        local_output_path = dst_path
-
-    for batch_i, batch in enumerate(dataloader):
-        _LOG.info(f"Got batch {batch_i}")
-
-        batch.save_netcdf(batch_i=batch_i, path=local_output_path)
-
-        if UPLOAD_EVERY_N_BATCHES > 0 and batch_i > 0 and batch_i % UPLOAD_EVERY_N_BATCHES == 0:
-            utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
-
-    # Make sure we upload the last few batches, if necessary.
-    if UPLOAD_EVERY_N_BATCHES > 0:
-        utils.upload_and_delete_local_files(dst_path, LOCAL_TEMP_PATH)
-
-
-def main():
-    if ENABLE_NEPTUNE_LOGGING:
-        run = neptune.init(
-            project="OpenClimateFix/nowcasting-data",
-            capture_stdout=True,
-            capture_stderr=True,
-            capture_hardware_metrics=False,
-        )
-        _LOG.addHandler(NeptuneHandler(run=run))
-
-    check_directories_exist()
-    if UPLOAD_EVERY_N_BATCHES > 0:
-        utils.delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
-
-    datamodule = get_data_module()
-
-    _LOG.info("Finished preparing datamodule!")
-    _LOG.info("Preparing training data...")
-    iterate_over_dataloader_and_write_to_disk(datamodule.train_dataloader(), DST_TRAIN_PATH)
-    _LOG.info("Preparing validation data...")
-    iterate_over_dataloader_and_write_to_disk(datamodule.val_dataloader(), DST_VALIDATION_PATH)
-    _LOG.info("Preparing test data...")
-    iterate_over_dataloader_and_write_to_disk(datamodule.test_dataloader(), DST_TEST_PATH)
-    _LOG.info("Done!")
-
-    save_yaml_configuration(config)
+@click.command()
+@click.option(
+    "--config_filename",
+    default=default_config_filename,
+    help="The filename of the YAML configuration file.",
+)
+@click.option(
+    "--data_source",
+    multiple=True,
+    default=ALL_DATA_SOURCE_NAMES,
+    type=click.Choice(ALL_DATA_SOURCE_NAMES),
+    help=(
+        "If you want to process just a subset of the DataSources in the config file, then enter"
+        " the names of those DataSources using the --data_source option.  Enter one name per"
+        " --data_source option.  You can use --data_source multiple times.  For example:"
+        " --data_source nwp --data_source satellite.  Note that only these DataSources"
+        " always be used when computing the available datetime periods across all the"
+        " DataSources, so be very careful about setting --data_source when creating the"
+        " spatial_and_temporal_locations_of_each_example.csv files!"
+    ),
+)
+@click.option(
+    "--overwrite_batches",
+    default=False,
+    help=(
+        "Overwrite any existing batches in the destination directory, for the selected"
+        " DataSource(s).  If this flag is not set, and if there are existing batches,"
+        " then this script will start generating new batches (if necessary) after the"
+        " existing batches."
+    ),
+)
+@utils.arg_logger
+def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
+    """Generate pre-prepared batches of data."""
+    manager = Manager()
+    manager.load_yaml_configuration(config_filename)
+    manager.initialise_data_sources(names_of_selected_data_sources=data_source)
+    # TODO: Issue 323: maybe don't allow
+    # create_files_specifying_spatial_and_temporal_locations_of_each_example to be run if a subset
+    # of data_sources is passed in at the command line.
+    manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
+    manager.create_batches(overwrite_batches)
+    # TODO: Issue #316: save_yaml_configuration(config)
+    # TODO: Issue #317: Validate ML data.
+    logger.info("Done!")
 
 
 if __name__ == "__main__":

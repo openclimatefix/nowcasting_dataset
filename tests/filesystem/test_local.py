@@ -1,3 +1,4 @@
+# noqa: D100
 import os
 import tempfile
 from pathlib import Path
@@ -7,12 +8,12 @@ from nowcasting_dataset.filesystem.utils import (
     delete_all_files_in_temp_path,
     download_to_local,
     get_all_filenames_in_path,
-    make_folder,
+    makedirs,
     upload_one_file,
 )
 
 
-def test_check_file_exists():
+def test_check_file_exists():  # noqa: D103
 
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
@@ -27,7 +28,7 @@ def test_check_file_exists():
 
         # add fake file to dir
         os.mkdir(f"{tmpdirname}/test_dir")
-        path_and_filename_2 = os.path.join(local_path, file2)
+        _ = os.path.join(local_path, file2)
         with open(os.path.join(local_path, file2), "w"):
             pass
 
@@ -35,7 +36,7 @@ def test_check_file_exists():
         check_path_exists(path=f"{tmpdirname}/test_dir")
 
 
-def test_make_folder():
+def test_makedirs():  # noqa: D103
 
     folder_1 = "test_dir_1"
     folder_2 = "test_dir_2"
@@ -48,7 +49,7 @@ def test_make_folder():
         folder_2 = os.path.join(local_path, folder_2)
 
         # use the make folder function
-        make_folder(folder_1)
+        makedirs(folder_1)
         check_path_exists(path=folder_1)
 
         # make a folder
@@ -58,7 +59,7 @@ def test_make_folder():
         check_path_exists(path=folder_2)
 
 
-def test_delete_local_files():
+def test_delete_local_files():  # noqa: D103
 
     file1 = "test_file1.txt"
     folder1 = "test_dir"
@@ -88,7 +89,7 @@ def test_delete_local_files():
         assert os.path.exists(path_and_folder_1)
 
 
-def test_delete_local_files_and_folder():
+def test_delete_local_files_and_folder():  # noqa: D103
 
     file1 = "test_file1.txt"
     folder1 = "test_dir"
@@ -118,7 +119,7 @@ def test_delete_local_files_and_folder():
         assert not os.path.exists(path_and_folder_1)
 
 
-def test_download():
+def test_download():  # noqa: D103
 
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
@@ -128,18 +129,18 @@ def test_download():
         local_path = Path(tmpdirname)
 
         # add fake file to dir
-        path_and_filename_1 = os.path.join(local_path, file1)
+        path_and_filename_1 = local_path / file1
         with open(path_and_filename_1, "w"):
             pass
 
         # add fake file to dir
-        os.mkdir(f"{tmpdirname}/test_dir")
-        path_and_filename_2 = os.path.join(local_path, file2)
-        with open(os.path.join(local_path, file2), "w"):
+        os.mkdir(local_path / "test_dir")
+        path_and_filename_2 = local_path / file2
+        with open(path_and_filename_2, "w"):
             pass
 
         # run function
-        path_and_filename_3 = os.path.join(local_path, file3)
+        path_and_filename_3 = local_path / file3
         download_to_local(remote_filename=path_and_filename_1, local_filename=path_and_filename_3)
 
         # check the object are not there
@@ -147,7 +148,7 @@ def test_download():
         assert len(filenames) == 3
 
 
-def test_upload():
+def test_upload():  # noqa: D103
 
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
@@ -163,7 +164,7 @@ def test_upload():
 
         # add fake file to dir
         os.mkdir(f"{tmpdirname}/test_dir")
-        path_and_filename_2 = os.path.join(local_path, file2)
+        _ = os.path.join(local_path, file2)
         with open(os.path.join(local_path, file2), "w"):
             pass
 

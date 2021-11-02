@@ -15,16 +15,18 @@ from datetime import datetime
 from typing import Optional
 
 import git
+import pandas as pd
 from pathy import Pathy
 from pydantic import BaseModel, Field, root_validator, validator
 
+# nowcasting_dataset imports
 from nowcasting_dataset.consts import (
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     NWP_VARIABLE_NAMES,
     SAT_VARIABLE_NAMES,
 )
-
+from nowcasting_dataset.dataset.split import split
 
 IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
 METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
@@ -102,7 +104,7 @@ class Satellite(DataSourceMixin):
     """Satellite configuration model"""
 
     satellite_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
         description="The path which holds the satellite zarr.",
     )
     satellite_channels: tuple = Field(
@@ -116,7 +118,7 @@ class NWP(DataSourceMixin):
     """NWP configuration model"""
 
     nwp_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
+        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",  # noqa: E501
         description="The path which holds the NWP zarr.",
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
@@ -213,7 +215,8 @@ class InputData(BaseModel):
         Run through the different data sources and  if the forecast or history minutes are not set,
         then set them to the default values
         """
-
+        # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
+        # but that causes a circular import.
         ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
         enabled_data_sources = [
             data_source_name
@@ -249,8 +252,8 @@ class InputData(BaseModel):
 class OutputData(BaseModel):
     """Output data model"""
 
-    filepath: str = Field(
-        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/",
+    filepath: Pathy = Field(
+        Pathy("gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/"),
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"
@@ -262,7 +265,29 @@ class Process(BaseModel):
     """Pydantic model of how the data is processed"""
 
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
-    batch_size: int = Field(32, description="the number of examples per batch")
+    batch_size: int = Field(32, description="The number of examples per batch")
+    t0_datetime_frequency: pd.Timedelta = Field(
+        pd.Timedelta("5 minutes"),
+        description=(
+            "The temporal frequency at which t0 datetimes will be sampled."
+            "  Can be any string that `pandas.Timedelta()` understands."
+            "  For example, if this is set to '5 minutes', then, for each example, the t0 datetime"
+            " could be at 0, 5, ..., 55 minutes past the hour.  If there are DataSources with a"
+            " lower sample rate (e.g. half-hourly) then these lower-sample-rate DataSources will"
+            " still produce valid examples.  For example, if a half-hourly DataSource is asked for"
+            " an example with t0=12:05, history_minutes=60, forecast_minutes=60, then it will"
+            " return data at 11:30, 12:00, 12:30, and 13:00."
+        ),
+    )
+    split_method: split.SplitMethod = Field(
+        split.SplitMethod.DAY,
+        description=(
+            "The method used to split the t0 datetimes into train, validation and test sets."
+        ),
+    )
+    n_train_batches: int = 250
+    n_validation_batches: int = 10
+    n_test_batches: int = 10
     upload_every_n_batches: int = Field(
         16,
         description=(

@@ -1,3 +1,4 @@
+"""Test PVDataSource."""
 import logging
 import os
 from datetime import datetime
@@ -13,7 +14,7 @@ from nowcasting_dataset.data_sources.pv.pv_data_source import (
 logger = logging.getLogger(__name__)
 
 
-def test_get_example_and_batch():
+def test_get_example_and_batch():  # noqa: D103
 
     path = os.path.dirname(nowcasting_dataset.__file__)
 
@@ -39,12 +40,12 @@ def test_get_example_and_batch():
     _ = pv_data_source.get_example(pv_data_source.pv_power.index[0], x_locations[0], y_locations[0])
 
     batch = pv_data_source.get_batch(
-        pv_data_source.pv_power.index[6:11], x_locations[0:10], y_locations[0:10]
+        pv_data_source.pv_power.index[6:16], x_locations[0:10], y_locations[0:10]
     )
-    assert batch.data.shape == (5, 19, 128)
+    assert batch.data.shape == (10, 19, 128)
 
 
-def test_drop_pv_systems_which_produce_overnight():
+def test_drop_pv_systems_which_produce_overnight():  # noqa: D103
     pv_power = pd.DataFrame(index=pd.date_range("2010-01-01", "2010-01-02", freq="5 min"))
 
     _ = drop_pv_systems_which_produce_overnight(pv_power=pv_power)

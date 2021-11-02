@@ -113,13 +113,13 @@ There does not seem to be an automated way to do this selecting and downloading,
 ## Configure `nowcasting_dataset` to point to the downloaded data
 
 Copy and modify one of the config yaml files in
-[`nowcasting_dataset/config/`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/nowcasting_dataset/config)
-and modify `prepare_ml_data.py` to use your config file.
+[`nowcasting_dataset/config/`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/nowcasting_dataset/config).
 
 
 ## Prepare ML batches
 
-Run [`scripts/prepare_ml_data.py`](https://github.com/openclimatefix/nowcasting_dataset/blob/main/scripts/prepare_ml_data.py)
+Run [`scripts/prepare_ml_data.py --help`](https://github.com/openclimatefix/nowcasting_dataset/blob/main/scripts/prepare_ml_data.py)
+to learn how to run the `prepare_ml_data.py` script.
 
 
 ## What exactly is in each batch?

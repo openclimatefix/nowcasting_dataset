@@ -1,17 +1,22 @@
 """  General Data Source Class """
 import itertools
 import logging
+from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
-from typing import Iterable, List, Tuple
+from pathlib import Path
+from typing import Iterable, List, Tuple, Union
 
 import pandas as pd
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
+import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import join_dataset_to_batch_dataset
+from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +44,8 @@ class DataSource:
     forecast_minutes: int
 
     def __post_init__(self):
-        """ Post Init """
+        """Post Init"""
+        self.check_input_paths_exist()
         self.sample_period_duration = pd.Timedelta(self.sample_period_minutes, unit="minutes")
 
         # TODO: Do we still need all these different representations of sequence lengths?
@@ -69,10 +75,14 @@ class DataSource:
             self._history_duration + self._forecast_duration + self.sample_period_duration
         )
 
-    def _get_start_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
+    def _get_start_dt(
+        self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
+    ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
         return t0_dt - self._history_duration
 
-    def _get_end_dt(self, t0_dt: pd.Timestamp) -> pd.Timestamp:
+    def _get_end_dt(
+        self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
+    ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
         return t0_dt + self._forecast_duration
 
     def get_contiguous_t0_time_periods(self) -> pd.DataFrame:
@@ -99,8 +109,7 @@ class DataSource:
         """
         This is the default sample period in minutes.
 
-        This functions may be overwritten if
-        the sample period of the data source is not 5 minutes.
+        This functions may be overwritten if the sample period of the data source is not 5 minutes.
         """
         logging.debug(
             "Getting sample_period_minutes default of 5 minutes. "
@@ -112,13 +121,104 @@ class DataSource:
         """Open the data source, if necessary.
 
         Called from each worker process.  Useful for data sources where the
-        underlying data source cannot be forked (like Zarr on GCP!).
+        underlying data source cannot be forked (like Zarr).
 
-        Data sources which can be forked safely should call open()
-        from __init__().
+        Data sources which can be forked safely should call open() from __init__().
         """
         pass
 
+    def check_input_paths_exist(self) -> None:
+        """Check any input paths exist.  Raise FileNotFoundError if not.
+
+        Can be overridden by child classes.
+        """
+        pass
+
+    # TODO: Issue #319: Standardise parameter names.
+    def create_batches(
+        self,
+        spatial_and_temporal_locations_of_each_example: pd.DataFrame,
+        idx_of_first_batch: int,
+        batch_size: int,
+        dst_path: Path,
+        local_temp_path: Path,
+        upload_every_n_batches: int,
+    ) -> None:
+        """Create multiple batches and save them to disk.
+
+        Safe to call from worker processes.
+
+        Args:
+          spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
+            the spatial and temporal location of an example.  The number of rows must be
+            an exact multiple of `batch_size`.
+            Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
+          idx_of_first_batch: The batch number of the first batch to create.
+          batch_size: The number of examples per batch.
+          dst_path: The final destination path for the batches.  Must exist.
+          local_temp_path: The local temporary path.  This is only required when dst_path is a
+            cloud storage bucket, so files must first be created on the VM's local disk in temp_path
+            and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
+          upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
+            of batches have been created.  If 0 then will write directly to dst_path.
+        """
+        # Sanity checks:
+        assert idx_of_first_batch >= 0
+        assert batch_size > 0
+        assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
+        assert upload_every_n_batches >= 0
+        assert spatial_and_temporal_locations_of_each_example.columns.to_list() == list(
+            SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
+        )
+
+        self.open()
+
+        # Figure out where to write batches to:
+        save_batches_locally_and_upload = upload_every_n_batches > 0
+        if save_batches_locally_and_upload:
+            nd_fs_utils.delete_all_files_in_temp_path(local_temp_path)
+        path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
+
+        # Split locations per example into batches:
+        n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
+        locations_for_batches = []
+        for batch_idx in range(n_batches):
+            start_example_idx = batch_idx * batch_size
+            end_example_idx = (batch_idx + 1) * batch_size
+            locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
+                start_example_idx:end_example_idx
+            ]
+            locations_for_batches.append(locations_for_batch)
+
+        # Loop round each batch:
+        for n_batches_processed, locations_for_batch in enumerate(locations_for_batches):
+            batch_idx = idx_of_first_batch + n_batches_processed
+            logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
+
+            # Generate batch.
+            batch = self.get_batch(
+                t0_datetimes=locations_for_batch.t0_datetime_UTC,
+                x_locations=locations_for_batch.x_center_OSGB,
+                y_locations=locations_for_batch.y_center_OSGB,
+            )
+
+            # Save batch to disk.
+            netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
+            batch.to_netcdf(netcdf_filename)
+
+            # Upload if necessary.
+            if (
+                save_batches_locally_and_upload
+                and n_batches_processed > 0
+                and n_batches_processed % upload_every_n_batches == 0
+            ):
+                nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+
+        # Upload last few batches, if necessary:
+        if save_batches_locally_and_upload:
+            nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+
+    # TODO: Issue #319: Standardise parameter names.
     def get_batch(
         self,
         t0_datetimes: pd.DatetimeIndex,
@@ -131,28 +231,39 @@ class DataSource:
         Args:
             t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
                 include data for historic and future depending on `history_minutes` and
-                `future_minutes`.
+                `future_minutes`.  The batch size is given by the length of the t0_datetimes.
             x_locations: x center batch locations
             y_locations: y center batch locations
 
         Returns: Batch data.
         """
-        examples = []
-        zipped = zip(t0_datetimes, x_locations, y_locations)
-        for t0_datetime, x_location, y_location in zipped:
-            output: xr.Dataset = self.get_example(t0_datetime, x_location, y_location)
+        assert len(t0_datetimes) == len(
+            x_locations
+        ), f"len(t0_datetimes) != len(x_locations): {len(t0_datetimes)} != {len(x_locations)}"
+        assert len(t0_datetimes) == len(
+            y_locations
+        ), f"len(t0_datetimes) != len(y_locations): {len(t0_datetimes)} != {len(y_locations)}"
+        zipped = list(zip(t0_datetimes, x_locations, y_locations))
+        batch_size = len(t0_datetimes)
 
-            examples.append(output)
+        with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+            future_examples = []
+            for coords in zipped:
+                t0_datetime, x_location, y_location = coords
+                future_example = executor.submit(
+                    self.get_example, t0_datetime, x_location, y_location
+                )
+                future_examples.append(future_example)
+            examples = [future_example.result() for future_example in future_examples]
 
-        # could add option here, to save each data source using
-        # 1. # DataSourceOutput.to_xr_dataset() to make it a dataset
-        # 2. DataSourceOutput.save_netcdf(), save to netcdf
-
-        # get the name of the cls, this could be one of the data sources like Sun
+        # Get the DataSource class, this could be one of the data sources like Sun
         cls = examples[0].__class__
 
+        # Set the coords to be indices before joining into a batch
+        examples = [make_dim_index(example) for example in examples]
+
         # join the examples together, and cast them to the cls, so that validation can occur
-        return cls(join_dataset_to_batch_dataset(examples))
+        return cls(join_list_dataset_to_batch_dataset(examples))
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
@@ -180,6 +291,7 @@ class DataSource:
             max_gap_duration=self.sample_period_duration,
         )
 
+    # TODO: Issue #319: Standardise parameter names.
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical locations for each t0_datetime.
 
@@ -191,10 +303,12 @@ class DataSource:
         raise NotImplementedError()
 
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
+    # TODO: Issue #319: Standardise parameter names.
     def _get_time_slice(self, t0_dt: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden."""
         raise NotImplementedError()
 
+    # TODO: Issue #319: Standardise parameter names.
     def get_example(
         self,
         t0_dt: pd.Timestamp,  #: Datetime of "now": The most recent obs.
@@ -240,21 +354,20 @@ class ZarrDataSource(ImageDataSource):
       channels: The Zarr parameters to load.
     """
 
-    channels: Iterable[str]
-    #: Mustn't be None, but cannot have a non-default arg in this position :)
-    n_timesteps_per_batch: int = None
+    # zarr_path and channels must be set.  But dataclasses complains about defining a non-default
+    # argument after a default argument if we remove the ` = None`.
+    zarr_path: Union[Path, str] = None
+    channels: Iterable[str] = None
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
-        if self.n_timesteps_per_batch is None:
-            # Using hacky default for now.  The whole concept of n_timesteps_per_batch
-            # will be removed when #213 is completed.
-            # TODO: Remove n_timesteps_per_batch when #213 is completed!
-            self.n_timesteps_per_batch = 16
-            logger.warning("n_timesteps_per_batch is not set!  Using default!")
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
 
     @property
     def data(self):
@@ -306,10 +419,7 @@ class ZarrDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        # rename 'variable' to 'channels'
-        selected_data = selected_data.rename({"variable": "channels"})
-
-        return selected_data
+        return selected_data.load()
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:
         """

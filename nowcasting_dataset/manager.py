@@ -141,6 +141,9 @@ class Manager:
                 t0_datetimes=datetimes_for_split, n_examples=n_examples
             )
             output_filename = self._filename_of_locations_csv_file(split_name)
+            path_for_csv = self.config.output_data.filepath / split_name
+            logger.info(f"Making {path_for_csv} if it does not exist.")
+            nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
             logger.debug(f"Writing {output_filename}")
             df_of_locations.to_csv(output_filename)
 

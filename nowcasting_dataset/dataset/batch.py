@@ -29,16 +29,9 @@ from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-from nowcasting_dataset.dataset.xr_utils import (
-    register_xr_data_array_to_tensor,
-    register_xr_data_set_to_tensor,
-)
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
-
-register_xr_data_array_to_tensor()
-register_xr_data_set_to_tensor()
 
 data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP, Datetime]
 

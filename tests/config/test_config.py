@@ -3,8 +3,6 @@ import os
 import tempfile
 from datetime import datetime
 
-import boto3
-import moto
 import pytest
 
 import nowcasting_dataset
@@ -61,27 +59,6 @@ def test_save_to_gcs():
     save_yaml_configuration(
         configuration=Configuration(),
         filename="gs://solar-pv-nowcasting-data/temp_dir_for_unit_tests/test_config.yaml",
-    )
-
-
-@pytest.mark.skip(
-    "Skipping due to unresolved bug in moto: https://github.com/aio-libs/aiobotocore/issues/755"
-)
-# See https://github.com/openclimatefix/nowcasting_dataset/issues/164
-# for more details and some possible work-arounds.
-@moto.mock_s3()
-def test_save_to_aws():
-    """
-    Check that configuration can be saved to gcs
-    """
-
-    bucket_name = "test_bucket"
-
-    s3_client = boto3.client("s3")
-    s3_client.create_bucket(Bucket=bucket_name)
-
-    save_yaml_configuration(
-        configuration=Configuration(), filename=f"s3://{bucket_name}/test_config.yaml"
     )
 
 

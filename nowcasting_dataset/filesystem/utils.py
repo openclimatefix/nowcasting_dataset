@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Union
 
 import fsspec
+import numpy as np
 from pathy import Pathy
 
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -30,8 +31,6 @@ def get_filesystem(path: Union[str, Path]) -> fsspec.AbstractFileSystem:
     return fsspec.open(path.parent).fs
 
 
-# TODO: Issue #308: Use leading zeros in batch filenames, then we can sort the filename strings
-# and take the last one, instead of converting all filenames to ints!
 def get_maximum_batch_id(path: Pathy) -> int:
     """
     Get the last batch ID. Works with GCS, AWS, and local.
@@ -60,15 +59,13 @@ def get_maximum_batch_id(path: Pathy) -> int:
         _LOG.debug(f"Did not find any files in {path}")
         return 0
 
-    # just take the stem (the filename without the suffix and without the path)
-    filenames = [Pathy(filename) for filename in filenames]
-    stems = [filename.stem for filename in filenames]
-
-    # change to integer
-    batch_indexes = [int(stem) for stem in stems if len(stem) > 0]
-
-    # get the maximum batch id
-    maximum_batch_id = max(batch_indexes)
+    # Now that filenames have leading zeros (like 000001.nc), we can use lexographical sorting
+    # to find the last filename, instead of having to convert all filenames to int.
+    filenames = np.sort(filenames)
+    last_filename = filenames[-1]
+    last_filename = Pathy(last_filename)
+    last_filename_stem = last_filename.stem
+    maximum_batch_id = int(last_filename_stem)
     _LOG.debug(f"Found maximum of batch it of {maximum_batch_id} in {path}")
 
     return maximum_batch_id

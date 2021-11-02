@@ -2,42 +2,17 @@
 from dataclasses import dataclass
 from numbers import Number
 
-import numpy as np
 import pandas as pd
 import rioxarray
 import xarray as xr
 from rasterio.warp import Resampling
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
-from nowcasting_dataset.consts import TOPOGRAPHIC_DATA
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
-
-# Means computed with
-# out_fp = "europe_dem_1km.tif"
-# out = rasterio.open(out_fp)
-# data = out.read(masked=True)
-# print(np.mean(data))
-# print(np.std(data))
-# TODO: Issue #321:  Remove these normalisation variables?
-TOPO_MEAN = xr.DataArray(
-    data=[
-        365.486887,
-    ],
-    dims=["variable"],
-    coords={"variable": [TOPOGRAPHIC_DATA]},
-).astype(np.float32)
-
-TOPO_STD = xr.DataArray(
-    data=[
-        478.841369,
-    ],
-    dims=["variable"],
-    coords={"variable": [TOPOGRAPHIC_DATA]},
-).astype(np.float32)
 
 
 @dataclass

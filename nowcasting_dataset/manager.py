@@ -90,13 +90,15 @@ class Manager:
                 self.config.input_data.data_source_which_defines_geospatial_locations
             ]
         except KeyError:
-            logger.error(
+            msg = (
                 "input_data.data_source_which_defines_geospatial_locations="
                 f"{self.config.input_data.data_source_which_defines_geospatial_locations}"
                 " is not a member of the DataSources, so cannot set"
                 " self.data_source_which_defines_geospatial_locations!"
                 f" The available DataSources are: {list(self.data_sources.keys())}"
             )
+            logger.error(msg)
+            raise RuntimeError(msg)
         else:
             logger.info(
                 f"DataSource `{data_source_name}` set as"
@@ -232,7 +234,9 @@ class Manager:
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
-        # TODO: Speed this up by splitting the shuffled_t0_datetimes across multiple processors.
+        # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
+        # multiple processors.  Currently takes about half an hour for 25,000 batches.
+        # But wait until we've implemented issue #305, as that is likely to be sufficient!
         (
             x_locations,
             y_locations,

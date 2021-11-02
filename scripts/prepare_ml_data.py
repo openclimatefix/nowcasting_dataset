@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 """Pre-prepares batches of data.
+
+Please run `./prepare_ml_data.py --help` for full details!
 """
 import logging
 
@@ -61,8 +63,8 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
     manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     manager.create_batches(overwrite_batches)
-    # TODO: save_yaml_configuration(config)
-    # TODO: Validate ML data.
+    # TODO: Issue #316: save_yaml_configuration(config)
+    # TODO: Issue #317: Validate ML data.
 
 
 if __name__ == "__main__":

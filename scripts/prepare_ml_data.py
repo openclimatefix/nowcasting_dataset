@@ -68,6 +68,7 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     manager.create_batches(overwrite_batches)
     # TODO: Issue #316: save_yaml_configuration(config)
     # TODO: Issue #317: Validate ML data.
+    logger.info("Done!")
 
 
 if __name__ == "__main__":

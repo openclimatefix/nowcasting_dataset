@@ -167,7 +167,7 @@ class DataSource:
         assert batch_size > 0
         assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
         assert upload_every_n_batches >= 0
-        assert spatial_and_temporal_locations_of_each_example.columns.to_tuple() == (
+        assert spatial_and_temporal_locations_of_each_example.columns.to_list() == list(
             SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
         )
 

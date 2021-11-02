@@ -342,8 +342,8 @@ class Manager:
         for split_name in splits_which_need_more_batches:
             filename = self._filename_of_locations_csv_file(split_name.value)
             logger.info(f"Loading {filename}.")
-            locations_for_each_example = pd.read_csv(filename)
-            assert locations_for_each_example.columns.to_tuple() == (
+            locations_for_each_example = pd.read_csv(filename, index_col=0)
+            assert locations_for_each_example.columns.to_list() == list(
                 SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
             )
             # Converting to datetimes is much faster using `pd.to_datetime()` than
@@ -399,7 +399,12 @@ class Manager:
                     future_create_batches_jobs.append(future)
 
                 # Wait for all futures to finish:
-                for future in future_create_batches_jobs:
+                for future, data_source_name in zip(
+                    future_create_batches_jobs, self.data_sources.keys()
+                ):
                     # Call exception() to propagate any exceptions raised by the worker process into
                     # the main process, and to wait for the worker to finish.
-                    future.exception()
+                    exception = future.exception()
+                    if exception is not None:
+                        logger.exception(f"Worker process {data_source_name} raised exception!")
+                        raise exception

@@ -280,7 +280,10 @@ class Manager:
                 path = (
                     self.config.output_data.filepath / split_name.value / data_source_name / "*.nc"
                 )
-                max_batch_id_on_disk = nd_fs_utils.get_maximum_batch_id(path)
+                try:
+                    max_batch_id_on_disk = nd_fs_utils.get_maximum_batch_id(path)
+                except FileNotFoundError:
+                    max_batch_id_on_disk = -1
                 first_batches_to_create[split_name][data_source_name] = max_batch_id_on_disk + 1
 
         return first_batches_to_create

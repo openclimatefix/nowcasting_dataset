@@ -20,11 +20,8 @@ dependencies:
 
   # Cloud & distributed compute
   - gcsfs
-  - s3fs
   - fsspec
   - pathy
-  - boto3
-  - moto
 
   # Machine learning
   - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.

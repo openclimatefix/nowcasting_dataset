@@ -113,6 +113,8 @@ class Manager:
 
         `<output_data.filepath> / <split_name> / spatial_and_temporal_locations_of_each_example.csv`
 
+        Creates the output directory if it does not exist.
+
         Works on any compute environment.
         """
         if self._locations_csv_file_exists():

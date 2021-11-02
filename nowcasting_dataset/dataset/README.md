@@ -9,4 +9,4 @@ This folder contains the following files
 
 ## xr_utils.py
 
-Utils for manipulating xarray DataArrays and Datasets.
+Utilities for manipulating xarray DataArrays and Datasets.

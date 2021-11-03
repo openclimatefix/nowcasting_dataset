@@ -17,7 +17,6 @@ setup(
     author_email="info@openclimatefix.org",
     company="Open Climate Fix Ltd",
     install_requires=install_requires,
-    extras_require={"torch": ["torch"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
     package_data={"config": ["nowcasting_dataset/config/*.yaml"]},

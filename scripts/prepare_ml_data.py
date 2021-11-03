@@ -66,7 +66,7 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
     # of data_sources is passed in at the command line.
     manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()
     manager.create_batches(overwrite_batches)
-    # TODO: Issue #316: save_yaml_configuration(config)
+    manager.save_yaml_configuration()
     # TODO: Issue #317: Validate ML data.
     logger.info("Done!")
 

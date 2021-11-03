@@ -1,8 +1,5 @@
 """ Various DataSources """
 from nowcasting_dataset.data_sources.data_source import DataSource  # noqa: F401
-from nowcasting_dataset.data_sources.datetime.datetime_data_source import (  # noqa: F401
-    DatetimeDataSource,
-)
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
 from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource

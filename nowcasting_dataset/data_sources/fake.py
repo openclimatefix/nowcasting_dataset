@@ -238,6 +238,9 @@ def create_gsp_pv_dataset(
 
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
+
+    # Add 1000 to the id numbers for the row numbers.
+    # This is a quick way to make sure row number is different from id,
     data["pv_system_row_number"] = data["id"] + 1000
 
     data.__setitem__("data", data.data.clip(min=0))

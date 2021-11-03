@@ -12,7 +12,6 @@ from typing import List, Optional, Tuple, Union
 import fsspec
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
@@ -49,8 +48,7 @@ class PVDataSource(ImageDataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        seed = torch.initial_seed()
-        self.rng = np.random.default_rng(seed=seed)
+        self.rng = np.random.default_rng()
         self.load()
 
     def check_input_paths_exist(self) -> None:

@@ -1,6 +1,5 @@
 """ Optical Flow Data Source """
 import logging
-from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
 from typing import Iterable, Optional
@@ -15,7 +14,6 @@ from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
-from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -27,6 +25,7 @@ class OpticalFlowDataSource(ZarrDataSource):
 
     Pads image size to allow for cropping out NaN values
     """
+
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
     previous_timestep_for_flow: int = 1
     image_size_pixels: InitVar[int] = 128
@@ -34,7 +33,7 @@ class OpticalFlowDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init  Add 16 pixels to each side of the image"""
-        super().__post_init__(image_size_pixels+32, meters_per_pixel)
+        super().__post_init__(image_size_pixels + 32, meters_per_pixel)
         n_channels = len(self.channels)
         self._cache = {}
         self._shape_of_example = (
@@ -59,7 +58,6 @@ class OpticalFlowDataSource(ZarrDataSource):
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
-
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
     ) -> DataSourceOutput:
@@ -78,17 +76,17 @@ class OpticalFlowDataSource(ZarrDataSource):
         selected_data = self._get_time_slice(t0_dt)
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
-            )
+        )
         selected_data = selected_data.sel(
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
-            )
+        )
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
             x=slice(0, self._square.size_pixels), y=slice(0, self._square.size_pixels)
-            )
+        )
 
         selected_data = self._post_process_example(selected_data, t0_dt)
 
@@ -98,7 +96,7 @@ class OpticalFlowDataSource(ZarrDataSource):
         # Creates a pyramid of optical flows for all timesteps up to t0, and apply predictions
         # for all future timesteps for each of them
         # Compute optical flow per channel, as it might be different
-        selected_data = self._compute_and_return_optical_flow(selected_data, t0_dt = t0_dt)
+        selected_data = self._compute_and_return_optical_flow(selected_data, t0_dt=t0_dt)
 
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
@@ -116,34 +114,37 @@ class OpticalFlowDataSource(ZarrDataSource):
 
         return selected_data
 
-    def _compute_previous_timestep(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp) -> pd.Timestamp:
+    def _compute_previous_timestep(
+        self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp
+    ) -> pd.Timestamp:
         """
         Get timestamp of previous
 
         Args:
-            satellite_data:
-            t0_dt:
+            satellite_data: Satellite data to use
+            t0_dt: Timestamp
 
         Returns:
-
+            The previous timesteps
         """
-        satellite_data = satellite_data.where(satellite_data.time < t0_dt, drop = True)
+        satellite_data = satellite_data.where(satellite_data.time < t0_dt, drop=True)
         return satellite_data.isel(time=-self.previous_timestep_for_flow).values
 
-    def _get_number_future_timesteps(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp) -> \
-            int:
+    def _get_number_future_timesteps(
+        self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp
+    ) -> int:
         """
         Get number of future timestamps
 
         Args:
-            satellite_data:
-            t0_dt:
+            satellite_data: Satellite data to use
+            t0_dt: The timestamp of the t0 image
 
         Returns:
-
+            The number of future timesteps
         """
-        satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop = True)
-        return len(satellite_data.coords['time'])
+        satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop=True)
+        return len(satellite_data.coords["time"])
 
     def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp):
         """
@@ -159,7 +160,7 @@ class OpticalFlowDataSource(ZarrDataSource):
 
         prediction_dictionary = {}
         # Get the previous timestamp
-        previous_timestamp = self._compute_previous_timestep(satellite_data, t0_dt = t0_dt)
+        previous_timestamp = self._compute_previous_timestep(satellite_data, t0_dt=t0_dt)
         for channel in satellite_data.coords["channels"]:
             channel_images = satellite_data.sel(channel=channel)
             t0_image = channel_images.sel(time=t0_dt).values
@@ -168,22 +169,27 @@ class OpticalFlowDataSource(ZarrDataSource):
             # Do predictions now
             predictions = []
             # Number of timesteps before t0
-            for prediction_timestep in range(self._get_number_future_timesteps(satellite_data, t0_dt)):
+            for prediction_timestep in range(
+                self._get_number_future_timesteps(satellite_data, t0_dt)
+            ):
                 flow = optical_flow * prediction_timestep
                 warped_image = self._remap_image(t0_image, flow)
-                warped_image = crop_center(warped_image, self._square.size_pixels,
-                                           self._square.size_pixels)
+                warped_image = crop_center(
+                    warped_image, self._square.size_pixels, self._square.size_pixels
+                )
                 predictions.append(warped_image)
             prediction_dictionary[channel] = predictions
         # TODO Convert to xr.DataArray
         # Swap out data for the future part of the dataarray
         return prediction_dictionary
 
-
     def _compute_optical_flow(self, t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
         """
+        Compute the optical flow for a set of images
+
         Args:
-            satellite_data: uint8 numpy array of shape (num_timesteps, height, width)
+            t0_image: t0 image
+            previous_image: previous image to compute optical flow with
 
         Returns:
             optical flow field
@@ -202,7 +208,8 @@ class OpticalFlowDataSource(ZarrDataSource):
         )
 
     def _remap_image(self, image: np.ndarray, flow: np.ndarray) -> np.ndarray:
-        """Takes an image and warps it forwards in time according to the flow field.
+        """
+        Takes an image and warps it forwards in time according to the flow field.
 
         Args:
             image: The grayscale image to warp.
@@ -216,19 +223,14 @@ class OpticalFlowDataSource(ZarrDataSource):
         remap = -flow.copy()
         remap[..., 0] += np.arange(width)  # map_x
         remap[..., 1] += np.arange(height)[:, np.newaxis]  # map_y
-        # cv.remap docs: https://docs.opencv.org/4.5.0/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4
         return cv2.remap(
             src=image,
             map1=remap,
             map2=None,
             interpolation=cv2.INTER_LINEAR,
-            # See BorderTypes: https://docs.opencv.org/4.5.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5
             borderMode=cv2.BORDER_CONSTANT,
             borderValue=np.NaN,
         )
-
-    def _open_data(self) -> xr.DataArray:
-        return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
     def _dataset_to_data_source_output(output: xr.Dataset) -> OpticalFlow:
         return OpticalFlow(output)
@@ -293,7 +295,7 @@ class OpticalFlowDataSource(ZarrDataSource):
             border_locations = self.geospatial_border()
             datetime_index = nd_time.select_daylight_datetimes(
                 datetimes=datetime_index, locations=border_locations
-                )
+            )
 
         return datetime_index
 
@@ -331,19 +333,19 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     return data_array
 
 
-def crop_center(img,cropx,cropy):
+def crop_center(img, cropx, cropy):
     """
     Crop center of numpy image
 
     Args:
-        img:
-        cropx:
-        cropy:
+        img: Image to crop
+        cropx: Size in x direction
+        cropy: Size in y direction
 
     Returns:
-
+        The cropped image
     """
-    y,x = img.shape
-    startx = x//2-(cropx//2)
-    starty = y//2-(cropy//2)
-    return img[starty:starty+cropy,startx:startx+cropx]
+    y, x = img.shape
+    startx = x // 2 - (cropx // 2)
+    starty = y // 2 - (cropy // 2)
+    return img[starty : starty + cropy, startx : startx + cropx]

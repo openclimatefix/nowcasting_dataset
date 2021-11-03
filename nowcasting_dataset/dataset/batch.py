@@ -16,21 +16,21 @@ from nowcasting_dataset.data_sources.fake import (
     gsp_fake,
     metadata_fake,
     nwp_fake,
+    optical_flow_fake,
     pv_fake,
     satellite_fake,
     sun_fake,
     topographic_fake,
-    optical_flow_fake,
 )
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.utils import get_netcdf_filename
-from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
 _LOG = logging.getLogger(__name__)
 
@@ -102,8 +102,8 @@ class Batch(BaseModel):
                 satellite_image_size_pixels=satellite_image_size_pixels,
                 number_satellite_channels=len(
                     configuration.input_data.satellite.satellite_channels
-                    ),
                 ),
+            ),
             nwp=nwp_fake(
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.nwp.seq_length_5_minutes,

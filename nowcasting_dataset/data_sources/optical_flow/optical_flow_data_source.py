@@ -11,6 +11,7 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset.time as nd_time
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
@@ -24,12 +25,9 @@ class OpticalFlowDataSource(ZarrDataSource):
     """
     Optical Flow Data Source, computing flow between Satellite data
 
-    zarr_path: Must start with 'gs://' if on GCP.
-
     Pads image size to allow for cropping out NaN values
     """
-
-    zarr_path: str = None
+    channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
     previous_timestep_for_flow: int = 1
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
@@ -37,12 +35,13 @@ class OpticalFlowDataSource(ZarrDataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init  Add 16 pixels to each side of the image"""
         super().__post_init__(image_size_pixels+32, meters_per_pixel)
+        n_channels = len(self.channels)
         self._cache = {}
         self._shape_of_example = (
             self._total_seq_length,
             image_size_pixels+32,
             image_size_pixels+32,
-            2,
+            n_channels,
         )
 
     def open(self) -> None:
@@ -281,30 +280,60 @@ class OpticalFlowDataSource(ZarrDataSource):
             borderValue=np.NaN,
         )
 
+    def _open_data(self) -> xr.DataArray:
+        return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
+
+    def _dataset_to_data_source_output(output: xr.Dataset) -> OpticalFlow:
+        return OpticalFlow(output)
+
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
-        try:
-            return self._cache[t0_dt]
-        except KeyError:
-            start_dt = self._get_start_dt(t0_dt)
-            end_dt = self._get_end_dt(t0_dt)
-            data = self.data.sel(time=slice(start_dt, end_dt))
-            data = data.load()
-            self._cache[t0_dt] = data
-            return data
-
-    def _post_process_example(
-        self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
-    ) -> xr.DataArray:
-
-        selected_data.data = selected_data.data.astype(np.float32)
-
-        return selected_data
+        start_dt = self._get_start_dt(t0_dt)
+        end_dt = self._get_end_dt(t0_dt)
+        data = self.data.sel(time=slice(start_dt, end_dt))
+        return data
 
     def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes
 
         Args:
             remove_night: If True then remove datetimes at night.
+                We're interested in forecasting solar power generation, so we
+                don't care about nighttime data :)
+
+                In the UK in summer, the sun rises first in the north east, and
+                sets last in the north west [1].  In summer, the north gets more
+                hours of sunshine per day.
+
+                In the UK in winter, the sun rises first in the south east, and
+                sets last in the south west [2].  In winter, the south gets more
+                hours of sunshine per day.
+
+                |                        | Summer | Winter |
+                |           ---:         |  :---: |  :---: |
+                | Sun rises first in     | N.E.   | S.E.   |
+                | Sun sets last in       | N.W.   | S.W.   |
+                | Most hours of sunlight | North  | South  |
+
+                Before training, we select timesteps which have at least some
+                sunlight.  We do this by computing the clearsky global horizontal
+                irradiance (GHI) for the four corners of the satellite imagery,
+                and for all the timesteps in the dataset.  We only use timesteps
+                where the maximum global horizontal irradiance across all four
+                corners is above some threshold.
+
+                The 'clearsky solar irradiance' is the amount of sunlight we'd
+                expect on a clear day at a specific time and location. The SI unit
+                of irradiance is watt per square meter.  The 'global horizontal
+                irradiance' (GHI) is the total sunlight that would hit a
+                horizontal surface on the surface of the Earth.  The GHI is the
+                sum of the direct irradiance (sunlight which takes a direct path
+                from the Sun to the Earth's surface) and the diffuse horizontal
+                irradiance (the sunlight scattered from the atmosphere).  For more
+                info, see: https://en.wikipedia.org/wiki/Solar_irradiance
+
+        References:
+          1. [Video of June 2019](https://www.youtube.com/watch?v=IOp-tj-IJpk)
+          2. [Video of Jan 2019](https://www.youtube.com/watch?v=CJ4prUVa2nQ)
         """
         if self._data is None:
             sat_data = self._open_data()
@@ -317,7 +346,7 @@ class OpticalFlowDataSource(ZarrDataSource):
             border_locations = self.geospatial_border()
             datetime_index = nd_time.select_daylight_datetimes(
                 datetimes=datetime_index, locations=border_locations
-            )
+                )
 
         return datetime_index
 

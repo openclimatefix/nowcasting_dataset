@@ -98,7 +98,9 @@ class OpticalFlowDataSource(ZarrDataSource):
         # Creates a pyramid of optical flows for all timesteps up to t0, and apply predictions
         # for all future timesteps for each of them
         # Compute optical flow per channel, as it might be different
-        selected_data = self._compute_and_return_optical_flow(selected_data, t0_dt=t0_dt)
+        selected_data: xr.DataArray = self._compute_and_return_optical_flow(
+            selected_data, t0_dt=t0_dt
+        )
 
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
@@ -148,7 +150,9 @@ class OpticalFlowDataSource(ZarrDataSource):
         satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop=True)
         return len(satellite_data.coords["time"])
 
-    def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp):
+    def _compute_and_return_optical_flow(
+        self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp
+    ) -> xr.DataArray:
         """
         Compute and return optical flow predictions for the example
 
@@ -184,7 +188,10 @@ class OpticalFlowDataSource(ZarrDataSource):
             [prediction_dictionary[k] for k in prediction_dictionary.keys()], axis=0
         )
         # Swap out data for the future part of the dataarray
-        return prediction
+        dataarray = self._update_dataarray_with_predictions(
+            satellite_data, predictions=prediction, t0_dt=t0_dt
+        )
+        return dataarray
 
     def _update_dataarray_with_predictions(
         self, satellite_data: xr.DataArray, predictions: np.ndarray, t0_dt: pd.Timestamp

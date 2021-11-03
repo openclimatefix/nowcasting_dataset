@@ -212,7 +212,7 @@ class OpticalFlowDataSource(ZarrDataSource):
             predictions: Predictions from the optical flow
 
         Returns:
-            The Xarray dataArray with the optical flow predictions
+            The Xarray DataArray with the optical flow predictions
         """
 
         # Combine all channels for a single timestep
@@ -239,7 +239,7 @@ class OpticalFlowDataSource(ZarrDataSource):
             previous_image: previous image to compute optical flow with
 
         Returns:
-            optical flow field
+            Optical Flow field
         """
         return cv2.calcOpticalFlowFarneback(
             prev=previous_image,

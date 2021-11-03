@@ -17,6 +17,8 @@ from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import Opti
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
+IMAGE_BUFFER_SIZE = 16
+
 
 @dataclass
 class OpticalFlowDataSource(ZarrDataSource):
@@ -33,7 +35,7 @@ class OpticalFlowDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init  Add 16 pixels to each side of the image"""
-        super().__post_init__(image_size_pixels + 32, meters_per_pixel)
+        super().__post_init__(image_size_pixels + 2 * IMAGE_BUFFER_SIZE, meters_per_pixel)
         n_channels = len(self.channels)
         self._cache = {}
         self._shape_of_example = (
@@ -161,27 +163,59 @@ class OpticalFlowDataSource(ZarrDataSource):
         prediction_dictionary = {}
         # Get the previous timestamp
         previous_timestamp = self._compute_previous_timestep(satellite_data, t0_dt=t0_dt)
-        for channel in satellite_data.coords["channels"]:
-            channel_images = satellite_data.sel(channel=channel)
-            t0_image = channel_images.sel(time=t0_dt).values
-            previous_image = channel_images.sel(time=previous_timestamp).values
-            optical_flow = self._compute_optical_flow(t0_image, previous_image)
-            # Do predictions now
+        for prediction_timestep in range(self._get_number_future_timesteps(satellite_data, t0_dt)):
             predictions = []
-            # Number of timesteps before t0
-            for prediction_timestep in range(
-                self._get_number_future_timesteps(satellite_data, t0_dt)
-            ):
+            for channel in satellite_data.coords["channels"]:
+                channel_images = satellite_data.sel(channel=channel)
+                t0_image = channel_images.sel(time=t0_dt).values
+                previous_image = channel_images.sel(time=previous_timestamp).values
+                optical_flow = self._compute_optical_flow(t0_image, previous_image)
+                # Do predictions now
                 flow = optical_flow * prediction_timestep
                 warped_image = self._remap_image(t0_image, flow)
                 warped_image = crop_center(
                     warped_image, self._square.size_pixels, self._square.size_pixels
                 )
                 predictions.append(warped_image)
-            prediction_dictionary[channel] = predictions
-        # TODO Convert to xr.DataArray
+            # Add the block of predictions for all channels
+            prediction_dictionary[prediction_timestep] = np.concatenate(predictions, axis=-1)
+        # Make a block of T, H, W, C ordering
+        prediction = np.stack(
+            [prediction_dictionary[k] for k in prediction_dictionary.keys()], axis=0
+        )
         # Swap out data for the future part of the dataarray
-        return prediction_dictionary
+        return prediction
+
+    def _update_dataarray_with_predictions(
+        self, satellite_data: xr.DataArray, predictions: np.ndarray, t0_dt: pd.Timestamp
+    ) -> xr.DataArray:
+        """
+        Updates the dataarray with predictions
+
+         Additionally, changes the temporal size to t0+1 to forecast horizon
+
+        Args:
+            satellite_data: Satellite data
+            predictions: Predictions from the optical flow
+
+        Returns:
+            The Xarray dataArray with the optical flow predictions
+        """
+
+        # Combine all channels for a single timestep
+        satellite_data = satellite_data.where(satellite_data.time > t0_dt)
+        # Make sure its the correct size
+        satellite_data = satellite_data.isel(
+            x=slice(0, self._square.size_pixels - IMAGE_BUFFER_SIZE),
+            y=slice(0, self._square.size_pixels - IMAGE_BUFFER_SIZE),
+        )
+        dataarray = xr.DataArray(
+            data=predictions,
+            dims=satellite_data.dims,
+            coords=satellite_data.coords,
+        )
+
+        return dataarray
 
     def _compute_optical_flow(self, t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
         """

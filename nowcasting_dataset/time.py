@@ -211,44 +211,6 @@ def get_contiguous_time_periods(
     return pd.DataFrame(periods)
 
 
-# TODO: Delete this function and tests.
-# https://github.com/openclimatefix/nowcasting_dataset/issues/208
-def datetime_features(index: pd.DatetimeIndex) -> pd.DataFrame:
-    """
-    Make datetime features, hour_of_day and day_of_year
-
-    Args:
-        index: index of datestamps
-
-    Returns: Example data with datetime features
-
-    """
-    features = {}
-    features["hour_of_day"] = index.hour + (index.minute / 60)
-    features["day_of_year"] = index.day_of_year
-    return pd.DataFrame(features, index=index).astype(np.float32)
-
-
-# TODO: Delete this function and tests.
-# https://github.com/openclimatefix/nowcasting_dataset/issues/208
-def datetime_features_in_example(index: pd.DatetimeIndex) -> xr.Dataset:
-    """
-    Make datetime features with sin and cos
-
-    Args:
-        index: index of datestamps
-
-    Returns: Example data with datetime features
-
-    """
-    dt_features = datetime_features(index)
-    dt_features["hour_of_day"] /= 24
-    dt_features["day_of_year"] /= 365
-    dt_features = utils.sin_and_cos(dt_features)
-
-    return dt_features.to_xarray()
-
-
 def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_minutes):
     """
     Make random time vectors

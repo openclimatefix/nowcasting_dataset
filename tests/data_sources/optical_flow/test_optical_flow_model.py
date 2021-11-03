@@ -20,7 +20,7 @@ def test_optical_flow_validation():  # noqa: D103
 
     sat.data[0, 0] = np.nan
     with pytest.raises(Exception):
-        optical_flow_fake.model_validation(sat)
+        OpticalFlow.model_validation(sat)
 
 
 def test_optical_flow_save():  # noqa: D103
@@ -28,4 +28,4 @@ def test_optical_flow_save():  # noqa: D103
     with tempfile.TemporaryDirectory() as dirpath:
         optical_flow_fake().save_netcdf(path=dirpath, batch_i=0)
 
-        assert os.path.exists(f"{dirpath}/optical_flow/000000.nc")
+        assert os.path.exists(f"{dirpath}/opticalflow/000000.nc")

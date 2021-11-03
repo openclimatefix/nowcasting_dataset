@@ -29,4 +29,4 @@ s3fs
 fsspec
 pathy
 satip>=2.0.2
-opencv
+opencv-python

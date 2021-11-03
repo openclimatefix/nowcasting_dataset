@@ -264,7 +264,7 @@ class PVDataSource(ImageDataSource):
             ),
         )
         pv_system_row_number = xr.DataArray(
-            data=pv_system_row_number.values,
+            data=pv_system_row_number,
             dims=["id_index"],
             coords=dict(
                 id_index=range(len(all_pv_system_ids.values)),

@@ -39,8 +39,8 @@ class OpticalFlowDataSource(ZarrDataSource):
         self._cache = {}
         self._shape_of_example = (
             self._total_seq_length,
-            image_size_pixels+32,
-            image_size_pixels+32,
+            image_size_pixels,
+            image_size_pixels,
             n_channels,
         )
 
@@ -59,60 +59,6 @@ class OpticalFlowDataSource(ZarrDataSource):
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
-    def get_batch(
-        self,
-        t0_datetimes: pd.DatetimeIndex,
-        x_locations: Iterable[Number],
-        y_locations: Iterable[Number],
-    ) -> OpticalFlow:
-        """
-        Get batch data
-
-        Load the first _n_timesteps_per_batch concurrently.  This
-        loads the timesteps from disk concurrently, and fills the
-        cache.  If we try loading all examples
-        concurrently, then SatelliteDataSource will try reading from
-        empty caches, and things are much slower!
-
-        Args:
-            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
-                include data for historic and future depending on `history_minutes` and
-                `future_minutes`.
-            x_locations: x center batch locations
-            y_locations: y center batch locations
-
-        Returns: Batch data
-
-        """
-        # Load the first _n_timesteps_per_batch concurrently.  This
-        # loads the timesteps from disk concurrently, and fills the
-        # cache.  If we try loading all examples
-        # concurrently, then SatelliteDataSource will try reading from
-        # empty caches, and things are much slower!
-        zipped = list(zip(t0_datetimes, x_locations, y_locations))
-        batch_size = len(t0_datetimes)
-
-        with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
-            future_examples = []
-            for coords in zipped[: self.n_timesteps_per_batch]:
-                t0_datetime, x_location, y_location = coords
-                future_example = executor.submit(
-                    self.get_example, t0_datetime, x_location, y_location
-                )
-                future_examples.append(future_example)
-            examples = [future_example.result() for future_example in future_examples]
-
-        # Load the remaining examples.  This should hit the DataSource caches.
-        for coords in zipped[self.n_timesteps_per_batch :]:
-            t0_datetime, x_location, y_location = coords
-            example = self.get_example(t0_datetime, x_location, y_location)
-            examples.append(example)
-
-        output = join_list_data_array_to_batch_dataset(examples)
-
-        self._cache = {}
-
-        return OpticalFlow(output)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -132,19 +78,27 @@ class OpticalFlowDataSource(ZarrDataSource):
         selected_data = self._get_time_slice(t0_dt)
         bounding_box = self._square.bounding_box_centered_on(
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
-        )
+            )
         selected_data = selected_data.sel(
             x=slice(bounding_box.left, bounding_box.right),
             y=slice(bounding_box.top, bounding_box.bottom),
-        )
+            )
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
             x=slice(0, self._square.size_pixels), y=slice(0, self._square.size_pixels)
-        )
+            )
 
         selected_data = self._post_process_example(selected_data, t0_dt)
+
+        # Compute optical flow for the timesteps
+        # Get Optical Flow for the pre-t0 time, and applying the t0-previous_timesteps_per_flow to
+        # t0 optical flow for forecast steps in the future
+        # Creates a pyramid of optical flows for all timesteps up to t0, and apply predictions
+        # for all future timesteps for each of them
+        # Compute optical flow per channel, as it might be different
+        selected_data = self._compute_and_return_optical_flow(selected_data, t0_dt = t0_dt)
 
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
@@ -159,14 +113,6 @@ class OpticalFlowDataSource(ZarrDataSource):
 
         # rename 'variable' to 'channels'
         selected_data = selected_data.rename({"variable": "channels"})
-
-        # Compute optical flow for the timesteps
-        # Get Optical Flow for the pre-t0 time, and applying the t0-previous_timesteps_per_flow to
-        # t0 optical flow for forecast steps in the future
-        # Creates a pyramid of optical flows for all timesteps up to t0, and apply predictions
-        # for all future timesteps for each of them
-        # Compute optical flow per channel, as it might be different
-        selected_data = self._compute_and_return_optical_flow(selected_data, t0_dt = t0_dt)
 
         return selected_data
 

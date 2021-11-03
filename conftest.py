@@ -7,7 +7,7 @@ import pytest
 import nowcasting_dataset
 from nowcasting_dataset import consts
 from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.data_sources import SatelliteDataSource
+from nowcasting_dataset.data_sources import OpticalFlowDataSource, SatelliteDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 
@@ -41,6 +41,17 @@ def sat_filename(use_cloud_data: bool) -> Path:  # noqa: D103
 @pytest.fixture
 def sat_data_source(sat_filename: Path):  # noqa: D103
     return SatelliteDataSource(
+        image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
+        zarr_path=sat_filename,
+        history_minutes=0,
+        forecast_minutes=5,
+        channels=("HRV",),
+    )
+
+
+@pytest.fixture
+def optical_flow_data_source(sat_filename: Path):  # noqa: D103
+    return OpticalFlowDataSource(
         image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
         zarr_path=sat_filename,
         history_minutes=0,

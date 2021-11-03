@@ -4,17 +4,17 @@ import pandas as pd
 import pytest
 
 
-def test_satellite_data_source_init(sat_data_source):  # noqa: D103
+def test_satellite_data_source_init(optical_flow_data_source):  # noqa: D103
     pass
 
 
-def test_open(sat_data_source):  # noqa: D103
-    sat_data_source.open()
-    assert sat_data_source.data is not None
+def test_open(optical_flow_data_source):  # noqa: D103
+    optical_flow_data_source.open()
+    assert optical_flow_data_source.data is not None
 
 
-def test_datetime_index(sat_data_source):  # noqa: D103
-    datetimes = sat_data_source.datetime_index()
+def test_datetime_index(optical_flow_data_source):  # noqa: D103
+    datetimes = optical_flow_data_source.datetime_index()
     assert isinstance(datetimes, pd.DatetimeIndex)
     assert len(datetimes) > 0
     assert len(np.unique(datetimes)) == len(datetimes)
@@ -35,10 +35,12 @@ def test_datetime_index(sat_data_source):  # noqa: D103
         (2001, 2001, -124_000, 130_000, 130_000, -124_000),
     ],
 )
-def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: D103
-    sat_data_source.open()
+def test_get_example(optical_flow_data_source, x, y, left, right, top, bottom):  # noqa: D103
+    optical_flow_data_source.open()
     t0_dt = pd.Timestamp("2019-01-01T13:00")
-    sat_data = sat_data_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    sat_data = optical_flow_data_source.get_example(
+        t0_dt=t0_dt, x_meters_center=x, y_meters_center=y
+    )
 
     assert left == sat_data.x.values[0]
     assert right == sat_data.x.values[-1]
@@ -49,7 +51,7 @@ def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: 
     assert len(sat_data.y) == pytest.IMAGE_SIZE_PIXELS
 
 
-def test_geospatial_border(sat_data_source):  # noqa: D103
-    border = sat_data_source.geospatial_border()
+def test_geospatial_border(optical_flow_data_source):  # noqa: D103
+    border = optical_flow_data_source.geospatial_border()
     correct_border = [(-110000, 1094000), (-110000, -58000), (730000, 1094000), (730000, -58000)]
     np.testing.assert_array_equal(border, correct_border)

@@ -37,11 +37,6 @@ pip install -e .
 A (probably older) version is also available through `pip install nowcasting-dataset`
 
 
-### `RuntimeError: unable to open shared memory object`
-
-To prevent PyTorch failing with an error like `RuntimeError: unable to open shared memory object </torch_2276740_2849291446> in read-write mode`, edit `/etc/security/limits.conf` as root and add this line: `*		 soft	 nofile		 512000` then log out and log back in again  (see [this issue](https://github.com/openclimatefix/nowcasting_dataset/issues/158) for more details).
-
-
 ### PV Live API
 If you want to also install [PVLive](https://github.com/SheffieldSolar/PV_Live-API) then use `pip install git+https://github.com/SheffieldSolar/PV_Live-API
 `

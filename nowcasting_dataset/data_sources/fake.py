@@ -132,7 +132,7 @@ def optical_flow_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
-            number_channels=number_satellite_channels,
+            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
         )
         for _ in range(batch_size)
     ]

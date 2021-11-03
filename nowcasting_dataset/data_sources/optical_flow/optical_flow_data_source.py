@@ -176,6 +176,7 @@ class OpticalFlowDataSource(ZarrDataSource):
                 predictions.append(warped_image)
             prediction_dictionary[channel] = predictions
         # TODO Convert to xr.DataArray
+        # Swap out data for the future part of the dataarray
         return prediction_dictionary
 
 

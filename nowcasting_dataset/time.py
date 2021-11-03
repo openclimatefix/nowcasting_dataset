@@ -7,7 +7,6 @@ from typing import Dict, Iterable, List, Tuple
 import numpy as np
 import pandas as pd
 import pvlib
-import xarray as xr
 
 from nowcasting_dataset import geospatial, utils
 

@@ -228,11 +228,7 @@ class PVDataSource(ImageDataSource):
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
 
-        # TODO: Issue #302. pv_system_row_number is assigned to but never used.
-        # That may indicate a bug?
-        pv_system_row_number = np.flatnonzero(  # noqa: F841
-            self.pv_metadata.index.isin(all_pv_system_ids)
-        )
+        pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
 
@@ -267,8 +263,16 @@ class PVDataSource(ImageDataSource):
                 id_index=range(len(all_pv_system_ids.values)),
             ),
         )
+        pv_system_row_number = xr.DataArray(
+            data=pv_system_row_number,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_pv_system_ids.values)),
+            ),
+        )
         pv["x_coords"] = x_coords
         pv["y_coords"] = y_coords
+        pv["pv_system_row_number"] = pv_system_row_number
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id_index)

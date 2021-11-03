@@ -16,4 +16,12 @@ class PV(DataSourceOutput):
         assert (~isnan(v.data)).all(), "Some pv data values are NaNs"
         assert (~isinf(v.data)).all(), "Some pv data values are Infinite"
         assert (v.data >= 0).all(), "Some pv data values are below 0"
+
+        assert v.time is not None
+        assert v.x_coords is not None
+        assert v.y_coords is not None
+        assert v.pv_system_row_number is not None
+
+        assert len(v.pv_system_row_number.shape) == 2
+
         return v

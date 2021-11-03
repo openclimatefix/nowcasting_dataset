@@ -31,7 +31,7 @@ from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP, Datetime]
+data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP]
 
 
 class Batch(BaseModel):

@@ -146,5 +146,6 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # (which are at 00, 05, ..., 55 minutes past the hour) we add 1 minute to
     # the time dimension.
     # TODO Remove this as new Zarr already has the time fixed
+    #  See https://github.com/openclimatefix/nowcasting_dataset/issues/313
     data_array["time"] = data_array.time + pd.Timedelta("1 minute")
     return data_array

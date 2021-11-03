@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
@@ -75,7 +76,7 @@ def nwp_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=image_size_pixels,
-            number_channels=number_nwp_channels,
+            channels=NWP_VARIABLE_NAMES[0:number_nwp_channels],
         )
         for _ in range(batch_size)
     ]
@@ -118,7 +119,7 @@ def satellite_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
-            number_channels=number_satellite_channels,
+            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
         )
         for _ in range(batch_size)
     ]
@@ -174,14 +175,14 @@ def create_image_array(
     dims=("time", "x", "y", "channels"),
     seq_length_5=19,
     image_size_pixels=64,
-    number_channels=7,
+    channels=SAT_VARIABLE_NAMES,
 ):
     """ Create Satellite or NWP fake image data"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
         "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
         "y": np.random.randint(low=0, high=1000, size=image_size_pixels),
-        "channels": np.arange(number_channels),
+        "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     image_data_array = xr.DataArray(
@@ -190,7 +191,7 @@ def create_image_array(
                 seq_length_5,
                 image_size_pixels,
                 image_size_pixels,
-                number_channels,
+                len(channels),
             )
         ),
         coords=coords,

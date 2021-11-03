@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
@@ -19,16 +18,6 @@ from nowcasting_dataset.dataset.xr_utils import (
     join_list_data_array_to_batch_dataset,
     join_list_dataset_to_batch_dataset,
 )
-
-
-def datetime_fake(batch_size, seq_length_5):
-    """ Create fake data """
-    xr_arrays = [create_datetime_dataset(seq_length=seq_length_5) for _ in range(batch_size)]
-
-    # make dataset
-    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
-
-    return Datetime(xr_dataset)
 
 
 def gsp_fake(

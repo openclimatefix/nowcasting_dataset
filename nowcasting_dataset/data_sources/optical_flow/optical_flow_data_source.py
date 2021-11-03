@@ -35,11 +35,11 @@ class OpticalFlowDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init  Add 16 pixels to each side of the image"""
-        super().__post_init__(image_size_pixels + 2 * IMAGE_BUFFER_SIZE, meters_per_pixel)
+        super().__post_init__(image_size_pixels + (2 * IMAGE_BUFFER_SIZE), meters_per_pixel)
         n_channels = len(self.channels)
         self._cache = {}
         self._shape_of_example = (
-            self._total_seq_length,
+            self.forecast_length,
             image_size_pixels,
             image_size_pixels,
             n_channels,
@@ -92,6 +92,9 @@ class OpticalFlowDataSource(ZarrDataSource):
 
         selected_data = self._post_process_example(selected_data, t0_dt)
 
+        # rename 'variable' to 'channels'
+        selected_data = selected_data.rename({"variable": "channels"})
+
         # Compute optical flow for the timesteps
         # Get Optical Flow for the pre-t0 time, and applying the t0-previous_timesteps_per_flow to
         # t0 optical flow for forecast steps in the future
@@ -113,9 +116,6 @@ class OpticalFlowDataSource(ZarrDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        # rename 'variable' to 'channels'
-        selected_data = selected_data.rename({"variable": "channels"})
-
         return selected_data
 
     def _compute_previous_timestep(
@@ -131,8 +131,10 @@ class OpticalFlowDataSource(ZarrDataSource):
         Returns:
             The previous timesteps
         """
-        satellite_data = satellite_data.where(satellite_data.time < t0_dt, drop=True)
-        return satellite_data.isel(time=-self.previous_timestep_for_flow).values
+        satellite_data = satellite_data.where(satellite_data.time <= t0_dt, drop=True)
+        return satellite_data.isel(
+            time=len(satellite_data.time) - self.previous_timestep_for_flow
+        ).time.values
 
     def _get_number_future_timesteps(
         self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp
@@ -170,7 +172,7 @@ class OpticalFlowDataSource(ZarrDataSource):
         for prediction_timestep in range(self._get_number_future_timesteps(satellite_data, t0_dt)):
             predictions = []
             for channel in satellite_data.coords["channels"]:
-                channel_images = satellite_data.sel(channel=channel)
+                channel_images = satellite_data.sel(channels=channel)
                 t0_image = channel_images.sel(time=t0_dt).values
                 previous_image = channel_images.sel(time=previous_timestamp).values
                 optical_flow = self._compute_optical_flow(t0_image, previous_image)
@@ -178,7 +180,9 @@ class OpticalFlowDataSource(ZarrDataSource):
                 flow = optical_flow * prediction_timestep
                 warped_image = self._remap_image(t0_image, flow)
                 warped_image = crop_center(
-                    warped_image, self._square.size_pixels, self._square.size_pixels
+                    warped_image,
+                    self._square.size_pixels - (2 * IMAGE_BUFFER_SIZE),
+                    self._square.size_pixels - (2 * IMAGE_BUFFER_SIZE),
                 )
                 predictions.append(warped_image)
             # Add the block of predictions for all channels
@@ -187,6 +191,8 @@ class OpticalFlowDataSource(ZarrDataSource):
         prediction = np.stack(
             [prediction_dictionary[k] for k in prediction_dictionary.keys()], axis=0
         )
+        if len(self.channels) == 1:  # Only case where another channel needs to be added
+            prediction = np.expand_dims(prediction, axis=-1)
         # Swap out data for the future part of the dataarray
         dataarray = self._update_dataarray_with_predictions(
             satellite_data, predictions=prediction, t0_dt=t0_dt
@@ -210,11 +216,11 @@ class OpticalFlowDataSource(ZarrDataSource):
         """
 
         # Combine all channels for a single timestep
-        satellite_data = satellite_data.where(satellite_data.time > t0_dt)
+        satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop=True)
         # Make sure its the correct size
         satellite_data = satellite_data.isel(
-            x=slice(0, self._square.size_pixels - IMAGE_BUFFER_SIZE),
-            y=slice(0, self._square.size_pixels - IMAGE_BUFFER_SIZE),
+            x=slice(IMAGE_BUFFER_SIZE, self._square.size_pixels - IMAGE_BUFFER_SIZE),
+            y=slice(IMAGE_BUFFER_SIZE, self._square.size_pixels - IMAGE_BUFFER_SIZE),
         )
         dataarray = xr.DataArray(
             data=predictions,
@@ -358,9 +364,7 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # seems to slow things down a lot if the Zarr store has more than
     # about a million chunks.
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
-    dataset = xr.open_dataset(
-        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
-    )
+    dataset = xr.open_dataset(zarr_path, engine="zarr", mode="r", chunks=None)
 
     data_array = dataset["stacked_eumetsat_data"]
     del dataset

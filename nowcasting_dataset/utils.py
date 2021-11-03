@@ -61,40 +61,6 @@ def scale_to_0_to_1(a: Array) -> Array:
     return a
 
 
-# TODO: Issue #170. Is this this function still used?
-def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    For every column in df, creates cols for sin and cos of that col.
-
-    Args:
-      df: Input DataFrame.  The values must be in the range [0, 1].
-
-    Raises:
-      ValueError if any value in df is not within the range [0, 1].
-
-    Returns:
-      A new DataFrame, with twice the number of columns as the input df.
-      For each col in df, the output DataFrame will have a <col name>_sin
-      and a <col_name>_cos.
-    """
-    columns = []
-    for col_name in df.columns:
-        columns.append(f"{col_name}_sin")
-        columns.append(f"{col_name}_cos")
-    output_df = pd.DataFrame(index=df.index, columns=columns, dtype=np.float32)
-    for col_name in df.columns:
-        series = df[col_name]
-        if series.min() < 0.0 or series.max() > 1.0:
-            raise ValueError(
-                f"{col_name} has values outside the range [0, 1]!"
-                f" min={series.min()}; max={series.max()}"
-            )
-        radians = series * 2 * np.pi
-        output_df[f"{col_name}_sin"] = np.sin(radians)
-        output_df[f"{col_name}_cos"] = np.cos(radians)
-    return output_df
-
-
 def get_netcdf_filename(batch_idx: int) -> str:
     """Generate full filename, excluding path."""
     assert 0 <= batch_idx < 1e6

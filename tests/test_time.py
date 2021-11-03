@@ -45,17 +45,6 @@ def test_get_contiguous_time_periods_2_with_2_chunks(min_seq_length):
     pd.testing.assert_frame_equal(periods, correct_periods)
 
 
-def test_datetime_features_in_example():
-    index = pd.date_range("2020-01-01", "2020-01-06 23:00", freq="h")
-    example = nd_time.datetime_features_in_example(index)
-    assert len(example.hour_of_day_sin) == len(index)
-    for col_name in ["hour_of_day_sin", "hour_of_day_cos"]:
-        np.testing.assert_array_almost_equal(
-            getattr(example, col_name),
-            np.tile(getattr(example, col_name)[:24], reps=6),
-        )
-
-
 def test_intersection_of_2_dataframes_of_periods():
     dt = pd.Timestamp("2020-01-01 00:00")
     a = []

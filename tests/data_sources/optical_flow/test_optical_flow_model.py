@@ -28,4 +28,4 @@ def test_optical_flow_save():  # noqa: D103
     with tempfile.TemporaryDirectory() as dirpath:
         optical_flow_fake().save_netcdf(path=dirpath, batch_i=0)
 
-        assert os.path.exists(f"{dirpath}/satellite/000000.nc")
+        assert os.path.exists(f"{dirpath}/optical_flow/000000.nc")

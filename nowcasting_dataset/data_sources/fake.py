@@ -238,6 +238,7 @@ def create_gsp_pv_dataset(
 
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
+    data["pv_system_row_number"] = data["id"] + 1000
 
     data.__setitem__("data", data.data.clip(min=0))
 

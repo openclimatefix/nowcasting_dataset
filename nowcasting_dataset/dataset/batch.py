@@ -11,9 +11,7 @@ import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
 from nowcasting_dataset.data_sources.fake import (
-    datetime_fake,
     gsp_fake,
     metadata_fake,
     nwp_fake,
@@ -62,7 +60,6 @@ class Batch(BaseModel):
     sun: Optional[Sun]
     gsp: Optional[GSP]
     nwp: Optional[NWP]
-    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):
@@ -74,7 +71,6 @@ class Batch(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.datetime,
             self.metadata,
         ]
 
@@ -118,10 +114,6 @@ class Batch(BaseModel):
             ),
             topographic=topographic_fake(
                 batch_size=batch_size, image_size_pixels=satellite_image_size_pixels
-            ),
-            datetime=datetime_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.default_seq_length_5_minutes,
             ),
         )
 
@@ -194,7 +186,6 @@ class Example(BaseModel):
     sun: Optional[Sun]
     gsp: Optional[GSP]
     nwp: Optional[NWP]
-    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):
@@ -206,6 +197,5 @@ class Example(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.datetime,
             self.metadata,
         ]

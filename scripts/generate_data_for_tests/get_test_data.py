@@ -7,7 +7,6 @@ from pathlib import Path
 
 import gcsfs
 import numcodecs
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -78,7 +77,7 @@ nwp_data = nwp_data.sel(variable=["t"])
 nwp_data = nwp_data.sel(step=slice(nwp_data.step[0], nwp_data.step[4]))  # take 4 hours periods
 # nwp_data = nwp_data.sel(x=slice(nwp_data.x[50], nwp_data.x[100]))
 # nwp_data = nwp_data.sel(y=slice(nwp_data.y[50], nwp_data.y[100]))
-nwp_data.UKV.values = nwp_data.UKV.values.astype(np.int16)
+# nwp_data.UKV.values = nwp_data.UKV.values.astype(np.int16)
 
 nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 

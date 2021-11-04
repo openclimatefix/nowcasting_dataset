@@ -25,7 +25,10 @@ for dset in sets:
         files = get_all_filenames_in_path(dir)
         files = sorted(files)
         # get files already in gsp
-        gsp_files_already = get_all_filenames_in_path(gsp_dir)
+        try:
+            gsp_files_already = get_all_filenames_in_path(gsp_dir)
+        except Exception:
+            gsp_files_already = []
         # only get .nc files
         filenames = [file for file in files if ".nc" in file]
         gsp_files_already = [file for file in gsp_files_already if ".nc" in file]

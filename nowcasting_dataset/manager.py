@@ -52,6 +52,10 @@ class Manager:
         self.local_temp_path = Path(self.config.process.local_temp_path).expanduser()
         logger.debug(f"config={self.config}")
 
+    def save_yaml_configuration(self):
+        """ Save configuration to the 'output_data' location """
+        config.save_yaml_configuration(configuration=self.config)
+
     def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:

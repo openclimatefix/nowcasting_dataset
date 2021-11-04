@@ -31,8 +31,6 @@ def test_yaml_load():
     assert isinstance(config, Configuration)
 
 
-# TODO: Issue #316: Remove save_yaml_configuration() and this test.
-@pytest.mark.skip("This test will be removed when issue #316 is implemented")
 def test_yaml_save():
     """
     Check a configuration can be saved to a yaml file

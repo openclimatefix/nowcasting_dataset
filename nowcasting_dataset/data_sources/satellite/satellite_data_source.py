@@ -55,6 +55,7 @@ class SatelliteDataSource(ZarrDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         data = self.data.sel(time=slice(start_dt, end_dt))
+
         return data
 
     def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:

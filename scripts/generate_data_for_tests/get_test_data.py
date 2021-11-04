@@ -7,6 +7,7 @@ from pathlib import Path
 
 import gcsfs
 import numcodecs
+import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -70,13 +71,14 @@ NWP_BASE_PATH = (
     "UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr"
 )
 
-nwp_data_raw = open_nwp(filename=NWP_BASE_PATH, consolidated=True)
+nwp_data_raw = open_nwp(zarr_path=NWP_BASE_PATH, consolidated=True)
 nwp_data = nwp_data_raw.sel(variable=list(NWP_VARIABLE_NAMES))
 nwp_data = nwp_data.sel(init_time=slice(start_dt, end_dt))
 nwp_data = nwp_data.sel(variable=["t"])
 nwp_data = nwp_data.sel(step=slice(nwp_data.step[0], nwp_data.step[4]))  # take 4 hours periods
 # nwp_data = nwp_data.sel(x=slice(nwp_data.x[50], nwp_data.x[100]))
 # nwp_data = nwp_data.sel(y=slice(nwp_data.y[50], nwp_data.y[100]))
+nwp_data.UKV.values = nwp_data.UKV.values.astype(np.float16)
 
 nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 

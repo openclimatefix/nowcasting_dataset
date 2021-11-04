@@ -21,18 +21,30 @@ all_filenames = {}
 for dset in sets[0:1]:
     for data_source in data_sources[0:1]:
         dir = f"{LOCAL_PATH}/{dset}/{data_source}"
+        gsp_dir = f"{GCP_PATH}/{dset}/{data_source}"
         files = get_all_filenames_in_path(dir)
         files = sorted(files)
+        # get files already in gsp
+        gsp_files_already = get_all_filenames_in_path(gsp_dir)
         # only get .nc files
         filenames = [file for file in files if ".nc" in file]
-        gcp_files = {
-            file: f'{GCP_PATH}/{dset}/{data_source}/{file.split("/")[-1]}' for file in filenames
-        }
-        all_filenames = {**all_filenames, **gcp_files}
+        gsp_files_already = [file for file in gsp_files_already if ".nc" in file]
+        print(f"Already {len(gsp_files_already)} in gsp folder already: {gsp_dir}")
+
+        # remove file if already in gsp
+        filenames = [
+            file
+            for file in filenames
+            if f'{gsp_dir.replace("gs://","")}/{file.split("/")[-1]}' not in gsp_files_already
+        ]
+        print(f"There are {len(filenames)} to upload")
+
+        files_dict = {file: f'{gsp_dir}/{file.split("/")[-1]}' for file in filenames}
+        all_filenames = {**all_filenames, **files_dict}
 
 
 def one_file(local_file, gsp_file):
-    """ Copy one file from local to gsp """
+    """Copy one file from local to gsp"""
     # can use this index, only to copy files after a certain number
     file_index = int(local_file.split(".")[0][-6:])
     if file_index > -1:
@@ -42,7 +54,6 @@ def one_file(local_file, gsp_file):
 
 # test to see if it works
 one_file(list(all_filenames.keys())[0], all_filenames[list(all_filenames.keys())[0]])
-
 
 # loop over files
 with futures.ThreadPoolExecutor(max_workers=2) as executor:

@@ -142,20 +142,21 @@ def download_to_local(remote_filename: str, local_filename: str):
     filesystem.get(remote_filename, local_filename)
 
 
-def upload_one_file(
-    remote_filename: str,
-    local_filename: str,
-):
+def upload_one_file(remote_filename: str, local_filename: str, overwrite: bool = True):
     """
     Upload one file to aws or gcp
 
     Args:
         remote_filename: the aws/gcp key name
         local_filename: the local file name
+        overwrite: overwrite file
 
     """
     filesystem = get_filesystem(remote_filename)
-    filesystem.put(local_filename, remote_filename)
+    if overwrite:
+        filesystem.put(local_filename, remote_filename)
+    elif ~filesystem.exists(remote_filename):
+        filesystem.put(local_filename, remote_filename)
 
 
 def makedirs(path: Union[str, Path], exist_ok: bool = True) -> None:

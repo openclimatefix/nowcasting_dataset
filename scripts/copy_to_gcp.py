@@ -37,7 +37,7 @@ def one_file(local_file, gsp_file):
     file_index = int(local_file.split(".")[0][-6:])
     if file_index > -1:
         print(gsp_file)
-        upload_one_file(remote_filename=gsp_file, local_filename=local_file)
+        upload_one_file(remote_filename=gsp_file, local_filename=local_file, overwrite=False)
 
 
 # test to see if it works

@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 import numcodecs
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -22,7 +21,6 @@ def generate_satellite_test_data():
     print("Writing satellite tests data to", output_filename)
     sat_data = xr.open_zarr(consts.SAT_FILENAME, consolidated=True)
     sat_data = sat_data.sel(variable=["HRV"], time=slice(START, END))
-    sat_data = sat_data.astype(np.int16)
     encoding = {"stacked_eumetsat_data": {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)}}
     sat_data = sat_data.chunk({"time": 1, "y": 704, "x": 548, "variable": 1})
     sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding)

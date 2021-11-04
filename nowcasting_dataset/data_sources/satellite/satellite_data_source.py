@@ -3,6 +3,7 @@ import logging
 from dataclasses import InitVar, dataclass
 from typing import Iterable, Optional
 
+import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -55,6 +56,8 @@ class SatelliteDataSource(ZarrDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         data = self.data.sel(time=slice(start_dt, end_dt))
+        data = data.astype(np.int16)
+
         return data
 
     def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:

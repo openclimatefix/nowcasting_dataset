@@ -40,7 +40,8 @@ for dset in sets:
         print(f"There are {len(filenames)} to upload")
 
         files_dict = {file: f'{gsp_dir}/{file.split("/")[-1]}' for file in filenames}
-        all_filenames = {**all_filenames, **files_dict}
+        if len(filenames) > 0:
+            all_filenames = {**all_filenames, **files_dict}
 
 
 def one_file(local_file, gsp_file):

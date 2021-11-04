@@ -18,8 +18,8 @@ LOCAL_PATH = (
 )
 
 all_filenames = {}
-for dset in sets[0:1]:
-    for data_source in data_sources[0:1]:
+for dset in sets:
+    for data_source in data_sources:
         dir = f"{LOCAL_PATH}/{dset}/{data_source}"
         gsp_dir = f"{GCP_PATH}/{dset}/{data_source}"
         files = get_all_filenames_in_path(dir)

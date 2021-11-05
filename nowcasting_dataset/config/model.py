@@ -127,7 +127,7 @@ class SatelliteHRV(Satellite):
         description="The " "number of pixels of the " "region of interest.",
     )
     satellite_meters_per_pixel: int = Field(
-        METERS_PER_PIXEL_FIELD.default // 3, description="The " "number of meters per " "pixel."
+        METERS_PER_PIXEL_FIELD.default // 3, description="The number of meters per pixel."
     )
 
 

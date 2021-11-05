@@ -119,6 +119,29 @@ def satellite_fake(
     return Satellite(xr_dataset)
 
 
+def hrv_satellite_fake(
+    batch_size=32,
+    seq_length_5=19,
+    satellite_image_size_pixels=64,
+    number_satellite_channels=7,
+) -> Satellite:
+    """ Create fake data """
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length_5=seq_length_5,
+            image_size_pixels=satellite_image_size_pixels * 3,  # HRV images are 3x other images
+            channels=SAT_VARIABLE_NAMES[0:1],
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
+
+    return Satellite(xr_dataset)
+
+
 def sun_fake(batch_size, seq_length_5):
     """Create fake data"""
     # create dataset with both azimuth and elevation, index with time

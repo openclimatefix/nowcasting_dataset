@@ -394,12 +394,10 @@ def load_solar_gsp_data(
     Returns: dataframe of pv data
 
     """
-
     logger.debug(f"Loading Solar GSP Data from {zarr_path} from {start_dt} to {end_dt}")
     # Open data - it may be quicker to open byte file first, but decided just to keep it
     # like this at the moment.
     gsp_power = xr.open_dataset(zarr_path, engine="zarr")
-
     gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
 
     # make normalized data

@@ -23,6 +23,7 @@ input_data:
       - hcc
     nwp_image_size_pixels: 64
     nwp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
+    history_minutes: 60
 
   #---------------------- PV -------------------
   pv:

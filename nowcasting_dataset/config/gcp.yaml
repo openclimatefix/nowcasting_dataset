@@ -7,7 +7,7 @@ input_data:
   gsp:
     forecast_minutes: 60
     gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr
-    history_minutes: 30
+    history_minutes: 60
   nwp:
     forecast_minutes: 60
     history_minutes: 30

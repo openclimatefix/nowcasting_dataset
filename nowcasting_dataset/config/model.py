@@ -122,8 +122,13 @@ class SatelliteHRV(Satellite):
     )
     # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
     # time the number of pixels
-    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD * 3
-    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD / 3
+    satellite_image_size_pixels: int = Field(
+        IMAGE_SIZE_PIXELS_FIELD.default * 3,
+        description="The " "number of pixels of the " "region of interest.",
+    )
+    satellite_meters_per_pixel: int = Field(
+        METERS_PER_PIXEL_FIELD.default // 3, description="The " "number of meters per " "pixel."
+    )
 
 
 class NWP(DataSourceMixin):

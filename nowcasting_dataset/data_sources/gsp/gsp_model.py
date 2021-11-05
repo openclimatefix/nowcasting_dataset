@@ -1,11 +1,7 @@
 """ Model for output of GSP data """
 import logging
 
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutput,
-    check_dataset_greater_than,
-    check_nan_and_inf,
-)
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +16,7 @@ class GSP(DataSourceOutput):
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
 
-        check_nan_and_inf(data=v.data, class_name="gsp")
-        check_dataset_greater_than(data=v.data, class_name="gsp", min_value=0)
+        v.check_nan_and_inf(data=v.data)
+        v.check_dataset_greater_than_or_equal_to(data=v.data, min_value=0)
 
         return v

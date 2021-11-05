@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput, check_nan_and_inf
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,6 @@ class NWP(DataSourceOutput):
     def model_validation(cls, v):
         """ Check that all values are not NaNs """
 
-        check_nan_and_inf(data=v.data, class_name="nwp")
+        v.check_nan_and_inf(data=v.data)
 
         return v

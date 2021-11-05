@@ -1,12 +1,7 @@
 """ Model for Sun features """
 import logging
 
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutput,
-    check_dataset_greater_than,
-    check_dataset_less_than,
-    check_nan_and_inf,
-)
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +15,21 @@ class Sun(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        check_nan_and_inf(data=v.elevation, class_name="sun elevation")
-        check_nan_and_inf(data=v.azimuth, class_name="sun azimuth")
+        v.check_nan_and_inf(data=v.elevation, variable_name="elevation")
+        v.check_nan_and_inf(data=v.azimuth, variable_name="azimuth")
 
-        check_dataset_greater_than(data=v.azimuth, class_name="sun azimuth", min_value=0)
-        check_dataset_less_than(data=v.azimuth, class_name="sun azimuth", max_value=360)
+        v.check_dataset_greater_than_or_equal_to(
+            data=v.azimuth, variable_name="azimuth", min_value=0
+        )
+        v.check_dataset_less_than_or_equal_to(
+            data=v.azimuth, variable_name="azimuth", max_value=360
+        )
 
-        check_dataset_greater_than(data=v.elevation, class_name="sun elevation", min_value=-90)
-        check_dataset_less_than(data=v.elevation, class_name="sun elevation", max_value=90)
+        v.check_dataset_greater_than_or_equal_to(
+            data=v.elevation, variable_name="elevation", min_value=-90
+        )
+        v.check_dataset_less_than_or_equal_to(
+            data=v.elevation, variable_name="elevation", max_value=90
+        )
 
         return v

@@ -3,11 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from nowcasting_dataset.data_sources.datasource_output import (
-    DataSourceOutput,
-    check_dataset_not_equal,
-    check_nan_and_inf,
-)
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +17,7 @@ class Satellite(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non negative """
-        check_nan_and_inf(data=v.data, class_name="satellite")
+        v.check_nan_and_inf(data=v.data)
         # put this validation back in when issue is done
-        check_dataset_not_equal(data=v.data, class_name="satellite", value=-1, raise_error=False)
+        v.check_dataset_not_equal(data=v.data, value=-1, raise_error=False)
         return v

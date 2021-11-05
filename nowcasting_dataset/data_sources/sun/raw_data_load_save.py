@@ -141,7 +141,7 @@ def load_from_zarr(
         The index is timestamps, and the columns are the x and y coordinates
 
     """
-    logger.debug("Loading Solar PV Data from GCS")
+    logger.debug("Loading sun data")
 
     # It is possible to simplify the code below and do
     # xr.open_dataset(file, engine='h5netcdf')

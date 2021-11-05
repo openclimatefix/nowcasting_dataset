@@ -1,7 +1,7 @@
 """ Satellite Data Source """
 import logging
 from dataclasses import InitVar, dataclass
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 import pandas as pd
 import xarray as xr
@@ -42,10 +42,11 @@ class SatelliteDataSource(ZarrDataSource):
         instances into separate processes.  Instead,
         call open() _after_ creating separate processes.
         """
-        self._data = self._open_data()
+        self._data, self._hrv_data = self._open_data()
         self._data = self._data.sel(variable=list(self.channels))
+        self._hrv_data = self._hrv_data.sel(variable=list(self.channels))
 
-    def _open_data(self) -> xr.DataArray:
+    def _open_data(self) -> Tuple[xr.DataArray, xr.DataArray]:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
     def _dataset_to_data_source_output(output: xr.Dataset) -> Satellite:
@@ -117,17 +118,20 @@ class SatelliteDataSource(ZarrDataSource):
         return datetime_index
 
 
-def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
+def open_sat_data(
+    zarr_path: str, hrv_zarr_path: str, consolidated: bool
+) -> Tuple[xr.DataArray, xr.DataArray]:
     """Lazily opens the Zarr store.
 
     Adds 1 minute to the 'time' coordinates, so the timestamps
     are at 00, 05, ..., 55 past the hour.
 
     Args:
-      zarr_path: Cloud URL or local path.  If GCP URL, must start with 'gs://'
+      zarr_path: Cloud URL or local path to non-HRV Zarr.  If GCP URL, must start with 'gs://'
+      hrv_zarr_path: Cloud URL or local path to HRV Zarr.
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
-    _LOG.debug("Opening satellite data: %s", zarr_path)
+    _LOG.debug("Opening satellite data: %s HRV: %s", zarr_path, hrv_zarr_path)
 
     # We load using chunks=None so xarray *doesn't* use Dask to
     # load the Zarr chunks from disk.  Using Dask to load the data
@@ -141,9 +145,10 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     data_array = dataset["stacked_eumetsat_data"]
     del dataset
 
-    # The 'time' dimension is at 04, 09, ..., 59 minutes past the hour.
-    # To make it easier to align the satellite data with other data sources
-    # (which are at 00, 05, ..., 55 minutes past the hour) we add 1 minute to
-    # the time dimension.
-    data_array["time"] = data_array.time + pd.Timedelta("1 minute")
-    return data_array
+    hrv_dataset = xr.open_dataset(
+        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+    )
+    hrv_data_array = hrv_dataset["stacked_eumetsat_data"]
+    del hrv_dataset
+
+    return data_array, hrv_data_array

@@ -21,7 +21,6 @@ class PV(DataSourceOutput):
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
         check_nan_and_inf(data=v.data, class_name="pv")
-
         check_dataset_greater_than(data=v.data, class_name="pv", min_value=0)
 
         assert v.time is not None

@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import logging
 
-from xarray.ufuncs import isinf, isnan
-
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.datasource_output import (
+    DataSourceOutput,
+    check_dataset_not_equal,
+    check_nan_and_inf,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +21,7 @@ class Satellite(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non negative """
-        assert (~isnan(v.data)).all(), "Some satellite data values are NaNs"
-        assert (~isinf(v.data)).all(), "Some satellite data values are Infinite"
-        assert (v.data != -1).all(), "Some satellite data values are -1's"
-
+        check_nan_and_inf(data=v.data, class_name="satellite")
+        # put this validation back in when issue is done
+        check_dataset_not_equal(data=v.data, class_name="satellite", value=-1, raise_error=False)
         return v

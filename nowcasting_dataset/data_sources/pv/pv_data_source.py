@@ -343,7 +343,6 @@ def load_solar_pv_data(
 
     Returns: Solar PV data
     """
-
     logger.debug(f"Loading Solar PV Data from {filename} from {start_dt} to {end_dt}.")
 
     # It is possible to simplify the code below and do

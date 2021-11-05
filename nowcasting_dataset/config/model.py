@@ -108,10 +108,22 @@ class Satellite(DataSourceMixin):
         description="The path which holds the satellite zarr.",
     )
     satellite_channels: tuple = Field(
-        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
+        SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
     )
     satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+
+
+class SatelliteHRV(Satellite):
+    """Satellite configuration model for HRV data"""
+
+    satellite_channels: tuple = Field(
+        SAT_VARIABLE_NAMES[0:1], description="the satellite channels that are used"
+    )
+    # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
+    # time the number of pixels
+    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD * 3
+    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD / 3
 
 
 class NWP(DataSourceMixin):
@@ -178,6 +190,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
+    satellite_hrv: Optional[SatelliteHRV] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -242,6 +255,7 @@ class InputData(BaseModel):
         return cls(
             pv=PV(),
             satellite=Satellite(),
+            satellite_hrv=SatelliteHRV(),
             nwp=NWP(),
             gsp=GSP(),
             topographic=Topographic(),
@@ -320,6 +334,7 @@ class Configuration(BaseModel):
             "pv.pv_filename",
             "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
+            "satellite_hrv.satellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",
         ]

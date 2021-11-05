@@ -1,15 +1,15 @@
 """ Loading Raw data """
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from numbers import Number
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import logging
-import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class SunDataSource(DataSource):
     """Add azimuth and elevation angles of the sun."""
 
-    filename: Union[str, Path]
+    zarr_path: Union[str, Path]
     start_dt: Optional[datetime] = None
     end_dt: Optional[datetime] = None
 
@@ -30,6 +30,10 @@ class SunDataSource(DataSource):
         """ Post Init """
         super().__post_init__()
         self._load()
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -45,7 +49,8 @@ class SunDataSource(DataSource):
         Returns: Dictionary of azimuth and elevation data
         """
         # all sun data is from 2019, analaysis showed over the timescale we are interested in the
-        # elevation and azimuth angles change by < 1 degree, so to save data, we just use data form 2019
+        # elevation and azimuth angles change by < 1 degree, so to save data, we just use data
+        # from 2019.
         t0_dt = t0_dt.replace(year=2019)
 
         start_dt = self._get_start_dt(t0_dt)
@@ -62,9 +67,11 @@ class SunDataSource(DataSource):
         ]
         # lets make sure there is atleast one
         assert len(location) > 0
-        # Take the first location, and x and y coordinates are the first and center entries in this array
+        # Take the first location, and x and y coordinates are the first and center entries in
+        # this array.
         location = location[0]
-        # make name of column to pull data from. The columns name will be about something like '22222.555,3333.6666'
+        # make name of column to pull data from. The columns name will be about
+        # something like '22222.555,3333.6666'
         name = x_y_to_name(x=location[0], y=location[1])
 
         del x_meters_center, y_meters_center
@@ -82,15 +89,13 @@ class SunDataSource(DataSource):
 
     def _load(self):
 
-        logger.info(f"Loading Sun data from {self.filename}")
+        logger.info(f"Loading Sun data from {self.zarr_path}")
 
         self.azimuth, self.elevation = load_from_zarr(
-            filename=self.filename, start_dt=self.start_dt, end_dt=self.end_dt
+            zarr_path=self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """ Sun data should not be used to get batch locations """
         raise NotImplementedError("Sun data should not be used to get batch locations")
 

@@ -32,23 +32,9 @@ conda activate nowcasting_dataset
 pip install -e .
 ```
 
-Note you can install the [pytorch](https://github.com/pytorch/pytorch)
-and [pytorch_lightning](https://github.com/PyTorchLightning/pytorch-lightning) using
-```shell
-pip install -e .[torch]
-```
-but it is only used to create a dataloader for machine learning models, and will not be necessary
-soon (when the dataloader is moved to `nowcasting_dataloader`).
-
-
 ### `pip`
 
 A (probably older) version is also available through `pip install nowcasting-dataset`
-
-
-### `RuntimeError: unable to open shared memory object`
-
-To prevent PyTorch failing with an error like `RuntimeError: unable to open shared memory object </torch_2276740_2849291446> in read-write mode`, edit `/etc/security/limits.conf` as root and add this line: `*		 soft	 nofile		 512000` then log out and log back in again  (see [this issue](https://github.com/openclimatefix/nowcasting_dataset/issues/158) for more details).
 
 
 ### PV Live API
@@ -113,13 +99,13 @@ There does not seem to be an automated way to do this selecting and downloading,
 ## Configure `nowcasting_dataset` to point to the downloaded data
 
 Copy and modify one of the config yaml files in
-[`nowcasting_dataset/config/`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/nowcasting_dataset/config)
-and modify `prepare_ml_data.py` to use your config file.
+[`nowcasting_dataset/config/`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/nowcasting_dataset/config).
 
 
 ## Prepare ML batches
 
-Run [`scripts/prepare_ml_data.py`](https://github.com/openclimatefix/nowcasting_dataset/blob/main/scripts/prepare_ml_data.py)
+Run [`scripts/prepare_ml_data.py --help`](https://github.com/openclimatefix/nowcasting_dataset/blob/main/scripts/prepare_ml_data.py)
+to learn how to run the `prepare_ml_data.py` script.
 
 
 ## What exactly is in each batch?

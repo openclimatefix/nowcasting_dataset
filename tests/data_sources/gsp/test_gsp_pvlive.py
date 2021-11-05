@@ -4,8 +4,8 @@ import pandas as pd
 import pytz
 
 from nowcasting_dataset.data_sources.gsp.pvlive import (
-    load_pv_gsp_raw_data_from_pvlive,
     get_installed_capacity,
+    load_pv_gsp_raw_data_from_pvlive,
 )
 
 

@@ -1,5 +1,4 @@
 general:
-  cloud: gcp
   description: example configuration
   name: example
 git: null
@@ -12,10 +11,10 @@ input_data:
     nwp_image_size_pixels: 64
     nwp_zarr_path: tests/data/nwp_data/test.zarr
   pv:
-    solar_pv_data_filename: tests/data/pv_data/test.nc
-    solar_pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
+    pv_filename: tests/data/pv_data/test.nc
+    pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
   satellite:
-    sat_channels:
+    satellite_channels:
       - HRV
     satellite_image_size_pixels: 64
     satellite_zarr_path: tests/data/sat_data.zarr

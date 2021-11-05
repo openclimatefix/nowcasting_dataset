@@ -1,18 +1,18 @@
 import os
-from nowcasting_dataset.dataset import NetCDFDataset, SAT_MEAN, SAT_STD
-import plotly.graph_objects as go
-import plotly
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import plotly.express as px
+
 import cv2
+import numpy as np
+import pandas as pd
+import plotly
+import plotly.express as px
+import plotly.graph_objects as go
 
 # get satellite image, currently from https://github.com/openclimatefix/py-staticmaps
 import staticmaps
-from nowcasting_dataset.geospatial import osgb_to_lat_lon
+from plotly.subplots import make_subplots
 
+from nowcasting_dataset.dataset import SAT_MEAN, SAT_STD, NetCDFDataset
+from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 ##############
 # Setup data generator

@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
-import torch
 import xarray as xr
 
 # DEFAULT PATHS
@@ -24,7 +23,7 @@ PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
 NWP_FILENAME = "gs://" + str(BUCKET / "NWP/UK_Met_Office/UKV_zarr")
 
 # Typing
-Array = Union[xr.DataArray, np.ndarray, torch.Tensor]
+Array = Union[xr.DataArray, np.ndarray]
 PV_SYSTEM_ID: str = "pv_system_id"
 PV_SYSTEM_ROW_NUMBER = "pv_system_row_number"
 PV_SYSTEM_X_COORDS = "pv_system_x_coords"
@@ -102,3 +101,9 @@ DEFAULT_REQUIRED_KEYS = [
     TOPOGRAPHIC_X_COORDS,
 ] + list(DATETIME_FEATURE_NAMES)
 T0_DT = "t0_dt"
+
+
+SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME = (
+    "spatial_and_temporal_locations_of_each_example.csv"
+)
+SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES = ("t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB")

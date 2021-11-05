@@ -3,7 +3,7 @@ import logging
 from concurrent import futures
 from dataclasses import dataclass
 from numbers import Number
-from typing import List, Tuple, Callable
+from typing import Callable, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -79,7 +79,8 @@ class NowcastingDataset(torch.utils.data.IterableDataset):
     collate_fn: Callable = torch.utils.data._utils.collate.default_collate
 
     # useful way to skip batches if creating dataset fails halfway through.
-    # This might not be that useful, as re-running creation of datasets may cause off issues like duplicate data.
+    # This might not be that useful, as re-running creation of datasets
+    # may cause off issues like duplicate data.
     skip_batch_index: int = 0
     batch_index: int = 0
 

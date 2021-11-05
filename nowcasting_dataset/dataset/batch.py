@@ -3,45 +3,35 @@ from __future__ import annotations
 
 import logging
 import os
+from concurrent import futures
 from pathlib import Path
 from typing import Optional, Union
-from concurrent import futures
 
 import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
-from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
-from nowcasting_dataset.data_sources.nwp.nwp_model import (
-    NWP,
-)
-from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
-from nowcasting_dataset.data_sources.sun.sun_model import Sun
-from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-from nowcasting_dataset.dataset.xr_utils import (
-    register_xr_data_array_to_tensor,
-    register_xr_data_set_to_tensor,
-)
 from nowcasting_dataset.data_sources.fake import (
-    datetime_fake,
-    metadata_fake,
     gsp_fake,
+    metadata_fake,
+    nwp_fake,
     pv_fake,
     satellite_fake,
     sun_fake,
     topographic_fake,
-    nwp_fake,
 )
+from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
+from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-register_xr_data_array_to_tensor()
-register_xr_data_set_to_tensor()
-
-data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP, Datetime]
+data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP]
 
 
 class Batch(BaseModel):
@@ -70,7 +60,6 @@ class Batch(BaseModel):
     sun: Optional[Sun]
     gsp: Optional[GSP]
     nwp: Optional[NWP]
-    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):
@@ -82,16 +71,15 @@ class Batch(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.datetime,
             self.metadata,
         ]
 
     @staticmethod
-    def fake(configuration: Configuration = Configuration()):
+    def fake(configuration: Configuration):
         """ Make fake batch object """
         batch_size = configuration.process.batch_size
-        satellite_image_size_pixels = configuration.input_data.satellite.satellite_image_size_pixels
-        nwp_image_size_pixels = configuration.input_data.nwp.nwp_image_size_pixels
+        satellite_image_size_pixels = 64
+        nwp_image_size_pixels = 64
 
         return Batch(
             batch_size=batch_size,
@@ -99,7 +87,9 @@ class Batch(BaseModel):
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
                 satellite_image_size_pixels=satellite_image_size_pixels,
-                number_sat_channels=len(configuration.input_data.satellite.sat_channels),
+                number_satellite_channels=len(
+                    configuration.input_data.satellite.satellite_channels
+                ),
             ),
             nwp=nwp_fake(
                 batch_size=batch_size,
@@ -124,10 +114,6 @@ class Batch(BaseModel):
             ),
             topographic=topographic_fake(
                 batch_size=batch_size, image_size_pixels=satellite_image_size_pixels
-            ),
-            datetime=datetime_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.default_seq_length_5_minutes,
             ),
         )
 
@@ -165,7 +151,7 @@ class Batch(BaseModel):
             for data_source_name in data_sources_names:
 
                 local_netcdf_filename = os.path.join(
-                    local_netcdf_path, data_source_name, f"{batch_idx}.nc"
+                    local_netcdf_path, data_source_name, get_netcdf_filename(batch_idx)
                 )
 
                 # submit task
@@ -200,7 +186,6 @@ class Example(BaseModel):
     sun: Optional[Sun]
     gsp: Optional[GSP]
     nwp: Optional[NWP]
-    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):
@@ -212,6 +197,5 @@ class Example(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.datetime,
             self.metadata,
         ]

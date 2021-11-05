@@ -7,18 +7,16 @@ import logging
 from dataclasses import dataclass
 from numbers import Number
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
+from typing import List, Optional, Tuple, Union
 
-import gcsfs
+import fsspec
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial, utils
-from nowcasting_dataset.consts import (
-    DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
-)
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
@@ -29,7 +27,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PVDataSource(ImageDataSource):
-    """ PV Data Source """
+    """PV Data Source.
+
+    This inherits from ImageDataSource so PVDataSource can select a geospatial region of interest
+    defined by image_size_pixels and meters_per_pixel.
+    """
 
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
@@ -46,9 +48,13 @@ class PVDataSource(ImageDataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """ Post Init """
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        seed = torch.initial_seed()
-        self.rng = np.random.default_rng(seed=seed)
+        self.rng = np.random.default_rng()
         self.load()
+
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        for filename in [self.filename, self.metadata_filename]:
+            nd_fs_utils.check_path_exists(filename)
 
     def load(self):
         """
@@ -60,7 +66,7 @@ class PVDataSource(ImageDataSource):
 
     def _load_metadata(self):
 
-        logger.debug("Loading Metadata")
+        logger.debug(f"Loading PV metadata from {self.metadata_filename}")
 
         pv_metadata = pd.read_csv(self.metadata_filename, index_col="system_id")
         pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
@@ -86,14 +92,9 @@ class PVDataSource(ImageDataSource):
 
     def _load_pv_power(self):
 
-        logger.debug("Loading PV Power data")
+        logger.debug(f"Loading PV Power data from {self.filename}")
 
-        if "gs://" not in str(self.filename):
-            self.load_from_gcs = False
-
-        pv_power = load_solar_pv_data_from_gcs(
-            self.filename, start_dt=self.start_dt, end_dt=self.end_dt, from_gcs=self.load_from_gcs
-        )
+        pv_power = load_solar_pv_data(self.filename, start_dt=self.start_dt, end_dt=self.end_dt)
 
         # A bit of hand-crafted cleaning
         if 30248 in pv_power.columns:
@@ -107,7 +108,8 @@ class PVDataSource(ImageDataSource):
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
-        # TODO: Cubic interpolation?
+        # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
+        # doesn't need all the data to be perfectly aligned).
         pv_power = pv_power.resample("5T").interpolate(method="time", limit=3)
         pv_power.dropna(axis="index", how="all", inplace=True)
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
@@ -207,8 +209,8 @@ class PVDataSource(ImageDataSource):
         Get Example data for PV data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include data
-                for historic and future depending on 'history_minutes' and 'future_minutes'.
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
+                data for historic and future depending on 'history_minutes' and 'future_minutes'.
             x_meters_center: x center batch locations
             y_meters_center: y center batch locations
 
@@ -270,10 +272,18 @@ class PVDataSource(ImageDataSource):
                 id_index=range(len(all_pv_system_ids.values)),
             ),
         )
+        pv_system_row_number = xr.DataArray(
+            data=pv_system_row_number,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_pv_system_ids.values)),
+            ),
+        )
         pv["x_coords"] = x_coords
         pv["y_coords"] = y_coords
+        pv["pv_system_row_number"] = pv_system_row_number
 
-        # pad out so that there are always 32 gsp, pad with zeros
+        # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id_index)
         pv = pv.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
 
@@ -281,9 +291,7 @@ class PVDataSource(ImageDataSource):
 
         return PV(pv)
 
-    def get_locations_for_batch(
-        self, t0_datetimes: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
@@ -320,40 +328,31 @@ class PVDataSource(ImageDataSource):
         return self.pv_power.index
 
 
-def load_solar_pv_data_from_gcs(
+def load_solar_pv_data(
     filename: Union[str, Path],
     start_dt: Optional[datetime.datetime] = None,
     end_dt: Optional[datetime.datetime] = None,
-    from_gcs: bool = True,
 ) -> pd.DataFrame:
     """
-    Load solar pv data from gcs (although there is an option to load from local - for testing)
+    Load solar pv data from any compute environment.
 
     Args:
         filename: filename of file to be loaded
         start_dt: the start datetime, which to trim the data to
         end_dt: the end datetime, which to trim the data to
-        from_gcs: option to laod from gcs, or form local file
 
     Returns: Solar PV data
-
     """
-    if from_gcs:
-        gcs = gcsfs.GCSFileSystem(access="read_only")
 
-    logger.info(f"Loading Solar PV Data {filename}")
+    logger.debug(f"Loading Solar PV Data from {filename} from {start_dt} to {end_dt}.")
 
     # It is possible to simplify the code below and do
     # xr.open_dataset(file, engine='h5netcdf')
     # in the first 'with' block, and delete the second 'with' block.
     # But that takes 1 minute to load the data, where as loading into memory
     # first and then loading from memory takes 23 seconds!
-    if from_gcs:
-        with gcs.open(filename, mode="rb") as file:
-            file_bytes = file.read()
-    else:
-        with open(filename, mode="rb") as file:
-            file_bytes = file.read()
+    with fsspec.open(filename, mode="rb") as file:
+        file_bytes = file.read()
 
     with io.BytesIO(file_bytes) as file:
         pv_power = xr.open_dataset(file, engine="h5netcdf")

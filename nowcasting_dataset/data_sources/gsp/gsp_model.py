@@ -1,13 +1,11 @@
 """ Model for output of GSP data """
 import logging
-from xarray.ufuncs import isnan, isinf
 
 from nowcasting_dataset.data_sources.datasource_output import (
     DataSourceOutput,
-    check_nan_and_inf,
     check_dataset_greater_than,
+    check_nan_and_inf,
 )
-from nowcasting_dataset.time import make_random_time_vectors
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +19,7 @@ class GSP(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
+
         check_nan_and_inf(data=v.data, class_name="gsp")
         check_dataset_greater_than(data=v.data, class_name="gsp", min_value=0)
 

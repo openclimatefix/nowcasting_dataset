@@ -1,3 +1,4 @@
+"""Test config."""
 import os
 import tempfile
 from datetime import datetime
@@ -7,7 +8,7 @@ import moto
 import pytest
 
 import nowcasting_dataset
-from nowcasting_dataset.config.load import load_yaml_configuration, load_configuration_from_gcs
+from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.config.model import Configuration, set_git_commit
 from nowcasting_dataset.config.save import save_yaml_configuration
 
@@ -87,7 +88,9 @@ def test_load_to_gcs():
     """
     Check that configuration can be loaded to gcs
     """
-    config = load_configuration_from_gcs(gcp_dir="prepared_ML_training_data/v-default")
+    config = load_yaml_configuration(
+        filename="gs://solar-pv-nowcasting-data/prepared_ML_training_data/v-default/configuration.yaml"  # noqa: E501
+    )
 
     assert isinstance(config, Configuration)
 

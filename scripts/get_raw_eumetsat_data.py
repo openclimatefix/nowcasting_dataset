@@ -5,12 +5,11 @@
 # Jacob Bieker
 #
 ############
-import satip.download
-import pandas as pd
 from datetime import datetime
 
 import click
-
+import pandas as pd
+import satip.download
 
 NATIVE_FILESIZE_MB = 102.210123
 CLOUD_FILESIZE_MB = 3.445185

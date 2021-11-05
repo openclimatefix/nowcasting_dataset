@@ -1,17 +1,19 @@
 """ utils functions """
-import hashlib
 import logging
+import os
+import re
 import tempfile
-from pathlib import Path
-from typing import Optional
+from functools import wraps
 
 import fsspec.asyn
 import gcsfs
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
+import nowcasting_dataset
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
+from nowcasting_dataset.config import load, model
 from nowcasting_dataset.consts import Array
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,7 @@ def set_fsspec_for_multiprocess() -> None:
     fsspec.asyn.loop[0] = None
 
 
+# TODO: Issue #170. Is this this function still used?
 def is_monotonically_increasing(a: Array) -> bool:
     """ Check the array is monotonically increasing """
     # TODO: Can probably replace with pd.Index.is_monotonic_increasing()
@@ -41,12 +44,14 @@ def is_monotonically_increasing(a: Array) -> bool:
     return np.all(np.diff(a) > 0)
 
 
+# TODO: Issue #170. Is this this function still used?
 def is_unique(a: Array) -> bool:
     """ Check array has unique values """
     # TODO: Can probably replace with pd.Index.is_unique()
     return len(a) == len(np.unique(a))
 
 
+# TODO: Issue #170. Is this this function still used?
 def scale_to_0_to_1(a: Array) -> Array:
     """Scale to the range [0, 1]."""
     a = a - a.min()
@@ -56,59 +61,13 @@ def scale_to_0_to_1(a: Array) -> Array:
     return a
 
 
-def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    For every column in df, creates cols for sin and cos of that col.
-
-    Args:
-      df: Input DataFrame.  The values must be in the range [0, 1].
-
-    Raises:
-      ValueError if any value in df is not within the range [0, 1].
-
-    Returns:
-      A new DataFrame, with twice the number of columns as the input df.
-      For each col in df, the output DataFrame will have a <col name>_sin
-      and a <col_name>_cos.
-    """
-    columns = []
-    for col_name in df.columns:
-        columns.append(f"{col_name}_sin")
-        columns.append(f"{col_name}_cos")
-    output_df = pd.DataFrame(index=df.index, columns=columns, dtype=np.float32)
-    for col_name in df.columns:
-        series = df[col_name]
-        if series.min() < 0.0 or series.max() > 1.0:
-            raise ValueError(
-                f"{col_name} has values outside the range [0, 1]!"
-                f" min={series.min()}; max={series.max()}"
-            )
-        radians = series * 2 * np.pi
-        output_df[f"{col_name}_sin"] = np.sin(radians)
-        output_df[f"{col_name}_cos"] = np.cos(radians)
-    return output_df
+def get_netcdf_filename(batch_idx: int) -> str:
+    """Generate full filename, excluding path."""
+    assert 0 <= batch_idx < 1e6
+    return f"{batch_idx:06d}.nc"
 
 
-def get_netcdf_filename(batch_idx: int, add_hash: bool = False) -> Path:
-    """Generate full filename, excluding path.
-
-    Filename includes the first 6 digits of the MD5 hash of the filename,
-    as recommended by Google Cloud in order to distribute data across
-    multiple back-end servers.
-
-    Add option to turn on and off hashing
-
-    """
-    filename = f"{batch_idx}.nc"
-    # Remove 'hash' at the moment. In the future could has the configuration file, and use this to make sure we are
-    # saving and loading the same thing
-    if add_hash:
-        hash_of_filename = hashlib.md5(filename.encode()).hexdigest()
-        filename = f"{hash_of_filename[0:6]}_{filename}"
-
-    return filename
-
-
+# TODO: Issue #170. Is this this function still used?
 def to_numpy(value):
     """ Change generic data to numpy"""
     if isinstance(value, xr.DataArray):
@@ -123,37 +82,18 @@ def to_numpy(value):
         value = np.int32(value.timestamp())
     elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
         value = value.astype("datetime64[s]").astype(np.int32)
-    elif isinstance(value, torch.Tensor):
-        value = value.numpy()
 
     return value
 
 
-def coord_to_range(
-    da: xr.DataArray, dim: str, prefix: Optional[str], dtype=np.int32
-) -> xr.DataArray:
-    """
-    TODO
-
-    TODO: Actually, I think this is over-complicated?  I think we can
-    just strip off the 'coord' from the dimension.
-
-    """
-    coord = da[dim]
-    da[dim] = np.arange(len(coord), dtype=dtype)
-    if prefix is not None:
-        da[f"{prefix}_{dim}_coords"] = xr.DataArray(coord, coords=[da[dim]], dims=[dim])
-    return da
-
-
 class OpenData:
-    """ General method to open a file, but if from GCS, the file is downloaded to a temp file first """
+    """Open a file, but if from GCS, the file is downloaded to a temp file first."""
 
     def __init__(self, file_name):
         """ Check file is there, and create temporary file """
         self.file_name = file_name
 
-        filesystem = fsspec.open(file_name).fs
+        filesystem = nd_fs_utils.get_filesystem(file_name)
         if not filesystem.exists(file_name):
             raise RuntimeError(f"{file_name} does not exist!")
 
@@ -165,7 +105,7 @@ class OpenData:
         1. if from gcs, download the file to temporary file, and return the temporary file name
         2. if local, return local file name
         """
-        fs = fsspec.open(self.file_name).fs
+        fs = nd_fs_utils.get_filesystem(self.file_name)
         if type(fs) == gcsfs.GCSFileSystem:
             fs.get_file(self.file_name, self.temp_file.name)
             filename = self.temp_file.name
@@ -177,3 +117,41 @@ class OpenData:
     def __exit__(self, type, value, traceback):
         """ Close temporary file """
         self.temp_file.close()
+
+
+def remove_regex_pattern_from_keys(d: dict, pattern_to_remove: str, **regex_compile_kwargs) -> dict:
+    """Remove `pattern_to_remove` from all keys in `d`.
+
+    Return a new dict with the same values as `d`, but where the key names
+    have had `pattern_to_remove` removed.
+    """
+    new_dict = {}
+    regex = re.compile(pattern_to_remove, **regex_compile_kwargs)
+    for old_key, value in d.items():
+        new_key = regex.sub(string=old_key, repl="")
+        new_dict[new_key] = value
+    return new_dict
+
+
+def get_config_with_test_paths(config_filename: str) -> model.Configuration:
+    """Sets the base paths to point to the testing data in this repository."""
+    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
+
+    # load configuration, this can be changed to a different filename as needed
+    filename = os.path.join(local_path, "tests", "config", config_filename)
+    config = load.load_yaml_configuration(filename)
+    config.set_base_path(local_path)
+    return config
+
+
+def arg_logger(func):
+    """A function decorator to log all the args and kwargs passed into a function."""
+    # Adapted from https://stackoverflow.com/a/23983263/732596
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        logger.debug(
+            f"Arguments passed into function `{func.__name__}`:" f" args={args}; kwargs={kwargs}"
+        )
+        return func(*args, **kwargs)
+
+    return inner_func

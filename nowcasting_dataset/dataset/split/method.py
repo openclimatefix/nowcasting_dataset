@@ -13,7 +13,9 @@ from nowcasting_dataset.dataset.split.model import (
 def split_method(
     datetimes: pd.DatetimeIndex,
     train_test_validation_split: Tuple[int] = (3, 1, 1),
-    train_test_validation_specific: TrainValidationTestSpecific = default_train_test_validation_specific,
+    train_test_validation_specific: TrainValidationTestSpecific = (
+        default_train_test_validation_specific
+    ),
     method: str = "modulo",
     freq: str = "D",
     seed: int = 1234,
@@ -38,10 +40,11 @@ def split_method(
         datetimes: list of datetimes
         train_test_validation_split: how the split is made
         method: which method to use. Can be modulo or random
-        freq: This can be D=day, W=week, M=month and Y=year. This means the data is divided up by different periods
+        freq: This can be D=day, W=week, M=month and Y=year. This means the data is divided up by
+            different periods
         seed: random seed used to permutate the data for the 'random' method
-        train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'. These specifies
-            which data goes into which datasets
+        train_test_validation_specific: pydandic class of 'train', 'validation' and 'test'.
+            These specify which data goes into which datasets
 
     Returns: train, validation and test datetimes
 
@@ -56,7 +59,8 @@ def split_method(
 
     if method == "modulo":
         # Method to split by module.
-        # I.e 1st, 2nd, 3rd periods goes to train, 4th goes to validation, 5th goes to test and repeat.
+        # I.e 1st, 2nd, 3rd periods goes to train, 4th goes to validation, 5th goes to test and
+        # repeat.
 
         # make which day indexes go i.e if the split is [3,1,1] then the
         # - train_ indexes = [0,1,2]
@@ -133,14 +137,17 @@ def split_by_dates(
     """
     Split datetimes into train, validation and test by two specific datetime splits
 
-    Note that the 'train_validation_datetime_split' should be less than the 'validation_test_datetime_split'
+    Note that the 'train_validation_datetime_split' should be less than the
+    'validation_test_datetime_split'
 
     Args:
         datetimes: list of datetimes
-        train_validation_datetime_split: the datetime which will split the train and validation datetimes.
-        For example if this is '2021-01-01' then the train datetimes will end by '2021-01-01' and the
-        validation datetimes will start at '2021-01-01'.
-        validation_test_datetime_split: the datetime which will split the validation and test datetimes
+        train_validation_datetime_split: the datetime which will split the train and validation
+            datetimes.
+        For example if this is '2021-01-01' then the train datetimes will end by '2021-01-01' and
+            the validation datetimes will start at '2021-01-01'.
+        validation_test_datetime_split: the datetime which will split the validation and
+            test datetimes
 
     Returns: train, validation and test datetimes
 

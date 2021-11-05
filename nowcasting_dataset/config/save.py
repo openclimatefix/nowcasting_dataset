@@ -1,4 +1,5 @@
 """ Save functions for the configuration model"""
+import json
 import logging
 from typing import Optional, Union
 
@@ -21,8 +22,9 @@ def save_yaml_configuration(
 
     Will save to GCP, AWS, or local, depending on the protocol suffix of filepath.
     """
-    # make a dictionary from the configuration
-    d = configuration.dict()
+    # make a dictionary from the configuration,
+    # Note that we make the object json'able first, so that it can be saved to a yaml file
+    d = json.loads(configuration.json())
     if filename is None:
         filename = Pathy(configuration.output_data.filepath) / "configuration.yaml"
     logger.info(f"Saving configuration to {filename}")

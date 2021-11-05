@@ -1,17 +1,19 @@
+"""Test Satellite model."""
 import os
 import tempfile
-import pytest
+
 import numpy as np
+import pytest
 
 from nowcasting_dataset.data_sources.fake import satellite_fake
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 
 
-def test_satellite_init():
+def test_satellite_init():  # noqa: D103
     _ = satellite_fake()
 
 
-def test_satellite_validation():
+def test_satellite_validation():  # noqa: D103
     sat = satellite_fake()
 
     Satellite.model_validation(sat)
@@ -21,9 +23,9 @@ def test_satellite_validation():
         Satellite.model_validation(sat)
 
 
-def test_satellite_save():
+def test_satellite_save():  # noqa: D103
 
     with tempfile.TemporaryDirectory() as dirpath:
         satellite_fake().save_netcdf(path=dirpath, batch_i=0)
 
-        assert os.path.exists(f"{dirpath}/satellite/0.nc")
+        assert os.path.exists(f"{dirpath}/satellite/000000.nc")

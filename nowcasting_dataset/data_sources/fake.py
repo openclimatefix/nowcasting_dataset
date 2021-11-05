@@ -6,30 +6,19 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset.dataset.xr_utils import (
-    convert_data_array_to_dataset,
-    join_dataset_to_batch_dataset,
-    join_list_data_array_to_batch_dataset,
-)
-
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
-from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
+from nowcasting_dataset.consts import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-
-
-def datetime_fake(batch_size, seq_length_5):
-    """ Create fake data """
-    xr_arrays = [create_datetime_dataset(seq_length=seq_length_5) for _ in range(batch_size)]
-
-    # make dataset
-    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
-
-    return Datetime(xr_dataset)
+from nowcasting_dataset.dataset.xr_utils import (
+    convert_data_array_to_dataset,
+    join_list_data_array_to_batch_dataset,
+    join_list_dataset_to_batch_dataset,
+)
 
 
 def gsp_fake(
@@ -49,7 +38,7 @@ def gsp_fake(
     ]
 
     # make dataset
-    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
 
     return GSP(xr_dataset)
 
@@ -59,7 +48,7 @@ def metadata_fake(batch_size):
     xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
 
     # make dataset
-    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
 
     return Metadata(xr_dataset)
 
@@ -76,7 +65,7 @@ def nwp_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=image_size_pixels,
-            number_channels=number_nwp_channels,
+            channels=NWP_VARIABLE_NAMES[0:number_nwp_channels],
         )
         for _ in range(batch_size)
     ]
@@ -84,8 +73,7 @@ def nwp_fake(
     # make dataset
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
-    xr_dataset = xr_dataset.rename({"time": "target_time"})
-    xr_dataset["init_time"] = xr_dataset.target_time[:, 0]
+    xr_dataset["init_time"] = xr_dataset.time[:, 0]
 
     return NWP(xr_dataset)
 
@@ -103,7 +91,7 @@ def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
     ]
 
     # make dataset
-    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
 
     return PV(xr_dataset)
 
@@ -112,7 +100,7 @@ def satellite_fake(
     batch_size=32,
     seq_length_5=19,
     satellite_image_size_pixels=64,
-    number_sat_channels=7,
+    number_satellite_channels=7,
 ) -> Satellite:
     """ Create fake data """
     # make batch of arrays
@@ -120,7 +108,7 @@ def satellite_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
-            number_channels=number_sat_channels,
+            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
         )
         for _ in range(batch_size)
     ]
@@ -143,7 +131,7 @@ def sun_fake(batch_size, seq_length_5):
     ]
 
     # make dataset
-    xr_dataset = join_dataset_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
 
     return Sun(xr_dataset)
 
@@ -176,14 +164,14 @@ def create_image_array(
     dims=("time", "x", "y", "channels"),
     seq_length_5=19,
     image_size_pixels=64,
-    number_channels=7,
+    channels=SAT_VARIABLE_NAMES,
 ):
     """ Create Satellite or NWP fake image data"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
         "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
         "y": np.random.randint(low=0, high=1000, size=image_size_pixels),
-        "channels": np.arange(number_channels),
+        "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     image_data_array = xr.DataArray(
@@ -192,7 +180,7 @@ def create_image_array(
                 seq_length_5,
                 image_size_pixels,
                 image_size_pixels,
-                number_channels,
+                len(channels),
             )
         ),
         coords=coords,
@@ -240,6 +228,10 @@ def create_gsp_pv_dataset(
 
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
+
+    # Add 1000 to the id numbers for the row numbers.
+    # This is a quick way to make sure row number is different from id,
+    data["pv_system_row_number"] = data["id"] + 1000
 
     data.__setitem__("data", data.data.clip(min=0))
 

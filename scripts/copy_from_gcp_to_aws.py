@@ -1,15 +1,17 @@
 ## copy a folder from gcp to aws
+import logging
+import os
+import tempfile
+from concurrent import futures
 from pathlib import Path
+
+import gcsfs
+
 from nowcasting_dataset.filesystem.utils import (
-    get_all_filenames_in_path,
     download_to_local,
+    get_all_filenames_in_path,
     upload_one_file,
 )
-import tempfile
-import gcsfs
-import os
-import logging
-from concurrent import futures
 
 logging.basicConfig()
 _LOG = logging.getLogger("nowcasting_dataset")

@@ -1,19 +1,35 @@
-""" Configuration model for the dataset """
+""" Configuration model for the dataset.
+
+All paths must include the protocol prefix.  For local files,
+it's sufficient to just start with a '/'.  For aws, start with 's3://',
+for gcp start with 'gs://'.
+
+This file is mostly about _configuring_ the DataSources.
+
+Separate Pydantic models in
+`nowcasting_dataset/data_sources/<data_source_name>/<data_source_name>_model.py`
+are used to validate the values of the data itself.
+
+"""
 from datetime import datetime
 from typing import Optional
-import logging
 
 import git
+import pandas as pd
 from pathy import Pathy
-from pydantic import BaseModel, Field
-from pydantic import validator, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
-from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
+# nowcasting_dataset imports
 from nowcasting_dataset.consts import (
-    SAT_VARIABLE_NAMES,
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
+    NWP_VARIABLE_NAMES,
+    SAT_VARIABLE_NAMES,
 )
+from nowcasting_dataset.dataset.split import split
+
+IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
+METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
 
 
 class General(BaseModel):
@@ -21,25 +37,19 @@ class General(BaseModel):
 
     name: str = Field("example", description="The name of this configuration file.")
     description: str = Field(
-        "example configuration", description="Description of this confgiruation file"
-    )
-    cloud: str = Field(
-        "gcp",
-        description=(
-            "local, gcp, or aws.  Deprecated.  Will be removed when issue"
-            " https://github.com/openclimatefix/nowcasting_dataset/issues/153"
-            " is implemented"
-        ),
+        "example configuration", description="Description of this configuration file"
     )
 
 
 class Git(BaseModel):
     """Git model"""
 
-    hash: str = Field(..., description="The git hash has for when a dataset is created.")
-    message: str = Field(..., description="The git message has for when a dataset is created.")
+    hash: str = Field(
+        ..., description="The git hash of nowcasting_dataset when a dataset is created."
+    )
+    message: str = Field(..., description="The git message for when a dataset is created.")
     committed_date: datetime = Field(
-        ..., description="The git datestamp has for when a dataset is created."
+        ..., description="The git datestamp for when a dataset is created."
     )
 
 
@@ -55,7 +65,7 @@ class DataSourceMixin(BaseModel):
     history_minutes: int = Field(
         None,
         ge=0,
-        description="how many historic minutes are used. "
+        description="how many historic minutes to use. "
         "If set to None, the value is defaulted to InputData.default_history_minutes",
     )
 
@@ -73,47 +83,47 @@ class DataSourceMixin(BaseModel):
 class PV(DataSourceMixin):
     """PV configuration model"""
 
-    solar_pv_data_filename: str = Field(
+    pv_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
         description=("The NetCDF file holding the solar PV power timeseries."),
     )
-    solar_pv_metadata_filename: str = Field(
+    pv_metadata_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
         description="The CSV file describing each PV system.",
     )
-    n_gsp_per_example: int = Field(
+    n_pv_systems_per_example: int = Field(
         DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
         description="The number of PV systems samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
     )
+    pv_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    pv_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class Satellite(DataSourceMixin):
     """Satellite configuration model"""
 
     satellite_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
         description="The path which holds the satellite zarr.",
     )
-
-    sat_channels: tuple = Field(
+    satellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES, description="the satellite channels that are used"
     )
-
-    satellite_image_size_pixels: int = Field(64, description="the size of the satellite images")
+    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class NWP(DataSourceMixin):
     """NWP configuration model"""
 
     nwp_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",
+        "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",  # noqa: E501
         description="The path which holds the NWP zarr.",
     )
-
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
-
-    nwp_image_size_pixels: int = Field(64, description="the size of the nwp images")
+    nwp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    nwp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class GSP(DataSourceMixin):
@@ -125,6 +135,8 @@ class GSP(DataSourceMixin):
         description="The number of GSP samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
     )
+    gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
@@ -146,6 +158,8 @@ class Topographic(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
         description="Path to the GeoTIFF Topographic data source",
     )
+    topographic_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    topographic_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class Sun(DataSourceMixin):
@@ -159,19 +173,15 @@ class Sun(DataSourceMixin):
 
 class InputData(BaseModel):
     """
-    Input data model
-
-    All paths must include the protocol prefix.  For local files,
-    it's sufficient to just start with a '/'.  For aws, start with 's3://',
-    for gcp start with 'gs://'.
+    Input data model.
     """
 
-    pv: PV = PV()
-    satellite: Satellite = Satellite()
-    nwp: NWP = NWP()
-    gsp: GSP = GSP()
-    topographic: Topographic = Topographic()
-    sun: Sun = Sun()
+    pv: Optional[PV] = None
+    satellite: Optional[Satellite] = None
+    nwp: Optional[NWP] = None
+    gsp: Optional[GSP] = None
+    topographic: Optional[Topographic] = None
+    sun: Optional[Sun] = None
 
     default_forecast_minutes: int = Field(
         60,
@@ -184,6 +194,12 @@ class InputData(BaseModel):
         ge=0,
         description="how many historic minutes are used. "
         "This sets the default for all the data sources if they are not set.",
+    )
+    data_source_which_defines_geospatial_locations: str = Field(
+        "gsp",
+        description=(
+            "The name of the DataSource which will define the geospatial position of each example."
+        ),
     )
 
     @property
@@ -199,9 +215,16 @@ class InputData(BaseModel):
         Run through the different data sources and  if the forecast or history minutes are not set,
         then set them to the default values
         """
+        # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
+        # but that causes a circular import.
+        ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
+        enabled_data_sources = [
+            data_source_name
+            for data_source_name in ALL_DATA_SOURCE_NAMES
+            if values[data_source_name] is not None
+        ]
 
-        for data_source_name in ["pv", "nwp", "satellite", "gsp", "topographic", "sun"]:
-
+        for data_source_name in enabled_data_sources:
             if values[data_source_name].forecast_minutes is None:
                 values[data_source_name].forecast_minutes = values["default_forecast_minutes"]
 
@@ -210,12 +233,27 @@ class InputData(BaseModel):
 
         return values
 
+    @classmethod
+    def set_all_to_defaults(cls):
+        """Returns an InputData instance with all fields set to their default values.
+
+        Used for unittests.
+        """
+        return cls(
+            pv=PV(),
+            satellite=Satellite(),
+            nwp=NWP(),
+            gsp=GSP(),
+            topographic=Topographic(),
+            sun=Sun(),
+        )
+
 
 class OutputData(BaseModel):
     """Output data model"""
 
-    filepath: str = Field(
-        "gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/",
+    filepath: Pathy = Field(
+        Pathy("gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/"),
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"
@@ -227,7 +265,29 @@ class Process(BaseModel):
     """Pydantic model of how the data is processed"""
 
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
-    batch_size: int = Field(32, description="the number of examples per batch")
+    batch_size: int = Field(32, description="The number of examples per batch")
+    t0_datetime_frequency: pd.Timedelta = Field(
+        pd.Timedelta("5 minutes"),
+        description=(
+            "The temporal frequency at which t0 datetimes will be sampled."
+            "  Can be any string that `pandas.Timedelta()` understands."
+            "  For example, if this is set to '5 minutes', then, for each example, the t0 datetime"
+            " could be at 0, 5, ..., 55 minutes past the hour.  If there are DataSources with a"
+            " lower sample rate (e.g. half-hourly) then these lower-sample-rate DataSources will"
+            " still produce valid examples.  For example, if a half-hourly DataSource is asked for"
+            " an example with t0=12:05, history_minutes=60, forecast_minutes=60, then it will"
+            " return data at 11:30, 12:00, 12:30, and 13:00."
+        ),
+    )
+    split_method: split.SplitMethod = Field(
+        split.SplitMethod.DAY,
+        description=(
+            "The method used to split the t0 datetimes into train, validation and test sets."
+        ),
+    )
+    n_train_batches: int = 250
+    n_validation_batches: int = 10
+    n_test_batches: int = 10
     upload_every_n_batches: int = Field(
         16,
         description=(
@@ -252,8 +312,8 @@ class Configuration(BaseModel):
         """Append base_path to all paths. Mostly used for testing."""
         base_path = Pathy(base_path)
         path_attrs = [
-            "pv.solar_pv_data_filename",
-            "pv.solar_pv_metadata_filename",
+            "pv.pv_filename",
+            "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",

@@ -1,9 +1,11 @@
 """ General utils functions """
 import logging
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
 import fsspec
+import numpy as np
+from pathy import Pathy
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -13,45 +15,57 @@ def upload_and_delete_local_files(dst_path: str, local_path: Path):
     Upload an entire folder and delete local files to either AWS or GCP
     """
     _LOG.info("Uploading!")
-    filesystem = fsspec.open(dst_path).fs
+    filesystem = get_filesystem(dst_path)
     filesystem.put(str(local_path), dst_path, recursive=True)
     delete_all_files_in_temp_path(local_path)
 
 
-def get_maximum_batch_id(path: str):
+def get_filesystem(path: Union[str, Path]) -> fsspec.AbstractFileSystem:
+    r"""Get the fsspect FileSystem from a path.
+
+    For example, if `path` starts with `gs:\\` then return a fsspec.GCSFileSystem.
+
+    It is safe for `path` to include wildcards in the final filename.
+    """
+    path = Pathy(path)
+    return fsspec.open(path.parent).fs
+
+
+def get_maximum_batch_id(path: Pathy) -> int:
     """
     Get the last batch ID. Works with GCS, AWS, and local.
 
     Args:
-        path: the path folder to look in.  Begin with 'gs://' for GCS. Begin with 's3://' for AWS S3.
+        path: The path folder to look in.
+              Begin with 'gs://' for GCS. Begin with 's3://' for AWS S3.
+              Supports wildcards *, **, ?, and [..].
 
-    Returns: the maximum batch id of data in `path`.
+    Returns: The maximum batch id of data in `path`.
+
+    Raises FileNotFoundError if `path` does not exist.
     """
     _LOG.debug(f"Looking for maximum batch id in {path}")
 
-    filesystem = fsspec.open(path).fs
-    if not filesystem.exists(path):
-        _LOG.debug(f"{path} does not exists")
-        return None
+    filesystem = get_filesystem(path)
+    if not filesystem.exists(path.parent):
+        msg = f"{path.parent} does not exist"
+        _LOG.warning(msg)
+        raise FileNotFoundError(msg)
 
-    filenames = get_all_filenames_in_path(path=path)
+    filenames = filesystem.glob(path)
 
-    # just take filename
-    filenames = [filename.split("/")[-1] for filename in filenames]
-
-    # remove suffix
-    filenames = [filename.split(".")[0] for filename in filenames]
-
-    # change to integer
-    batch_indexes = [int(filename) for filename in filenames if len(filename) > 0]
-
-    # if there is no files, return None
-    if len(batch_indexes) == 0:
+    # if there is no files, return 0
+    if len(filenames) == 0:
         _LOG.debug(f"Did not find any files in {path}")
-        return None
+        return 0
 
-    # get the maximum batch id
-    maximum_batch_id = max(batch_indexes)
+    # Now that filenames have leading zeros (like 000001.nc), we can use lexographical sorting
+    # to find the last filename, instead of having to convert all filenames to int.
+    filenames = np.sort(filenames)
+    last_filename = filenames[-1]
+    last_filename = Pathy(last_filename)
+    last_filename_stem = last_filename.stem
+    maximum_batch_id = int(last_filename_stem)
     _LOG.debug(f"Found maximum of batch it of {maximum_batch_id} in {path}")
 
     return maximum_batch_id
@@ -61,14 +75,14 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
     """
     Delete all the files in a temporary path. Option to delete the folders or not
     """
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     filenames = get_all_filenames_in_path(path=path)
 
     _LOG.info(f"Deleting {len(filenames)} files from {path}.")
 
     if delete_dirs:
-        for file in filenames:
-            filesystem.rm(file, recursive=True)
+        for filename in filenames:
+            filesystem.rm(str(filename), recursive=True)
     else:
         # loop over folder structure, but only delete files
         for root, dirs, files in filesystem.walk(path):
@@ -78,10 +92,10 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
 
 
 def check_path_exists(path: Union[str, Path]):
-    """Raises a RuntimeError if `path` does not exist in the local filesystem."""
-    filesystem = fsspec.open(path).fs
+    """Raises a FileNotFoundError if `path` does not exist."""
+    filesystem = get_filesystem(path)
     if not filesystem.exists(path):
-        raise RuntimeError(f"{path} does not exist!")
+        raise FileNotFoundError(f"{path} does not exist!")
 
 
 def rename_file(remote_file: str, new_filename: str):
@@ -93,20 +107,20 @@ def rename_file(remote_file: str, new_filename: str):
         new_filename: What the file should be renamed too
 
     """
-    filesystem = fsspec.open(remote_file).fs
+    filesystem = get_filesystem(remote_file)
     filesystem.mv(remote_file, new_filename)
 
 
 def get_all_filenames_in_path(path: Union[str, Path]) -> List[str]:
     """
-    Get all the files names from one folder in gcp
+    Get all the files names from one folder.
 
     Args:
-        path: the path that we should look in
+        path: The path that we should look in.
 
-    Returns: a list of files names represented as strings.
+    Returns: A list of filenames represented as strings.
     """
-    filesystem = fsspec.open(path).fs
+    filesystem = get_filesystem(path)
     return filesystem.ls(path)
 
 
@@ -120,7 +134,11 @@ def download_to_local(remote_filename: str, local_filename: str):
     """
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
 
-    filesystem = fsspec.open(remote_filename).fs
+    # Check the inputs are strings
+    remote_filename = str(remote_filename)
+    local_filename = str(local_filename)
+
+    filesystem = get_filesystem(remote_filename)
     filesystem.get(remote_filename, local_filename)
 
 
@@ -136,12 +154,20 @@ def upload_one_file(
         local_filename: the local file name
 
     """
-    filesystem = fsspec.open(remote_filename).fs
+    filesystem = get_filesystem(remote_filename)
     filesystem.put(local_filename, remote_filename)
 
 
-def make_folder(path: Union[str, Path]):
-    """ Make folder """
-    filesystem = fsspec.open(path).fs
-    if not filesystem.exists(path):
-        filesystem.mkdir(path)
+def makedirs(path: Union[str, Path], exist_ok: bool = True) -> None:
+    """Recursively make directories
+
+    Creates directory at path and any intervening required directories.
+
+    Raises exception if, for instance, the path already exists but is a file.
+
+    Args:
+        path: The path to create.
+        exist_ok: If False then raise an exception if `path` already exists.
+    """
+    filesystem = get_filesystem(path)
+    filesystem.makedirs(path, exist_ok=exist_ok)

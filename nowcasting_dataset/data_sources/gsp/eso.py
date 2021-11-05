@@ -1,5 +1,7 @@
 """
-This file has a few functions that are used to get GSP (Grid Supply Point) information from National Grid ESO.
+This file has a few functions that are used to get GSP (Grid Supply Point) information
+
+The info comes from National Grid ESO.
 
 ESO - Electricity System Operator. General information can be found here
 - https://data.nationalgrideso.com/system/gis-boundaries-for-gb-grid-supply-points
@@ -50,8 +52,8 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
     """
     logger.debug("Getting GSP shape file")
 
-    # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
-    # will stay operational
+    # call ESO website. There is a possibility that this API will be replaced and its unclear if
+    # this original API will will stay operational
     url = (
         "https://data.nationalgrideso.com/api/3/action/datastore_search?"
         "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
@@ -95,7 +97,8 @@ def get_gsp_shape_from_eso(
     Get the the gsp shape file from ESO (or a local file)
 
     Args:
-        join_duplicates: If True, any RegionIDs which have multiple entries, will be joined together to give one entry
+        join_duplicates: If True, any RegionIDs which have multiple entries, will be joined
+            together to give one entry.
         load_local_file: Load from a local file, not from ESO
         save_local_file: Save to a local file, only need to do this is Data is updated.
 
@@ -117,11 +120,11 @@ def get_gsp_shape_from_eso(
         shape_gpd.rename(columns=rename_load_columns, inplace=True)
         logger.debug("loading local file for GSP shape data:done")
     else:
-        # call ESO website. There is a possibility that this API will be replaced and its unclear if this original API will
-        # will stay operational
+        # call ESO website. There is a possibility that this API will be replaced and its unclear
+        # if this original API will stay operational.
         url = (
-            "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/resource/"
-            "a3ed5711-407a-42a9-a63a-011615eea7e0/download/gsp_regions_20181031.geojson"
+            "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
+            "resource/a3ed5711-407a-42a9-a63a-011615eea7e0/download/gsp_regions_20181031.geojson"
         )
 
         with urlopen(url) as response:

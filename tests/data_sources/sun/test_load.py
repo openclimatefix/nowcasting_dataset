@@ -1,11 +1,12 @@
+import tempfile
+
 import numpy as np
 import pandas as pd
-import tempfile
 
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
     get_azimuth_and_elevation,
-    save_to_zarr,
     load_from_zarr,
+    save_to_zarr,
 )
 
 
@@ -43,14 +44,14 @@ def test_save():
     )
 
     with tempfile.TemporaryDirectory() as fp:
-        save_to_zarr(azimuth=azimuth, elevation=elevation, filename=fp)
+        save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path=fp)
 
 
 def test_load(test_data_folder):
 
-    filename = test_data_folder + "/sun/test.zarr"
+    zarr_path = test_data_folder + "/sun/test.zarr"
 
-    azimuth, elevation = load_from_zarr(filename=filename)
+    azimuth, elevation = load_from_zarr(zarr_path=zarr_path)
 
     assert type(azimuth) == pd.DataFrame
     assert type(elevation) == pd.DataFrame

@@ -2,12 +2,13 @@ import logging
 import os
 from pathlib import Path
 
-import nowcasting_dataset
 import torch
-from nowcasting_dataset.config.load import load_configuration_from_gcs, load_yaml_configuration
+
+import nowcasting_dataset
+from nowcasting_dataset.cloud.utils import get_maximum_batch_id
+from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.dataset.datasets import NetCDFDataset, worker_init_fn
 from nowcasting_dataset.dataset.validate import ValidatorDataset
-from nowcasting_dataset.cloud.utils import get_maximum_batch_id
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(pathname)s %(lineno)d %(message)s")
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -17,7 +18,6 @@ logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
 
 # load configuration, this can be changed to a different filename as needed
 filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
-config = load_configuration_from_gcs(gcp_dir="prepared_ML_training_data/v5/")
 config = load_yaml_configuration(filename=filename)
 
 DST_NETCDF4_PATH = config.output_data.filepath
@@ -48,7 +48,6 @@ train_dataset = torch.utils.data.DataLoader(
         maximum_batch_id_train,
         f"gs://{DST_TRAIN_PATH}",
         LOCAL_TEMP_PATH,
-        cloud="gcp",
         configuration=config,
     ),
     **dataloader_config,
@@ -60,7 +59,6 @@ validation_dataset = torch.utils.data.DataLoader(
         maximum_batch_id_train,
         f"gs://{DST_VALIDATION_PATH}",
         LOCAL_TEMP_PATH,
-        cloud="gcp",
         configuration=config,
     ),
     **dataloader_config,
@@ -71,7 +69,6 @@ test_dataset = torch.utils.data.DataLoader(
         maximum_batch_id_train,
         f"gs://{DST_TEST_PATH}",
         LOCAL_TEMP_PATH,
-        cloud="gcp",
         configuration=config,
     ),
     **dataloader_config,

@@ -91,7 +91,7 @@ class DataSourceOutput(PydanticXArrayDataSet):
         self, data: xr.Dataset, value: int, raise_error: bool = True, variable_name: str = None
     ):
         """ Check data is not equal than a certain value """
-        if (data == value).any():
+        if np.isclose(data, value).any():
             message = f"Some {self.__class__.__name__} data values are equal to {value}"
             message += f" ({variable_name})" if variable_name is not None else None
             if raise_error:

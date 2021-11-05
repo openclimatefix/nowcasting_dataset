@@ -1,8 +1,6 @@
 """ Model for output of GSP data """
 import logging
 
-from xarray.ufuncs import isinf, isnan
-
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
@@ -17,8 +15,8 @@ class GSP(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (~isnan(v.data)).all(), "Some gsp data values are NaNs"
-        assert (~isinf(v.data)).all(), "Some gsp data values are Infinite"
-        assert (v.data >= 0).all(), f"Some gsp data values are below 0 {v.data.min()}"
+
+        v.check_nan_and_inf(data=v.data)
+        v.check_dataset_greater_than_or_equal_to(data=v.data, min_value=0)
 
         return v

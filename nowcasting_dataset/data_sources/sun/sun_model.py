@@ -1,7 +1,9 @@
 """ Model for Sun features """
-from xarray.ufuncs import isinf, isnan
+import logging
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+
+logger = logging.getLogger(__name__)
 
 
 class Sun(DataSourceOutput):
@@ -13,22 +15,21 @@ class Sun(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (~isnan(v.elevation)).all(), "Some elevation data values are NaNs"
-        assert (~isinf(v.elevation)).all(), "Some elevation data values are Infinite"
+        v.check_nan_and_inf(data=v.elevation, variable_name="elevation")
+        v.check_nan_and_inf(data=v.azimuth, variable_name="azimuth")
 
-        assert (~isnan(v.azimuth)).all(), "Some azimuth data values are NaNs"
-        assert (~isinf(v.azimuth)).all(), "Some azimuth data values are Infinite"
+        v.check_dataset_greater_than_or_equal_to(
+            data=v.azimuth, variable_name="azimuth", min_value=0
+        )
+        v.check_dataset_less_than_or_equal_to(
+            data=v.azimuth, variable_name="azimuth", max_value=360
+        )
 
-        assert (0 <= v.azimuth).all(), f"Some azimuth data values are lower 0, {v.azimuth.min()}"
-        assert (
-            v.azimuth <= 360
-        ).all(), f"Some azimuth data values are greater than 360, {v.azimuth.max()}"
-
-        assert (
-            -90 <= v.elevation
-        ).all(), f"Some elevation data values are lower -90, {v.elevation.min()}"
-        assert (
-            v.elevation <= 90
-        ).all(), f"Some elevation data values are greater than 90, {v.elevation.max()}"
+        v.check_dataset_greater_than_or_equal_to(
+            data=v.elevation, variable_name="elevation", min_value=-90
+        )
+        v.check_dataset_less_than_or_equal_to(
+            data=v.elevation, variable_name="elevation", max_value=90
+        )
 
         return v

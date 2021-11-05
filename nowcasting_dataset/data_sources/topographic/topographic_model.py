@@ -1,5 +1,4 @@
 """ Model for Topogrpahic features """
-from xarray.ufuncs import isinf, isnan
 
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
@@ -13,6 +12,7 @@ class Topographic(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are non NaNs """
-        assert (~isnan(v.data)).all(), "Some topological data values are NaNs"
-        assert (~isinf(v.data)).all(), "Some topological data values are Infinite"
+
+        v.check_nan_and_inf(data=v.data)
+
         return v

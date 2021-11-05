@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import logging
 
-from xarray.ufuncs import isinf, isnan
-
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
@@ -21,6 +19,7 @@ class NWP(DataSourceOutput):
     @classmethod
     def model_validation(cls, v):
         """ Check that all values are not NaNs """
-        assert (~isnan(v.data)).all(), "Some nwp data values are NaNs"
-        assert (~isinf(v.data)).all(), "Some nwp data values are Infinite"
+
+        v.check_nan_and_inf(data=v.data)
+
         return v

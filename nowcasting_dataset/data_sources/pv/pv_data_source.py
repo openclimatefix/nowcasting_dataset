@@ -122,6 +122,15 @@ class PVDataSource(ImageDataSource):
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+
+        pv_power_zero_or_above_flag = selected_pv_power.ge(0).all()
+
+        if pv_power_zero_or_above_flag.sum() != len(selected_pv_power.columns):
+            n = len(selected_pv_power.columns) - pv_power_zero_or_above_flag.sum()
+            logger.debug(f"Will be removing {n} pv systems as they have negative values")
+
+        selected_pv_power = selected_pv_power.loc[:, pv_power_zero_or_above_flag]
+
         return selected_pv_power
 
     def _get_central_pv_system_id(

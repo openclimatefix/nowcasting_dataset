@@ -97,6 +97,8 @@ class SunDataSource(DataSource):
     def datetime_index(self):
         """The datetime index of this datasource"""
         return NotImplementedError(
-            "Sun data should not be used to datetime_index, "
-            "as it is available for all time periods"
+            "Sun data should not be used for datetime_index. "
+            "This is because normally the data is available all the time, "
+            "except for when using test data. "
+            "This is becasue data from 2019 is extrapolate on to other years. "
         )

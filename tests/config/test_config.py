@@ -6,6 +6,7 @@ from datetime import datetime
 import boto3
 import moto
 import pytest
+from pathy import Pathy
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
@@ -29,6 +30,10 @@ def test_yaml_load():
     config = load_yaml_configuration(filename)
 
     assert isinstance(config, Configuration)
+    assert type(config.output_data.filepath) == Pathy
+
+    # Need to make sure 'gs://' is in file path, not 'gs:/' as it is needed for loading
+    assert "gs://" in str(config.output_data.filepath)
 
 
 def test_yaml_save():

@@ -99,6 +99,9 @@ class SunDataSource(DataSource):
         """Sun data should not be used to get batch locations"""
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
-    def datetime_index(self) -> pd.DatetimeIndex:
+    def datetime_index(self):
         """The datetime index of this datasource"""
-        return self.azimuth.index
+        return NotImplementedError(
+            "Sun data should not be used to datetime_index, "
+            "as it is available for all time periods"
+        )

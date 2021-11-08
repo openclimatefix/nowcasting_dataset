@@ -7,14 +7,14 @@ logger = logging.getLogger(__name__)
 
 
 class Sun(DataSourceOutput):
-    """ Class to store Sun data as a xr.Dataset with some validation """
+    """Class to store Sun data as a xr.Dataset with some validation"""
 
     __slots__ = ()
     _expected_dimensions = ("time",)
 
     @classmethod
     def model_validation(cls, v):
-        """ Check that all values are non NaNs """
+        """Check that all values are non NaNs"""
         v.check_nan_and_inf(data=v.elevation, variable_name="elevation")
         v.check_nan_and_inf(data=v.azimuth, variable_name="azimuth")
 

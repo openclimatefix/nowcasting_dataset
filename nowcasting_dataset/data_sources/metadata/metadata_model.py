@@ -3,7 +3,7 @@ from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 
 class Metadata(DataSourceOutput):
-    """ Class to store metedata data as a xr.Dataset with some validation """
+    """Class to store metedata data as a xr.Dataset with some validation"""
 
     __slots__ = ()
     _expected_dimensions = ("t0_dt",)

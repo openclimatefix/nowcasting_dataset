@@ -6,7 +6,7 @@ from nowcasting_dataset.consts import Array
 
 
 class BoundingBox(NamedTuple):
-    """ Bounding box tuple """
+    """Bounding box tuple"""
 
     top: Union[Number, float]
     bottom: Union[Number, float]
@@ -15,7 +15,7 @@ class BoundingBox(NamedTuple):
 
 
 class Square:
-    """ Class for computing bounding box for satellite imagery. """
+    """Class for computing bounding box for satellite imagery."""
 
     def __init__(self, size_pixels: int, meters_per_pixel: Number):
         """

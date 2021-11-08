@@ -15,7 +15,7 @@ NWP_ZARR_PATH = f"{PATH}/../tests/data/nwp_data/test.zarr"
 def test_nwp_data_source_init():  # noqa: D103
     _ = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
-        history_minutes=30,
+        history_minutes=60,
         forecast_minutes=60,
     )
 
@@ -23,7 +23,7 @@ def test_nwp_data_source_init():  # noqa: D103
 def test_nwp_data_source_open():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
-        history_minutes=30,
+        history_minutes=60,
         forecast_minutes=60,
         channels=["t"],
     )
@@ -34,7 +34,7 @@ def test_nwp_data_source_open():  # noqa: D103
 def test_nwp_data_source_batch():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
-        history_minutes=30,
+        history_minutes=60,
         forecast_minutes=60,
         channels=["t"],
     )
@@ -47,13 +47,17 @@ def test_nwp_data_source_batch():  # noqa: D103
 
     batch = nwp.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
 
-    assert batch.data.shape == (4, 1, 19, 2, 2)
+    # batch size 4
+    # channel 1
+    # time series, 1 int he past, 1 now, 1 in the future
+    # x,y of size 2
+    assert batch.data.shape == (4, 1, 3, 2, 2)
 
 
 def test_nwp_get_contiguous_time_periods():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
-        history_minutes=30,
+        history_minutes=60,
         forecast_minutes=60,
         channels=["t"],
     )
@@ -68,13 +72,13 @@ def test_nwp_get_contiguous_time_periods():  # noqa: D103
 def test_nwp_get_contiguous_t0_time_periods():  # noqa: D103
     nwp = NWPDataSource(
         zarr_path=NWP_ZARR_PATH,
-        history_minutes=30,
+        history_minutes=60,
         forecast_minutes=60,
         channels=["t"],
     )
 
     contiguous_time_periods = nwp.get_contiguous_t0_time_periods()
     correct_time_periods = pd.DataFrame(
-        [{"start_dt": pd.Timestamp("2019-01-01 00:30"), "end_dt": pd.Timestamp("2019-01-02 01:00")}]
+        [{"start_dt": pd.Timestamp("2019-01-01 01:00"), "end_dt": pd.Timestamp("2019-01-02 01:00")}]
     )
     pd.testing.assert_frame_equal(contiguous_time_periods, correct_time_periods)

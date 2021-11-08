@@ -57,7 +57,7 @@ class DataSource:
         assert self.forecast_length >= 0
         assert self.history_minutes % self.sample_period_minutes == 0, (
             f"sample period ({self.sample_period_minutes}) minutes "
-            f"does not fit into historic minutes ({self.forecast_minutes})"
+            f"does not fit into historic minutes ({self.history_minutes})"
         )
         assert self.forecast_minutes % self.sample_period_minutes == 0, (
             f"sample period ({self.sample_period_minutes}) minutes "

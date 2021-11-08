@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class NWP(DataSourceOutput):
-    """ Class to store NWP data as a xr.Dataset with some validation """
+    """Class to store NWP data as a xr.Dataset with some validation"""
 
     # Use to store xr.Dataset data
 
@@ -18,7 +18,7 @@ class NWP(DataSourceOutput):
 
     @classmethod
     def model_validation(cls, v):
-        """ Check that all values are not NaNs """
+        """Check that all values are not NaNs"""
 
         v.check_nan_and_inf(data=v.data)
 

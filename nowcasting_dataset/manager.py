@@ -53,7 +53,7 @@ class Manager:
         logger.debug(f"config={self.config}")
 
     def save_yaml_configuration(self):
-        """ Save configuration to the 'output_data' location """
+        """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
     def initialise_data_sources(

@@ -34,7 +34,7 @@ def set_fsspec_for_multiprocess() -> None:
 
 # TODO: Issue #170. Is this this function still used?
 def is_monotonically_increasing(a: Array) -> bool:
-    """ Check the array is monotonically increasing """
+    """Check the array is monotonically increasing"""
     # TODO: Can probably replace with pd.Index.is_monotonic_increasing()
     assert a is not None
     assert len(a) > 0
@@ -46,7 +46,7 @@ def is_monotonically_increasing(a: Array) -> bool:
 
 # TODO: Issue #170. Is this this function still used?
 def is_unique(a: Array) -> bool:
-    """ Check array has unique values """
+    """Check array has unique values"""
     # TODO: Can probably replace with pd.Index.is_unique()
     return len(a) == len(np.unique(a))
 
@@ -69,7 +69,7 @@ def get_netcdf_filename(batch_idx: int) -> str:
 
 # TODO: Issue #170. Is this this function still used?
 def to_numpy(value):
-    """ Change generic data to numpy"""
+    """Change generic data to numpy"""
     if isinstance(value, xr.DataArray):
         # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
         value = value.data
@@ -90,7 +90,7 @@ class OpenData:
     """Open a file, but if from GCS, the file is downloaded to a temp file first."""
 
     def __init__(self, file_name):
-        """ Check file is there, and create temporary file """
+        """Check file is there, and create temporary file"""
         self.file_name = file_name
 
         filesystem = nd_fs_utils.get_filesystem(file_name)
@@ -115,7 +115,7 @@ class OpenData:
         return filename
 
     def __exit__(self, type, value, traceback):
-        """ Close temporary file """
+        """Close temporary file"""
         self.temp_file.close()
 
 

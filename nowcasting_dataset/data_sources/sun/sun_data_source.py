@@ -27,7 +27,7 @@ class SunDataSource(DataSource):
     end_dt: Optional[datetime] = None
 
     def __post_init__(self):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__()
         self._load()
 
@@ -96,9 +96,9 @@ class SunDataSource(DataSource):
         )
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
-        """ Sun data should not be used to get batch locations """
+        """Sun data should not be used to get batch locations"""
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
     def datetime_index(self) -> pd.DatetimeIndex:
-        """ The datetime index of this datasource """
+        """The datetime index of this datasource"""
         return self.azimuth.index

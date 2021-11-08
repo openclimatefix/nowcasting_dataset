@@ -77,7 +77,7 @@ class Batch(BaseModel):
 
     @staticmethod
     def fake(configuration: Configuration):
-        """ Make fake batch object """
+        """Make fake batch object"""
         batch_size = configuration.process.batch_size
         satellite_image_size_pixels = 64
         nwp_image_size_pixels = 64

@@ -46,7 +46,7 @@ class PVDataSource(ImageDataSource):
     get_center: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self.rng = np.random.default_rng()
         self.load()

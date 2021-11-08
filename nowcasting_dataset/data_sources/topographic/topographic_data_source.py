@@ -25,7 +25,7 @@ class TopographicDataSource(ImageDataSource):
     filename: str = None
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post init """
+        """Post init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._shape_of_example = (
             image_size_pixels,

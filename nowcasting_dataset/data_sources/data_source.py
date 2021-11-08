@@ -333,7 +333,7 @@ class ImageDataSource(DataSource):
     meters_per_pixel: InitVar[int]
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__()
         self._square = square.Square(
             size_pixels=image_size_pixels, meters_per_pixel=meters_per_pixel
@@ -361,7 +361,7 @@ class ZarrDataSource(ImageDataSource):
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post init """
+        """Post init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
 
@@ -371,7 +371,7 @@ class ZarrDataSource(ImageDataSource):
 
     @property
     def data(self):
-        """ Data property """
+        """Data property"""
         if self._data is None:
             raise RuntimeError("Please run `open()` before accessing data!")
         return self._data

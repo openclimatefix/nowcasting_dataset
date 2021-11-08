@@ -369,11 +369,13 @@ def load_solar_pv_data(
     pv_power_df.columns = [np.int32(col) for col in pv_power_df.columns]
 
     if "passiv" in filename:
-        pv_power_df = pv_power_df.tz_localize("UTC")
+        pv_power_df = pv_power_df.tz_localize("UTC").tz_convert(None)
     else:
-        pv_power_df = pv_power_df.tz_localize("Europe/London").tz_convert("UTC")
+        pv_power_df = pv_power_df.tz_localize("Europe/London").tz_convert("UTC").tz_convert(None)
 
-    return pv_power_df.tz_convert(None)
+    logger.debug("Loading Solar PV Data: done")
+
+    return pv_power_df
 
 
 def align_pv_system_ids(

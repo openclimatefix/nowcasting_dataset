@@ -27,8 +27,8 @@ input_data:
   pv:
     forecast_minutes: 60
     history_minutes: 30
-    pv_filename: gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc
-    pv_metadata_filename: gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv
+    pv_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passive.netcdf
+    pv_metadata_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv
   satellite:
     forecast_minutes: 60
     history_minutes: 30
@@ -50,13 +50,13 @@ input_data:
   sun:
     forecast_minutes: 60
     history_minutes: 30
-    sun_zarr_path: gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/
+    sun_zarr_path: gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr
   topographic:
     forecast_minutes: 60
     history_minutes: 30
     topographic_filename: gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif
 output_data:
-  filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/
+  filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v9/
 process:
   batch_size: 32
   local_temp_path: ~/temp/

@@ -35,7 +35,7 @@ def load_file():
 
 
 def format_df_to_xr(passive_5min_df):
-    """ Format 'pandas' to 'xarray' """
+    """Format 'pandas' to 'xarray'"""
     print("Format to xr")
 
     # change generation_wh to power_w

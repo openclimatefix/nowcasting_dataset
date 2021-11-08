@@ -1,10 +1,9 @@
 """ Loading Raw data """
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 from numbers import Number
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -23,8 +22,6 @@ class SunDataSource(DataSource):
     """Add azimuth and elevation angles of the sun."""
 
     zarr_path: Union[str, Path]
-    start_dt: Optional[datetime] = None
-    end_dt: Optional[datetime] = None
 
     def __post_init__(self):
         """Post Init"""
@@ -91,9 +88,7 @@ class SunDataSource(DataSource):
 
         logger.info(f"Loading Sun data from {self.zarr_path}")
 
-        self.azimuth, self.elevation = load_from_zarr(
-            zarr_path=self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
-        )
+        self.azimuth, self.elevation = load_from_zarr(zarr_path=self.zarr_path)
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Sun data should not be used to get batch locations"""

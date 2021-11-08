@@ -54,8 +54,8 @@ def format_df_to_xr(passive_5min_df):
     # change to float32
     passive_5min_jan_xr = passive_5min_jan_xr.astype(np.float32)
 
-    # change datetime to 'datetime'
-    datetime = passive_5min_on_ssid.index.tz_convert("UTC").tz_convert(None)
+    # change datetime to 'datetime'. Save it as UTC time
+    datetime = passive_5min_on_ssid.index.tz_convert(None)
     passive_5min_jan_xr["datetime"] = datetime
 
     return passive_5min_jan_xr
@@ -67,6 +67,7 @@ def save_netcdf(passive_5min_xr, file_output):
 
     Each month of data seems to be about 11MB
     """
+    print(f"Save file to {file_output}")
     encoding = {name: {"compression": "lzf"} for name in passive_5min_xr.data_vars}
     passive_5min_xr.to_netcdf(file_output, engine="h5netcdf", mode="w", encoding=encoding)
 

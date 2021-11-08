@@ -49,16 +49,16 @@ def format_df_to_xr(passive_5min_df):
     passive_5min_on_ssid.columns = [str(col) for col in passive_5min_on_ssid.columns]
 
     # change to xarray
-    passive_5min_jan_xr = passive_5min_on_ssid.to_xarray()
+    passive_5min_xr = passive_5min_on_ssid.to_xarray()
 
     # change to float32
-    passive_5min_jan_xr = passive_5min_jan_xr.astype(np.float32)
+    passive_5min_xr = passive_5min_xr.astype(np.float32)
 
     # change datetime to 'datetime'. Save it as UTC time
     datetime = passive_5min_on_ssid.index.tz_convert(None)
-    passive_5min_jan_xr["datetime"] = datetime
+    passive_5min_xr["datetime"] = datetime
 
-    return passive_5min_jan_xr
+    return passive_5min_xr
 
 
 def save_netcdf(passive_5min_xr, file_output):

@@ -110,8 +110,15 @@ class Satellite(DataSourceMixin):
     satellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
     )
-    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
-    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    satellite_image_size_pixels: int = Field(
+        IMAGE_SIZE_PIXELS_FIELD.default // 3,
+        description="The number of pixels of the region of interest for non-HRV satellite "
+        "channels.",
+    )
+    satellite_meters_per_pixel: int = Field(
+        METERS_PER_PIXEL_FIELD.default * 3,
+        description="The number of meters per pixel for " "non-HRV satellite channels.",
+    )
 
 
 class SatelliteHRV(Satellite):
@@ -122,13 +129,8 @@ class SatelliteHRV(Satellite):
     )
     # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
     # time the number of pixels
-    satellite_image_size_pixels: int = Field(
-        IMAGE_SIZE_PIXELS_FIELD.default * 3,
-        description="The " "number of pixels of the " "region of interest.",
-    )
-    satellite_meters_per_pixel: int = Field(
-        METERS_PER_PIXEL_FIELD.default // 3, description="The number of meters per pixel."
-    )
+    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class NWP(DataSourceMixin):

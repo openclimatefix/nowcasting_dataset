@@ -26,7 +26,7 @@ def gsp_fake(
     seq_length_30,
     n_gsp_per_batch,
 ):
-    """ Create fake data """
+    """Create fake data"""
     # make batch of arrays
     xr_arrays = [
         create_gsp_pv_dataset(
@@ -59,7 +59,7 @@ def nwp_fake(
     image_size_pixels=64,
     number_nwp_channels=7,
 ) -> NWP:
-    """ Create fake data """
+    """Create fake data"""
     # make batch of arrays
     xr_arrays = [
         create_image_array(
@@ -79,7 +79,7 @@ def nwp_fake(
 
 
 def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
-    """ Create fake data """
+    """Create fake data"""
     # make batch of arrays
     xr_arrays = [
         create_gsp_pv_dataset(
@@ -102,7 +102,7 @@ def satellite_fake(
     satellite_image_size_pixels=64,
     number_satellite_channels=7,
 ) -> Satellite:
-    """ Create fake data """
+    """Create fake data"""
     # make batch of arrays
     xr_arrays = [
         create_image_array(
@@ -120,7 +120,7 @@ def satellite_fake(
 
 
 def sun_fake(batch_size, seq_length_5):
-    """ Create fake data """
+    """Create fake data"""
     # create dataset with both azimuth and elevation, index with time
     # make batch of arrays
     xr_arrays = [
@@ -137,7 +137,7 @@ def sun_fake(batch_size, seq_length_5):
 
 
 def topographic_fake(batch_size, image_size_pixels):
-    """ Create fake data """
+    """Create fake data"""
     # make batch of arrays
     xr_arrays = [
         xr.DataArray(
@@ -166,7 +166,7 @@ def create_image_array(
     image_size_pixels=64,
     channels=SAT_VARIABLE_NAMES,
 ):
-    """ Create Satellite or NWP fake image data"""
+    """Create Satellite or NWP fake image data"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
         "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
@@ -194,7 +194,7 @@ def create_gsp_pv_dataset(
     seq_length=19,
     number_of_systems=128,
 ):
-    """ Create gsp or pv fake dataset """
+    """Create gsp or pv fake dataset"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
         "id": np.random.randint(low=0, high=1000, size=number_of_systems),
@@ -276,7 +276,7 @@ def create_sun_dataset(
 
 
 def create_metadata_dataset() -> xr.Dataset:
-    """ Create fake metadata dataset"""
+    """Create fake metadata dataset"""
     d = {
         "dims": ("t0_dt",),
         "data": pd.date_range("2021-01-01", freq="5T", periods=1) + pd.Timedelta("30T"),
@@ -295,7 +295,7 @@ def create_metadata_dataset() -> xr.Dataset:
 def create_datetime_dataset(
     seq_length=19,
 ) -> xr.Dataset:
-    """ Create fake datetime dataset"""
+    """Create fake datetime dataset"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length),
     }

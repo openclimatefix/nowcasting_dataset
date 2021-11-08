@@ -16,7 +16,7 @@ print(OUTPUT_PATH)
 
 
 def generate_satellite_test_data():
-    """ Main function to make satelllite test data """
+    """Main function to make satelllite test data"""
     output_filename = OUTPUT_PATH / "sat_data.zarr"
     print("Writing satellite tests data to", output_filename)
     sat_data = xr.open_zarr(consts.SAT_FILENAME, consolidated=True)

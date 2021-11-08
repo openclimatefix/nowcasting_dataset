@@ -49,7 +49,7 @@ def test_load_yaml_configuration():  # noqa: D103
 
 
 def test_get_daylight_datetime_index():
-    """ Check that 'manager' gets the correct t0 datetime over nighttime"""
+    """Check that 'manager' gets the correct t0 datetime over nighttime"""
     filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
 
     sat = SatelliteDataSource(

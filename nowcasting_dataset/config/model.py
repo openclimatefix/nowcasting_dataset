@@ -12,7 +12,7 @@ are used to validate the values of the data itself.
 
 """
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 import git
 import pandas as pd
@@ -252,13 +252,18 @@ class InputData(BaseModel):
 class OutputData(BaseModel):
     """Output data model"""
 
-    filepath: Pathy = Field(
+    filepath: Union[str, Pathy] = Field(
         Pathy("gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/"),
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"
         ),
     )
+
+    @validator("filepath")
+    def filepath_pathy(cls, v):
+        """Make sure filepath is a Pathy object"""
+        return Pathy(v)
 
 
 class Process(BaseModel):

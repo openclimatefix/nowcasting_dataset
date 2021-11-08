@@ -1,6 +1,5 @@
 name: nowcasting_dataset
 channels:
-  - pytorch
   - pvlib
   - conda-forge
 dependencies:

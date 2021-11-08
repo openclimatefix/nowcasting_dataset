@@ -9,7 +9,6 @@ import logging
 import click
 from pathy import Pathy
 
-# nowcasting_dataset imports
 import nowcasting_dataset
 from nowcasting_dataset import utils
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
@@ -18,6 +17,7 @@ from nowcasting_dataset.manager import Manager
 # Set up logging.
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s at %(pathname)s#L%(lineno)d")
 logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
+
 logger = logging.getLogger("nowcasting_dataset")
 logger.setLevel(logging.DEBUG)
 

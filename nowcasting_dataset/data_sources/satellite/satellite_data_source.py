@@ -23,7 +23,7 @@ class SatelliteDataSource(ZarrDataSource):
     meters_per_pixel: InitVar[int] = 2_000
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (

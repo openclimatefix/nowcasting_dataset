@@ -11,6 +11,7 @@ import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
+from nowcasting_dataset.data_sources.data_source import DataSourceOutput
 from nowcasting_dataset.data_sources.fake import (
     gsp_fake,
     metadata_fake,
@@ -76,7 +77,7 @@ class Batch(BaseModel):
 
     @staticmethod
     def fake(configuration: Configuration):
-        """ Make fake batch object """
+        """Make fake batch object"""
         batch_size = configuration.process.batch_size
         satellite_image_size_pixels = 64
         nwp_image_size_pixels = 64
@@ -165,7 +166,7 @@ class Batch(BaseModel):
         for data_source_name, future_examples in future_examples_per_source:
             xr_dataset = future_examples.result()
 
-            batch_dict[data_source_name] = xr_dataset
+            batch_dict[data_source_name] = DataSourceOutput(xr_dataset)
 
         batch_dict["batch_size"] = len(batch_dict["metadata"].example)
 

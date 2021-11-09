@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset.data_sources.transforms.transform import Transform
+from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.transforms.base import Transform
 from nowcasting_dataset.dataset.batch import Batch
 
 _LOG = logging.getLogger("nowcasting_dataset")
@@ -21,7 +22,7 @@ class OpticalFlowTransform(Transform):
 
     final_image_size_pixels: Optional[int] = None
 
-    def apply_transform(self, batch: Batch) -> Batch:
+    def apply_transforms(self, batch: Batch) -> DataSourceOutput:
         """
         Calculate optical flow for the batch, and add to Batch
 

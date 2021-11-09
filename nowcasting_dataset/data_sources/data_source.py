@@ -16,6 +16,7 @@ import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.transforms.base import Transform
 from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class DataSource:
 
     history_minutes: int
     forecast_minutes: int
+    transform: Transform
 
     def __post_init__(self):
         """Post Init"""
@@ -201,6 +203,9 @@ class DataSource:
                 x_locations=locations_for_batch.x_center_OSGB,
                 y_locations=locations_for_batch.y_center_OSGB,
             )
+
+            # Run transforms on batch
+            batch: DataSourceOutput = self.transform.apply_transforms(batch)
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)

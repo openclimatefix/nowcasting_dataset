@@ -139,7 +139,6 @@ class Batch(BaseModel):
             path: the path where it will be saved. This can be local or in the cloud.
 
         """
-
         with futures.ThreadPoolExecutor() as executor:
             # Submit tasks to the executor.
             for data_source in self.data_sources:
@@ -195,6 +194,7 @@ class Example(BaseModel):
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     topographic: Optional[Topographic]
+    optical_flow: Optional[OpticalFlow]
     pv: Optional[PV]
     sun: Optional[Sun]
     gsp: Optional[GSP]
@@ -205,6 +205,7 @@ class Example(BaseModel):
         """The different data sources"""
         return [
             self.satellite,
+            self.optical_flow,
             self.topographic,
             self.pv,
             self.sun,

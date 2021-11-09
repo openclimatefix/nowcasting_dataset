@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import xarray as xr
@@ -99,6 +100,18 @@ class DataSourceOutput(PydanticXArrayDataSet):
                 raise Exception(message)
             else:
                 logger.warning(message)
+
+    def check_data_var_dim(self, data: xr.Dataset, dims: Tuple[str]):
+        """Check the data var has the correct dims"""
+
+        actual_dims = data.dims
+        if set(actual_dims) != set(dims):
+            message = (
+                f"Actual dims {actual_dims} does not equal {dims} "
+                f"for {data.name} {self.__class__.__name__}"
+            )
+            logger.error(message)
+            raise Exception(message)
 
 
 def pad_nans(array, pad_width) -> np.ndarray:

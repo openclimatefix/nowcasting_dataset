@@ -13,6 +13,7 @@ class Satellite(DataSourceOutput):
 
     __slots__ = ()
     _expected_dimensions = ("time", "x", "y", "channels")
+    _expected_data_vars = ("data",)
 
     @classmethod
     def model_validation(cls, v):
@@ -20,4 +21,8 @@ class Satellite(DataSourceOutput):
         v.check_nan_and_inf(data=v.data)
         # put this validation back in when issue is done
         v.check_dataset_not_equal(data=v.data, value=-1, raise_error=False)
+        v.check_data_var_dim(
+            v.data, ("example", "time_index", "x_index", "y_index", "channels_index")
+        )
+
         return v

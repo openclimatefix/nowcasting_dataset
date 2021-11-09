@@ -18,11 +18,12 @@ Therefore, its ok good to use 1 year of data, for all the years
 import logging
 import os
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
+from pathy import Pathy
 
 import nowcasting_dataset
+from nowcasting_dataset.config import load_yaml_configuration
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
     get_azimuth_and_elevation,
@@ -34,11 +35,13 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" / "gcp.yaml"
+config = load_yaml_configuration(config_filename)
+
 
 # set up
-BUCKET = Path("solar-pv-nowcasting-data")
-PV_PATH = BUCKET / "PV/PVOutput.org"
-PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
+PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filename
+sun_file_zarr = config.input_data.sun.sun_zarr_path
 
 # set up variables
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
@@ -75,8 +78,6 @@ azimuth = azimuth.astype(int)
 elevation = elevation.astype(int)
 
 # save it locally and in the cloud, just in case when saving in the cloud it fails
-save_to_zarr(azimuth=azimuth, elevation=elevation, filename="./sun.zarr")
-save_to_zarr(
-    azimuth=azimuth, elevation=elevation, filename="gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/"
-)
+save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path="./sun.zarr")
+save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path=sun_file_zarr)
 # This has been uploaded to 'gs://solar-pv-nowcasting-data/Sun/v0'

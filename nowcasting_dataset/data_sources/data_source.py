@@ -43,7 +43,6 @@ class DataSource:
 
     history_minutes: int
     forecast_minutes: int
-    transform: Transform
 
     def __post_init__(self):
         """Post Init"""
@@ -203,9 +202,6 @@ class DataSource:
                 x_locations=locations_for_batch.x_center_OSGB,
                 y_locations=locations_for_batch.y_center_OSGB,
             )
-
-            # Run transforms on batch
-            batch: DataSourceOutput = self.transform.apply_transforms(batch)
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -461,3 +457,53 @@ class ZarrDataSource(ImageDataSource):
 
     def _open_data(self) -> xr.DataArray:
         raise NotImplementedError()
+
+
+@dataclass
+class DerivedDataSource(DataSource):
+    """
+    Base class for data sources derived from other data sources
+    """
+
+    def datetime_index(self):
+        """The datetime index of this datasource"""
+        return NotImplementedError(
+            "DerivedDataSources only use other, pre-computed batches, so no datetime_index is "
+            "needed"
+            )
+
+    def get_batch(self, t0_datetimes: pd.DatetimeIndex, **kwargs) -> DataSourceOutput:
+        """
+        Get Batch of data Data
+
+        Args:
+            **kwargs:
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
+                include data for historic and future depending on `history_minutes` and
+                `future_minutes`.  The batch size is given by the length of the t0_datetimes.
+            x_locations: x center batch locations
+            y_locations: y center batch locations
+
+        Returns: Batch data.
+        """
+        zipped = list(t0_datetimes)
+        batch_size = len(t0_datetimes)
+
+        with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+            future_examples = []
+            for coords in zipped:
+                t0_datetime = coords
+                future_example = executor.submit(
+                    self.get_example, t0_datetime
+                    )
+                future_examples.append(future_example)
+            examples = [future_example.result() for future_example in future_examples]
+
+        # Get the DataSource class, this could be one of the data sources like Sun
+        cls = examples[0].__class__
+
+        # Set the coords to be indices before joining into a batch
+        examples = [make_dim_index(example) for example in examples]
+
+        # join the examples together, and cast them to the cls, so that validation can occur
+        return cls(join_list_dataset_to_batch_dataset(examples))

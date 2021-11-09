@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 dir = "gs://solar-pv-nowcasting-data/PV/Passive/20211027_Passiv_PV_Data/5min"
 file_output = "../passive.netcdf"
@@ -13,7 +14,7 @@ months = pd.date_range("2021-01-01", "2021-12-01", freq="MS").strftime("%b").tol
 years = ["2020", "2021"]
 
 
-def load_file():
+def load_file() -> pd.DataFrame:
     """
     Load all passiv data
 
@@ -37,7 +38,7 @@ def load_file():
     return pd.concat(data_df)
 
 
-def format_df_to_xr(passive_5min_df):
+def format_df_to_xr(passive_5min_df: pd.DataFrame):
     """Format 'pandas' to 'xarray'"""
     print("Format to xr")
 
@@ -64,7 +65,7 @@ def format_df_to_xr(passive_5min_df):
     return passive_5min_xr
 
 
-def save_netcdf(passive_5min_xr, file_output):
+def save_netcdf(passive_5min_xr: xr.DataArray, save_file_output: str):
     """
     Save to netcdf
 
@@ -72,7 +73,7 @@ def save_netcdf(passive_5min_xr, file_output):
     """
     print(f"Save file to {file_output}")
     encoding = {name: {"compression": "lzf"} for name in passive_5min_xr.data_vars}
-    passive_5min_xr.to_netcdf(file_output, engine="h5netcdf", mode="w", encoding=encoding)
+    passive_5min_xr.to_netcdf(save_file_output, engine="h5netcdf", mode="w", encoding=encoding)
 
 
 data_df = load_file()

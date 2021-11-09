@@ -2,6 +2,9 @@
 
 Use the script download_UK_Met_Office_NWPs_from_CEDA.sh to download grib files.
 
+For documentation about the UK Met Office grib files, please see:
+http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+
 Todo:
 * Start single-threaded
 * Use click to set source and target directories.

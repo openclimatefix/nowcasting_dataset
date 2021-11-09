@@ -11,7 +11,6 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
@@ -62,8 +61,7 @@ class GSPDataSource(ImageDataSource):
         Set random seed and load data
         """
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        seed = torch.initial_seed()
-        self.rng = np.random.default_rng(seed=seed)
+        self.rng = np.random.default_rng()
         self.load()
 
     def check_input_paths_exist(self) -> None:
@@ -350,7 +348,7 @@ class GSPDataSource(ImageDataSource):
         # remove any nans
         power = power.dropna(axis="columns", how="any")
 
-        logger.debug(f"Found {len(power.columns)} GSP")
+        logger.debug(f"Found {len(power.columns)} GSP valid data for {t0_dt}")
 
         return power
 

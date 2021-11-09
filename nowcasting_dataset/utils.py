@@ -9,7 +9,6 @@ import fsspec.asyn
 import gcsfs
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
 import nowcasting_dataset
@@ -35,7 +34,7 @@ def set_fsspec_for_multiprocess() -> None:
 
 # TODO: Issue #170. Is this this function still used?
 def is_monotonically_increasing(a: Array) -> bool:
-    """ Check the array is monotonically increasing """
+    """Check the array is monotonically increasing"""
     # TODO: Can probably replace with pd.Index.is_monotonic_increasing()
     assert a is not None
     assert len(a) > 0
@@ -47,7 +46,7 @@ def is_monotonically_increasing(a: Array) -> bool:
 
 # TODO: Issue #170. Is this this function still used?
 def is_unique(a: Array) -> bool:
-    """ Check array has unique values """
+    """Check array has unique values"""
     # TODO: Can probably replace with pd.Index.is_unique()
     return len(a) == len(np.unique(a))
 
@@ -62,40 +61,6 @@ def scale_to_0_to_1(a: Array) -> Array:
     return a
 
 
-# TODO: Issue #170. Is this this function still used?
-def sin_and_cos(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    For every column in df, creates cols for sin and cos of that col.
-
-    Args:
-      df: Input DataFrame.  The values must be in the range [0, 1].
-
-    Raises:
-      ValueError if any value in df is not within the range [0, 1].
-
-    Returns:
-      A new DataFrame, with twice the number of columns as the input df.
-      For each col in df, the output DataFrame will have a <col name>_sin
-      and a <col_name>_cos.
-    """
-    columns = []
-    for col_name in df.columns:
-        columns.append(f"{col_name}_sin")
-        columns.append(f"{col_name}_cos")
-    output_df = pd.DataFrame(index=df.index, columns=columns, dtype=np.float32)
-    for col_name in df.columns:
-        series = df[col_name]
-        if series.min() < 0.0 or series.max() > 1.0:
-            raise ValueError(
-                f"{col_name} has values outside the range [0, 1]!"
-                f" min={series.min()}; max={series.max()}"
-            )
-        radians = series * 2 * np.pi
-        output_df[f"{col_name}_sin"] = np.sin(radians)
-        output_df[f"{col_name}_cos"] = np.cos(radians)
-    return output_df
-
-
 def get_netcdf_filename(batch_idx: int) -> str:
     """Generate full filename, excluding path."""
     assert 0 <= batch_idx < 1e6
@@ -104,7 +69,7 @@ def get_netcdf_filename(batch_idx: int) -> str:
 
 # TODO: Issue #170. Is this this function still used?
 def to_numpy(value):
-    """ Change generic data to numpy"""
+    """Change generic data to numpy"""
     if isinstance(value, xr.DataArray):
         # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
         value = value.data
@@ -117,8 +82,6 @@ def to_numpy(value):
         value = np.int32(value.timestamp())
     elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
         value = value.astype("datetime64[s]").astype(np.int32)
-    elif isinstance(value, torch.Tensor):
-        value = value.numpy()
 
     return value
 
@@ -127,7 +90,7 @@ class OpenData:
     """Open a file, but if from GCS, the file is downloaded to a temp file first."""
 
     def __init__(self, file_name):
-        """ Check file is there, and create temporary file """
+        """Check file is there, and create temporary file"""
         self.file_name = file_name
 
         filesystem = nd_fs_utils.get_filesystem(file_name)
@@ -152,7 +115,7 @@ class OpenData:
         return filename
 
     def __exit__(self, type, value, traceback):
-        """ Close temporary file """
+        """Close temporary file"""
         self.temp_file.close()
 
 

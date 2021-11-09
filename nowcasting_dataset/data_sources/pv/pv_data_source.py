@@ -12,7 +12,6 @@ from typing import List, Optional, Tuple, Union
 import fsspec
 import numpy as np
 import pandas as pd
-import torch
 import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
@@ -47,10 +46,9 @@ class PVDataSource(ImageDataSource):
     get_center: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        seed = torch.initial_seed()
-        self.rng = np.random.default_rng(seed=seed)
+        self.rng = np.random.default_rng()
         self.load()
 
     def check_input_paths_exist(self) -> None:
@@ -124,6 +122,15 @@ class PVDataSource(ImageDataSource):
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+
+        pv_power_zero_or_above_flag = selected_pv_power.ge(0).all()
+
+        if pv_power_zero_or_above_flag.sum() != len(selected_pv_power.columns):
+            n = len(selected_pv_power.columns) - pv_power_zero_or_above_flag.sum()
+            logger.debug(f"Will be removing {n} pv systems as they have negative values")
+
+        selected_pv_power = selected_pv_power.loc[:, pv_power_zero_or_above_flag]
+
         return selected_pv_power
 
     def _get_central_pv_system_id(
@@ -230,11 +237,7 @@ class PVDataSource(ImageDataSource):
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
 
-        # TODO: Issue #302. pv_system_row_number is assigned to but never used.
-        # That may indicate a bug?
-        pv_system_row_number = np.flatnonzero(  # noqa: F841
-            self.pv_metadata.index.isin(all_pv_system_ids)
-        )
+        pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]
 
@@ -269,8 +272,16 @@ class PVDataSource(ImageDataSource):
                 id_index=range(len(all_pv_system_ids.values)),
             ),
         )
+        pv_system_row_number = xr.DataArray(
+            data=pv_system_row_number,
+            dims=["id_index"],
+            coords=dict(
+                id_index=range(len(all_pv_system_ids.values)),
+            ),
+        )
         pv["x_coords"] = x_coords
         pv["y_coords"] = y_coords
+        pv["pv_system_row_number"] = pv_system_row_number
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id_index)

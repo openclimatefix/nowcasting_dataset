@@ -57,7 +57,7 @@ class DataSource:
         assert self.forecast_length >= 0
         assert self.history_minutes % self.sample_period_minutes == 0, (
             f"sample period ({self.sample_period_minutes}) minutes "
-            f"does not fit into historic minutes ({self.forecast_minutes})"
+            f"does not fit into historic minutes ({self.history_minutes})"
         )
         assert self.forecast_minutes % self.sample_period_minutes == 0, (
             f"sample period ({self.sample_period_minutes}) minutes "
@@ -65,25 +65,25 @@ class DataSource:
         )
 
         # Plus 1 because neither history_length nor forecast_length include t0.
-        self._total_seq_length = self.history_length + self.forecast_length + 1
+        self.total_seq_length = self.history_length + self.forecast_length + 1
 
-        self._history_duration = pd.Timedelta(self.history_minutes, unit="minutes")
-        self._forecast_duration = pd.Timedelta(self.forecast_minutes, unit="minutes")
+        self.history_duration = pd.Timedelta(self.history_minutes, unit="minutes")
+        self.forecast_duration = pd.Timedelta(self.forecast_minutes, unit="minutes")
         # Add sample_period_duration because neither history_duration not forecast_duration
         # include t0.
-        self._total_seq_duration = (
-            self._history_duration + self._forecast_duration + self.sample_period_duration
+        self.total_seq_duration = (
+            self.history_duration + self.forecast_duration + self.sample_period_duration
         )
 
     def _get_start_dt(
         self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-        return t0_dt - self._history_duration
+        return t0_dt - self.history_duration
 
     def _get_end_dt(
         self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-        return t0_dt + self._forecast_duration
+        return t0_dt + self.forecast_duration
 
     def get_contiguous_t0_time_periods(self) -> pd.DataFrame:
         """Get all time periods which contain valid t0 datetimes.
@@ -98,8 +98,8 @@ class DataSource:
           NotImplementedError if this DataSource has no concept of a datetime index.
         """
         contiguous_time_periods = self.get_contiguous_time_periods()
-        contiguous_time_periods["start_dt"] += self._history_duration
-        contiguous_time_periods["end_dt"] -= self._forecast_duration
+        contiguous_time_periods["start_dt"] += self.history_duration
+        contiguous_time_periods["end_dt"] -= self.forecast_duration
         assert (contiguous_time_periods["start_dt"] <= contiguous_time_periods["end_dt"]).all()
         return contiguous_time_periods
 
@@ -287,7 +287,7 @@ class DataSource:
         datetimes = self.datetime_index()
         return nd_time.get_contiguous_time_periods(
             datetimes=datetimes,
-            min_seq_length=self._total_seq_length,
+            min_seq_length=self.total_seq_length,
             max_gap_duration=self.sample_period_duration,
         )
 
@@ -333,7 +333,7 @@ class ImageDataSource(DataSource):
     meters_per_pixel: InitVar[int]
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__()
         self._square = square.Square(
             size_pixels=image_size_pixels, meters_per_pixel=meters_per_pixel
@@ -361,7 +361,7 @@ class ZarrDataSource(ImageDataSource):
     consolidated: bool = True
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post init """
+        """Post init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._data = None
 
@@ -371,7 +371,7 @@ class ZarrDataSource(ImageDataSource):
 
     @property
     def data(self):
-        """ Data property """
+        """Data property"""
         if self._data is None:
             raise RuntimeError("Please run `open()` before accessing data!")
         return self._data

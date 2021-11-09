@@ -1,9 +1,9 @@
 """ Loading Raw data """
+import logging
 from dataclasses import dataclass
-from datetime import datetime
 from numbers import Number
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -14,17 +14,17 @@ from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zar
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class SunDataSource(DataSource):
     """Add azimuth and elevation angles of the sun."""
 
     zarr_path: Union[str, Path]
-    start_dt: Optional[datetime] = None
-    end_dt: Optional[datetime] = None
 
     def __post_init__(self):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__()
         self._load()
 
@@ -85,14 +85,20 @@ class SunDataSource(DataSource):
         return Sun(sun)
 
     def _load(self):
-        self.azimuth, self.elevation = load_from_zarr(
-            zarr_path=self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
-        )
+
+        logger.info(f"Loading Sun data from {self.zarr_path}")
+
+        self.azimuth, self.elevation = load_from_zarr(zarr_path=self.zarr_path)
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
-        """ Sun data should not be used to get batch locations """
+        """Sun data should not be used to get batch locations"""
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
-    def datetime_index(self) -> pd.DatetimeIndex:
-        """ The datetime index of this datasource """
-        return self.azimuth.index
+    def datetime_index(self):
+        """The datetime index of this datasource"""
+        return NotImplementedError(
+            "Sun data should not be used for datetime_index. "
+            "This is because normally the data is available all the time, "
+            "except for when using test data. "
+            "This is becasue data from 2019 is extrapolate on to other years. "
+        )

@@ -10,14 +10,13 @@ install_requires = (this_directory / "requirements.txt").read_text().splitlines(
 
 setup(
     name="nowcasting_dataset",
-    version="1.0.27",
+    version="2.0.17",
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",
     author_email="info@openclimatefix.org",
     company="Open Climate Fix Ltd",
     install_requires=install_requires,
-    extras_require={"torch": ["torch"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
     package_data={"config": ["nowcasting_dataset/config/*.yaml"]},

@@ -1,6 +1,5 @@
 name: nowcasting_dataset
 channels:
-  - pytorch
   - pvlib
   - conda-forge
 dependencies:
@@ -22,9 +21,6 @@ dependencies:
   - gcsfs
   - fsspec
   - pathy
-
-  # Machine learning
-  - pytorch::pytorch # explicitly specify pytorch channel to prevent conda from using conda-forge for pytorch, and hence installing the CPU-only version.
 
   # PV & Geospatial
   - pvlib

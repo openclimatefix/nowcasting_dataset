@@ -23,4 +23,3 @@ black
 pre-commit
 fsspec
 pathy
-satip>=2.0.2

@@ -56,7 +56,7 @@ class NWPDataSource(ZarrDataSource):
         n_channels = len(self.channels)
         self._shape_of_example = (
             n_channels,
-            self._total_seq_length,
+            self.total_seq_length,
             image_size_pixels,
             image_size_pixels,
         )
@@ -114,11 +114,10 @@ class NWPDataSource(ZarrDataSource):
         """Resamples to 5 minutely."""
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
-        selected_data = selected_data.resample({"target_time": "5T"})
-        selected_data = selected_data.interpolate()
+
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
         selected_data = selected_data.rename({"target_time": "time", "variable": "channels"})
-        selected_data.data = selected_data.data.astype(np.float32)
+        selected_data.data = selected_data.data.astype(np.float16)
 
         return selected_data
 
@@ -133,8 +132,12 @@ class NWPDataSource(ZarrDataSource):
         target_times = np.unique(target_times)
         target_times = np.sort(target_times)
         target_times = pd.DatetimeIndex(target_times)
-        resampler = pd.Series(0, index=target_times).resample("5T")
-        return resampler.ffill(limit=11).dropna().index
+        return target_times
+
+    @property
+    def sample_period_minutes(self) -> int:
+        """Override the default sample minutes"""
+        return 60
 
 
 def open_nwp(zarr_path: str, consolidated: bool) -> xr.Dataset:

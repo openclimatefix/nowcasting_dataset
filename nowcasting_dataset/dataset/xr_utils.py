@@ -2,12 +2,10 @@
 
 1. joining data arrays to datasets
 2. pydantic exentions model of xr.Dataset
-3. xr array and xr dataset --> to torch functions
 """
 from typing import Any, List
 
 import numpy as np
-import torch
 import xarray as xr
 
 
@@ -21,7 +19,7 @@ def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr
 
 
 def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset:
-    """ Join a list of data sets to a dataset by expanding dims """
+    """Join a list of data sets to a dataset by expanding dims"""
 
     new_datasets = []
     for i, dataset in enumerate(datasets):
@@ -35,7 +33,7 @@ def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset
 # followed by make_dim_index, to make it more explicit what's happening?  At the moment,
 # in the calling code, it's not clear that the coordinates are being changed.
 def convert_data_array_to_dataset(data_xarray: xr.DataArray) -> xr.Dataset:
-    """ Convert data array to dataset. Reindex dim so that it can be merged with batch"""
+    """Convert data array to dataset. Reindex dim so that it can be merged with batch"""
     data = xr.Dataset({"data": data_xarray})
     return make_dim_index(dataset=data)
 
@@ -85,7 +83,7 @@ class PydanticXArrayDataSet(xr.Dataset):
 
     @classmethod
     def model_validation(cls, v):
-        """ Specific model validation, to be overwritten by class """
+        """Specific model validation, to be overwritten by class"""
         return v
 
     @classmethod
@@ -123,49 +121,3 @@ class PydanticXArrayDataSet(xr.Dataset):
             coord = v.coords[f"{dim}_index"]
             assert len(coord) > 0, f"{dim}_index is empty in {cls.__name__}!"
         return v
-
-
-def register_xr_data_array_to_tensor():
-    """ Add torch object to data array """
-    if not hasattr(xr.DataArray, "torch"):
-
-        @xr.register_dataarray_accessor("torch")
-        class TorchAccessor:
-            def __init__(self, xarray_obj):
-                self._obj = xarray_obj
-
-            def to_tensor(self):
-                """Convert this DataArray to a torch.Tensor"""
-                return torch.tensor(self._obj.data)
-
-            # torch tensor names does not working in dataloader yet - 2021-10-15
-            # https://discuss.pytorch.org/t/collating-named-tensors/78650
-            # https://github.com/openclimatefix/nowcasting_dataset/issues/25
-            # def to_named_tensor(self):
-            #     """Convert this DataArray to a torch.Tensor with named dimensions"""
-            #     import torch
-            #
-            #     return torch.tensor(self._obj.data, names=self._obj.dims)
-
-
-def register_xr_data_set_to_tensor():
-    """ Add torch object to dataset """
-    if not hasattr(xr.Dataset, "torch"):
-
-        @xr.register_dataset_accessor("torch")
-        class TorchAccessor:
-            def __init__(self, xdataset_obj: xr.Dataset):
-                self._obj = xdataset_obj
-
-            def to_tensor(self, dims: List[str]) -> dict:
-                """Convert this Dataset to dictionary of torch tensors"""
-                torch_dict = {}
-
-                for dim in dims:
-                    v = getattr(self._obj, dim)
-                    if dim.find("time") != -1:
-                        v = v.astype(np.int32)
-
-                    torch_dict[dim] = v.torch.to_tensor()
-
-                return torch_dict

@@ -1,4 +1,5 @@
 """ Topological DataSource """
+import logging
 from dataclasses import dataclass
 from numbers import Number
 
@@ -14,6 +15,8 @@ from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class TopographicDataSource(ImageDataSource):
@@ -22,12 +25,14 @@ class TopographicDataSource(ImageDataSource):
     filename: str = None
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post init """
+        """Post init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         self._shape_of_example = (
             image_size_pixels,
             image_size_pixels,
         )
+
+        logger.info(f"Loading Topological data {self.filename}")
 
         with OpenData(file_name=self.filename) as filename:
             self._data = rioxarray.open_rasterio(

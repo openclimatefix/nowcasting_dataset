@@ -11,9 +11,8 @@ import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.data_sources.datetime.datetime_model import Datetime
+from nowcasting_dataset.data_sources.data_source import DataSourceOutput
 from nowcasting_dataset.data_sources.fake import (
-    datetime_fake,
     gsp_fake,
     metadata_fake,
     nwp_fake,
@@ -29,18 +28,11 @@ from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-from nowcasting_dataset.dataset.xr_utils import (
-    register_xr_data_array_to_tensor,
-    register_xr_data_set_to_tensor,
-)
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-register_xr_data_array_to_tensor()
-register_xr_data_set_to_tensor()
-
-data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP, Datetime]
+data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP]
 
 
 class Batch(BaseModel):
@@ -69,7 +61,6 @@ class Batch(BaseModel):
     sun: Optional[Sun]
     gsp: Optional[GSP]
     nwp: Optional[NWP]
-    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):
@@ -81,13 +72,12 @@ class Batch(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.datetime,
             self.metadata,
         ]
 
     @staticmethod
     def fake(configuration: Configuration):
-        """ Make fake batch object """
+        """Make fake batch object"""
         batch_size = configuration.process.batch_size
         satellite_image_size_pixels = 64
         nwp_image_size_pixels = 64
@@ -125,10 +115,6 @@ class Batch(BaseModel):
             ),
             topographic=topographic_fake(
                 batch_size=batch_size, image_size_pixels=satellite_image_size_pixels
-            ),
-            datetime=datetime_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.default_seq_length_5_minutes,
             ),
         )
 
@@ -180,7 +166,7 @@ class Batch(BaseModel):
         for data_source_name, future_examples in future_examples_per_source:
             xr_dataset = future_examples.result()
 
-            batch_dict[data_source_name] = xr_dataset
+            batch_dict[data_source_name] = DataSourceOutput(xr_dataset)
 
         batch_dict["batch_size"] = len(batch_dict["metadata"].example)
 
@@ -201,7 +187,6 @@ class Example(BaseModel):
     sun: Optional[Sun]
     gsp: Optional[GSP]
     nwp: Optional[NWP]
-    datetime: Optional[Datetime]
 
     @property
     def data_sources(self):
@@ -213,6 +198,5 @@ class Example(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.datetime,
             self.metadata,
         ]

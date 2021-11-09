@@ -23,11 +23,11 @@ class SatelliteDataSource(ZarrDataSource):
     meters_per_pixel: InitVar[int] = 2_000
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
-        """ Post Init """
+        """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (
-            self._total_seq_length,
+            self.total_seq_length,
             image_size_pixels,
             image_size_pixels,
             n_channels,
@@ -55,6 +55,7 @@ class SatelliteDataSource(ZarrDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         data = self.data.sel(time=slice(start_dt, end_dt))
+
         return data
 
     def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:

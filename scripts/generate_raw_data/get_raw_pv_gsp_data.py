@@ -1,11 +1,11 @@
-############
-# Pull raw pv gsp data from Sheffield Solar
-#
-# 2021-09-01
-# Peter Dudfield
-#
-# The data is about 1MB for a month of data
-############
+"""
+Pull raw pv gsp data from Sheffield Solar
+
+2021-09-01
+Peter Dudfield
+
+The data is about 1MB for a month of data
+"""
 import logging
 import os
 from datetime import datetime

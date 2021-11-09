@@ -1,10 +1,9 @@
-############
-# Pull raw satellite data from EUMetSat
-#
-# 2021-09-28
-# Jacob Bieker
-#
-############
+"""
+Pull raw satellite data from EUMetSat
+
+2021-09-28
+Jacob Bieker
+"""
 from datetime import datetime
 
 import click
@@ -16,13 +15,19 @@ CLOUD_FILESIZE_MB = 3.445185
 RSS_ID = "EO:EUM:DAT:MSG:MSG15-RSS"
 CLOUD_ID = "EO:EUM:DAT:MSG:RSS-CLM"
 
-format_dt_str = lambda dt: pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def format_dt_str(dt):
+    """Format dt str"""
+    return pd.to_datetime(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def validate_date(ctx, param, value):
+    """Validate data"""
+
     try:
         return format_dt_str(value)
     except ValueError:
+        print(ctx, param, value)
         raise click.BadParameter("Date must be in format accepted by pd.to_datetime()")
 
 
@@ -31,7 +36,8 @@ def validate_date(ctx, param, value):
     "--download_directory",
     "--dir",
     default="/storage/",
-    help="Where to download the data to. Also where the script searches for previously downloaded data.",
+    help="Where to download the data to. Also where the script searches for "
+    "previously downloaded data.",
 )
 @click.option(
     "--start_date",
@@ -51,20 +57,23 @@ def validate_date(ctx, param, value):
     "--backfill",
     "-b",
     default=False,
-    prompt="Whether to download any missing data from the start date of the data on disk to the end date",
+    prompt="Whether to download any missing data from the start date of the "
+    "data on disk to the end date",
     is_flag=True,
 )
 @click.option(
     "--user_key",
     "--key",
     default=None,
-    help="The User Key for EUMETSAT access. Alternatively, the user key can be set using an auth file.",
+    help="The User Key for EUMETSAT access. Alternatively, the user key can be set "
+    "using an auth file.",
 )
 @click.option(
     "--user_secret",
     "--secret",
     default=None,
-    help="The User secret for EUMETSAT access. Alternatively, the user secret can be set using an auth file.",
+    help="The User secret for EUMETSAT access. Alternatively, the user secret can be set "
+    "using an auth file.",
 )
 @click.option(
     "--auth_filename",
@@ -79,6 +88,7 @@ def validate_date(ctx, param, value):
     type=float,
 )
 def download_sat_files(*args, **kwargs):
+    """Main function to download sat data"""
     satip.download.download_eumetsat_data(*args, **kwargs)
 
 

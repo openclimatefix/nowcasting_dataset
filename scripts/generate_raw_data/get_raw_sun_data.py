@@ -1,19 +1,19 @@
-############
-# Compute raw sun data using pvlib
-#
-# 2021-09-01
-# Peter Dudfield
-#
-# The data is about
-# - 1MB for a 2 of days, for ~2000 sites and takes about ~1 minutes
-# - 6MB for a 10 of days, for ~2000 sites and takes about ~1 minutes
-# - 252MB for a 365 of days, for ~2000 sites and takes about ~11 minutes (on a macbook pro)
+"""
+Compute raw sun data using pvlib
 
-# Decide to just go for one year of data
-# on 1st Jan 2019 and 2020, the biggest differences was in elevation was 1 degree,
-# More investigation has been done (link), and happy difference is less than 1 degree,
-# Therefore, its ok good to use 1 year of data, for all the years
-############
+2021-09-01
+Peter Dudfield
+
+The data is about
+ - 1MB for a 2 of days, for ~2000 sites and takes about ~1 minutes
+ - 6MB for a 10 of days, for ~2000 sites and takes about ~1 minutes
+ - 252MB for a 365 of days, for ~2000 sites and takes about ~11 minutes (on a macbook pro)
+
+Decide to just go for one year of data
+on 1st Jan 2019 and 2020, the biggest differences was in elevation was 1 degree,
+More investigation has been done (link), and happy difference is less than 1 degree,
+Therefore, its ok good to use 1 year of data, for all the years
+"""
 
 import logging
 import os

@@ -22,7 +22,7 @@ passive_llsoacd = pd.read_csv(filename)
 # join llsoacdf data
 passive_metadata = passive_metadata.merge(passive_llsoacd, on="llsoacd", how="left")
 
-passive_metadata["system_id"] = passive_metadata["ss_id"]
+passive_metadata.rename(columns={"ss_id": "system_id"})
 
 assert "system_id" in passive_metadata.columns
 assert "longitude" in passive_metadata.columns
@@ -36,9 +36,9 @@ filename = f"{dir}/system_metadata_OCF_ONLY.csv"
 
 passive_metadata_ocf = pd.read_csv(filename)
 
-passive_metadata_ocf["system_id"] = passive_metadata_ocf["ss_id"]
-passive_metadata_ocf["longitude"] = passive_metadata_ocf["longitude_rounded"]
-passive_metadata_ocf["latitude"] = passive_metadata_ocf["latitude_rounded"]
+passive_metadata.rename(
+    columns={"ss_id": "system_id", "longitude": "longitude_rounded", "latitude": "latitude_rounded"}
+)
 
 assert "system_id" in passive_metadata_ocf.columns
 assert "longitude" in passive_metadata_ocf.columns

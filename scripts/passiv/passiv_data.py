@@ -29,7 +29,10 @@ def load_file():
                 df = pd.read_csv(file)
                 data_df.append(df)
             except Exception as e:  # noqa F481
-                print(f"Could not load {file}")
+                print(
+                    f"Could not load {file}. "
+                    f"Decided not to raise as error, as data might be in the future"
+                )
 
     return pd.concat(data_df)
 

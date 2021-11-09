@@ -1,4 +1,4 @@
-""" Test script, to se if passive data works"""
+""" Test script, to see if passive data works"""
 from datetime import datetime
 
 from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource

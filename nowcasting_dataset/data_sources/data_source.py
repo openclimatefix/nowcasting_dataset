@@ -496,8 +496,5 @@ class DerivedDataSource(DataSource):
         # Get the DataSource class, this could be one of the data sources like Sun
         cls = examples[0].__class__
 
-        # Set the coords to be indices before joining into a batch
-        examples = [make_dim_index(example) for example in examples]
-
         # join the examples together, and cast them to the cls, so that validation can occur
         return cls(join_list_dataset_to_batch_dataset(examples))

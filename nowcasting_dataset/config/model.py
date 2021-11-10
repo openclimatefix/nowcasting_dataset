@@ -185,7 +185,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
-    optical_flow: Optional[OpticalFlow] = None
+    opticalflow: Optional[OpticalFlow] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -232,7 +232,7 @@ class InputData(BaseModel):
             "gsp",
             "topographic",
             "sun",
-            "optical_flow",
+            "opticalflow",
         )
         enabled_data_sources = [
             data_source_name

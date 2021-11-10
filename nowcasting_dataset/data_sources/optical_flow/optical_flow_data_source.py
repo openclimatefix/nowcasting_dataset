@@ -1,11 +1,8 @@
 """ Optical Flow Data Source """
 import logging
-from concurrent import futures
 from dataclasses import dataclass
-from numbers import Number
-from typing import Iterable
 from pathlib import Path
-from typing import  Union
+from typing import  Union, Optional
 
 import cv2
 import numpy as np
@@ -14,8 +11,8 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
+import nowcasting_dataset.dataset.batch
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -30,19 +27,11 @@ class OpticalFlowDataSource(DerivedDataSource):
 
     netcdf_path: Union[str, Path]
     previous_timestep_for_flow: int = 1
+    final_image_size_pixels: Optional[int] = None
 
-    def __post_init__(self):
-        """Post Init"""
-        self.open()
-
-    def open(self) -> None:
-        """
-        Open Satellite data
-        """
-        self._data = xr.load_dataset(self.netcdf_path)
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, **kwargs
     ) -> DataSourceOutput:
         """
         Get Optical Flow Example data
@@ -50,26 +39,19 @@ class OpticalFlowDataSource(DerivedDataSource):
         Args:
             t0_dt: list of timestamps for the datetime of the batches. The batch will also include
                 data for historic and future depending on `history_minutes` and `future_minutes`.
-            x_meters_center: x center batch locations
-            y_meters_center: y center batch locations
 
         Returns: Example Data
 
         """
+
+        if self.final_image_size_pixels is None:
+            self.final_image_size_pixels = len(batch.satellite.x_index)
+
+        # Only do optical flow for satellite data
+        self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
+        t0_dt = batch.metadata.t0_dt.values[example_idx]
+
         selected_data = self._compute_and_return_optical_flow(self._data, t0_dt = t0_dt)
-
-        selected_data = self._post_process_example(selected_data, t0_dt)
-
-        if selected_data.shape != self._shape_of_example:
-            raise RuntimeError(
-                "Example is wrong shape! "
-                f"x_meters_center={x_meters_center}\n"
-                f"y_meters_center={y_meters_center}\n"
-                f"t0_dt={t0_dt}\n"
-                f"times are {selected_data.time}\n"
-                f"expected shape={self._shape_of_example}\n"
-                f"actual shape {selected_data.shape}"
-            )
 
         return selected_data
 
@@ -78,7 +60,6 @@ class OpticalFlowDataSource(DerivedDataSource):
         satellite_data: xr.DataArray,
         predictions: np.ndarray,
         t0_dt: pd.Timestamp,
-        final_image_size_pixels: int,
     ) -> xr.DataArray:
         """
         Updates the dataarray with predictions
@@ -96,7 +77,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Combine all channels for a single timestep
         satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop=True)
         # Make sure its the correct size
-        buffer = satellite_data.sizes["x"] - final_image_size_pixels // 2
+        buffer = satellite_data.sizes["x"] - self.final_image_size_pixels // 2
         satellite_data = satellite_data.isel(
             x=slice(buffer, satellite_data.sizes["x"] - buffer),
             y=slice(buffer, satellite_data.sizes["y"] - buffer),
@@ -147,7 +128,6 @@ class OpticalFlowDataSource(DerivedDataSource):
         self,
         satellite_data: xr.DataArray,
         t0_dt: pd.Timestamp,
-        final_image_size_pixels: int,
     ) -> xr.DataArray:
         """
         Compute and return optical flow predictions for the example
@@ -169,8 +149,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         prediction_block = np.zeros(
             (
                 future_timesteps,
-                final_image_size_pixels,
-                final_image_size_pixels,
+                self.final_image_size_pixels,
+                self.final_image_size_pixels,
                 satellite_data.sizes["channels_index"],
             )
         )
@@ -193,8 +173,8 @@ class OpticalFlowDataSource(DerivedDataSource):
                 warped_image = self._remap_image(t0_image, flow)
                 warped_image = self.crop_center(
                     warped_image,
-                    final_image_size_pixels,
-                    final_image_size_pixels,
+                    self.final_image_size_pixels,
+                    self.final_image_size_pixels,
                 )
                 prediction_block[prediction_timestep, :, :, channel : channel + 4] = warped_image
         # Convert to correct C, T, H, W order
@@ -278,11 +258,3 @@ class OpticalFlowDataSource(DerivedDataSource):
         startx = x // 2 - (x_size // 2)
         starty = y // 2 - (y_size // 2)
         return image[starty : starty + y_size, startx : startx + x_size]
-
-    def _post_process_example(
-        self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
-    ) -> xr.DataArray:
-
-        selected_data.data = selected_data.data.astype(np.float32)
-
-        return selected_data

@@ -16,8 +16,8 @@ import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.data_sources.transforms.base import Transform
 from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
+import nowcasting_dataset.dataset.batch
 
 logger = logging.getLogger(__name__)
 
@@ -472,29 +472,23 @@ class DerivedDataSource(DataSource):
             "needed"
             )
 
-    def get_batch(self, t0_datetimes: pd.DatetimeIndex, **kwargs) -> DataSourceOutput:
+    def get_batch(self, net_cdf_path: Union[str, Path], batch_idx: int, **kwargs) -> \
+            DataSourceOutput:
         """
-        Get Batch of data Data
+        Get Batch of derived data
 
         Args:
             **kwargs:
-            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
-                include data for historic and future depending on `history_minutes` and
-                `future_minutes`.  The batch size is given by the length of the t0_datetimes.
-            x_locations: x center batch locations
-            y_locations: y center batch locations
+            net_cdf_path: PAth to the NetCDF files of the Batch to load
 
         Returns: Batch data.
         """
-        zipped = list(t0_datetimes)
-        batch_size = len(t0_datetimes)
-
-        with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+        batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(net_cdf_path, batch_idx = batch_idx)
+        with futures.ThreadPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []
-            for coords in zipped:
-                t0_datetime = coords
+            for example_idx in range(batch.batch_size):
                 future_example = executor.submit(
-                    self.get_example, t0_datetime
+                    self.get_example, batch, example_idx
                     )
                 future_examples.append(future_example)
             examples = [future_example.result() for future_example in future_examples]

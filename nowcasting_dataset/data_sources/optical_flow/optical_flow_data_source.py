@@ -71,9 +71,12 @@ class OpticalFlowDataSource(DerivedDataSource):
         """
 
         # Combine all channels for a single timestep
-        satellite_data = satellite_data.isel(time_index=slice(satellite_data.sizes["time_index"]
-                                                              - predictions.shape[0],
-                                                              satellite_data.sizes["time_index"]))
+        satellite_data = satellite_data.isel(
+            time_index=slice(
+                satellite_data.sizes["time_index"] - predictions.shape[0],
+                satellite_data.sizes["time_index"],
+            )
+        )
         # Make sure its the correct size
         buffer = (satellite_data.sizes["x_index"] - self.final_image_size_pixels) // 2
         satellite_data = satellite_data.isel(

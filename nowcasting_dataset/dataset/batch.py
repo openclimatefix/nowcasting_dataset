@@ -59,7 +59,7 @@ class Batch(BaseModel):
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     topographic: Optional[Topographic]
-    optical_flow: Optional[OpticalFlow]
+    opticalflow: Optional[OpticalFlow]
     pv: Optional[PV]
     sun: Optional[Sun]
     gsp: Optional[GSP]
@@ -71,7 +71,7 @@ class Batch(BaseModel):
         return [
             self.satellite,
             self.topographic,
-            self.optical_flow,
+            self.opticalflow,
             self.pv,
             self.sun,
             self.gsp,
@@ -96,7 +96,7 @@ class Batch(BaseModel):
                     configuration.input_data.satellite.satellite_channels
                 ),
             ),
-            optical_flow=optical_flow_fake(
+            opticalflow=optical_flow_fake(
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
                 satellite_image_size_pixels=satellite_image_size_pixels,
@@ -194,7 +194,7 @@ class Example(BaseModel):
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     topographic: Optional[Topographic]
-    optical_flow: Optional[OpticalFlow]
+    opticalflow: Optional[OpticalFlow]
     pv: Optional[PV]
     sun: Optional[Sun]
     gsp: Optional[GSP]
@@ -205,7 +205,7 @@ class Example(BaseModel):
         """The different data sources"""
         return [
             self.satellite,
-            self.optical_flow,
+            self.opticalflow,
             self.topographic,
             self.pv,
             self.sun,

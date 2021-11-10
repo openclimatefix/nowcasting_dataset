@@ -75,8 +75,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Make sure its the correct size
         buffer = satellite_data.sizes["x_index"] - self.final_image_size_pixels // 2
         satellite_data = satellite_data.isel(
-            x=slice(buffer, satellite_data.sizes["x_index"] - buffer),
-            y=slice(buffer, satellite_data.sizes["y_index"] - buffer),
+            x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
+            y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
         dataarray = xr.DataArray(
             data=predictions,

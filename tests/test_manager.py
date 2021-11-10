@@ -134,7 +134,7 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/gsp")
 
         print(get_all_filenames_in_path(f"{dst_path}/train/gsp"))
-        assert get_all_filenames_in_path(f"{dst_path}/train/gsp")
+        assert get_all_filenames_in_path(f"{dst_path}/train/gsp") == 0
 
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000000.nc")

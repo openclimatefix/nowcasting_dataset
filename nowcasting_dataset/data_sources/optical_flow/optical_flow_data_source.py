@@ -174,7 +174,7 @@ class OpticalFlowDataSource(DerivedDataSource):
                 )
                 prediction_block[prediction_timestep, :, :, channel : channel + 4] = warped_image
         # Convert to correct C, T, H, W order
-        prediction_block = np.permute(prediction_block, [3, 0, 1, 2])
+        prediction_block = np.transpose(prediction_block, [3, 0, 1, 2])
         dataarray = self._update_dataarray_with_predictions(
             satellite_data=satellite_data, predictions=prediction_block, t0_dt=t0_dt
         )

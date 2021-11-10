@@ -9,6 +9,7 @@ from nowcasting_dataset.filesystem.utils import (
     download_to_local,
     get_all_filenames_in_path,
     makedirs,
+    upload_and_delete_local_files,
     upload_one_file,
 )
 
@@ -175,3 +176,42 @@ def test_upload():  # noqa: D103
         # check the object are not there
         filenames = get_all_filenames_in_path(local_path)
         assert len(filenames) == 3
+
+
+def test_upload_and_delete_local_files():
+    """Check 'upload_and_delete_local_files' works"""
+
+    file1 = "test_file1.txt"
+    file2 = "test_dir/test_file2.txt"
+    file3 = "test_file3.txt"
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        local_path = Path(tmpdirname)
+
+        # add fake file to dir
+        path_and_filename_1 = os.path.join(local_path, file1)
+        with open(path_and_filename_1, "w"):
+            pass
+
+        # add fake file to dir
+        os.mkdir(f"{tmpdirname}/test_dir")
+        _ = os.path.join(local_path, file2)
+        with open(os.path.join(local_path, file2), "w"):
+            pass
+
+        path_and_filename_3 = os.path.join(local_path, file3)
+        with open(path_and_filename_3, "w"):
+            pass
+
+        with tempfile.TemporaryDirectory() as tmpdirname2:
+            dst_path = Path(tmpdirname2)
+
+            upload_and_delete_local_files(dst_path=dst_path, local_path=local_path)
+
+            # check the object are not there,just dir is left
+            filenames = get_all_filenames_in_path(local_path)
+            assert len(filenames) == 1
+
+            # check the object are there
+            filenames = get_all_filenames_in_path(dst_path)
+            assert len(filenames) == 3

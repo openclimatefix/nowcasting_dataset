@@ -372,7 +372,7 @@ class Manager:
                     future = executor.submit(
                         data_source.create_batches,
                         batch_path="",
-                        total_number_batches=0,
+                        total_number_batches = self._get_n_batches_for_split_name(split_name.value),
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
                         dst_path=dst_path,

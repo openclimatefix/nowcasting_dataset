@@ -10,7 +10,7 @@ from pathy import Pathy
 _LOG = logging.getLogger("nowcasting_dataset")
 
 
-def upload_and_delete_local_files(dst_path: str, local_path: Path):
+def upload_and_delete_local_files(dst_path: Union[str, Path], local_path: Union[str, Path]):
     """
     Upload an entire folder and delete local files to either AWS or GCP
     """

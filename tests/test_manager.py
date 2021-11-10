@@ -137,3 +137,25 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
+
+
+def test_save_config():
+    """Test that configuration file is saved"""
+
+    manager = Manager()
+
+    # load config
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        # set local temp path, and dst path
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        # save config
+        manager.save_yaml_configuration()
+
+        assert os.path.exists(f"{dst_path}/configuration.yaml")

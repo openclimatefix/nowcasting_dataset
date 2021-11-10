@@ -115,9 +115,7 @@ def test_batches():
     filename = local_path / "tests" / "config" / "test.yaml"
     manager.load_yaml_configuration(filename=filename)
 
-    with tempfile.TemporaryDirectory(dir="./") as local_temp_path, tempfile.TemporaryDirectory(
-        dir="./"
-    ) as dst_path:
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)

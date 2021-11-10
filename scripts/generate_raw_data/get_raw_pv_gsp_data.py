@@ -1,11 +1,11 @@
-############
-# Pull raw pv gsp data from Sheffield Solar
-#
-# 2021-09-01
-# Peter Dudfield
-#
-# The data is about 1MB for a month of data
-############
+"""
+Pull raw pv gsp data from Sheffield Solar
+
+2021-09-01
+Peter Dudfield
+
+The data is about 1MB for a month of data
+"""
 import logging
 import os
 from datetime import datetime
@@ -15,7 +15,10 @@ import numcodecs
 import pytz
 import xarray as xr
 import yaml
+from pathy import Pathy
 
+import nowcasting_dataset
+from nowcasting_dataset.config import load_yaml_configuration
 from nowcasting_dataset.data_sources.gsp.pvlive import load_pv_gsp_raw_data_from_pvlive
 from nowcasting_dataset.filesystem.utils import (
     delete_all_files_in_temp_path,
@@ -26,11 +29,14 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" / "gcp.yaml"
+config = load_yaml_configuration(config_filename)
+
 start = datetime(2016, 1, 1, tzinfo=pytz.utc)
 end = datetime(2021, 10, 1, tzinfo=pytz.utc)
-gcp_path = "gs://solar-pv-nowcasting-data/PV/GSP/v2"
+gcp_path = config.input_data.gsp.gsp_zarr_path
 
-config = {"start": start, "end": end, "gcp_path": gcp_path}
+config_gsp = {"start": start, "end": end, "gcp_path": gcp_path}
 
 # format local temp folder
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
@@ -57,7 +63,7 @@ data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
 
 # save config to file
 with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:
-    yaml.dump(config, f, allow_unicode=True)
+    yaml.dump(config_gsp, f, allow_unicode=True)
 
 # Make encoding
 encoding = {

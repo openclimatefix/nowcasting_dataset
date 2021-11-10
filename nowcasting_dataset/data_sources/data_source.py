@@ -5,7 +5,7 @@ from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Iterable, List, Tuple, Union
 
 import pandas as pd
 import xarray as xr

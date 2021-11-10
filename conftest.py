@@ -50,17 +50,6 @@ def sat_data_source(sat_filename: Path):  # noqa: D103
 
 
 @pytest.fixture
-def optical_flow_data_source(sat_filename: Path):  # noqa: D103
-    return OpticalFlowDataSource(
-        image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
-        zarr_path=sat_filename,
-        history_minutes=0,
-        forecast_minutes=5,
-        channels=("HRV",),
-    )
-
-
-@pytest.fixture
 def general_data_source():  # noqa: D103
     return MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
 

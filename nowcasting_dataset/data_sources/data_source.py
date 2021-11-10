@@ -5,7 +5,7 @@ from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
 from pathlib import Path
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, List, Tuple, Union, Optional
 
 import pandas as pd
 import xarray as xr
@@ -463,6 +463,10 @@ class DerivedDataSource(DataSource):
     """
     Base class for data sources derived from other data sources
     """
+
+    history_minutes: int = 0
+    forecast_minutes: int = 0
+
 
     def datetime_index(self):
         """The datetime index of this datasource"""

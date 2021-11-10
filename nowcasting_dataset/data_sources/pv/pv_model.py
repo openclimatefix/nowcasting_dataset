@@ -12,6 +12,7 @@ class PV(DataSourceOutput):
 
     __slots__ = ()
     _expected_dimensions = ("time", "id")
+    _expected_data_vars = ("data", "pv_system_row_number", "x_coords", "y_coords")
 
     @classmethod
     def model_validation(cls, v):
@@ -19,11 +20,10 @@ class PV(DataSourceOutput):
         v.check_nan_and_inf(data=v.data)
         v.check_dataset_greater_than_or_equal_to(data=v.data, min_value=0)
 
-        assert v.time is not None
-        assert v.x_coords is not None
-        assert v.y_coords is not None
-        assert v.pv_system_row_number is not None
-
-        assert len(v.pv_system_row_number.shape) == 2
+        v.check_data_var_dim(v.data, ("example", "time_index", "id_index"))
+        v.check_data_var_dim(v.time, ("example", "time_index"))
+        v.check_data_var_dim(v.x_coords, ("example", "id_index"))
+        v.check_data_var_dim(v.y_coords, ("example", "id_index"))
+        v.check_data_var_dim(v.pv_system_row_number, ("example", "id_index"))
 
         return v

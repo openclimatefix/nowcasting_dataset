@@ -82,7 +82,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
         print(satellite_data)
-        print(predictions)
+        print(predictions.shape)
         dataarray = xr.DataArray(
             data=predictions,
             dims=satellite_data.dims,
@@ -90,8 +90,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         )
         print("Satellite Update Four")
         print(dataarray.values.shape)
-        #print(dataarray.dims)
-        #print(dataarray.coords)
+        print(dataarray.dims)
+        print(dataarray.coords)
 
         return dataarray
 

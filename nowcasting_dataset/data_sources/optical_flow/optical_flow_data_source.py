@@ -69,8 +69,6 @@ class OpticalFlowDataSource(DerivedDataSource):
         Returns:
             The Xarray DataArray with the optical flow predictions
         """
-        print("Satellite Update One")
-        print(satellite_data)
         # Combine all channels for a single timestep
         satellite_data = satellite_data.isel(
             time_index=slice(
@@ -78,16 +76,14 @@ class OpticalFlowDataSource(DerivedDataSource):
                 satellite_data.sizes["time_index"],
             )
         )
-        print("Satellite Update Two")
-        print(satellite_data)
         # Make sure its the correct size
         buffer = (satellite_data.sizes["x_index"] - self.opticalflow_image_size_pixels) // 2
         satellite_data = satellite_data.isel(
             x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
-        print("Satellite Update Three")
         print(satellite_data)
+        print(predictions)
         dataarray = xr.DataArray(
             data=predictions,
             dims=satellite_data.dims,

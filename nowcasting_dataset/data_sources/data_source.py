@@ -182,8 +182,8 @@ class DataSource:
         # Split locations per example into batches:
         n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
         locations_for_batches = []
-        print("xxxxx")
-        print(n_batches)
+        logger.warning("xxxxx")
+        logger.warning(n_batches)
         for batch_idx in range(n_batches):
             start_example_idx = batch_idx * batch_size
             end_example_idx = (batch_idx + 1) * batch_size
@@ -195,7 +195,7 @@ class DataSource:
         # Loop round each batch:
         for n_batches_processed, locations_for_batch in enumerate(locations_for_batches):
             batch_idx = idx_of_first_batch + n_batches_processed
-            logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
+            logger.warning(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
             batch = self.get_batch(
@@ -207,7 +207,6 @@ class DataSource:
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
             batch.to_netcdf(netcdf_filename)
-            print(f"Saved file to {netcdf_filename}")
 
             # Upload if necessary.
             if (

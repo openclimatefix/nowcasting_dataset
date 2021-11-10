@@ -16,7 +16,7 @@ def upload_and_delete_local_files(dst_path: str, local_path: Path):
     """
     _LOG.info("Uploading!")
     filesystem = get_filesystem(dst_path)
-    filesystem.put(str(local_path), dst_path, recursive=True)
+    filesystem.put(str(local_path), str(dst_path), recursive=True)
     delete_all_files_in_temp_path(local_path)
 
 

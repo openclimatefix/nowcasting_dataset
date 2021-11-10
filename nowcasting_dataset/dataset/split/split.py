@@ -200,6 +200,9 @@ def split_data(
 
     logger.debug("Split data done!")
     for split_name, dt in split_datetimes._asdict().items():
-        logger.debug(f"{split_name} has {len(dt):,d} datetimes, from {dt[0]} to {dt[-1]}")
+        if len(dt) == 0:
+            logger.warning(f"{split_name} has {len(dt):,d} datetimes")
+        else:
+            logger.debug(f"{split_name} has {len(dt):,d} datetimes, from {dt[0]} to {dt[-1]}")
 
     return split_datetimes

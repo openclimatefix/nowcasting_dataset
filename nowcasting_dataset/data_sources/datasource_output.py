@@ -101,13 +101,15 @@ class DataSourceOutput(PydanticXArrayDataSet):
             else:
                 logger.warning(message)
 
-    def check_data_var_dim(self, data: xr.Dataset, dims: Tuple[str]):
+    def check_data_var_dim(self, data: xr.Dataset, expected_dims: Tuple[str]):
         """Check the data var has the correct dims"""
 
         actual_dims = data.dims
-        if set(actual_dims) != set(dims):
+        # check the dims are the same as expected,
+        # we are using 'set' so ordering doesnt matter
+        if set(actual_dims) != set(expected_dims):
             message = (
-                f"Actual dims {actual_dims} does not equal {dims} "
+                f"Actual dims {actual_dims} does not equal {expected_dims} "
                 f"for {data.name} {self.__class__.__name__}"
             )
             logger.error(message)

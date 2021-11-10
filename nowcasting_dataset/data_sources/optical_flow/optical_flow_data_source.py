@@ -46,6 +46,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Only do optical flow for satellite data
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
         t0_dt = batch.metadata.t0_dt.values[example_idx]
+        print(self._data)
 
         selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_dt)
 
@@ -68,7 +69,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         Returns:
             The Xarray DataArray with the optical flow predictions
         """
-
+        print("Satellite Update One")
+        print(satellite_data)
         # Combine all channels for a single timestep
         satellite_data = satellite_data.isel(
             time_index=slice(
@@ -76,12 +78,16 @@ class OpticalFlowDataSource(DerivedDataSource):
                 satellite_data.sizes["time_index"],
             )
         )
+        print("Satellite Update Two")
+        print(satellite_data)
         # Make sure its the correct size
         buffer = (satellite_data.sizes["x_index"] - self.opticalflow_image_size_pixels) // 2
         satellite_data = satellite_data.isel(
             x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
+        print("Satellite Update Three")
+        print(satellite_data)
         dataarray = xr.DataArray(
             data=predictions,
             dims=satellite_data.dims,
@@ -154,6 +160,7 @@ class OpticalFlowDataSource(DerivedDataSource):
                 satellite_data.sizes["channels_index"],
             )
         )
+        print(f"Prediction Shape: {prediction_block.shape} Future Timestep: {future_timesteps}")
         for prediction_timestep in range(future_timesteps):
             for channel in range(0, len(satellite_data.coords["channels_index"]), 4):
                 # Optical Flow works with RGB images, so chunking channels for it to be faster

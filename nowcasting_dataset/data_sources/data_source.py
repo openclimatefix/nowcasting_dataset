@@ -473,9 +473,15 @@ class DerivedDataSource(DataSource):
         )
 
     def create_batches(
-            self, batch_path: Path, total_number_batches: int, idx_of_first_batch: int, dst_path: Path, local_temp_path: Path,
-            upload_every_n_batches: int, **kwargs
-            ) -> None:
+        self,
+        batch_path: Path,
+        total_number_batches: int,
+        idx_of_first_batch: int,
+        dst_path: Path,
+        local_temp_path: Path,
+        upload_every_n_batches: int,
+        **kwargs,
+    ) -> None:
         """Create multiple batches and save them to disk.
 
         Safe to call from worker processes.
@@ -510,10 +516,7 @@ class DerivedDataSource(DataSource):
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self.get_batch(
-                netcdf_path=batch_path,
-                batch_idx = batch_idx
-                )
+            batch = self.get_batch(netcdf_path=batch_path, batch_idx=batch_idx)
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -521,9 +524,9 @@ class DerivedDataSource(DataSource):
             n_batches_processed += 1
             # Upload if necessary.
             if (
-                    save_batches_locally_and_upload
-                    and n_batches_processed > 0
-                    and n_batches_processed % upload_every_n_batches == 0
+                save_batches_locally_and_upload
+                and n_batches_processed > 0
+                and n_batches_processed % upload_every_n_batches == 0
             ):
                 nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 

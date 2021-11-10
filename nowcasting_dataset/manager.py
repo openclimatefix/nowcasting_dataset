@@ -347,12 +347,15 @@ class Manager:
             with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
                 future_create_batches_jobs = []
                 for worker_id, (data_source_name, data_source) in enumerate(
-                        self.derived_data_sources.items()):
+                    self.derived_data_sources.items()
+                ):
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
 
                     # Get paths.
-                    dst_path = self.config.output_data.filepath / split_name.value / data_source_name
+                    dst_path = (
+                        self.config.output_data.filepath / split_name.value / data_source_name
+                    )
                     local_temp_path = (
                         self.local_temp_path
                         / split_name.value
@@ -369,7 +372,7 @@ class Manager:
                     future = executor.submit(
                         data_source.create_batches,
                         batch_path="",
-                        total_number_batches = 0,
+                        total_number_batches=0,
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
                         dst_path=dst_path,

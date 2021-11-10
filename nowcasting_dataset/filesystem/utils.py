@@ -22,7 +22,7 @@ def upload_and_delete_local_files(dst_path: Union[str, Path], local_path: Union[
     _LOG.warning(get_all_filenames_in_path(local_path))
     _LOG.warning(get_all_filenames_in_path(dst_path))
 
-    filesystem.put(str(local_path), str(dst_path), recursive=True)
+    filesystem.put(str(local_path) + "/", str(dst_path) + "/", recursive=True)
     delete_all_files_in_temp_path(local_path)
 
     _LOG.warning(get_all_filenames_in_path(local_path))

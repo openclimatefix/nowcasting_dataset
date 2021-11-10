@@ -10,7 +10,6 @@ from typing import Iterable, List, Tuple, Union
 import pandas as pd
 import xarray as xr
 
-import nowcasting_dataset.dataset.batch
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
@@ -547,6 +546,9 @@ class DerivedDataSource(DataSource):
         Returns:
             Batch of the derived data source
         """
+        # To get around circular imports
+        import nowcasting_dataset.dataset.batch
+
         batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(netcdf_path, batch_idx=batch_idx)
         with futures.ThreadPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []

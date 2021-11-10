@@ -397,10 +397,15 @@ class Manager:
                     nd_fs_utils.makedirs(dst_path, exist_ok=True)
                     if self.save_batches_locally_and_upload:
                         nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
+                    else:
+                        logger.warning(
+                            f"Not saving uploading batches so have not made {local_temp_path}"
+                        )
 
                     # Submit data_source.create_batches task to the worker process.
-                    future = executor.submit(
-                        data_source.create_batches,
+                    print(executor)
+                    # future = executor.submit(
+                    data_source.create_batches(
                         spatial_and_temporal_locations_of_each_example=locations,
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
@@ -408,7 +413,7 @@ class Manager:
                         local_temp_path=local_temp_path,
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
-                    future_create_batches_jobs.append(future)
+                    # future_create_batches_jobs.append(future)
 
                 # Wait for all futures to finish:
                 for future, data_source_name in zip(

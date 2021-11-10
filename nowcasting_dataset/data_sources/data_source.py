@@ -182,6 +182,8 @@ class DataSource:
         # Split locations per example into batches:
         n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
         locations_for_batches = []
+        print("xxxxx")
+        print(n_batches)
         for batch_idx in range(n_batches):
             start_example_idx = batch_idx * batch_size
             end_example_idx = (batch_idx + 1) * batch_size

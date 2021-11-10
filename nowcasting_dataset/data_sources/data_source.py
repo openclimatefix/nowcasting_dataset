@@ -10,6 +10,7 @@ from typing import Iterable, List, Tuple, Union
 import pandas as pd
 import xarray as xr
 
+import nowcasting_dataset.dataset.batch
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
@@ -17,7 +18,6 @@ from nowcasting_dataset import square
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
-import nowcasting_dataset.dataset.batch
 
 logger = logging.getLogger(__name__)
 
@@ -470,10 +470,11 @@ class DerivedDataSource(DataSource):
         return NotImplementedError(
             "DerivedDataSources only use other, pre-computed batches, so no datetime_index is "
             "needed"
-            )
+        )
 
-    def get_batch(self, net_cdf_path: Union[str, Path], batch_idx: int, **kwargs) -> \
-            DataSourceOutput:
+    def get_batch(
+        self, net_cdf_path: Union[str, Path], batch_idx: int, **kwargs
+    ) -> DataSourceOutput:
         """
         Get Batch of derived data
 
@@ -483,13 +484,13 @@ class DerivedDataSource(DataSource):
 
         Returns: Batch data.
         """
-        batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(net_cdf_path, batch_idx = batch_idx)
+        batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(
+            net_cdf_path, batch_idx=batch_idx
+        )
         with futures.ThreadPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []
             for example_idx in range(batch.batch_size):
-                future_example = executor.submit(
-                    self.get_example, batch, example_idx
-                    )
+                future_example = executor.submit(self.get_example, batch, example_idx)
                 future_examples.append(future_example)
             examples = [future_example.result() for future_example in future_examples]
 

@@ -2,17 +2,17 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import  Union, Optional
+from typing import Optional, Union
 
 import cv2
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+import nowcasting_dataset.dataset.batch
 from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
-import nowcasting_dataset.dataset.batch
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -28,7 +28,6 @@ class OpticalFlowDataSource(DerivedDataSource):
     netcdf_path: Union[str, Path]
     previous_timestep_for_flow: int = 1
     final_image_size_pixels: Optional[int] = None
-
 
     def get_example(
         self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, **kwargs
@@ -51,7 +50,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
         t0_dt = batch.metadata.t0_dt.values[example_idx]
 
-        selected_data = self._compute_and_return_optical_flow(self._data, t0_dt = t0_dt)
+        selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_dt)
 
         return selected_data
 

@@ -17,6 +17,7 @@ from nowcasting_dataset.consts import (
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
 )
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
+from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 
@@ -29,6 +30,7 @@ class Manager:
     Attrs:
       config: Configuration object.
       data_sources: dict[str, DataSource]
+      derived_data_sources: dict[str, DerivedDataSource]
       data_source_which_defines_geospatial_locations: DataSource: The DataSource used to compute the
         geospatial locations of each example.
       save_batches_locally_and_upload: bool: Set to True by `load_yaml_configuration()` if
@@ -57,10 +59,10 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
-    def initialise_data_sources(
+    def initialize_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:
-        """Initialise DataSources specified in the InputData configuration.
+        """Initialize DataSources specified in the InputData configuration.
 
         For each key in each DataSource's configuration object, the string `<data_source_name>_`
         is removed from the key before passing to the DataSource constructor.  This allows us to
@@ -86,7 +88,10 @@ class Manager:
             except Exception:
                 logger.exception(f"Exception whilst instantiating {data_source_name}!")
                 raise
-            self.data_sources[data_source_name] = data_source
+            if isinstance(data_source, DerivedDataSource):
+                self.derived_data_sources[data_source_name] = data_source
+            else:
+                self.data_sources[data_source_name] = data_source
 
         # Set data_source_which_defines_geospatial_locations:
         try:

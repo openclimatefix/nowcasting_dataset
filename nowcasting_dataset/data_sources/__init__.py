@@ -15,6 +15,7 @@ from nowcasting_dataset.data_sources.topographic.topographic_data_source import 
 MAP_DATA_SOURCE_NAME_TO_CLASS = {
     "pv": PVDataSource,
     "satellite": SatelliteDataSource,
+    "optical_flow": OpticalFlowDataSource,
     "nwp": NWPDataSource,
     "gsp": GSPDataSource,
     "topographic": TopographicDataSource,

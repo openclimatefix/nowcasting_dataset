@@ -78,9 +78,6 @@ def test_get_daylight_datetime_index():
     np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
 
 
-# TODO: Issue #322: Test the other Manager methods!
-
-
 def test_batches():
     """Test that batches can be made"""
     filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"

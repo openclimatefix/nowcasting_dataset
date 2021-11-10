@@ -93,6 +93,8 @@ class OpticalFlowDataSource(DerivedDataSource):
             dims=satellite_data.dims,
             coords=satellite_data.coords,
         )
+        print("Satellite Update Four")
+        print(dataarray)
 
         return dataarray
 

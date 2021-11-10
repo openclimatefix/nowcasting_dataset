@@ -1,4 +1,6 @@
 """Test Manager."""
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -76,4 +78,81 @@ def test_get_daylight_datetime_index():
     np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
 
 
-# TODO: Issue #322: Test the other Manager methods!
+def test_batches():
+    """Test that batches can be made"""
+    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+
+    sat = SatelliteDataSource(
+        zarr_path=filename,
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+        channels=("HRV",),
+    )
+
+    filename = (
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
+    )
+
+    gsp = GSPDataSource(
+        zarr_path=filename,
+        start_dt=datetime(2019, 1, 1),
+        end_dt=datetime(2019, 1, 2),
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+    )
+
+    manager = Manager()
+
+    # load config
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        # set local temp path, and dst path
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        # just set satellite as data source
+        manager.data_sources = {"gsp": gsp, "sat": sat}
+        manager.data_source_which_defines_geospatial_locations = gsp
+
+        # make file for locations
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+
+        # make batches
+        manager.create_batches(overwrite_batches=True)
+
+        assert os.path.exists(f"{dst_path}/train")
+        assert os.path.exists(f"{dst_path}/train/gsp")
+        assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
+
+
+def test_save_config():
+    """Test that configuration file is saved"""
+
+    manager = Manager()
+
+    # load config
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        # set local temp path, and dst path
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        # save config
+        manager.save_yaml_configuration()
+
+        assert os.path.exists(f"{dst_path}/configuration.yaml")

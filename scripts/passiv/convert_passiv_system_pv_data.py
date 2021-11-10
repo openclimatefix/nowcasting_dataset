@@ -11,7 +11,7 @@ file_output = "../passive.netcdf"
 t = time.time()
 
 months = pd.date_range("2021-01-01", "2021-12-01", freq="MS").strftime("%b").tolist()
-years = ["2020", "2021"]
+years = ["2018", "2019", "2020", "2021"]
 
 
 def load_file() -> pd.DataFrame:

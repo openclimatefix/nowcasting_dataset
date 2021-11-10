@@ -207,6 +207,7 @@ class DataSource:
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
             batch.to_netcdf(netcdf_filename)
+            logger.warning(f"Save file to  {netcdf_filename}")
 
             # Upload if necessary.
             if (

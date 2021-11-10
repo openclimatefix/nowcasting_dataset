@@ -128,8 +128,14 @@ def test_batches():
         # make batches
         manager.create_batches(overwrite_batches=True)
 
+        from nowcasting_dataset.filesystem.utils import get_all_filenames_in_path
+
         assert os.path.exists(f"{dst_path}/train")
         assert os.path.exists(f"{dst_path}/train/gsp")
+
+        print(get_all_filenames_in_path(f"{dst_path}/train/gsp"))
+        assert get_all_filenames_in_path(f"{dst_path}/train/gsp")
+
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")

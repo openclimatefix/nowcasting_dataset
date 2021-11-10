@@ -30,3 +30,6 @@ process:
   local_temp_path: ~/temp/
   seed: 1234
   upload_every_n_batches: 16
+  n_train_batches: 2
+  n_validation_batches: 0
+  n_test_batches: 0

@@ -77,6 +77,7 @@ class PydanticXArrayDataSet(xr.Dataset):
     """
 
     _expected_dimensions = ()  # Subclasses should set this.
+    _expected_data_vars = ()  # Subclasses should set this.
 
     # xarray doesnt support sub classing at the moment: https://github.com/pydata/xarray/issues/3980
     __slots__ = ()
@@ -96,6 +97,7 @@ class PydanticXArrayDataSet(xr.Dataset):
         """Do validation"""
         v = cls.validate_dims(v)
         v = cls.validate_coords(v)
+        v = cls.validate_data_vars(v)
         v = cls.model_validation(v)
         return v
 
@@ -120,4 +122,15 @@ class PydanticXArrayDataSet(xr.Dataset):
         for dim in cls._expected_dimensions:
             coord = v.coords[f"{dim}_index"]
             assert len(coord) > 0, f"{dim}_index is empty in {cls.__name__}!"
+        return v
+
+    @classmethod
+    def validate_data_vars(cls, v: Any) -> Any:
+        """Validate the data vars"""
+
+        data_var_names = v.data_vars
+        for data_var in cls._expected_data_vars:
+            assert (
+                data_var in data_var_names
+            ), f"{data_var} is not in all data_vars ({data_var_names}) in {cls.__name__}!"
         return v

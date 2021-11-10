@@ -85,11 +85,16 @@ class OpticalFlowDataSource(DerivedDataSource):
         print(predictions.shape)
         print(satellite_data.coords)
         print(satellite_data.dims)
-        print(satellite_data.transpose({"time_index", "x_index", "y_index", "channels_index"}).dims)
         dataarray = xr.DataArray(
             data=predictions,
-            dims=satellite_data.dims,
-            coords=satellite_data.coords,
+            dims={"time_index": satellite_data.dims["time_index"],
+                "x_index": satellite_data.dims["x_index"],
+                "y_index": satellite_data.dims["y_index"],
+                "channels_index": satellite_data.dims["channels_index"]},
+            coords={"time_index": satellite_data.coords["time_index"],
+                    "x_index": satellite_data.coords["x_index"],
+                    "y_index": satellite_data.coords["y_index"],
+                    "channels_index": satellite_data.coords["channels_index"]},
         )
         print("Satellite Update Four")
         print(dataarray.values.shape)

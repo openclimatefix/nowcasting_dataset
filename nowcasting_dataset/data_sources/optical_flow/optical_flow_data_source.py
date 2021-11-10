@@ -73,7 +73,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Combine all channels for a single timestep
         satellite_data = satellite_data.isel(
             time_index=slice(
-                satellite_data.sizes["time_index"] - predictions.shape[1],
+                satellite_data.sizes["time_index"] - predictions.shape[0],
                 satellite_data.sizes["time_index"],
             )
         )
@@ -179,7 +179,7 @@ class OpticalFlowDataSource(DerivedDataSource):
                 )
                 prediction_block[prediction_timestep, :, :, channel : channel + 4] = warped_image
         # Convert to correct C, T, H, W order
-        prediction_block = np.transpose(prediction_block, [3, 0, 1, 2])
+        prediction_block = np.transpose(prediction_block, [0, 3, 1, 2])
         dataarray = self._update_dataarray_with_predictions(
             satellite_data=satellite_data, predictions=prediction_block, t0_dt=t0_dt
         )

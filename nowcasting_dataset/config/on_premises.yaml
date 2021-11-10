@@ -56,6 +56,11 @@ input_data:
   topographic:
     topographic_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Topographic/europe_dem_1km_osgb.tif
 
+  # ------------------------- Optical Flow ---------------
+  opticalflow:
+    previous_timestep_for_flow: 1
+    opticalflow_image_size_pixels: 64
+
 output_data:
   filepath: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v10/
 process:

@@ -24,6 +24,6 @@ def test_optical_flow_data_source_get_batch(configuration):  # noqa: D103
     )
     with tempfile.TemporaryDirectory() as dirpath:
         Batch.fake(configuration=configuration).save_netcdf(path=dirpath, batch_i=0)
-        print(Batch.fake(configuration = configuration))
+        print(Batch.fake(configuration=configuration))
         optical_flow = optical_flow_datasource.get_batch(netcdf_path=dirpath, batch_idx=0)
         print(optical_flow)

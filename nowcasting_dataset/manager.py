@@ -373,7 +373,7 @@ class Manager:
                     if len(locations_for_split) == 0:
                         # not raising error as this is ok for unittests
                         logger.warning(
-                            f"Not create batches for {split_name} " f"as there are no locations"
+                            f"Not create batches for {split_name} as there are no locations"
                         )
                         break
 

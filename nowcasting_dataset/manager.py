@@ -39,6 +39,7 @@ class Manager:
     def __init__(self) -> None:  # noqa: D107
         self.config = None
         self.data_sources = {}
+        self.derived_data_sources = {}
         self.data_source_which_defines_geospatial_locations = None
 
     def load_yaml_configuration(self, filename: str) -> None:
@@ -340,49 +341,53 @@ class Manager:
             if len(splits_which_need_more_batches) == 0:
                 logger.info("All batches have already been created!  No work to do!")
                 return
+        n_data_sources = len(self.derived_data_sources)
+        nd_utils.set_fsspec_for_multiprocess()
+        for split_name in splits_which_need_more_batches:
+            with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
+                future_create_batches_jobs = []
+                for worker_id, (data_source_name, data_source) in enumerate(
+                        self.derived_data_sources.items()):
+                    # Get indexes of first batch and example. And subset locations_for_split.
+                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
 
-        with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
-            future_create_batches_jobs = []
-            for worker_id, (data_source_name, data_source) in enumerate(self.data_sources.items()):
-                # Get indexes of first batch and example. And subset locations_for_split.
-                idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
-                idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
+                    # Get paths.
+                    dst_path = self.config.output_data.filepath / split_name.value / data_source_name
+                    local_temp_path = (
+                        self.local_temp_path
+                        / split_name.value
+                        / data_source_name
+                        / f"worker_{worker_id}"
+                    )
 
-                # Get paths.
-                dst_path = self.config.output_data.filepath / split_name.value / data_source_name
-                local_temp_path = (
-                    self.local_temp_path
-                    / split_name.value
-                    / data_source_name
-                    / f"worker_{worker_id}"
-                )
+                    # Make folders.
+                    nd_fs_utils.makedirs(dst_path, exist_ok=True)
+                    if self.save_batches_locally_and_upload:
+                        nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
 
-                # Make folders.
-                nd_fs_utils.makedirs(dst_path, exist_ok=True)
-                if self.save_batches_locally_and_upload:
-                    nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
+                    # Submit data_source.create_batches task to the worker process.
+                    future = executor.submit(
+                        data_source.create_batches,
+                        batch_path="",
+                        total_number_batches = 0,
+                        idx_of_first_batch=idx_of_first_batch,
+                        batch_size=self.config.process.batch_size,
+                        dst_path=dst_path,
+                        local_temp_path=local_temp_path,
+                        upload_every_n_batches=self.config.process.upload_every_n_batches,
+                    )
+                    future_create_batches_jobs.append(future)
 
-                # Submit data_source.create_batches task to the worker process.
-                future = executor.submit(
-                    data_source.create_batches,
-                    idx_of_first_batch=idx_of_first_batch,
-                    batch_size=self.config.process.batch_size,
-                    dst_path=dst_path,
-                    local_temp_path=local_temp_path,
-                    upload_every_n_batches=self.config.process.upload_every_n_batches,
-                )
-                future_create_batches_jobs.append(future)
-
-            # Wait for all futures to finish:
-            for future, data_source_name in zip(
-                future_create_batches_jobs, self.data_sources.keys()
-            ):
-                # Call exception() to propagate any exceptions raised by the worker process into
-                # the main process, and to wait for the worker to finish.
-                exception = future.exception()
-                if exception is not None:
-                    logger.exception(f"Worker process {data_source_name} raised exception!")
-                    raise exception
+                # Wait for all futures to finish:
+                for future, data_source_name in zip(
+                    future_create_batches_jobs, self.data_sources.keys()
+                ):
+                    # Call exception() to propagate any exceptions raised by the worker process into
+                    # the main process, and to wait for the worker to finish.
+                    exception = future.exception()
+                    if exception is not None:
+                        logger.exception(f"Worker process {data_source_name} raised exception!")
+                        raise exception
 
     def create_batches(self, overwrite_batches: bool) -> None:
         """Create batches (if necessary).

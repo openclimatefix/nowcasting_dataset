@@ -472,6 +472,65 @@ class DerivedDataSource(DataSource):
             "needed"
         )
 
+    def create_batches(
+            self, batch_path: Path, total_number_batches: int, idx_of_first_batch: int, dst_path: Path, local_temp_path: Path,
+            upload_every_n_batches: int, **kwargs
+            ) -> None:
+        """Create multiple batches and save them to disk.
+
+        Safe to call from worker processes.
+
+        Args:
+          batch_path: Path to where the netcdf batches are stored
+          total_number_batches: The total number of batches to make
+          idx_of_first_batch: The batch number of the first batch to create.
+          dst_path: The final destination path for the batches.  Must exist.
+          local_temp_path: The local temporary path.  This is only required when dst_path is a
+            cloud storage bucket, so files must first be created on the VM's local disk in temp_path
+            and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
+          upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
+            of batches have been created.  If 0 then will write directly to dst_path.
+        """
+        # Sanity checks:
+        assert idx_of_first_batch >= 0
+        assert upload_every_n_batches >= 0
+        assert total_number_batches >= 0
+
+        self.open()
+
+        # Figure out where to write batches to:
+        save_batches_locally_and_upload = upload_every_n_batches > 0
+        if save_batches_locally_and_upload:
+            nd_fs_utils.delete_all_files_in_temp_path(local_temp_path)
+        path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
+
+        # Loop round each batch:
+        n_batches_processed = 0
+        for batch_idx in range(idx_of_first_batch, total_number_batches):
+            logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
+
+            # Generate batch.
+            batch = self.get_batch(
+                netcdf_path=batch_path,
+                batch_idx = batch_idx
+                )
+
+            # Save batch to disk.
+            netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
+            batch.to_netcdf(netcdf_filename)
+            n_batches_processed += 1
+            # Upload if necessary.
+            if (
+                    save_batches_locally_and_upload
+                    and n_batches_processed > 0
+                    and n_batches_processed % upload_every_n_batches == 0
+            ):
+                nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+
+        # Upload last few batches, if necessary:
+        if save_batches_locally_and_upload:
+            nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+
     def get_batch(
         self, netcdf_path: Union[str, Path], batch_idx: int, **kwargs
     ) -> DataSourceOutput:

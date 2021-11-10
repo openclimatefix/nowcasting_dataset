@@ -24,7 +24,6 @@ class OpticalFlowDataSource(DerivedDataSource):
     zarr_path: Must start with 'gs://' if on GCP.
     """
 
-    netcdf_path: Union[str, Path]
     previous_timestep_for_flow: int = 1
     final_image_size_pixels: Optional[int] = None
 

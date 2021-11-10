@@ -83,14 +83,18 @@ class OpticalFlowDataSource(DerivedDataSource):
         )
         dataarray = xr.DataArray(
             data=predictions,
-            dims={"time_index": satellite_data.dims["time_index"],
+            dims={
+                "time_index": satellite_data.dims["time_index"],
                 "x_index": satellite_data.dims["x_index"],
                 "y_index": satellite_data.dims["y_index"],
-                "channels_index": satellite_data.dims["channels_index"]},
-            coords={"time_index": satellite_data.coords["time_index"],
-                    "x_index": satellite_data.coords["x_index"],
-                    "y_index": satellite_data.coords["y_index"],
-                    "channels_index": satellite_data.coords["channels_index"]},
+                "channels_index": satellite_data.dims["channels_index"],
+            },
+            coords={
+                "time_index": satellite_data.coords["time_index"],
+                "x_index": satellite_data.coords["x_index"],
+                "y_index": satellite_data.coords["y_index"],
+                "channels_index": satellite_data.coords["channels_index"],
+            },
         )
 
         return dataarray

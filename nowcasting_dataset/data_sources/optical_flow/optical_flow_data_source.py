@@ -83,8 +83,9 @@ class OpticalFlowDataSource(DerivedDataSource):
         )
         print(satellite_data)
         print(predictions.shape)
-        print(satellite_data.dims)
         print(satellite_data.coords)
+        print(satellite_data.dims)
+        print(satellite_data.transpose({"time_index", "x_index", "y_index", "channels_index"}).dims)
         dataarray = xr.DataArray(
             data=predictions,
             dims=satellite_data.dims,

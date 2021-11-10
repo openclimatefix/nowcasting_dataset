@@ -1,4 +1,5 @@
 """Test Manager."""
+import logging
 import os
 import tempfile
 from datetime import datetime
@@ -11,6 +12,8 @@ import nowcasting_dataset
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 from nowcasting_dataset.manager import Manager
+
+_LOG = logging.getLogger("nowcasting_dataset")
 
 
 def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
@@ -133,7 +136,7 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train")
         assert os.path.exists(f"{dst_path}/train/gsp")
 
-        print(get_all_filenames_in_path(f"{dst_path}/train/gsp"))
+        _LOG.warning(get_all_filenames_in_path(f"{dst_path}/train/gsp"))
         assert get_all_filenames_in_path(f"{dst_path}/train/gsp") == 0
 
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")

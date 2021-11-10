@@ -4,32 +4,32 @@
 # In[1]:
 
 
+import datetime
+import re
 from pathlib import Path
+from typing import Union
+
 import cfgrib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import re
-import datetime
 import xarray as xr
-from typing import Union
-
 
 # This notebook is research for [GitHub issue #344: Convert NWP grib files to Zarr intermediate](https://github.com/openclimatefix/nowcasting_dataset/issues/344).
-# 
+#
 # Useful links:
-# 
+#
 # * [Met Office's data docs](http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf)
-# 
+#
 # Done:
-# 
+#
 # * Merge Wholesale1 and 2 (2 includes dswrf, lcc, mcc, and hcc)
 # * Remove dimensions we don't care about (e.g. select temperature at 1 meter, not 0 meters)
 # * Reshape images from 1D to 2D.
 # * Do we really need to convert datetimes to unix epochs before appending to zarr?  If no, submit a bug report.
-# 
+#
 # Some outstanding questions / Todo items
-# 
+#
 # * Zarr chunk size and compression.
 # * Do we need to combine all the DataArrays into a single DataArray (with "variable" being a dimension?).  The upside is that then a single Zarr chunk can include multiple variables.  The downside is that we lose the metadata (but that's not a huge problem, maybe?)
 # * Separately log "bad files" to a CSV file.
@@ -66,7 +66,9 @@ NUM_COLS = len(EASTING)
 
 
 # NWP_PATH = Path("/home/jack/Data/NWP/01")
-NWP_PATH = Path("/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native")  # Must not include trailing slash!!!
+NWP_PATH = Path(
+    "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native"
+)  # Must not include trailing slash!!!
 
 
 # In[4]:
@@ -86,12 +88,12 @@ print(len(filenames), "grib filenames found!")
 
 def grib_filename_to_datetime_and_wholesale_file_number(full_filename: Path) -> dict[str, object]:
     """Parse the grib filename and return the datetime and wholesale number.
-    
+
     Returns a dict with three keys: 'full_filename', `nwp_init_datetime_utc` and `wholesale_file_number`.
       For example, if the filename is '202101010000_u1096_ng_umqv_Wholesale1.grib',
       then `nwp_init_datetime_utc` will be datetime(year=2021, month=1, day=1, hour=0, minute=0)
       and the `wholesale_file_number` will be 1 (represented as an int).
-      
+
     Raises RuntimeError if the filename does not match the expected regex pattern.
     """
     # Get the base_filename, which will be of the form '202101010000_u1096_ng_umqv_Wholesale1.grib'
@@ -108,30 +110,33 @@ def grib_filename_to_datetime_and_wholesale_file_number(full_filename: Path) -> 
     #   . matches any character.
     #   $ matches the end of the string.
     regex_pattern_string = (
-        '^'  # Match the beginning of the string.
-        '(?P<year>\d{4})'  # Match the year.
-        '(?P<month>\d{2})'  # Match the month.
-        '(?P<day>\d{2})'  # Match the day.
-        '(?P<hour>\d{2})'  # Match the hour.
-        '(?P<minute>\d{2})'  # Match the minute.
-        '_u1096_ng_umqv_Wholesale'
-        '(?P<wholesale_file_number>\d)'  # Match the number after "Wholesale".
-        '\.grib$'  # Match the end of the string (escape the fullstop).
+        "^"  # Match the beginning of the string.
+        "(?P<year>\d{4})"  # Match the year.
+        "(?P<month>\d{2})"  # Match the month.
+        "(?P<day>\d{2})"  # Match the day.
+        "(?P<hour>\d{2})"  # Match the hour.
+        "(?P<minute>\d{2})"  # Match the minute.
+        "_u1096_ng_umqv_Wholesale"
+        "(?P<wholesale_file_number>\d)"  # Match the number after "Wholesale".
+        "\.grib$"  # Match the end of the string (escape the fullstop).
     )
     regex_pattern = re.compile(regex_pattern_string)
     regex_match = regex_pattern.match(base_filename)
     if regex_match is None:
-        raise RuntimeError(f"Filename '{full_filename}' does not conform to expected regex pattern '{regex_pattern_string}'!")
+        raise RuntimeError(
+            f"Filename '{full_filename}' does not conform to expected regex pattern '{regex_pattern_string}'!"
+        )
 
     # Convert strings to ints:
     regex_groups = {key: int(value) for key, value in regex_match.groupdict().items()}
 
-    wholesale_file_number = regex_groups.pop('wholesale_file_number')
+    wholesale_file_number = regex_groups.pop("wholesale_file_number")
     dt = datetime.datetime(**regex_groups)
     return {
-        'full_filename': full_filename,
-        'nwp_init_datetime_utc': dt,
-        'wholesale_file_number': wholesale_file_number}
+        "full_filename": full_filename,
+        "nwp_init_datetime_utc": dt,
+        "wholesale_file_number": wholesale_file_number,
+    }
 
 
 # In[7]:
@@ -139,22 +144,23 @@ def grib_filename_to_datetime_and_wholesale_file_number(full_filename: Path) -> 
 
 def decode_and_group_grib_filenames(filenames: list[Path]) -> pd.DataFrame:
     """Returns a DataFrame where the index is the datetime of the NWP init time.
-    
+
     And the columns of the DataFrame are 'wholesale_file_number' and 'full_filename'.
     """
     n_filenames = len(filenames)
     df = pd.DataFrame(
-        index=range(n_filenames), 
-        columns=['full_filename', 'nwp_init_datetime_utc', 'wholesale_file_number'])
+        index=range(n_filenames),
+        columns=["full_filename", "nwp_init_datetime_utc", "wholesale_file_number"],
+    )
     for i, filename in enumerate(filenames):
         df.iloc[i] = grib_filename_to_datetime_and_wholesale_file_number(filename)
-    
+
     # Change dtypes
-    df = df.astype({'wholesale_file_number': np.int8})
-    df['nwp_init_datetime_utc'] = pd.to_datetime(df['nwp_init_datetime_utc'])
-    
+    df = df.astype({"wholesale_file_number": np.int8})
+    df["nwp_init_datetime_utc"] = pd.to_datetime(df["nwp_init_datetime_utc"])
+
     # Set index and sort
-    df = df.set_index('nwp_init_datetime_utc')
+    df = df.set_index("nwp_init_datetime_utc")
     df = df.sort_index()
     return df
 
@@ -162,14 +168,14 @@ def decode_and_group_grib_filenames(filenames: list[Path]) -> pd.DataFrame:
 # In[8]:
 
 
-def load_grib_file(full_filename: Union[Path, str], verbose: bool=False) -> xr.Dataset:
+def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr.Dataset:
     # The grib files are "heterogeneous", so we use cfgrib.open_datasets
     # to return a list of contiguous xr.Datasets.
     # See https://github.com/ecmwf/cfgrib#automatic-filtering
     datasets_from_grib = cfgrib.open_datasets(
         full_filename,
         backend_kwargs=dict(
-            indexpath=''  # Disable GRIB index file.  See https://github.com/ecmwf/cfgrib#grib-index-file
+            indexpath=""  # Disable GRIB index file.  See https://github.com/ecmwf/cfgrib#grib-index-file
         ),
     )
 
@@ -179,40 +185,47 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool=False) -> xr.D
     # because we will be modifying each dataset:
     for i in range(n_datasets):
         ds = datasets_from_grib[i]
-        
+
         if verbose:
             print("\nDataset", i, "before processing:\n", ds, "\n")
-        
-        ds = ds.drop_vars('valid_time')  # valid_time is easy to compute again later.
-        if 't' in ds and 'heightAboveGround' in ds['t'].dims:
+
+        ds = ds.drop_vars("valid_time")  # valid_time is easy to compute again later.
+        if "t" in ds and "heightAboveGround" in ds["t"].dims:
             # For temperature, we want the temperature at 1 meter above ground,
             # not at 0 meters above ground.  The early NWPs (definitely in the 2016-03-22 NWPs),
             # heightAboveGround only has 1 entry ("1") and isn't set as a dimension for ds['t'].
             # In later NWPs, 'heightAboveGround' is a dimension, and has 2 values (0, 1).
             ds = ds.sel(heightAboveGround=1)
 
-            
         vars_to_delete = [
-            'unknown', 'valid_time', 'heightAboveGround', 'heightAboveGroundLayer', 
-            'atmosphere', 'cloudBase', 'surface', 'meanSea', 'level']
+            "unknown",
+            "valid_time",
+            "heightAboveGround",
+            "heightAboveGroundLayer",
+            "atmosphere",
+            "cloudBase",
+            "surface",
+            "meanSea",
+            "level",
+        ]
         for var_name in vars_to_delete:
             try:
                 del ds[var_name]
             except KeyError as e:
                 if verbose:
-                    print('var name not in dataset:', e)
-                
+                    print("var name not in dataset:", e)
+
             else:
                 if verbose:
-                    print('Deleted', var_name)
+                    print("Deleted", var_name)
 
         if verbose:
             print("\nDataset", i, "after processing:\n", ds, "\n")
             print("**************************************************")
-            
+
         datasets_from_grib[i] = ds
         del ds
-    
+
     return xr.merge(datasets_from_grib)
 
 
@@ -221,25 +234,26 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool=False) -> xr.D
 
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
     """Convert 1D into 2D array.
-    
+
     For each `step`, the pixel values in the grib files represent a 2D image.  But, in the grib,
     the values are in a flat 1D array (indexed by the `values` dimension).  The ordering of the pixels are row_0, row_1, row_2, etc.
 
     We reshape every data variable at once using this trick.
     """
     # Adapted from https://stackoverflow.com/a/62667154
-    
+
     # Don't reshape yet.  Instead just create new coordinates,
     # which give the `x` and `y` position of each position in the `values` dimension:
     dataset = dataset.assign_coords(
         {
-            'x': ('values', np.tile(EASTING, reps=NUM_ROWS)), 
-            'y': ('values', np.repeat(NORTHING, repeats=NUM_COLS))
-        })
-    
+            "x": ("values", np.tile(EASTING, reps=NUM_ROWS)),
+            "y": ("values", np.repeat(NORTHING, repeats=NUM_COLS)),
+        }
+    )
+
     # Now set "values" to be a MultiIndex, indexed by `y` and `x`:
     dataset = dataset.set_index(values=("y", "x"))
-    
+
     # Now unstack.  This gets rid of the `values` dimension and indexes
     # the data variables using `y` and `x`.
     return dataset.unstack("values")
@@ -261,7 +275,7 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     zarr_path = Path(zarr_path)
     if zarr_path.exists():
         to_zarr_kwargs = dict(
-            append_dim = "time",
+            append_dim="time",
         )
     else:
         to_zarr_kwargs = dict(
@@ -271,9 +285,7 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
             # https://github.com/pydata/xarray/issues/5969 and
             # http://xarray.pydata.org/en/stable/user-guide/io.html#time-units
             encoding={
-                'time': {
-                    'units': 'nanoseconds since 1970-01-01'
-                },
+                "time": {"units": "nanoseconds since 1970-01-01"},
             },
         )
 
@@ -286,7 +298,7 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
 def load_grib_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.Dataset:
     datasets_for_nwp_init_datetime = []
     for full_filename in full_filenames:
-        print('Loading', full_filename)
+        print("Loading", full_filename)
         try:
             dataset_for_filename = load_grib_file(full_filename)
         except EOFError as e:
@@ -323,5 +335,5 @@ for nwp_init_datetime_utc in df.index.unique():
     if ds is not None:
         append_to_zarr(
             ds,
-            "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/test.zarr")
-
+            "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/test.zarr",
+        )

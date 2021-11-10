@@ -405,6 +405,8 @@ class Manager:
                     # Submit data_source.create_batches task to the worker process.
                     print(executor)
                     # future = executor.submit(
+                    logger.warning("Making batches")
+                    logger.warning(locations)
                     data_source.create_batches(
                         spatial_and_temporal_locations_of_each_example=locations,
                         idx_of_first_batch=idx_of_first_batch,

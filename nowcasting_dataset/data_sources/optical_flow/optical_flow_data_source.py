@@ -46,7 +46,6 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Only do optical flow for satellite data
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
         t0_dt = batch.metadata.t0_dt.values[example_idx]
-        print(self._data)
 
         selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_dt)
 
@@ -91,8 +90,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         )
         print("Satellite Update Four")
         print(dataarray.values.shape)
-        print(dataarray.dims)
-        print(dataarray.coords)
+        #print(dataarray.dims)
+        #print(dataarray.coords)
 
         return dataarray
 
@@ -160,7 +159,6 @@ class OpticalFlowDataSource(DerivedDataSource):
                 satellite_data.sizes["channels_index"],
             )
         )
-        print(f"Prediction Shape: {prediction_block.shape} Future Timestep: {future_timesteps}")
         for prediction_timestep in range(future_timesteps):
             for channel in range(0, len(satellite_data.coords["channels_index"]), 4):
                 # Optical Flow works with RGB images, so chunking channels for it to be faster

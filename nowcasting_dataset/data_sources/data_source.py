@@ -485,9 +485,7 @@ class DerivedDataSource(DataSource):
         Returns:
             Batch of the derived data source
         """
-        batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(
-            netcdf_path, batch_idx=batch_idx
-        )
+        batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(netcdf_path, batch_idx=batch_idx)
         with futures.ThreadPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []
             for example_idx in range(batch.batch_size):

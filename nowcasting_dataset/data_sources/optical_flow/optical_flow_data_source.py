@@ -73,10 +73,10 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Combine all channels for a single timestep
         satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop=True)
         # Make sure its the correct size
-        buffer = satellite_data.sizes["x"] - self.final_image_size_pixels // 2
+        buffer = satellite_data.sizes["x_index"] - self.final_image_size_pixels // 2
         satellite_data = satellite_data.isel(
-            x=slice(buffer, satellite_data.sizes["x"] - buffer),
-            y=slice(buffer, satellite_data.sizes["y"] - buffer),
+            x=slice(buffer, satellite_data.sizes["x_index"] - buffer),
+            y=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
         dataarray = xr.DataArray(
             data=predictions,

@@ -473,19 +473,20 @@ class DerivedDataSource(DataSource):
         )
 
     def get_batch(
-        self, net_cdf_path: Union[str, Path], batch_idx: int, **kwargs
+        self, netcdf_path: Union[str, Path], batch_idx: int, **kwargs
     ) -> DataSourceOutput:
         """
         Get Batch of derived data
 
         Args:
-            **kwargs:
-            net_cdf_path: PAth to the NetCDF files of the Batch to load
+            netcdf_path: Path to the NetCDF files of the Batch to load
+            batch_idx: The batch ID to load from those in teh path
 
-        Returns: Batch data.
+        Returns:
+            Batch of the derived data source
         """
         batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(
-            net_cdf_path, batch_idx=batch_idx
+            netcdf_path, batch_idx=batch_idx
         )
         with futures.ThreadPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []

@@ -12,7 +12,6 @@ import xarray as xr
 import nowcasting_dataset.dataset.batch
 from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import join_list_data_array_to_batch_dataset
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -36,8 +35,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         Get Optical Flow Example data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
-                data for historic and future depending on `history_minutes` and `future_minutes`.
+            batch: Batch containing satellite and metadata at least
+            example_idx: The example to load and use
 
         Returns: Example Data
 

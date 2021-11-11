@@ -125,7 +125,7 @@ def hrv_satellite_fake(
     satellite_image_size_pixels=64,
     number_satellite_channels=7,
 ) -> Satellite:
-    """ Create fake data """
+    """Create fake data"""
     # make batch of arrays
     xr_arrays = [
         create_image_array(

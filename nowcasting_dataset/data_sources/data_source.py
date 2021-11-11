@@ -489,7 +489,9 @@ class DerivedDataSource(DataSource):
         Safe to call from worker processes.
 
         Args:
-          batch_path: Path to where the netcdf batches are stored (these will fed into the `DerivedDataSource`)
+          batch_path: Path to where the netcdf batches are stored
+            (these will fed into the `DerivedDataSource`). This is the path to the top level path,
+            such as `foo/v10/train/`
           total_number_batches: The total number of batches to make
           idx_of_first_batch: The batch number of the first batch to create.
           dst_path: The final destination path for the batches.  Must exist.

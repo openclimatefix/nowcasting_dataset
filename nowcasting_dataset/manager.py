@@ -267,7 +267,7 @@ class Manager:
         )
 
     def _get_first_batches_to_create(
-        self, overwrite_batches: bool
+        self, overwrite_batches: bool, data_sources: dict,
     ) -> dict[split.SplitName, dict[str, int]]:
         """For each SplitName & for each DataSource name, return the first batch ID to create.
 
@@ -278,7 +278,7 @@ class Manager:
         first_batches_to_create: dict[split.SplitName, dict[str, int]] = {}
         for split_name in split.SplitName:
             first_batches_to_create[split_name] = {
-                data_source_name: 0 for data_source_name in self.data_sources
+                data_source_name: 0 for data_source_name in data_sources
             }
 
         if overwrite_batches:
@@ -286,7 +286,7 @@ class Manager:
 
         # If we're not overwriting batches then find the last batch on disk.
         for split_name in split.SplitName:
-            for data_source_name in self.data_sources:
+            for data_source_name in data_sources:
                 path = (
                     self.config.output_data.filepath / split_name.value / data_source_name / "*.nc"
                 )
@@ -335,7 +335,7 @@ class Manager:
             written to disk, and only create any batches which have not yet been written to disk.
 
         """
-        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)
+        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches, self.derived_data_sources)
 
         # Check if there's any work to do.
         if overwrite_batches:
@@ -411,7 +411,7 @@ class Manager:
             previously been written to disk. If False then check which batches have previously been
             written to disk, and only create any batches which have not yet been written to disk.
         """
-        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)
+        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches, self.data_sources)
 
         # Check if there's any work to do.
         if overwrite_batches:

@@ -161,9 +161,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             len(historical_satellite_data.coords["time_index"])
             - self.number_previous_timesteps_to_use
             - 1
-        ) >= 0, ValueError(
-            "Trying to compute flow further back than the number of historical timesteps"
-        )
+        ) >= 0, "Trying to compute flow further back than the number of historical timesteps"
         prediction_block = np.zeros(
             (
                 future_timesteps,

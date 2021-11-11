@@ -44,8 +44,8 @@ def test_optical_flow_get_example_too_many_timesteps(optical_flow_configuration)
         number_previous_timesteps_to_use=300, opticalflow_image_size_pixels=32
     )
     batch = Batch.fake(configuration=optical_flow_configuration)
-    with pytest.raises(ValueError):
-        example = optical_flow_datasource.get_example(batch=batch, example_idx=0)
+    with pytest.raises(AssertionError):
+        optical_flow_datasource.get_example(batch=batch, example_idx=0)
 
 
 def test_optical_flow_data_source_get_batch(optical_flow_configuration):  # noqa: D103

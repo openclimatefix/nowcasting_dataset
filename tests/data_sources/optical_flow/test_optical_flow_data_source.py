@@ -1,5 +1,6 @@
 """Test Optical Flow Data Source"""
 import tempfile
+import numpy as np
 
 import pytest
 
@@ -22,8 +23,17 @@ def optical_flow_configuration():  # noqa: D103
 
 def test_optical_flow_get_example(optical_flow_configuration):
     optical_flow_datasource = OpticalFlowDataSource(
-        previous_timestep_for_flow=1, opticalflow_image_size_pixels=32
+        previous_timestep_to_use=1, opticalflow_image_size_pixels=32
     )
+    batch = Batch.fake(configuration=optical_flow_configuration)
+    example = optical_flow_datasource.get_example(batch=batch, example_idx=0)
+    assert example.values.shape == (12, 32, 32, 12)
+
+
+def test_optical_flow_get_example_multi_timesteps(optical_flow_configuration):
+    optical_flow_datasource = OpticalFlowDataSource(
+        previous_timestep_to_use=3, opticalflow_image_size_pixels=32
+        )
     batch = Batch.fake(configuration=optical_flow_configuration)
     example = optical_flow_datasource.get_example(batch=batch, example_idx=0)
     assert example.values.shape == (12, 32, 32, 12)

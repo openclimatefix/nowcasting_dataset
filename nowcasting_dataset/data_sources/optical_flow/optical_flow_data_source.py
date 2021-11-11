@@ -79,8 +79,21 @@ class OpticalFlowDataSource(DerivedDataSource):
             x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
-        dataarray = xr.full_like(satellite_data, fill_value=np.NaN)
-        dataarray[:] = predictions
+        dataarray = xr.DataArray(
+            data=predictions,
+            dims={
+                "time_index": satellite_data.dims["time_index"],
+                "x_index": satellite_data.dims["x_index"],
+                "y_index": satellite_data.dims["y_index"],
+                "channels_index": satellite_data.dims["channels_index"],
+                },
+            coords={
+                "time_index": satellite_data.coords["time_index"],
+                "x_index": satellite_data.coords["x_index"],
+                "y_index": satellite_data.coords["y_index"],
+                "channels_index": satellite_data.coords["channels_index"],
+                },
+            )
 
         return dataarray
 
@@ -149,13 +162,21 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         for prediction_timestep in range(future_timesteps):
-            t0 = historical_satellite_data.isel(time_index=-1)
-            previous = historical_satellite_data.isel(time_index=-2)
             for channel in range(0, len(historical_satellite_data.coords["channels_index"])):
-                t0_image = t0.sel(channels_index=channel).data.values
-                previous_image = previous.sel(channels_index=channel).data.values
-                optical_flow = compute_optical_flow(t0_image, previous_image)
+                t0 = historical_satellite_data.sel(channels_index=channel)
+                previous = historical_satellite_data.sel(channels_index=channel)
+                optical_flows = []
+                for i in range(len(historical_satellite_data.coords[
+                                       "time_index"])-1, len(historical_satellite_data.coords[
+                                                               "time_index"])-self.previous_timestep_to_use-1, -1):
+                    t0_image = t0.isel(time_index=i).data.values
+                    previous_image = previous.isel(time_index=i-1).data.values
+                    optical_flow = compute_optical_flow(t0_image, previous_image)
+                    optical_flows.append(optical_flow)
+                # Average predictions
+                optical_flow = np.mean(optical_flows, axis = 0)
                 # Do predictions now
+                t0_image = t0.isel(time_index=-1).data.values
                 flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(t0_image, flow)
                 warped_image = crop_center(
@@ -240,7 +261,7 @@ def crop_center(image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:
     Returns:
         The cropped image
     """
-    y, x, channels = image.shape
+    y, x = image.shape
     startx = x // 2 - (x_size // 2)
     starty = y // 2 - (y_size // 2)
     return image[starty : starty + y_size, startx : startx + x_size]

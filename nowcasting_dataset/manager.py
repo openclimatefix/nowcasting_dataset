@@ -267,7 +267,9 @@ class Manager:
         )
 
     def _get_first_batches_to_create(
-        self, overwrite_batches: bool, data_sources: dict,
+        self,
+        overwrite_batches: bool,
+        data_sources: dict,
     ) -> dict[split.SplitName, dict[str, int]]:
         """For each SplitName & for each DataSource name, return the first batch ID to create.
 
@@ -335,7 +337,9 @@ class Manager:
             written to disk, and only create any batches which have not yet been written to disk.
 
         """
-        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches, self.derived_data_sources)
+        first_batches_to_create = self._get_first_batches_to_create(
+            overwrite_batches, self.derived_data_sources
+        )
 
         # Check if there's any work to do.
         if overwrite_batches:
@@ -411,7 +415,9 @@ class Manager:
             previously been written to disk. If False then check which batches have previously been
             written to disk, and only create any batches which have not yet been written to disk.
         """
-        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches, self.data_sources)
+        first_batches_to_create = self._get_first_batches_to_create(
+            overwrite_batches, self.data_sources
+        )
 
         # Check if there's any work to do.
         if overwrite_batches:

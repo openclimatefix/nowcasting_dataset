@@ -5,6 +5,7 @@ from typing import Iterable, Optional
 
 import pandas as pd
 import xarray as xr
+from glob import glob
 
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
@@ -124,7 +125,7 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     are at 00, 05, ..., 55 past the hour.
 
     Args:
-      zarr_path: Cloud URL or local path.  If GCP URL, must start with 'gs://'
+      zarr_path: Cloud URL or local path pattern.  If GCP URL, must start with 'gs://'
       consolidated: Whether or not the Zarr metadata is consolidated.
     """
     _LOG.debug("Opening satellite data: %s", zarr_path)
@@ -134,9 +135,18 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # seems to slow things down a lot if the Zarr store has more than
     # about a million chunks.
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
-    dataset = xr.open_dataset(
-        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
-    )
+    #dataset = xr.open_dataset(
+    #    zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+    #)
+
+    # Get Paths
+    zarr_paths = list(glob(zarr_path))
+    if len(zarr_paths) == 1:
+        dataset = xr.open_dataset(
+                zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+            )
+    else:
+        dataset = xr.open_mfdataset(zarr_paths, chunks=None, mode='r', engine='zarr', concat_dim='time')
 
     data_array = dataset["stacked_eumetsat_data"]
     del dataset

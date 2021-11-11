@@ -27,17 +27,23 @@ import xarray as xr
 # * Remove dimensions we don't care about (e.g. select temperature at 1 meter, not 0 meters)
 # * Reshape images from 1D to 2D.
 # * Do we really need to convert datetimes to unix epochs before appending to zarr?  If no, submit a bug report.
+# * eccodes takes ages to load multiple datasets from each grib.  Maybe it'd be faster to pre-load each grib into ramdisk?  UPDATE: Nope, it's not faster!  What does give a big speedup, though, is using an idx file!
+# * Reshaping is pretty slow.  Maybe go back to using `np.reshape`?
+# * Experiment with when it might be fastest to load data into memory.
 #
 # Some outstanding questions / Todo items
 #
+# * Remove `wholesale_file_number`.  And then use a `pd.Series` instead of a DF.
 # * Zarr chunk size and compression.
 # * Do we need to combine all the DataArrays into a single DataArray (with "variable" being a dimension?).  The upside is that then a single Zarr chunk can include multiple variables.  The downside is that we lose the metadata (but that's not a huge problem, maybe?)
-# * Separately log "bad files" to a CSV file.
+# * Separately log "bad files" to a CSV file?
+# * Restart from last `time` in existing Zarr.
 # * Convert to float16?
 # * Check for NaNs.  cdcb has NaNs.
-# * Remove `wholesale_file_number`?
-# * Experiment with when it might be fastest to load data into memory.
 # * Parallelise
+# * Convert to script
+# * Use click to set source and target directories
+#
 
 # In[2]:
 
@@ -66,33 +72,45 @@ NUM_COLS = len(EASTING)
 
 
 # NWP_PATH = Path("/home/jack/Data/NWP/01")
+# NWP_PATH = Path("/media/jack/128GB_USB/NWPs")  # Must not include trailing slash!!!
 NWP_PATH = Path(
     "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native"
-)  # Must not include trailing slash!!!
+)
 
 
 # In[4]:
 
 
-filenames = list(NWP_PATH.glob("*/*/*/*Wholesale[12].grib"))
+assert NWP_PATH.exists()
+
+
+# In[ ]:
+
+
+print("Getting list of all filenames...")
 
 
 # In[5]:
 
 
-print(len(filenames), "grib filenames found!")
+filenames = list(NWP_PATH.glob("*/*/*/*Wholesale[12].grib"))
 
 
 # In[6]:
 
 
-def grib_filename_to_datetime_and_wholesale_file_number(full_filename: Path) -> dict[str, object]:
-    """Parse the grib filename and return the datetime and wholesale number.
+print("Got", len(filenames), "filenames")
 
-    Returns a dict with three keys: 'full_filename', `nwp_init_datetime_utc` and `wholesale_file_number`.
+
+# In[7]:
+
+
+def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
+    """Parse the grib filename and return the datetime encoded in the filename.
+
+    Returns a datetime.
       For example, if the filename is '202101010000_u1096_ng_umqv_Wholesale1.grib',
-      then `nwp_init_datetime_utc` will be datetime(year=2021, month=1, day=1, hour=0, minute=0)
-      and the `wholesale_file_number` will be 1 (represented as an int).
+      then the returned datetime will be datetime(year=2021, month=1, day=1, hour=0, minute=0).
 
     Raises RuntimeError if the filename does not match the expected regex pattern.
     """
@@ -116,9 +134,7 @@ def grib_filename_to_datetime_and_wholesale_file_number(full_filename: Path) -> 
         "(?P<day>\d{2})"  # Match the day.
         "(?P<hour>\d{2})"  # Match the hour.
         "(?P<minute>\d{2})"  # Match the minute.
-        "_u1096_ng_umqv_Wholesale"
-        "(?P<wholesale_file_number>\d)"  # Match the number after "Wholesale".
-        "\.grib$"  # Match the end of the string (escape the fullstop).
+        "_u1096_ng_umqv_Wholesale\d\.grib$"  # Match the end of the string (escape the fullstop).
     )
     regex_pattern = re.compile(regex_pattern_string)
     regex_match = regex_pattern.match(base_filename)
@@ -130,45 +146,44 @@ def grib_filename_to_datetime_and_wholesale_file_number(full_filename: Path) -> 
     # Convert strings to ints:
     regex_groups = {key: int(value) for key, value in regex_match.groupdict().items()}
 
-    wholesale_file_number = regex_groups.pop("wholesale_file_number")
-    dt = datetime.datetime(**regex_groups)
-    return {
-        "full_filename": full_filename,
-        "nwp_init_datetime_utc": dt,
-        "wholesale_file_number": wholesale_file_number,
-    }
+    return datetime.datetime(**regex_groups)
 
 
-# In[7]:
+# In[22]:
 
 
-def decode_and_group_grib_filenames(filenames: list[Path]) -> pd.DataFrame:
-    """Returns a DataFrame where the index is the datetime of the NWP init time.
+def decode_and_group_grib_filenames(filenames: list[Path]) -> pd.Series:
+    """Returns a pd.Series where the index is the datetime of the NWP init time.
 
-    And the columns of the DataFrame are 'wholesale_file_number' and 'full_filename'.
+    And the values are the full_filename of each grib file.
     """
     n_filenames = len(filenames)
-    df = pd.DataFrame(
-        index=range(n_filenames),
-        columns=["full_filename", "nwp_init_datetime_utc", "wholesale_file_number"],
-    )
+    nwp_init_datetimes = np.full(shape=n_filenames, fill_value=np.NaN, dtype="datetime64[ns]")
     for i, filename in enumerate(filenames):
-        df.iloc[i] = grib_filename_to_datetime_and_wholesale_file_number(filename)
+        nwp_init_datetimes[i] = grib_filename_to_datetime(filename)
 
-    # Change dtypes
-    df = df.astype({"wholesale_file_number": np.int8})
-    df["nwp_init_datetime_utc"] = pd.to_datetime(df["nwp_init_datetime_utc"])
+    # Swap index and values
+    map_datetime_to_filename = pd.Series(filenames, index=nwp_init_datetimes)
 
-    # Set index and sort
-    df = df.set_index("nwp_init_datetime_utc")
-    df = df.sort_index()
-    return df
+    return map_datetime_to_filename.sort_index()
 
 
-# In[8]:
+# In[23]:
 
 
 def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr.Dataset:
+    """Merges and loads all contiguous xr.Datasets from the grib file.
+
+    Removes unnecessary variables.  Picks heightAboveGround=1meter for temperature.
+
+    Returns an xr.Dataset which has been loaded from disk.  Loading from disk at this point
+    takes about 2 seconds for a 250 MB grib file, but speeds up reshape_1d_to_2d
+    from about 7 seconds to 0.5 seconds :)
+
+    Args:
+      full_filename:  The full filename (including the path) of a single grib file.
+      verbose:  If True then print out some useful debugging information.
+    """
     # The grib files are "heterogeneous", so we use cfgrib.open_datasets
     # to return a list of contiguous xr.Datasets.
     # See https://github.com/ecmwf/cfgrib#automatic-filtering
@@ -221,8 +236,11 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
         del ds
 
     merged_ds = xr.merge(datasets_from_grib)
-    del datasets_from_grib
+    del datasets_from_grib  # Save memory
     return merged_ds.load()
+
+
+# In[24]:
 
 
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
@@ -252,7 +270,7 @@ def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
     return dataset.unstack("values")
 
 
-# In[10]:
+# In[25]:
 
 
 def dataset_has_variables(dataset: xr.Dataset) -> bool:
@@ -260,7 +278,7 @@ def dataset_has_variables(dataset: xr.Dataset) -> bool:
     return len(dataset.variables) > 0
 
 
-# In[20]:
+# In[26]:
 
 
 def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
@@ -285,7 +303,7 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     dataset.to_zarr(zarr_path, **to_zarr_kwargs)
 
 
-# In[12]:
+# In[27]:
 
 
 def load_grib_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.Dataset:
@@ -313,29 +331,75 @@ def load_grib_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.Dataset
     return dataset_for_nwp_init_datetime.expand_dims("time", axis=0)
 
 
-# In[13]:
+# In[28]:
 
 
-df = decode_and_group_grib_filenames(filenames)
+map_datetime_to_grib_filename = decode_and_group_grib_filenames(filenames)
 
 
-# In[15]:
+# In[33]:
 
 
-for nwp_init_datetime_utc in df.index.unique():
-    full_filenames = df.loc[nwp_init_datetime_utc]
-    if full_filenames.shape != (2, 2):
-        print(
-            "filenames has wrong shape!  Expected (2, 2).  Got",
-            full_filenames.shape,
-            "for",
-            nwp_init_datetime_utc,
-        )
+map_datetime_to_grib_filename.head()
+
+
+# In[47]:
+
+
+for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
+    # Sanity check!
+    indicies = np.where(map_datetime_to_grib_filename.index == nwp_init_datetime_utc)[0]
+    n_filenames = len(indicies)
+    if n_filenames != 2:
+        print(n_filenames, "filenames found for", nwp_init_datetime_utc, ".  Expected 2. Skipping!")
         continue
-    full_filenames = full_filenames.full_filename.values
+
+    # Load files.
+    full_filenames = map_datetime_to_grib_filename[nwp_init_datetime_utc]
     ds = load_grib_for_single_nwp_init_time(full_filenames)
+
+    # Save to Zarr.
     if ds is not None:
+        print("Saving to Zarr...")
         append_to_zarr(
             ds,
+            #  "/home/jack/data/nwp.zarr"
             "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/test.zarr",
         )
+
+print("Done!")
+
+
+# ## Load from Zarr
+
+# In[ ]:
+
+
+ds_from_zarr = xr.open_dataset("/home/jack/data/nwp.zarr", engine="zarr")
+
+
+# In[ ]:
+
+
+ds_from_zarr
+
+
+# In[ ]:
+
+
+ds_from_zarr["t"].isel(step=6, time=1).plot.imshow()
+
+
+# In[ ]:
+
+
+ds_from_zarr["t"].encoding
+
+
+# In[ ]:
+
+
+ds_from_zarr["t"]
+
+
+# In[ ]:

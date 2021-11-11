@@ -393,7 +393,7 @@ class Manager:
 
                 # Wait for all futures to finish:
                 for future, data_source_name in zip(
-                    future_create_batches_jobs, self.data_sources.keys()
+                    future_create_batches_jobs, self.derived_data_sources.keys()
                 ):
                     # Call exception() to propagate any exceptions raised by the worker process into
                     # the main process, and to wait for the worker to finish.

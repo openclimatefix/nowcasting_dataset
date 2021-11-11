@@ -162,12 +162,10 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         for prediction_timestep in range(future_timesteps):
-            t0 = satellite_data.isel(
-                time_index=len(satellite_data.time_index) - 1
-                ).data.values
+            t0 = satellite_data.isel(time_index=len(satellite_data.time_index) - 1).data.values
             previous = satellite_data.isel(
                 time_index=len(satellite_data.time_index) - 2
-                ).data.values
+            ).data.values
             for channel in range(0, len(satellite_data.coords["channels_index"])):
                 # Optical Flow works with RGB images, so chunking channels for it to be faster
                 t0_image = t0.sel(channels_index=channel)
@@ -189,6 +187,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             satellite_data=self._data, predictions=prediction_block
         )
         return dataarray
+
 
 def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
     """
@@ -221,6 +220,7 @@ def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np
         flags=cv2.OPTFLOW_FARNEBACK_GAUSSIAN,
     )
 
+
 def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
     """
     Takes an image and warps it forwards in time according to the flow field.
@@ -245,6 +245,7 @@ def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=np.NaN,
     )
+
 
 def crop_center(image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:
     """

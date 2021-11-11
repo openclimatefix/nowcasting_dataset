@@ -383,4 +383,3 @@ for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
         )
         
 print("Done!")
-

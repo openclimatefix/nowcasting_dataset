@@ -162,7 +162,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             - self.number_previous_timesteps_to_use
             - 1
         ) >= 0, ValueError(
-            "Trying to compute flow further back than the number of historical " "timesteps"
+            "Trying to compute flow further back than the number of historical timesteps"
         )
         prediction_block = np.zeros(
             (

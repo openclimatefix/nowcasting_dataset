@@ -1,4 +1,4 @@
-# Nowcasting
+# nowcasting_dataset
 
 This main dir contains the following dirs and files
 

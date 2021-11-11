@@ -164,9 +164,9 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         for prediction_timestep in range(future_timesteps):
-            for channel in range(0, len(satellite_data.coords["channels_index"]), 4):
+            for channel in range(0, len(satellite_data.coords["channels_index"])):
                 # Optical Flow works with RGB images, so chunking channels for it to be faster
-                channel_images = satellite_data.sel(channels_index=slice(channel, channel + 3))
+                channel_images = satellite_data.sel(channels_index=channel)
                 # Extra 1 in shape from time dimension, so removing that dimension
                 t0_image = channel_images.isel(
                     time_index=len(satellite_data.time_index) - 1
@@ -209,8 +209,6 @@ class OpticalFlowDataSource(DerivedDataSource):
         t0_image /= image_max
         previous_image -= image_min
         previous_image /= image_max
-        t0_image = cv2.cvtColor(t0_image.astype(np.float32), cv2.COLOR_RGBA2GRAY)
-        previous_image = cv2.cvtColor(previous_image.astype(np.float32), cv2.COLOR_RGBA2GRAY)
         return cv2.calcOpticalFlowFarneback(
             prev=previous_image,
             next=t0_image,

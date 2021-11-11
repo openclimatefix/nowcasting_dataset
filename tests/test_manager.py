@@ -136,6 +136,7 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
 
+
 def test_derived_batches():
     """Test that derived batches can be made"""
     filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
@@ -147,10 +148,10 @@ def test_derived_batches():
         image_size_pixels=64,
         meters_per_pixel=2000,
         channels=("HRV",),
-        )
+    )
 
     filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
     )
 
     gsp = GSPDataSource(
@@ -161,13 +162,13 @@ def test_derived_batches():
         forecast_minutes=60,
         image_size_pixels=64,
         meters_per_pixel=2000,
-        )
+    )
 
     of = OpticalFlowDataSource(
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=32,
-        )
+    )
 
     manager = Manager()
 
@@ -194,7 +195,8 @@ def test_derived_batches():
         manager.create_batches(overwrite_batches=True)
 
         # make derived batches
-        manager.create_derived_batches(overwrite_batches = True)
+        manager.create_derived_batches(overwrite_batches=True)
+
 
 def test_save_config():
     """Test that configuration file is saved"""

@@ -38,19 +38,23 @@ from typing import Union
 # * Reshaping is pretty slow.  Maybe go back to using `np.reshape`?
 # * Experiment with when it might be fastest to load data into memory.
 # * Remove `wholesale_file_number`.  And then use a `pd.Series` instead of a DF.
+# * Zarr chunk size and compression.
+# * Write to leonardo's SSD
+# * Do we need to combine all the DataArrays into a single DataArray (with "variable" being a dimension?).  The upside is that then a single Zarr chunk can include multiple variables.  The downside is that we lose the metadata (but that's not a huge problem, maybe?)
+# * Convert to float16?
 # 
 # Some outstanding questions / Todo items
 # 
-# * Zarr chunk size and compression.
-# * Do we need to combine all the DataArrays into a single DataArray (with "variable" being a dimension?).  The upside is that then a single Zarr chunk can include multiple variables.  The downside is that we lose the metadata (but that's not a huge problem, maybe?)
+# 
+# * Experiment with compression
+# * Load some data to make sure float16 is fine!
 # * Separately log "bad files" to a CSV file?
 # * Restart from last `time` in existing Zarr.
-# * Convert to float16?
 # * Check for NaNs.  cdcb has NaNs.
 # * Parallelise
 # * Convert to script
 # * Use click to set source and target directories
-# * Write to leonardo's SSD
+# 
 # 
 
 # In[65]:
@@ -371,7 +375,6 @@ for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
     
     # Save to Zarr.
     if ds is not None:
-        break
         print("Saving to Zarr...")
         append_to_zarr(
             ds, 
@@ -380,3 +383,4 @@ for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
         )
         
 print("Done!")
+

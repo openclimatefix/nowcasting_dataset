@@ -58,7 +58,7 @@ input_data:
 
   # ------------------------- Optical Flow ---------------
   opticalflow:
-    previous_timestep_for_flow: 1
+    number_previous_timesteps_to_use: 1
     opticalflow_image_size_pixels: 64
 
 output_data:

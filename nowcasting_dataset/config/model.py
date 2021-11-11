@@ -117,7 +117,7 @@ class Satellite(DataSourceMixin):
 class OpticalFlow(DataSourceMixin):
     """Optical Flow configuration model"""
 
-    previous_timestep_to_use: int = 1
+    number_previous_timesteps_to_use: int = 1
     opticalflow_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
 
 

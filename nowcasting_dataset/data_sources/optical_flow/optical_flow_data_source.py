@@ -149,12 +149,8 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         for prediction_timestep in range(future_timesteps):
-            t0 = historical_satellite_data.isel(
-                time_index=-1
-            )
-            previous = historical_satellite_data.isel(
-                time_index=-2
-            )
+            t0 = historical_satellite_data.isel(time_index=-1)
+            previous = historical_satellite_data.isel(time_index=-2)
             for channel in range(0, len(historical_satellite_data.coords["channels_index"])):
                 t0_image = t0.sel(channels_index=channel).data.values
                 previous_image = previous.sel(channels_index=channel).data.values

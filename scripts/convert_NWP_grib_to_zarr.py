@@ -4,25 +4,32 @@
 # In[1]:
 
 
-import datetime
-import re
 from pathlib import Path
-from typing import Union
-
 import cfgrib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import re
+import datetime
 import xarray as xr
+from typing import Union
+
 
 # This notebook is research for [GitHub issue #344: Convert NWP grib files to Zarr intermediate](https://github.com/openclimatefix/nowcasting_dataset/issues/344).
-#
+# 
 # Useful links:
-#
+# 
 # * [Met Office's data docs](http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf)
-#
+# 
+# Known differences between the old Zarr (UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr) and the new zarr:
+# 
+# * Images in the old zarr were top-to-bottom.  Images in the new Zarr follow the ordering in the grib files: bottom-to-top.
+# * The x and y coordinates are different by 1km each.
+# * The new Zarr is float16?
+# * The new Zarr has a few more variables.
+# 
 # Done:
-#
+# 
 # * Merge Wholesale1 and 2 (2 includes dswrf, lcc, mcc, and hcc)
 # * Remove dimensions we don't care about (e.g. select temperature at 1 meter, not 0 meters)
 # * Reshape images from 1D to 2D.
@@ -30,10 +37,10 @@ import xarray as xr
 # * eccodes takes ages to load multiple datasets from each grib.  Maybe it'd be faster to pre-load each grib into ramdisk?  UPDATE: Nope, it's not faster!  What does give a big speedup, though, is using an idx file!
 # * Reshaping is pretty slow.  Maybe go back to using `np.reshape`?
 # * Experiment with when it might be fastest to load data into memory.
-#
-# Some outstanding questions / Todo items
-#
 # * Remove `wholesale_file_number`.  And then use a `pd.Series` instead of a DF.
+# 
+# Some outstanding questions / Todo items
+# 
 # * Zarr chunk size and compression.
 # * Do we need to combine all the DataArrays into a single DataArray (with "variable" being a dimension?).  The upside is that then a single Zarr chunk can include multiple variables.  The downside is that we lose the metadata (but that's not a huge problem, maybe?)
 # * Separately log "bad files" to a CSV file?
@@ -43,9 +50,10 @@ import xarray as xr
 # * Parallelise
 # * Convert to script
 # * Use click to set source and target directories
-#
+# * Write to leonardo's SSD
+# 
 
-# In[2]:
+# In[65]:
 
 
 # Define geographical domain for UKV.
@@ -57,7 +65,7 @@ import xarray as xr
 DY_METERS = DX_METERS = 2_000
 NORTH = 1223_000
 SOUTH = -185_000
-WEST = -239_000
+WEST = -239_000 
 EAST = 857_000
 
 # Note that the UKV NWPs y is top-to-bottom
@@ -73,9 +81,7 @@ NUM_COLS = len(EASTING)
 
 # NWP_PATH = Path("/home/jack/Data/NWP/01")
 # NWP_PATH = Path("/media/jack/128GB_USB/NWPs")  # Must not include trailing slash!!!
-NWP_PATH = Path(
-    "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native"
-)
+NWP_PATH = Path("/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native")
 
 
 # In[4]:
@@ -107,11 +113,11 @@ print("Got", len(filenames), "filenames")
 
 def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
     """Parse the grib filename and return the datetime encoded in the filename.
-
+    
     Returns a datetime.
       For example, if the filename is '202101010000_u1096_ng_umqv_Wholesale1.grib',
       then the returned datetime will be datetime(year=2021, month=1, day=1, hour=0, minute=0).
-
+      
     Raises RuntimeError if the filename does not match the expected regex pattern.
     """
     # Get the base_filename, which will be of the form '202101010000_u1096_ng_umqv_Wholesale1.grib'
@@ -128,20 +134,18 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
     #   . matches any character.
     #   $ matches the end of the string.
     regex_pattern_string = (
-        "^"  # Match the beginning of the string.
-        "(?P<year>\d{4})"  # Match the year.
-        "(?P<month>\d{2})"  # Match the month.
-        "(?P<day>\d{2})"  # Match the day.
-        "(?P<hour>\d{2})"  # Match the hour.
-        "(?P<minute>\d{2})"  # Match the minute.
-        "_u1096_ng_umqv_Wholesale\d\.grib$"  # Match the end of the string (escape the fullstop).
+        '^'  # Match the beginning of the string.
+        '(?P<year>\d{4})'  # Match the year.
+        '(?P<month>\d{2})'  # Match the month.
+        '(?P<day>\d{2})'  # Match the day.
+        '(?P<hour>\d{2})'  # Match the hour.
+        '(?P<minute>\d{2})'  # Match the minute.
+        '_u1096_ng_umqv_Wholesale\d\.grib$'  # Match the end of the string (escape the fullstop).
     )
     regex_pattern = re.compile(regex_pattern_string)
     regex_match = regex_pattern.match(base_filename)
     if regex_match is None:
-        raise RuntimeError(
-            f"Filename '{full_filename}' does not conform to expected regex pattern '{regex_pattern_string}'!"
-        )
+        raise RuntimeError(f"Filename '{full_filename}' does not conform to expected regex pattern '{regex_pattern_string}'!")
 
     # Convert strings to ints:
     regex_groups = {key: int(value) for key, value in regex_match.groupdict().items()}
@@ -154,32 +158,32 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
 
 def decode_and_group_grib_filenames(filenames: list[Path]) -> pd.Series:
     """Returns a pd.Series where the index is the datetime of the NWP init time.
-
+    
     And the values are the full_filename of each grib file.
     """
     n_filenames = len(filenames)
-    nwp_init_datetimes = np.full(shape=n_filenames, fill_value=np.NaN, dtype="datetime64[ns]")
+    nwp_init_datetimes = np.full(shape=n_filenames, fill_value=np.NaN, dtype='datetime64[ns]')
     for i, filename in enumerate(filenames):
         nwp_init_datetimes[i] = grib_filename_to_datetime(filename)
-
+    
     # Swap index and values
     map_datetime_to_filename = pd.Series(filenames, index=nwp_init_datetimes)
-
+    
     return map_datetime_to_filename.sort_index()
 
 
 # In[23]:
 
 
-def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr.Dataset:
+def load_grib_file(full_filename: Union[Path, str], verbose: bool=False) -> xr.Dataset:
     """Merges and loads all contiguous xr.Datasets from the grib file.
-
+    
     Removes unnecessary variables.  Picks heightAboveGround=1meter for temperature.
-
+    
     Returns an xr.Dataset which has been loaded from disk.  Loading from disk at this point
     takes about 2 seconds for a 250 MB grib file, but speeds up reshape_1d_to_2d
     from about 7 seconds to 0.5 seconds :)
-
+    
     Args:
       full_filename:  The full filename (including the path) of a single grib file.
       verbose:  If True then print out some useful debugging information.
@@ -198,45 +202,38 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
 
         if verbose:
             print("\nDataset", i, "before processing:\n", ds, "\n")
-
+        
         # For temperature, we want the temperature at 1 meter above ground,
         # not at 0 meters above ground.  The early NWPs (definitely in the 2016-03-22 NWPs),
         # heightAboveGround only has 1 entry ("1" meter above ground) and `heightAboveGround` isn't set as a dimension for `t`.
         # In later NWPs, 'heightAboveGround' has 2 values (0, 1) is a dimension for `t`.
-        if "t" in ds and "heightAboveGround" in ds["t"].dims:
+        if 't' in ds and 'heightAboveGround' in ds['t'].dims:
             ds = ds.sel(heightAboveGround=1)
 
         # Delete unnecessary variables.
         vars_to_delete = [
-            "unknown",
-            "valid_time",
-            "heightAboveGround",
-            "heightAboveGroundLayer",
-            "atmosphere",
-            "cloudBase",
-            "surface",
-            "meanSea",
-            "level",
-        ]
+            'unknown', 'valid_time', 'heightAboveGround', 'heightAboveGroundLayer',
+            'atmosphere', 'cloudBase', 'surface', 'meanSea', 'level']
         for var_name in vars_to_delete:
             try:
                 del ds[var_name]
             except KeyError as e:
                 if verbose:
-                    print("var name not in dataset:", e)
+                    print('var name not in dataset:', e)
             else:
                 if verbose:
-                    print("Deleted", var_name)
+                    print('Deleted', var_name)
 
         if verbose:
             print("\nDataset", i, "after processing:\n", ds, "\n")
             print("**************************************************")
-
+            
         datasets_from_grib[i] = ds
         del ds
-
+    
     merged_ds = xr.merge(datasets_from_grib)
     del datasets_from_grib  # Save memory
+    print("Loading...")
     return merged_ds.load()
 
 
@@ -245,26 +242,26 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
 
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
     """Convert 1D into 2D array.
-
+    
     For each `step`, the pixel values in the grib files represent a 2D image.  But, in the grib,
-    the values are in a flat 1D array (indexed by the `values` dimension).  The ordering of the pixels are row_0, row_1, row_2, etc.
+    the values are in a flat 1D array (indexed by the `values` dimension).
+    The ordering of the pixels in the grib are left to right, bottom to top.
 
     We reshape every data variable at once using this trick.
     """
     # Adapted from https://stackoverflow.com/a/62667154
-
+    
     # Don't reshape yet.  Instead just create new coordinates,
     # which give the `x` and `y` position of each position in the `values` dimension:
     dataset = dataset.assign_coords(
         {
-            "x": ("values", np.tile(EASTING, reps=NUM_ROWS)),
-            "y": ("values", np.repeat(NORTHING, repeats=NUM_COLS)),
-        }
-    )
-
+            'x': ('values', np.tile(EASTING, reps=NUM_ROWS)), 
+            'y': ('values', np.repeat(NORTHING, repeats=NUM_COLS))
+        })
+    
     # Now set "values" to be a MultiIndex, indexed by `y` and `x`:
     dataset = dataset.set_index(values=("y", "x"))
-
+    
     # Now unstack.  This gets rid of the `values` dimension and indexes
     # the data variables using `y` and `x`.
     return dataset.unstack("values")
@@ -286,7 +283,7 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     zarr_path = Path(zarr_path)
     if zarr_path.exists():
         to_zarr_kwargs = dict(
-            append_dim="time",
+            append_dim = "init_time",
         )
     else:
         to_zarr_kwargs = dict(
@@ -296,9 +293,29 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
             # https://github.com/pydata/xarray/issues/5969 and
             # http://xarray.pydata.org/en/stable/user-guide/io.html#time-units
             encoding={
-                "time": {"units": "nanoseconds since 1970-01-01"},
+                'init_time': {
+                    'units': 'nanoseconds since 1970-01-01'
+                },
+                "UKV": {
+                    "compressor": numcodecs.Blosc(cname="zstd", clevel=5), 
+                }
             },
         )
+        
+    dataset = (
+        dataset
+        .to_array(dim="variable", name="UKV")
+        .to_dataset()
+        .astype(np.float16)
+        .rename({'time': 'init_time'})
+        .chunk({
+            "init_time": 1, 
+            "step": 1, 
+            "y": len(dataset.y) // 2,
+            "x": len(dataset.x) // 2,
+            "variable": -1
+        })
+    )
 
     dataset.to_zarr(zarr_path, **to_zarr_kwargs)
 
@@ -309,7 +326,7 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
 def load_grib_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.Dataset:
     datasets_for_nwp_init_datetime = []
     for full_filename in full_filenames:
-        print("Loading", full_filename)
+        print('Opening', full_filename)
         try:
             dataset_for_filename = load_grib_file(full_filename)
         except EOFError as e:
@@ -337,13 +354,7 @@ def load_grib_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.Dataset
 map_datetime_to_grib_filename = decode_and_group_grib_filenames(filenames)
 
 
-# In[33]:
-
-
-map_datetime_to_grib_filename.head()
-
-
-# In[47]:
+# In[49]:
 
 
 for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
@@ -353,53 +364,19 @@ for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
     if n_filenames != 2:
         print(n_filenames, "filenames found for", nwp_init_datetime_utc, ".  Expected 2. Skipping!")
         continue
-
+        
     # Load files.
     full_filenames = map_datetime_to_grib_filename[nwp_init_datetime_utc]
     ds = load_grib_for_single_nwp_init_time(full_filenames)
-
+    
     # Save to Zarr.
     if ds is not None:
+        break
         print("Saving to Zarr...")
         append_to_zarr(
-            ds,
+            ds, 
             #  "/home/jack/data/nwp.zarr"
-            "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/test.zarr",
+            "/mnt/storage_ssd/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/test.zarr",
         )
-
+        
 print("Done!")
-
-
-# ## Load from Zarr
-
-# In[ ]:
-
-
-ds_from_zarr = xr.open_dataset("/home/jack/data/nwp.zarr", engine="zarr")
-
-
-# In[ ]:
-
-
-ds_from_zarr
-
-
-# In[ ]:
-
-
-ds_from_zarr["t"].isel(step=6, time=1).plot.imshow()
-
-
-# In[ ]:
-
-
-ds_from_zarr["t"].encoding
-
-
-# In[ ]:
-
-
-ds_from_zarr["t"]
-
-
-# In[ ]:

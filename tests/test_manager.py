@@ -167,7 +167,7 @@ def test_derived_batches():
     of = OpticalFlowDataSource(
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=32,
+        opticalflow_image_size_pixels=32,
     )
 
     manager = Manager()

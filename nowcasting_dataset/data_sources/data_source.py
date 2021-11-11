@@ -135,6 +135,7 @@ class DataSource:
         pass
 
     # TODO: Issue #319: Standardise parameter names.
+    # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(
         self,
         spatial_and_temporal_locations_of_each_example: pd.DataFrame,
@@ -474,6 +475,7 @@ class DerivedDataSource(DataSource):
             "needed"
         )
 
+    # TODO Reduce duplication https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(
         self,
         batch_path: Path,

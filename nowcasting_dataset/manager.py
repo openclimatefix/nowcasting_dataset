@@ -322,6 +322,7 @@ class Manager:
                 splits_which_need_more_batches.append(split_name)
         return splits_which_need_more_batches
 
+    # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_derived_batches(self, overwrite_batches: bool) -> None:
         """
         Create batches of derived data sources
@@ -397,6 +398,7 @@ class Manager:
                         logger.exception(f"Worker process {data_source_name} raised exception!")
                         raise exception
 
+    # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(self, overwrite_batches: bool) -> None:
         """Create batches (if necessary).
 

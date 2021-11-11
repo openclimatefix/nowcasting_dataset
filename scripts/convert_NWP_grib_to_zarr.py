@@ -330,7 +330,16 @@ df = decode_and_group_grib_filenames(filenames)
 
 
 for nwp_init_datetime_utc in df.index.unique():
-    full_filenames = df.loc[nwp_init_datetime_utc].full_filename.values
+    full_filenames = df.loc[nwp_init_datetime_utc]
+    if len(full_filenames) != 2:
+        print(
+            len(full_filenames),
+            "filenames found for",
+            nwp_init_datetime_utc,
+            ".  Expected 2. Skipping!",
+        )
+        continue
+    full_filenames = full_filenames.full_filename.values
     ds = load_grib_for_single_nwp_init_time(full_filenames)
     if ds is not None:
         append_to_zarr(

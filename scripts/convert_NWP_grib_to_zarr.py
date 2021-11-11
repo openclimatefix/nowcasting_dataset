@@ -331,12 +331,12 @@ df = decode_and_group_grib_filenames(filenames)
 
 for nwp_init_datetime_utc in df.index.unique():
     full_filenames = df.loc[nwp_init_datetime_utc]
-    if len(full_filenames) != 2:
+    if full_filenames.shape != (2, 2):
         print(
-            len(full_filenames),
-            "filenames found for",
+            "filenames has wrong shape!  Expected (2, 2).  Got",
+            full_filenames.shape,
+            "for",
             nwp_init_datetime_utc,
-            ".  Expected 2. Skipping!",
         )
         continue
     full_filenames = full_filenames.full_filename.values

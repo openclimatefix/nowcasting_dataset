@@ -19,12 +19,10 @@ _LOG = logging.getLogger("nowcasting_dataset")
 class OpticalFlowDataSource(DerivedDataSource):
     """
     Optical Flow Data Source, computing flow between Satellite data
-
-    zarr_path: Must start with 'gs://' if on GCP.
     """
 
-    previous_timestep_for_flow: int = 1
-    image_size_pixels: Optional[int] = None
+    previous_timestep_to_use: int = 1
+    opticalflow_image_size_pixels: Optional[int] = None
 
     def get_example(
         self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, **kwargs
@@ -40,8 +38,8 @@ class OpticalFlowDataSource(DerivedDataSource):
 
         """
 
-        if self.image_size_pixels is None:
-            self.image_size_pixels = len(batch.satellite.x_index)
+        if self.opticalflow_image_size_pixels is None:
+            self.opticalflow_image_size_pixels = len(batch.satellite.x_index)
 
         # Only do optical flow for satellite data
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
@@ -76,7 +74,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         # Make sure its the correct size
-        buffer = (satellite_data.sizes["x_index"] - self.image_size_pixels) // 2
+        buffer = (satellite_data.sizes["x_index"] - self.opticalflow_image_size_pixels) // 2
         satellite_data = satellite_data.isel(
             x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
@@ -158,108 +156,109 @@ class OpticalFlowDataSource(DerivedDataSource):
         prediction_block = np.zeros(
             (
                 future_timesteps,
-                self.image_size_pixels,
-                self.image_size_pixels,
+                self.opticalflow_image_size_pixels,
+                self.opticalflow_image_size_pixels,
                 satellite_data.sizes["channels_index"],
             )
         )
         for prediction_timestep in range(future_timesteps):
+            t0 = satellite_data.isel(
+                time_index=len(satellite_data.time_index) - 1
+                ).data.values
+            previous = satellite_data.isel(
+                time_index=len(satellite_data.time_index) - 2
+                ).data.values
             for channel in range(0, len(satellite_data.coords["channels_index"])):
                 # Optical Flow works with RGB images, so chunking channels for it to be faster
-                channel_images = satellite_data.sel(channels_index=channel)
+                t0_image = t0.sel(channels_index=channel)
+                previous_image = previous.sel(channels_index=channel)
                 # Extra 1 in shape from time dimension, so removing that dimension
-                t0_image = channel_images.isel(
-                    time_index=len(satellite_data.time_index) - 1
-                ).data.values
-                previous_image = channel_images.isel(
-                    time_index=len(satellite_data.time_index) - 2
-                ).data.values
-                optical_flow = self._compute_optical_flow(t0_image, previous_image)
+                optical_flow = compute_optical_flow(t0_image, previous_image)
                 # Do predictions now
                 flow = (
                     optical_flow * prediction_timestep + 1
                 )  # Otherwise first prediction would be 0
-                warped_image = self._remap_image(t0_image, flow)
-                warped_image = self._crop_center(
+                warped_image = remap_image(t0_image, flow)
+                warped_image = crop_center(
                     warped_image,
-                    self.image_size_pixels,
-                    self.image_size_pixels,
+                    self.opticalflow_image_size_pixels,
+                    self.opticalflow_image_size_pixels,
                 )
-                prediction_block[prediction_timestep, :, :, channel : channel + 4] = warped_image
+                prediction_block[prediction_timestep, :, :, channel] = warped_image
         dataarray = self._update_dataarray_with_predictions(
             satellite_data=self._data, predictions=prediction_block
         )
         return dataarray
 
-    def _compute_optical_flow(self, t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
-        """
-        Compute the optical flow for a set of images
+def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
+    """
+    Compute the optical flow for a set of images
 
-        Args:
-            t0_image: t0 image
-            previous_image: previous image to compute optical flow with
+    Args:
+        t0_image: t0 image
+        previous_image: previous image to compute optical flow with
 
-        Returns:
-            Optical Flow field
-        """
-        # Input images have to be single channel and between 0 and 1
-        image_min = np.min([t0_image, previous_image])
-        image_max = np.max([t0_image, previous_image])
-        t0_image -= image_min
-        t0_image /= image_max
-        previous_image -= image_min
-        previous_image /= image_max
-        return cv2.calcOpticalFlowFarneback(
-            prev=previous_image,
-            next=t0_image,
-            flow=None,
-            pyr_scale=0.5,
-            levels=2,
-            winsize=40,
-            iterations=3,
-            poly_n=5,
-            poly_sigma=0.7,
-            flags=cv2.OPTFLOW_FARNEBACK_GAUSSIAN,
-        )
+    Returns:
+        Optical Flow field
+    """
+    # Input images have to be single channel and between 0 and 1
+    image_min = np.min([t0_image, previous_image])
+    image_max = np.max([t0_image, previous_image])
+    t0_image -= image_min
+    t0_image /= image_max
+    previous_image -= image_min
+    previous_image /= image_max
+    return cv2.calcOpticalFlowFarneback(
+        prev=previous_image,
+        next=t0_image,
+        flow=None,
+        pyr_scale=0.5,
+        levels=2,
+        winsize=40,
+        iterations=3,
+        poly_n=5,
+        poly_sigma=0.7,
+        flags=cv2.OPTFLOW_FARNEBACK_GAUSSIAN,
+    )
 
-    def _remap_image(self, image: np.ndarray, flow: np.ndarray) -> np.ndarray:
-        """
-        Takes an image and warps it forwards in time according to the flow field.
+def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
+    """
+    Takes an image and warps it forwards in time according to the flow field.
 
-        Args:
-            image: The grayscale image to warp.
-            flow: A 3D array.  The first two dimensions must be the same size as the first two
-                dimensions of the image.  The third dimension represented the x and y displacement.
+    Args:
+        image: The grayscale image to warp.
+        flow: A 3D array.  The first two dimensions must be the same size as the first two
+            dimensions of the image.  The third dimension represented the x and y displacement.
 
-        Returns:  Warped image.  The border has values np.NaN.
-        """
-        # Adapted from https://github.com/opencv/opencv/issues/11068
-        height, width = flow.shape[:2]
-        remap = -flow.copy()
-        remap[..., 0] += np.arange(width)  # map_x
-        remap[..., 1] += np.arange(height)[:, np.newaxis]  # map_y
-        return cv2.remap(
-            src=image,
-            map1=remap,
-            map2=None,
-            interpolation=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_CONSTANT,
-            borderValue=np.NaN,
-        )
+    Returns:  Warped image.  The border has values np.NaN.
+    """
+    # Adapted from https://github.com/opencv/opencv/issues/11068
+    height, width = flow.shape[:2]
+    remap = -flow.copy()
+    remap[..., 0] += np.arange(width)  # map_x
+    remap[..., 1] += np.arange(height)[:, np.newaxis]  # map_y
+    return cv2.remap(
+        src=image,
+        map1=remap,
+        map2=None,
+        interpolation=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=np.NaN,
+    )
 
-    def _crop_center(self, image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:
-        """
-        Crop center of numpy image
+def crop_center(image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:
+    """
+    Crop center of numpy image
 
-        Args:
-            image: Image to crop
-            x_size: Size in x direction
-            y_size: Size in y direction
+    Args:
+        image: Image to crop
+        x_size: Size in x direction
+        y_size: Size in y direction
 
-        Returns:
-            The cropped image
-        """
-        y, x, channels = image.shape
-        startx = x // 2 - (x_size // 2)
-        starty = y // 2 - (y_size // 2)
-        return image[starty : starty + y_size, startx : startx + x_size]
+    Returns:
+        The cropped image
+    """
+    y, x, channels = image.shape
+    startx = x // 2 - (x_size // 2)
+    starty = y // 2 - (y_size // 2)
+    return image[starty : starty + y_size, startx : startx + x_size]

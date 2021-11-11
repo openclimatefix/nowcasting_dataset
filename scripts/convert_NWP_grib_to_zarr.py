@@ -172,15 +172,10 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
     # The grib files are "heterogeneous", so we use cfgrib.open_datasets
     # to return a list of contiguous xr.Datasets.
     # See https://github.com/ecmwf/cfgrib#automatic-filtering
-    datasets_from_grib = cfgrib.open_datasets(
-        full_filename,
-        backend_kwargs=dict(
-            indexpath=""  # Disable GRIB index file.  See https://github.com/ecmwf/cfgrib#grib-index-file
-        ),
-    )
+    datasets_from_grib = cfgrib.open_datasets(full_filename)
+    n_datasets = len(datasets_from_grib)
 
     # Get each dataset into the right shape for merging:
-    n_datasets = len(datasets_from_grib)
     # Loop round the datasets using an index (instead of `for ds in datasets_from_grib`)
     # because we will be modifying each dataset:
     for i in range(n_datasets):
@@ -189,14 +184,14 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
         if verbose:
             print("\nDataset", i, "before processing:\n", ds, "\n")
 
-        ds = ds.drop_vars("valid_time")  # valid_time is easy to compute again later.
+        # For temperature, we want the temperature at 1 meter above ground,
+        # not at 0 meters above ground.  The early NWPs (definitely in the 2016-03-22 NWPs),
+        # heightAboveGround only has 1 entry ("1" meter above ground) and `heightAboveGround` isn't set as a dimension for `t`.
+        # In later NWPs, 'heightAboveGround' has 2 values (0, 1) is a dimension for `t`.
         if "t" in ds and "heightAboveGround" in ds["t"].dims:
-            # For temperature, we want the temperature at 1 meter above ground,
-            # not at 0 meters above ground.  The early NWPs (definitely in the 2016-03-22 NWPs),
-            # heightAboveGround only has 1 entry ("1") and isn't set as a dimension for ds['t'].
-            # In later NWPs, 'heightAboveGround' is a dimension, and has 2 values (0, 1).
             ds = ds.sel(heightAboveGround=1)
 
+        # Delete unnecessary variables.
         vars_to_delete = [
             "unknown",
             "valid_time",
@@ -214,7 +209,6 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
             except KeyError as e:
                 if verbose:
                     print("var name not in dataset:", e)
-
             else:
                 if verbose:
                     print("Deleted", var_name)
@@ -227,9 +221,6 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
         del ds
 
     return xr.merge(datasets_from_grib)
-
-
-# In[9]:
 
 
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:

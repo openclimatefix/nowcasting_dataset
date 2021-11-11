@@ -220,7 +220,9 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
         datasets_from_grib[i] = ds
         del ds
 
-    return xr.merge(datasets_from_grib)
+    merged_ds = xr.merge(datasets_from_grib)
+    del datasets_from_grib
+    return merged_ds.load()
 
 
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:

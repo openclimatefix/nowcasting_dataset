@@ -19,9 +19,13 @@ _LOG = logging.getLogger("nowcasting_dataset")
 class OpticalFlowDataSource(DerivedDataSource):
     """
     Optical Flow Data Source, computing flow between Satellite data
+
+    number_previous_timesteps_to_use: Number of previous timesteps to use, i.e. if 1, only uses the
+        flow between t-1 and t0 images, if 3, computes the flow between (t-3,t-2),(t-2,t-1),
+        and (t-1,t0) image pairs and uses the mean optical flow for future timesteps.
     """
 
-    previous_timestep_to_use: int = 1
+    number_previous_timesteps_to_use: int = 1
     opticalflow_image_size_pixels: Optional[int] = None
 
     def get_example(
@@ -168,7 +172,7 @@ class OpticalFlowDataSource(DerivedDataSource):
                 optical_flows = []
                 for i in range(len(historical_satellite_data.coords[
                                        "time_index"])-1, len(historical_satellite_data.coords[
-                                                               "time_index"])-self.previous_timestep_to_use-1, -1):
+                                                               "time_index"]) - self.number_previous_timesteps_to_use - 1, -1):
                     t0_image = t0.isel(time_index=i).data.values
                     previous_image = previous.isel(time_index=i-1).data.values
                     optical_flow = compute_optical_flow(t0_image, previous_image)

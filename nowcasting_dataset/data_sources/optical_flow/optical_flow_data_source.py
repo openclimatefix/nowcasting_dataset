@@ -79,21 +79,8 @@ class OpticalFlowDataSource(DerivedDataSource):
             x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
         )
-        dataarray = xr.DataArray(
-            data=predictions,
-            dims={
-                "time_index": satellite_data.dims["time_index"],
-                "x_index": satellite_data.dims["x_index"],
-                "y_index": satellite_data.dims["y_index"],
-                "channels_index": satellite_data.dims["channels_index"],
-            },
-            coords={
-                "time_index": satellite_data.coords["time_index"],
-                "x_index": satellite_data.coords["x_index"],
-                "y_index": satellite_data.coords["y_index"],
-                "channels_index": satellite_data.coords["channels_index"],
-            },
-        )
+        dataarray = xr.full_like(satellite_data, fill_value=np.NaN)
+        dataarray[:] = predictions
 
         return dataarray
 
@@ -149,7 +136,7 @@ class OpticalFlowDataSource(DerivedDataSource):
 
         # Get the previous timestamp
         future_timesteps = self._get_number_future_timesteps(satellite_data, t0_dt)
-        satellite_data: xr.DataArray = self._get_previous_timesteps(
+        historical_satellite_data: xr.DataArray = self._get_previous_timesteps(
             satellite_data,
             t0_dt=t0_dt,
         )
@@ -162,19 +149,17 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         for prediction_timestep in range(future_timesteps):
-            t0 = satellite_data.isel(time_index=len(satellite_data.time_index) - 1).data.values
-            previous = satellite_data.isel(
-                time_index=len(satellite_data.time_index) - 2
+            t0 = historical_satellite_data.isel(time_index=len(historical_satellite_data.time_index) - 1).data.values
+            previous = historical_satellite_data.isel(
+                time_index=len(historical_satellite_data.time_index) - 2
             ).data.values
-            for channel in range(0, len(satellite_data.coords["channels_index"])):
-                # Optical Flow works with RGB images, so chunking channels for it to be faster
+            for channel in range(0, len(historical_satellite_data.coords["channels_index"])):
                 t0_image = t0.sel(channels_index=channel)
                 previous_image = previous.sel(channels_index=channel)
-                # Extra 1 in shape from time dimension, so removing that dimension
                 optical_flow = compute_optical_flow(t0_image, previous_image)
                 # Do predictions now
                 flow = (
-                    optical_flow * prediction_timestep + 1
+                    optical_flow * (prediction_timestep + 1)
                 )  # Otherwise first prediction would be 0
                 warped_image = remap_image(t0_image, flow)
                 warped_image = crop_center(

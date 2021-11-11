@@ -19,6 +19,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     join_list_data_array_to_batch_dataset,
     join_list_dataset_to_batch_dataset,
 )
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
 def gsp_fake(
@@ -211,7 +212,7 @@ def create_gsp_pv_dataset(
     data = convert_data_array_to_dataset(data_array)
 
     x_coords = xr.DataArray(
-        data=np.sort(np.random.randn(number_of_systems)),
+        data=10 ** 4 * np.random.randn(number_of_systems),
         dims=["id_index"],
         coords=dict(
             id_index=range(number_of_systems),
@@ -219,15 +220,26 @@ def create_gsp_pv_dataset(
     )
 
     y_coords = xr.DataArray(
-        data=np.sort(np.random.randn(number_of_systems)),
+        data=10 ** 4 * np.random.randn(number_of_systems),
         dims=["id_index"],
         coords=dict(
             id_index=range(number_of_systems),
         ),
     )
 
-    data["x_coords"] = x_coords
-    data["y_coords"] = y_coords
+    # make first coords centroid
+    x_coords.data[0] = x_coords.data.mean()
+    y_coords.data[0] = y_coords.data.mean()
+
+    # make random lat and long
+    lat = np.random.randint(51, 55)
+    lon = np.random.randint(-2.5, 1)
+
+    # turn into OSGB
+    x, y = lat_lon_to_osgb(lat=lat, lon=lon)
+
+    data["x_coords"] = x_coords + x
+    data["y_coords"] = y_coords + y
 
     # Add 1000 to the id numbers for the row numbers.
     # This is a quick way to make sure row number is different from id,

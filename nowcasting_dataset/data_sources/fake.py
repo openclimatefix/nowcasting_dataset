@@ -201,11 +201,24 @@ def create_gsp_pv_dataset(
         "id": np.random.randint(low=0, high=1000, size=number_of_systems),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+
+    # make pv yield
+    data = np.random.randn(
+        seq_length,
+        number_of_systems,
+    )
+    data = data.clip(min=0)
+
+    # smooth the data, the convolution method smooeths that data across systems first,
+    # and then a bit across time (depending what you set N)
+    N = int(seq_length / 2)
+    data = np.convolve(data.ravel(), np.ones(N) / N, mode="same").reshape(
+        (seq_length, number_of_systems)
+    )
+
+    # make into a Data Array
     data_array = xr.DataArray(
-        np.random.randn(
-            seq_length,
-            number_of_systems,
-        ),
+        data,
         coords=coords,
     )  # Fake data for testing!
 

@@ -544,7 +544,7 @@ class DerivedDataSource(DataSource):
 
         Args:
             netcdf_path: Path to the NetCDF files of the Batch to load
-            batch_idx: The batch ID to load from those in teh path
+            batch_idx: The batch ID to load from those in the path
 
         Returns:
             Batch of the derived data source

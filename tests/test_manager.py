@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 import nowcasting_dataset
+from nowcasting_dataset.data_sources import OpticalFlowDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 from nowcasting_dataset.manager import Manager
@@ -135,6 +136,65 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
 
+def test_derived_batches():
+    """Test that derived batches can be made"""
+    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+
+    sat = SatelliteDataSource(
+        zarr_path=filename,
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+        channels=("HRV",),
+        )
+
+    filename = (
+            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
+    )
+
+    gsp = GSPDataSource(
+        zarr_path=filename,
+        start_dt=datetime(2019, 1, 1),
+        end_dt=datetime(2019, 1, 2),
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+        )
+
+    of = OpticalFlowDataSource(
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=32,
+        )
+
+    manager = Manager()
+
+    # load config
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        # set local temp path, and dst path
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        # just set satellite as data source
+        manager.data_sources = {"gsp": gsp, "sat": sat}
+        manager.derived_data_sources = {"opticalflow": of}
+        manager.data_source_which_defines_geospatial_locations = gsp
+
+        # make file for locations
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+
+        # make batches
+        manager.create_batches(overwrite_batches=True)
+
+        # make derived batches
+        manager.create_derived_batches(overwrite_batches = True)
 
 def test_save_config():
     """Test that configuration file is saved"""

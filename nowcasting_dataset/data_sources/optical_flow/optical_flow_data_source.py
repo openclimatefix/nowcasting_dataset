@@ -150,19 +150,17 @@ class OpticalFlowDataSource(DerivedDataSource):
         )
         for prediction_timestep in range(future_timesteps):
             t0 = historical_satellite_data.isel(
-                time_index=len(historical_satellite_data.time_index) - 1
-            ).data.values
+                time_index=-1
+            )
             previous = historical_satellite_data.isel(
-                time_index=len(historical_satellite_data.time_index) - 2
-            ).data.values
+                time_index=-2
+            )
             for channel in range(0, len(historical_satellite_data.coords["channels_index"])):
-                t0_image = t0.sel(channels_index=channel)
-                previous_image = previous.sel(channels_index=channel)
+                t0_image = t0.sel(channels_index=channel).data.values
+                previous_image = previous.sel(channels_index=channel).data.values
                 optical_flow = compute_optical_flow(t0_image, previous_image)
                 # Do predictions now
-                flow = optical_flow * (
-                    prediction_timestep + 1
-                )  # Otherwise first prediction would be 0
+                flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(t0_image, flow)
                 warped_image = crop_center(
                     warped_image,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[110]:
 
 
 from pathlib import Path
@@ -13,6 +13,7 @@ import re
 import datetime
 import xarray as xr
 from typing import Union
+import numcodecs
 
 
 # This notebook is research for [GitHub issue #344: Convert NWP grib files to Zarr intermediate](https://github.com/openclimatefix/nowcasting_dataset/issues/344).
@@ -383,3 +384,42 @@ for nwp_init_datetime_utc in map_datetime_to_grib_filename.index.unique():
         )
         
 print("Done!")
+
+
+# ## Load from Zarr
+
+# In[105]:
+
+
+ds_from_zarr = xr.open_dataset("test.zarr", engine="zarr")
+
+
+# In[106]:
+
+
+ds_from_zarr
+
+
+# In[108]:
+
+
+ds_from_zarr['UKV'].sel(variable='t').isel(step=0, init_time=0).astype(np.float32).plot.imshow()
+
+
+# In[109]:
+
+
+ds_from_zarr['UKV'].encoding
+
+
+# In[ ]:
+
+
+ds_from_zarr['t']
+
+
+# In[ ]:
+
+
+
+

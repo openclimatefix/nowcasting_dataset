@@ -1,7 +1,7 @@
 """Test Optical Flow Data Source"""
 import tempfile
-import numpy as np
 
+import numpy as np
 import pytest
 
 from nowcasting_dataset.config.model import Configuration, InputData
@@ -33,7 +33,7 @@ def test_optical_flow_get_example(optical_flow_configuration):
 def test_optical_flow_get_example_multi_timesteps(optical_flow_configuration):
     optical_flow_datasource = OpticalFlowDataSource(
         previous_timestep_to_use=3, opticalflow_image_size_pixels=32
-        )
+    )
     batch = Batch.fake(configuration=optical_flow_configuration)
     example = optical_flow_datasource.get_example(batch=batch, example_idx=0)
     assert example.values.shape == (12, 32, 32, 12)

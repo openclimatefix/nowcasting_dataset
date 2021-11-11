@@ -90,14 +90,14 @@ class OpticalFlowDataSource(DerivedDataSource):
                 "x_index": satellite_data.dims["x_index"],
                 "y_index": satellite_data.dims["y_index"],
                 "channels_index": satellite_data.dims["channels_index"],
-                },
+            },
             coords={
                 "time_index": satellite_data.coords["time_index"],
                 "x_index": satellite_data.coords["x_index"],
                 "y_index": satellite_data.coords["y_index"],
                 "channels_index": satellite_data.coords["channels_index"],
-                },
-            )
+            },
+        )
 
         return dataarray
 
@@ -170,15 +170,19 @@ class OpticalFlowDataSource(DerivedDataSource):
                 t0 = historical_satellite_data.sel(channels_index=channel)
                 previous = historical_satellite_data.sel(channels_index=channel)
                 optical_flows = []
-                for i in range(len(historical_satellite_data.coords[
-                                       "time_index"])-1, len(historical_satellite_data.coords[
-                                                               "time_index"]) - self.number_previous_timesteps_to_use - 1, -1):
+                for i in range(
+                    len(historical_satellite_data.coords["time_index"]) - 1,
+                    len(historical_satellite_data.coords["time_index"])
+                    - self.previous_timestep_to_use
+                    - 1,
+                    -1,
+                ):
                     t0_image = t0.isel(time_index=i).data.values
-                    previous_image = previous.isel(time_index=i-1).data.values
+                    previous_image = previous.isel(time_index=i - 1).data.values
                     optical_flow = compute_optical_flow(t0_image, previous_image)
                     optical_flows.append(optical_flow)
                 # Average predictions
-                optical_flow = np.mean(optical_flows, axis = 0)
+                optical_flow = np.mean(optical_flows, axis=0)
                 # Do predictions now
                 t0_image = t0.isel(time_index=-1).data.values
                 flow = optical_flow * (prediction_timestep + 1)

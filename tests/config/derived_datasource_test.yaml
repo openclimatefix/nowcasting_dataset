@@ -5,12 +5,6 @@ git: null
 input_data:
   gsp:
     gsp_zarr_path: tests/data/gsp/test.zarr
-  nwp:
-    nwp_channels:
-      - t
-    nwp_image_size_pixels: 2
-    nwp_zarr_path: tests/data/nwp_data/test.zarr
-    history_minutes: 60
   satellite:
     satellite_channels:
       - HRV

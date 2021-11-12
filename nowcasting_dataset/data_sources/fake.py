@@ -161,6 +161,36 @@ def topographic_fake(batch_size, image_size_pixels):
     return Topographic(xr_dataset)
 
 
+def add_uk_centroid_osgb(x, y):
+    """Add a OSGB value to make coords in center of UK"""
+    lat = np.random.uniform(51, 55)
+    lon = np.random.uniform(-2.5, 1)
+
+    x_center, y_center = lat_lon_to_osgb(lat=lat, lon=lon)
+
+    x = x + x_center
+    y = y + y_center
+
+    return x, y
+
+
+def make_random_point_coords_osgb(size: int):
+    """Make random coords [OSGB] for pv site, of gsp"""
+    # this is about 100KM
+    x = np.sort(np.random.randint(0, 10 ** 5, size))
+    y = np.sort(np.random.randint(0, 10 ** 5, size))
+
+    return add_uk_centroid_osgb(x, y)
+
+
+def make_random_image_coords_osgb(size: int):
+    """Make random coords for image. These are ranges for the pixels"""
+    x = 4 * 10 ** 3 * np.array((range(0, size)))
+    y = 4 * 10 ** 3 * np.array((range(0, size)))
+
+    return add_uk_centroid_osgb(x, y)
+
+
 def create_image_array(
     dims=("time", "x", "y", "channels"),
     seq_length_5=19,
@@ -168,24 +198,27 @@ def create_image_array(
     channels=SAT_VARIABLE_NAMES,
 ):
     """Create Satellite or NWP fake image data"""
+
+    x, y = make_random_image_coords_osgb(size=image_size_pixels)
+
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
-        "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
-        "y": np.random.randint(low=0, high=1000, size=image_size_pixels),
+        "x": x,
+        "y": y,
         "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     image_data_array = xr.DataArray(
-        abs(
-            np.random.randn(
-                seq_length_5,
-                image_size_pixels,
-                image_size_pixels,
-                len(channels),
+        abs(  # to make sure average is about 100
+            np.random.uniform(
+                0,
+                200,
+                size=(seq_length_5, image_size_pixels, image_size_pixels, len(channels)),
             )
         ),
         coords=coords,
     )  # Fake data for testing!
+
     return image_data_array
 
 
@@ -224,8 +257,11 @@ def create_gsp_pv_dataset(
 
     data = convert_data_array_to_dataset(data_array)
 
+    # make random coords
+    x, y = make_random_point_coords_osgb(size=number_of_systems)
+
     x_coords = xr.DataArray(
-        data=10 ** 4 * np.random.randn(number_of_systems),
+        data=x,
         dims=["id_index"],
         coords=dict(
             id_index=range(number_of_systems),
@@ -233,7 +269,7 @@ def create_gsp_pv_dataset(
     )
 
     y_coords = xr.DataArray(
-        data=10 ** 4 * np.random.randn(number_of_systems),
+        data=y,
         dims=["id_index"],
         coords=dict(
             id_index=range(number_of_systems),
@@ -244,15 +280,8 @@ def create_gsp_pv_dataset(
     x_coords.data[0] = x_coords.data.mean()
     y_coords.data[0] = y_coords.data.mean()
 
-    # make random lat and long
-    lat = np.random.randint(51, 55)
-    lon = np.random.randint(-2.5, 1)
-
-    # turn into OSGB
-    x, y = lat_lon_to_osgb(lat=lat, lon=lon)
-
-    data["x_coords"] = x_coords + x
-    data["y_coords"] = y_coords + y
+    data["x_coords"] = x_coords
+    data["y_coords"] = y_coords
 
     # Add 1000 to the id numbers for the row numbers.
     # This is a quick way to make sure row number is different from id,

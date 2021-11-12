@@ -165,13 +165,14 @@ class Batch(BaseModel):
                 local_netcdf_filename = os.path.join(
                     local_netcdf_path, data_source_name, get_netcdf_filename(batch_idx)
                 )
-
-                # submit task
-                future_examples = executor.submit(
-                    xr.load_dataset,
-                    filename_or_obj=local_netcdf_filename,
-                )
-                future_examples_per_source.append([data_source_name, future_examples])
+                # If the file exists, load it, otherwise data source isn't used
+                if os.path.isfile(local_netcdf_filename):
+                    # submit task
+                    future_examples = executor.submit(
+                        xr.load_dataset,
+                        filename_or_obj=local_netcdf_filename,
+                    )
+                    future_examples_per_source.append([data_source_name, future_examples])
 
         # Collect results from each thread.
         for data_source_name, future_examples in future_examples_per_source:

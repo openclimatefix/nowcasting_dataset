@@ -10,6 +10,7 @@ import pandas as pd
 import nowcasting_dataset
 from nowcasting_dataset.data_sources import OpticalFlowDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 from nowcasting_dataset.manager import Manager
 
@@ -170,6 +171,8 @@ def test_derived_batches():
         image_size_pixels=32,
     )
 
+    meta = MetadataDataSource(forecast_minutes = 60, history_minutes = 30)
+
     manager = Manager()
 
     # load config
@@ -182,7 +185,7 @@ def test_derived_batches():
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
         # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat}
+        manager.data_sources = {"gsp": gsp, "sat": sat, "metadata": meta}
         manager.derived_data_sources = {"opticalflow": of}
         manager.data_source_which_defines_geospatial_locations = gsp
 

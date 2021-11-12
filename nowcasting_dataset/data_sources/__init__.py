@@ -1,6 +1,7 @@
 """ Various DataSources """
 from nowcasting_dataset.data_sources.data_source import DataSource  # noqa: F401
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_data_source import (
     OpticalFlowDataSource,
@@ -13,6 +14,7 @@ from nowcasting_dataset.data_sources.topographic.topographic_data_source import 
 )
 
 MAP_DATA_SOURCE_NAME_TO_CLASS = {
+    "metadata": MetadataDataSource,
     "pv": PVDataSource,
     "satellite": SatelliteDataSource,
     "opticalflow": OpticalFlowDataSource,

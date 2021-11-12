@@ -121,7 +121,6 @@ class GSPDataSource(ImageDataSource):
         Returns: list of x and y locations
 
         """
-
         total_gsp_nan_count = self.gsp_power.isna().sum().sum()
         if total_gsp_nan_count == 0:
 
@@ -165,7 +164,7 @@ class GSPDataSource(ImageDataSource):
 
                 # Get metadata for GSP
                 x_centers_osgb.append(metadata_for_gsp.location_x)
-                x_centers_osgb.append(metadata_for_gsp.location_y)
+                y_centers_osgb.append(metadata_for_gsp.location_y)
 
         return x_centers_osgb, y_centers_osgb
 

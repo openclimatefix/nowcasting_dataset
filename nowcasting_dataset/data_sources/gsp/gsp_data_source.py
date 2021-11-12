@@ -121,35 +121,53 @@ class GSPDataSource(ImageDataSource):
         Returns: list of x and y locations
 
         """
-        # Pick a random GSP for each t0_datetime, and then grab
-        # their geographical location.
-        x_locations = []
-        y_locations = []
 
-        # TODO: Issue 305: Speed up this function by removing this for loop?
-        for t0_dt in t0_datetimes:
+        gsp_nans = self.gsp_power.isna().sum().sum()
+        if gsp_nans == 0:
 
-            # Choose start and end times
-            start_dt = self._get_start_dt(t0_dt)
-            end_dt = self._get_end_dt(t0_dt)
+            # get random gps metadata
+            indexes = list(np.random.choice(range(len(self.metadata)), size=len(t0_datetimes)))
+            metadata = self.metadata.iloc[indexes]
 
-            # remove any nans
-            gsp_power = self.gsp_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+            # get x, y locations
+            x_centers_osgb = list(metadata.location_x)
+            y_centers_osgb = list(metadata.location_y)
 
-            # get random index
-            random_gsp_id = self.rng.choice(gsp_power.columns)
-            meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
+        else:
 
-            # Make sure there is only one GSP.
-            # Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
-            # TODO: Issue #272: Further investigation on multiple GSPs may be needed.
-            metadata_for_gsp = meta_data.iloc[0]
+            logger.warning(
+                "There are some nans in the gsp data, "
+                "so to get x,y locations we have to do a big loop"
+            )
 
-            # Get metadata for GSP
-            x_locations.append(metadata_for_gsp.location_x)
-            y_locations.append(metadata_for_gsp.location_y)
+            # Pick a random GSP for each t0_datetime, and then grab
+            # their geographical location.
+            x_centers_osgb = []
+            y_centers_osgb = []
 
-        return x_locations, y_locations
+            for t0_dt in t0_datetimes:
+
+                # Choose start and end times
+                start_dt = self._get_start_dt(t0_dt)
+                end_dt = self._get_end_dt(t0_dt)
+
+                # remove any nans
+                gsp_power = self.gsp_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+
+                # get random index
+                random_gsp_id = self.rng.choice(gsp_power.columns)
+                meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
+
+                # Make sure there is only one GSP.
+                # Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
+                # TODO: Issue #272: Further investigation on multiple GSPs may be needed.
+                metadata_for_gsp = meta_data.iloc[0]
+
+                # Get metadata for GSP
+                x_centers_osgb.append(metadata_for_gsp.location_x)
+                x_centers_osgb.append(metadata_for_gsp.location_y)
+
+        return x_centers_osgb, y_centers_osgb
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number

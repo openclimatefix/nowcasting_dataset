@@ -266,8 +266,9 @@ class Manager:
         for t0_datetime_UTC, locations_task in tasks:
             x_center_OSGB, y_center_OSGB = locations_task.result()
 
-            x_centers_osgb.append(x_center_OSGB)
-            y_centers_osgb.append(y_center_OSGB)
+            # current 'x_center_OSGB' and 'y_center_OSGB' are lists
+            x_centers_osgb.append(x_center_OSGB[0])
+            y_centers_osgb.append(y_center_OSGB[0])
             t0_datetimes_utc.append(t0_datetime_UTC)
 
         return pd.DataFrame(

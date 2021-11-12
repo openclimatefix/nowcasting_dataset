@@ -351,16 +351,40 @@ class Manager:
             if len(splits_which_need_more_batches) == 0:
                 logger.info("All batches have already been created!  No work to do!")
                 return
+
+        # Load locations for each example off disk.
+        locations_for_each_example_of_each_split: dict[split.SplitName, pd.DataFrame] = {}
+        for split_name in splits_which_need_more_batches:
+            filename = self._filename_of_locations_csv_file(split_name.value)
+            logger.info(f"Loading {filename}.")
+            locations_for_each_example = pd.read_csv(filename, index_col=0)
+            assert locations_for_each_example.columns.to_list() == list(
+                SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
+                )
+            # Converting to datetimes is much faster using `pd.to_datetime()` than
+            # passing `parse_datetimes` into `pd.read_csv()`.
+            locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
+                locations_for_each_example["t0_datetime_UTC"]
+                )
+            locations_for_each_example_of_each_split[split_name] = locations_for_each_example
+
         n_data_sources = len(self.derived_data_sources)
         nd_utils.set_fsspec_for_multiprocess()
         for split_name in splits_which_need_more_batches:
+            locations_for_split = locations_for_each_example_of_each_split[split_name]
             with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
                 future_create_batches_jobs = []
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.derived_data_sources.items()
                 ):
+
+                    if len(locations_for_split) == 0:
+                        break
+
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
+                    idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
+                    locations = locations_for_split.loc[idx_of_first_example:]
 
                     # Get paths.
                     dst_path = (
@@ -382,6 +406,7 @@ class Manager:
                     future = executor.submit(
                         data_source.create_batches,
                         batch_path=self.config.output_data.filepath / split_name.value,
+                        spatial_and_temporal_locations_of_each_example=locations,
                         total_number_batches=self._get_n_batches_for_split_name(split_name.value),
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,

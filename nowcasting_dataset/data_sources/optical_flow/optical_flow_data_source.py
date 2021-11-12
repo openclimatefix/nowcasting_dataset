@@ -29,7 +29,7 @@ class OpticalFlowDataSource(DerivedDataSource):
     image_size_pixels: Optional[int] = None
 
     def get_example(
-        self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, **kwargs
+        self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, t0_datetime: pd.Timestamp, **kwargs
     ) -> DataSourceOutput:
         """
         Get Optical Flow Example data
@@ -37,6 +37,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         Args:
             batch: Batch containing satellite and metadata at least
             example_idx: The example to load and use
+            t0_datetime: t0 datetime for the example
 
         Returns: Example Data
 
@@ -47,9 +48,8 @@ class OpticalFlowDataSource(DerivedDataSource):
 
         # Only do optical flow for satellite data
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
-        t0_dt = batch.metadata.t0_dt.values[example_idx]
 
-        selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_dt)
+        selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_datetime)
 
         return selected_data
 

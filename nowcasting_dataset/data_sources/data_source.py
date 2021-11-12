@@ -477,15 +477,10 @@ class DerivedDataSource(DataSource):
 
     # TODO Reduce duplication https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(
-        self,
-        batch_path: Path,
-        total_number_batches: int,
-        idx_of_first_batch: int,
-        dst_path: Path,
-        local_temp_path: Path,
-        upload_every_n_batches: int,
-        **kwargs,
-    ) -> None:
+            self, batch_path: Path, spatial_and_temporal_locations_of_each_example: pd.DataFrame,
+            total_number_batches: int, idx_of_first_batch: int, dst_path: Path,
+            local_temp_path: Path, upload_every_n_batches: int, **kwargs
+            ) -> None:
         """Create multiple batches and save them to disk.
 
         Safe to call from worker processes.
@@ -494,6 +489,10 @@ class DerivedDataSource(DataSource):
           batch_path: Path to where the netcdf batches are stored
             (these will fed into the `DerivedDataSource`). This is the path to the top level path,
             such as `foo/v10/train/`
+          spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
+            the spatial and temporal location of an example.  The number of rows must be
+            an exact multiple of `batch_size`.
+            Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
           total_number_batches: The total number of batches to make
           idx_of_first_batch: The batch number of the first batch to create.
           dst_path: The final destination path for the batches.  Must exist.
@@ -516,13 +515,25 @@ class DerivedDataSource(DataSource):
             nd_fs_utils.delete_all_files_in_temp_path(local_temp_path)
         path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
 
+        # Split locations per example into batches:
+        batch_size = len(spatial_and_temporal_locations_of_each_example) // total_number_batches
+        locations_for_batches = []
+        for batch_idx in range(total_number_batches):
+            start_example_idx = batch_idx * batch_size
+            end_example_idx = (batch_idx + 1) * batch_size
+            locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
+                                  start_example_idx:end_example_idx
+                                  ]
+            locations_for_batches.append(locations_for_batch)
+
         # Loop round each batch:
-        n_batches_processed = 0
-        for batch_idx in range(idx_of_first_batch, total_number_batches):
+        for n_batches_processed, locations_for_batch in enumerate(locations_for_batches):
+            batch_idx = idx_of_first_batch + n_batches_processed
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self.get_batch(netcdf_path=batch_path, batch_idx=batch_idx)
+            batch = self.get_batch(netcdf_path=batch_path, batch_idx=batch_idx,
+                                   t0_datetimes=locations_for_batch.t0_datetime_UTC,)
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -541,7 +552,7 @@ class DerivedDataSource(DataSource):
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
     def get_batch(
-        self, netcdf_path: Union[str, Path], batch_idx: int, **kwargs
+        self, netcdf_path: Union[str, Path], batch_idx: int, t0_datetimes: pd.DatetimeIndex, **kwargs
     ) -> DataSourceOutput:
         """
         Get Batch of derived data
@@ -549,6 +560,9 @@ class DerivedDataSource(DataSource):
         Args:
             netcdf_path: Path to the NetCDF files of the Batch to load
             batch_idx: The batch ID to load from those in the path
+            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
+                include data for historic and future depending on `history_minutes` and
+                `future_minutes`.  The batch size is given by the length of the t0_datetimes.
 
         Returns:
             Batch of the derived data source
@@ -560,7 +574,8 @@ class DerivedDataSource(DataSource):
         with futures.ProcessPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []
             for example_idx in range(batch.batch_size):
-                future_example = executor.submit(self.get_example, batch, example_idx)
+                future_example = executor.submit(self.get_example, batch, example_idx,
+                                                 t0_datetimes[example_idx])
                 future_examples.append(future_example)
             examples = [future_example.result() for future_example in future_examples]
 

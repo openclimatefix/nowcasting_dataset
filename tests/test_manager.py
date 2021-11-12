@@ -194,6 +194,11 @@ def test_derived_batches():
 
         # make batches
         manager.create_batches(overwrite_batches=True)
+        import glob
+        print(list(glob.glob(os.path.join(dst_path, "train", "*"))))
+        # Load batch
+        from nowcasting_dataset.dataset.batch import Batch
+        batch = Batch.load_netcdf(os.path.join(dst_path, "train"), batch_idx = 0)
 
         # make derived batches
         manager.create_derived_batches(overwrite_batches=True)

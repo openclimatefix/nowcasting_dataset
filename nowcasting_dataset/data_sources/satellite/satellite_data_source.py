@@ -44,7 +44,8 @@ class SatelliteDataSource(ZarrDataSource):
         """
         self._data = self._open_data()
         self._data = self._data.sel(variable=list(self.channels))
-        self._data = self._data.rename({"variable"})
+        if "variable" in self._data.dims:
+            self._data = self._data.rename({"variable": "channels"})
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
@@ -139,7 +140,9 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
         zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
     )
 
-    data_array = dataset["stacked_eumetsat_data"].rename({"stacked_eumetsat_data": "data" "va"})
+    data_array = dataset["stacked_eumetsat_data"]
+    if "stacked_eumetsat_data" == data_array.name:
+        data_array.name = "data"
     del dataset
 
     # The 'time' dimension is at 04, 09, ..., 59 minutes past the hour.

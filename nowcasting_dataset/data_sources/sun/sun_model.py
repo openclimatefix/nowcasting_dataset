@@ -11,6 +11,7 @@ class Sun(DataSourceOutput):
 
     __slots__ = ()
     _expected_dimensions = ("time",)
+    _expected_data_vars = ("elevation", "azimuth")
 
     @classmethod
     def model_validation(cls, v):
@@ -31,5 +32,8 @@ class Sun(DataSourceOutput):
         v.check_dataset_less_than_or_equal_to(
             data=v.elevation, variable_name="elevation", max_value=90
         )
+
+        v.check_data_var_dim(v.elevation, ("example", "time_index"))
+        v.check_data_var_dim(v.azimuth, ("example", "time_index"))
 
         return v

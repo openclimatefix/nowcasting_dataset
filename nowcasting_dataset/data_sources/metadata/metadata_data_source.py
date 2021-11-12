@@ -9,7 +9,6 @@ import xarray as xr
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
-from nowcasting_dataset.utils import to_numpy
 
 
 @dataclass

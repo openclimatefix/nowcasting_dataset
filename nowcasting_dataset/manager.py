@@ -249,7 +249,7 @@ class Manager:
         with futures.ThreadPoolExecutor() as executor:
             tasks = []
 
-            # loop over data sources
+            # loop over t0 datetimes
             for t0_datetime_UTC in shuffled_t0_datetimes:
 
                 # submit task

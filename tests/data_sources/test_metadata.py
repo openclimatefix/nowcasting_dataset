@@ -6,7 +6,7 @@ from nowcasting_dataset.data_sources.metadata.metadata_data_source import Metada
 
 def test_metadata_example():
     data_source = MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
-    t0 = pd.date_range("2021-01-01", freq="5T", periods=1) + pd.Timedelta("30T")
+    t0 = pd.Timestamp('2021-01-01')
     x_meters_center = 1000
     y_meters_center = 1000
     example = data_source.get_example(

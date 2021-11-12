@@ -41,10 +41,10 @@ class MetadataDataSource(DataSource):
         # TODO: data_dict is unused in this function.  Is that a bug?
         # https://github.com/openclimatefix/nowcasting_dataset/issues/279
         data_dict = dict(  # noqa: F841
-            t0_dt=t0_dt,  #: Shape: [batch_size,]
-            x_meters_center=np.array([x_meters_center]),
-            y_meters_center=np.array([y_meters_center]),
-            object_at_center_label=np.array([object_at_center_label]),
+            t0_dt=[t0_dt],  #: Shape: [batch_size,]
+            x_meters_center=[x_meters_center],
+            y_meters_center=[y_meters_center],
+            object_at_center_label=[object_at_center_label],
         )
         d = {
             "dims": ("t0_dt",),
@@ -59,5 +59,7 @@ class MetadataDataSource(DataSource):
                 {"data": v}
             )
             data[v] = getattr(d, v)
+        data = data.drop_vars("t0_dt")
+        data = data.rename({"data": "t0_dt"})
 
         return Metadata(data)

@@ -1,0 +1,33 @@
+general:
+  description: example configuration
+  name: example
+git: null
+input_data:
+  gsp:
+    gsp_zarr_path: tests/data/gsp/test.zarr
+  nwp:
+    nwp_channels:
+      - t
+    nwp_image_size_pixels: 2
+    nwp_zarr_path: tests/data/nwp_data/test.zarr
+    history_minutes: 60
+  satellite:
+    satellite_channels:
+      - HRV
+    satellite_image_size_pixels: 64
+    satellite_zarr_path: tests/data/sat_data.zarr
+  topographic:
+    topographic_filename: tests/data/europe_dem_2km_osgb.tif
+  opticalflow:
+    number_previous_timesteps_to_use: 1
+    opticalflow_image_size_pixels: 32
+output_data:
+  filepath: not used by unittests!
+process:
+  batch_size: 32
+  local_temp_path: ~/temp/
+  seed: 1234
+  upload_every_n_batches: 16
+  n_train_batches: 2
+  n_validation_batches: 0
+  n_test_batches: 0

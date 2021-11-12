@@ -467,22 +467,12 @@ if DST_ZARR_PATH.exists():
 # In[ ]:
 
 
-# Set maxtasksperchild otherwise total memory usage slowly grows until the script uses
-# more memory than is available, and crashes with a "BrokenPipeError".
-with multiprocessing.Pool(processes=1, maxtasksperchild=4) as pool:
-    result_iterator = pool.imap(
-        func=load_grib_files_from_groupby_tuple, 
-        iterable=map_datetime_to_grib_filename.groupby(level=0),
-        chunksize=1
+for groupby_tuple in map_datetime_to_grib_filename.groupby(level=0):
+    dataset = load_grib_files_from_groupby_tuple(groupby_tuple)
+    if dataset is None:
+        continue
+    append_to_zarr(
+        dataset, 
+        #"/home/jack/data/nwp.zarr"
+        DST_ZARR_PATH,
     )
-    print("After pool.imap!", flush=True)
-    for dataset in result_iterator:
-        print("Got dataset from iterator!", flush=True)
-        if dataset is None:
-            continue
-        append_to_zarr(
-            dataset, 
-            #"/home/jack/data/nwp.zarr"
-            DST_ZARR_PATH,
-        )
-        del dataset

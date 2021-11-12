@@ -50,9 +50,9 @@ class MetadataDataSource(DataSource):
 
         d_all = {
             "t0_dt": {"dims": ("t0_dt"), "data": [t0_dt]},
-            "x_meters_center": {"dims": ("t0_dt_index"), "data": [x_meters_center]},
-            "y_meters_center": {"dims": ("t0_dt_index"), "data": [y_meters_center]},
-            "object_at_center_label": {"dims": ("t0_dt_index"), "data": [object_at_center_label]},
+            "x_meters_center": {"dims": ("t0_dt"), "data": [x_meters_center]},
+            "y_meters_center": {"dims": ("t0_dt"), "data": [y_meters_center]},
+            "object_at_center_label": {"dims": ("t0_dt"), "data": [object_at_center_label]},
         }
 
         data = convert_data_array_to_dataset(xr.DataArray.from_dict(d_all["t0_dt"]))

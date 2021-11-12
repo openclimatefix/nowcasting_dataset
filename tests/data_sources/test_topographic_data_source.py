@@ -40,6 +40,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     assert np.isclose(top, topo_data.y.values[0], atol=size)
     assert np.isclose(bottom, topo_data.y.values[-1], atol=size)
 
+
 @pytest.mark.parametrize(
     "x, y, left, right, top, bottom",
     [
@@ -52,8 +53,8 @@ def test_get_example_2km(x, y, left, right, top, bottom):
         (2000, 2000, -126_000, 128_000, 130_000, -124_000),
         (2000, 1000, -126_000, 128_000, 128_000, -126_000),
         (2001, 2001, -124_000, 130_000, 130_000, -124_000),
-        ],
-    )
+    ],
+)
 def test_get_batch_2km(x, y, left, right, top, bottom):
     size = 2000  # meters
     topo_source = TopographicDataSource(
@@ -62,12 +63,13 @@ def test_get_batch_2km(x, y, left, right, top, bottom):
         meters_per_pixel=size,
         forecast_minutes=300,
         history_minutes=10,
-        )
-    x = np.array([x]*32)
-    y = np.array([y]*32)
+    )
+    x = np.array([x] * 32)
+    y = np.array([y] * 32)
     t0_datetimes = pd.date_range("2021-01-01", freq="5T", periods=32) + pd.Timedelta("30T")
     topo_data = topo_source.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
     assert "x_index_index" not in topo_data.dims
+
 
 @pytest.mark.skip("CD does not have access to GCS")
 def test_get_example_gcs():

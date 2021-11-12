@@ -122,8 +122,8 @@ class GSPDataSource(ImageDataSource):
 
         """
 
-        gsp_nans = self.gsp_power.isna().sum().sum()
-        if gsp_nans == 0:
+        total_gsp_nan_count = self.gsp_power.isna().sum().sum()
+        if total_gsp_nan_count == 0:
 
             # get random gps metadata
             indexes = list(np.random.choice(range(len(self.metadata)), size=len(t0_datetimes)))

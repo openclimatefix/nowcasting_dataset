@@ -245,18 +245,36 @@ class Manager:
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
-        # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
-        # multiple processors.  Currently takes about half an hour for 25,000 batches.
-        # But wait until we've implemented issue #305, as that is likely to be sufficient!
-        (
-            x_locations,
-            y_locations,
-        ) = self.data_source_which_defines_geospatial_locations.get_locations(shuffled_t0_datetimes)
+
+        with futures.ThreadPoolExecutor() as executor:
+            tasks = []
+
+            # loop over data sources
+            for t0_datetime_UTC in shuffled_t0_datetimes:
+
+                # submit task
+                locations_task = executor.submit(
+                    self.data_source_which_defines_geospatial_locations.get_locations,
+                    t0_datetimes=[t0_datetime_UTC],
+                )
+                tasks.append([t0_datetime_UTC, locations_task])
+
+        # Collect results from each thread.
+        x_centers_osgb = []
+        y_centers_osgb = []
+        t0_datetimes_utc = []
+        for t0_datetime_UTC, locations_task in tasks:
+            x_center_OSGB, y_center_OSGB = locations_task.result()
+
+            x_centers_osgb.append(x_center_OSGB)
+            y_centers_osgb.append(y_center_OSGB)
+            t0_datetimes_utc.append(t0_datetime_UTC)
+
         return pd.DataFrame(
             {
-                "t0_datetime_UTC": shuffled_t0_datetimes,
-                "x_center_OSGB": x_locations,
-                "y_center_OSGB": y_locations,
+                "t0_datetime_UTC": t0_datetimes_utc,
+                "x_center_OSGB": x_centers_osgb,
+                "y_center_OSGB": y_centers_osgb,
             }
         )
 

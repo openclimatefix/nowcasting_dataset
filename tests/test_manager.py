@@ -171,11 +171,10 @@ def test_derived_batches():
     )
 
     manager = Manager()
-    from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
 
     # load config
     local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "derived_datasource_test.yaml"
+    filename = local_path / "tests" / "config" / "test.yaml"
     manager.load_yaml_configuration(filename=filename)
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 

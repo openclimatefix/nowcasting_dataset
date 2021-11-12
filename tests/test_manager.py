@@ -130,6 +130,7 @@ def test_batches():
         manager.create_batches(overwrite_batches=True)
 
         assert os.path.exists(f"{dst_path}/train")
+        assert os.path.exists(f"{dst_path}/train/metadata/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp")
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
@@ -186,6 +187,7 @@ def test_derived_batches():
         # just set satellite as data source
         manager.data_sources = {"gsp": gsp, "sat": sat}
         manager.derived_data_sources = {"opticalflow": of}
+        print(manager.derived_data_sources)
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations

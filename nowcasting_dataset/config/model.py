@@ -262,7 +262,7 @@ class InputData(BaseModel):
         return cls(
             pv=PV(),
             satellite=Satellite(),
-            satellite_hrv=SatelliteHRV(),
+            hrvsatellite=HRVSatellite(),
             nwp=NWP(),
             gsp=GSP(),
             topographic=Topographic(),

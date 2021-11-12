@@ -187,7 +187,7 @@ def test_derived_batches():
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
         # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat, 'meta': meta}
+        manager.data_sources = {"gsp": gsp, "sat": sat, "meta": meta}
         manager.derived_data_sources = {"opticalflow": of}
         manager.data_source_which_defines_geospatial_locations = gsp
 

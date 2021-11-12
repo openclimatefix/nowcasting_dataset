@@ -42,26 +42,21 @@ class MetadataDataSource(DataSource):
         # TODO: data_dict is unused in this function.  Is that a bug?
         # https://github.com/openclimatefix/nowcasting_dataset/issues/279
         data_dict = dict(  # noqa: F841
-            t0_dt=to_numpy(t0_dt),  #: Shape: [batch_size,]
-            x_meters_center=np.array(x_meters_center),
-            y_meters_center=np.array(y_meters_center),
-            object_at_center_label=object_at_center_label,
+            t0_dt=t0_dt,  #: Shape: [batch_size,]
+            x_meters_center=np.array([x_meters_center]),
+            y_meters_center=np.array([y_meters_center]),
+            object_at_center_label=np.array([object_at_center_label]),
         )
+        d = {
+            "dims": ("t0_dt",),
+            "data": data_dict["t0_dt"],
+            }
 
-        d_all = {
-            "t0_dt": {"dims": ("t0_dt"), "data": [t0_dt]},
-            "x_meters_center": {"dims": ("t0_dt"), "data": [x_meters_center]},
-            "y_meters_center": {"dims": ("t0_dt"), "data": [y_meters_center]},
-            "object_at_center_label": {"dims": ("t0_dt"), "data": [object_at_center_label]},
-        }
-
-        data = convert_data_array_to_dataset(xr.DataArray.from_dict(d_all["t0_dt"]))
+        data = convert_data_array_to_dataset(xr.DataArray.from_dict(d))
 
         for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
-            d: dict = d_all[v]
-            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename(
-                {"data": v}
-            )
+            d: dict = {"dims": ("t0_dt",), "data": data_dict[v]}
+            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename({"data": v})
             data[v] = getattr(d, v)
 
         return Metadata(data)

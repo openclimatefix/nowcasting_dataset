@@ -477,10 +477,16 @@ class DerivedDataSource(DataSource):
 
     # TODO Reduce duplication https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(
-            self, batch_path: Path, spatial_and_temporal_locations_of_each_example: pd.DataFrame,
-            total_number_batches: int, idx_of_first_batch: int, dst_path: Path,
-            local_temp_path: Path, upload_every_n_batches: int, **kwargs
-            ) -> None:
+        self,
+        batch_path: Path,
+        spatial_and_temporal_locations_of_each_example: pd.DataFrame,
+        total_number_batches: int,
+        idx_of_first_batch: int,
+        dst_path: Path,
+        local_temp_path: Path,
+        upload_every_n_batches: int,
+        **kwargs,
+    ) -> None:
         """Create multiple batches and save them to disk.
 
         Safe to call from worker processes.
@@ -522,8 +528,8 @@ class DerivedDataSource(DataSource):
             start_example_idx = batch_idx * batch_size
             end_example_idx = (batch_idx + 1) * batch_size
             locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
-                                  start_example_idx:end_example_idx
-                                  ]
+                start_example_idx:end_example_idx
+            ]
             locations_for_batches.append(locations_for_batch)
 
         # Loop round each batch:
@@ -532,8 +538,11 @@ class DerivedDataSource(DataSource):
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self.get_batch(netcdf_path=batch_path, batch_idx=batch_idx,
-                                   t0_datetimes=locations_for_batch.t0_datetime_UTC,)
+            batch = self.get_batch(
+                netcdf_path=batch_path,
+                batch_idx=batch_idx,
+                t0_datetimes=locations_for_batch.t0_datetime_UTC,
+            )
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -552,7 +561,11 @@ class DerivedDataSource(DataSource):
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
     def get_batch(
-        self, netcdf_path: Union[str, Path], batch_idx: int, t0_datetimes: pd.DatetimeIndex, **kwargs
+        self,
+        netcdf_path: Union[str, Path],
+        batch_idx: int,
+        t0_datetimes: pd.DatetimeIndex,
+        **kwargs,
     ) -> DataSourceOutput:
         """
         Get Batch of derived data
@@ -574,8 +587,9 @@ class DerivedDataSource(DataSource):
         with futures.ProcessPoolExecutor(max_workers=batch.batch_size) as executor:
             future_examples = []
             for example_idx in range(batch.batch_size):
-                future_example = executor.submit(self.get_example, batch, example_idx,
-                                                 t0_datetimes[example_idx])
+                future_example = executor.submit(
+                    self.get_example, batch, example_idx, t0_datetimes[example_idx]
+                )
                 future_examples.append(future_example)
             examples = [future_example.result() for future_example in future_examples]
 

@@ -360,12 +360,12 @@ class Manager:
             locations_for_each_example = pd.read_csv(filename, index_col=0)
             assert locations_for_each_example.columns.to_list() == list(
                 SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-                )
+            )
             # Converting to datetimes is much faster using `pd.to_datetime()` than
             # passing `parse_datetimes` into `pd.read_csv()`.
             locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
                 locations_for_each_example["t0_datetime_UTC"]
-                )
+            )
             locations_for_each_example_of_each_split[split_name] = locations_for_each_example
 
         n_data_sources = len(self.derived_data_sources)

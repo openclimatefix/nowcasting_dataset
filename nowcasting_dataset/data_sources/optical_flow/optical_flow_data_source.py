@@ -29,7 +29,11 @@ class OpticalFlowDataSource(DerivedDataSource):
     image_size_pixels: Optional[int] = None
 
     def get_example(
-        self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, t0_datetime: pd.Timestamp, **kwargs
+        self,
+        batch: nowcasting_dataset.dataset.batch.Batch,
+        example_idx: int,
+        t0_datetime: pd.Timestamp,
+        **kwargs
     ) -> DataSourceOutput:
         """
         Get Optical Flow Example data

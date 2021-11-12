@@ -164,7 +164,6 @@ def test_derived_batches():
         meters_per_pixel=2000,
     )
 
-
     of = OpticalFlowDataSource(
         history_minutes=30,
         forecast_minutes=60,

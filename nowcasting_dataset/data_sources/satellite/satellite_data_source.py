@@ -142,7 +142,7 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     if Path(zarr_path).exists:
         dataset = xr.open_dataset(
             zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
-            )
+        )
     else:
         # Get Paths
         zarr_paths = list(glob(zarr_path))

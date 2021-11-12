@@ -121,7 +121,7 @@ class Satellite(DataSourceMixin):
     )
 
 
-class SatelliteHRV(Satellite):
+class HRVSatellite(Satellite):
     """Satellite configuration model for HRV data"""
 
     satellite_channels: tuple = Field(
@@ -197,7 +197,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
-    satellite_hrv: Optional[SatelliteHRV] = None
+    hrvsatellite: Optional[HRVSatellite] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None

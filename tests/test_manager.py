@@ -171,7 +171,7 @@ def test_derived_batches():
         image_size_pixels=32,
     )
 
-    meta = MetadataDataSource(forecast_minutes = 60, history_minutes = 30)
+    meta = MetadataDataSource(forecast_minutes=60, history_minutes=30)
 
     manager = Manager()
 

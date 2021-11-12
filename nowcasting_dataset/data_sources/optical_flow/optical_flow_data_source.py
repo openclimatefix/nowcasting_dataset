@@ -26,7 +26,7 @@ class OpticalFlowDataSource(DerivedDataSource):
     """
 
     number_previous_timesteps_to_use: int = 1
-    opticalflow_image_size_pixels: Optional[int] = None
+    image_size_pixels: Optional[int] = None
 
     def get_example(
         self, batch: nowcasting_dataset.dataset.batch.Batch, example_idx: int, **kwargs
@@ -42,8 +42,8 @@ class OpticalFlowDataSource(DerivedDataSource):
 
         """
 
-        if self.opticalflow_image_size_pixels is None:
-            self.opticalflow_image_size_pixels = len(batch.satellite.x_index)
+        if self.image_size_pixels is None:
+            self.image_size_pixels = len(batch.satellite.x_index)
 
         # Only do optical flow for satellite data
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
@@ -78,7 +78,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             )
         )
         # Make sure its the correct size
-        buffer = (satellite_data.sizes["x_index"] - self.opticalflow_image_size_pixels) // 2
+        buffer = (satellite_data.sizes["x_index"] - self.image_size_pixels) // 2
         satellite_data = satellite_data.isel(
             x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
             y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
@@ -165,8 +165,8 @@ class OpticalFlowDataSource(DerivedDataSource):
         prediction_block = np.zeros(
             (
                 future_timesteps,
-                self.opticalflow_image_size_pixels,
-                self.opticalflow_image_size_pixels,
+                self.image_size_pixels,
+                self.image_size_pixels,
                 satellite_data.sizes["channels_index"],
             )
         )
@@ -194,8 +194,8 @@ class OpticalFlowDataSource(DerivedDataSource):
                 warped_image = remap_image(t0_image, flow)
                 warped_image = crop_center(
                     warped_image,
-                    self.opticalflow_image_size_pixels,
-                    self.opticalflow_image_size_pixels,
+                    self.image_size_pixels,
+                    self.image_size_pixels,
                 )
                 prediction_block[prediction_timestep, :, :, channel] = warped_image
         dataarray = self._update_dataarray_with_predictions(

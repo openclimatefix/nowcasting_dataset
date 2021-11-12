@@ -469,7 +469,7 @@ if DST_ZARR_PATH.exists():
 
 # Set maxtasksperchild otherwise total memory usage slowly grows until the script uses
 # more memory than is available, and crashes with a "BrokenPipeError".
-with multiprocessing.Pool(processes=8, maxtasksperchild=4) as pool:
+with multiprocessing.Pool(processes=2, maxtasksperchild=4) as pool:
     result_iterator = pool.imap(
         func=load_grib_files_from_groupby_tuple, 
         iterable=map_datetime_to_grib_filename.groupby(level=0),

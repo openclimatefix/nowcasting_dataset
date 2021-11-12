@@ -50,13 +50,15 @@ class MetadataDataSource(DataSource):
         d = {
             "dims": ("t0_dt",),
             "data": data_dict["t0_dt"],
-            }
+        }
 
         data = convert_data_array_to_dataset(xr.DataArray.from_dict(d))
 
         for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
             d: dict = {"dims": ("t0_dt",), "data": data_dict[v]}
-            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename({"data": v})
+            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename(
+                {"data": v}
+            )
             data[v] = getattr(d, v)
 
         return Metadata(data)

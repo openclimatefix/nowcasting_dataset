@@ -180,16 +180,16 @@ def test_derived_batches():
     local_path = Path(nowcasting_dataset.__file__).parent.parent
     filename = local_path / "tests" / "config" / "derived_datasource_test.yaml"
     manager.load_yaml_configuration(filename=filename)
-    manager.initialize_data_sources(names_of_selected_data_sources=ALL_DATA_SOURCE_NAMES)
+    # manager.initialize_data_sources(names_of_selected_data_sources=ALL_DATA_SOURCE_NAMES)
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
         # just set satellite as data source
-        # manager.data_sources = {"gsp": gsp, "sat": sat, 'meta': meta}
-        # manager.derived_data_sources = {"opticalflow": of}
-        # manager.data_source_which_defines_geospatial_locations = gsp
+        manager.data_sources = {"gsp": gsp, "sat": sat, 'meta': meta}
+        manager.derived_data_sources = {"opticalflow": of}
+        manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
         manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101

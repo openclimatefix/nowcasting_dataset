@@ -17,7 +17,7 @@ and the new Zarr:
 * The new Zarr has a few more variables.
 
 """
-
+import warnings
 import datetime
 import multiprocessing
 import re
@@ -81,7 +81,7 @@ NUM_COLS = len(EASTING)
 
 NWP_PATH = Path(
     "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/"
-    "UK_Met_Office/UKV/native"
+    "UK_Met_Office/UKV/native/2017"
 )
 
 DST_ZARR_PATH = Path(
@@ -91,7 +91,7 @@ DST_ZARR_PATH = Path(
 assert NWP_PATH.exists()
 
 print("Getting list of all filenames...")
-filenames = list(NWP_PATH.glob("*/*/*/*Wholesale[12].grib"))
+filenames = list(NWP_PATH.glob("*/*/*Wholesale[12].grib"))
 print("Got", len(filenames), "filenames")
 
 
@@ -181,7 +181,11 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
     # The grib files are "heterogeneous", so we use cfgrib.open_datasets
     # to return a list of contiguous xr.Datasets.
     # See https://github.com/ecmwf/cfgrib#automatic-filtering
-    datasets_from_grib = cfgrib.open_datasets(full_filename)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action="ignore",
+            message="ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'")
+        datasets_from_grib = cfgrib.open_datasets(full_filename)
     n_datasets = len(datasets_from_grib)
 
     # Get each dataset into the right shape for merging:
@@ -376,7 +380,9 @@ if DST_ZARR_PATH.exists():
 
 
 N_PROCESSES = 4
-rate_limiting_semaphore = multiprocessing.Semaphore(value=N_PROCESSES * 2)
+# To pass the shared Semaphore into the worker processes, we must use a Manager():
+multiprocessing_manager = multiprocessing.Manager()
+rate_limiting_semaphore = multiprocessing_manager.Semaphore(value=N_PROCESSES * 2)
 load_grib_files_func = partial(
     load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore)
 with multiprocessing.Pool(processes=N_PROCESSES) as pool:

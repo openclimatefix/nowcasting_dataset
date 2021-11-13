@@ -17,13 +17,14 @@ and the new Zarr:
 * The new Zarr has a few more variables.
 
 """
-import logging
 import datetime
+import logging
 import multiprocessing
 import re
+import time
+from functools import partial
 from pathlib import Path
 from typing import Union
-from functools import partial
 
 import cfgrib
 import numcodecs
@@ -39,10 +40,11 @@ class FilterEccodesWarning(logging.Filter):
     def filter(self, record) -> bool:
         """Inspect `record`. Return True to log `record`. Return False to ignore `record`."""
         return not record.getMessage() == (
-            "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'")
+            "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
+        )
 
 
-logging.getLogger('cfgrib.dataset').addFilter(FilterEccodesWarning())
+logging.getLogger("cfgrib.dataset").addFilter(FilterEccodesWarning())
 
 # Done:
 #
@@ -355,14 +357,16 @@ def load_grib_files_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.D
 
 
 def load_grib_files_from_groupby_tuple(
-        groupby_tuple: tuple[pd.Timestamp, pd.Series],
-        rate_limiting_semaphore: multiprocessing.Semaphore
+    groupby_tuple: tuple[pd.Timestamp, pd.Series],
+    rate_limiting_semaphore: multiprocessing.Semaphore,
 ) -> xr.Dataset:
     TIMEOUT_SECONDS = 120
     # Block if reader processes are getting ahead of the Zarr writing process.
     rate_limiting_semaphore.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
     full_grib_filenames = groupby_tuple[1]
-    return load_grib_files_for_single_nwp_init_time(full_grib_filenames)
+    dataset = load_grib_files_for_single_nwp_init_time(full_grib_filenames)
+    print(time.time(), "Returning dataset!", flush=True)
+    return dataset
 
 
 def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
@@ -387,21 +391,22 @@ if DST_ZARR_PATH.exists():
     ]
 
 
-N_PROCESSES = 4
+N_PROCESSES = 1
 # To pass the shared Semaphore into the worker processes, we must use a Manager():
 multiprocessing_manager = multiprocessing.Manager()
 rate_limiting_semaphore = multiprocessing_manager.Semaphore(value=N_PROCESSES * 2)
 load_grib_files_func = partial(
-    load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore)
+    load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore
+)
 with multiprocessing.Pool(processes=N_PROCESSES) as pool:
     result_iterator = pool.imap(
         func=load_grib_files_func,
         iterable=map_datetime_to_grib_filename.groupby(level=0),
-        chunksize=1
+        chunksize=1,
     )
     print("After pool.imap!", flush=True)
     for dataset in result_iterator:
-        print("Got dataset from iterator!", flush=True)
+        print(time.time(), "Got dataset from iterator!", flush=True)
         rate_limiting_semaphore.release()  # Unblock one reader process.
         if dataset is None:
             continue

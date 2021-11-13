@@ -3,7 +3,9 @@
 
 """Convert numerical weather predictions from the UK Met Office "UKV" model to Zarr.
 
-This script uses multiple processes to speed up the conversion.
+This script uses multiple processes to speed up the conversion.  On leonardo (Open Climate Fix's
+on-premises Threadripper 1920x server) this takes about 3 hours of processing per year
+of NWP data.
 
 Useful links:
 
@@ -49,6 +51,9 @@ is working on task n, it cannot write to the destination Zarr until the "previou
 Then a process finishes writing to disk, it release "next_lock" (which enables the process working
 on the next NWP init time to write to the destination Zarr).
 
+TROUBLESHOOTING
+If you get any errors regarding .idx files then try deleting all *.idx files and trying again.
+
 """
 import datetime
 import glob
@@ -93,56 +98,56 @@ NUM_COLS = len(EASTING)
         "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/"
         "UK_Met_Office/UKV/native/*/*/*/*Wholesale[12].grib"
     ),
-    type=str,
     help=(
-        "The directory and the search pattern for the source grib files."
+        "Optional.  The directory and the search pattern for the source grib files."
         "  For example /foo/bar/*/*/*/*Wholesale[12].grib"
     ),
 )
 @click.option(
     "--destination_zarr_path",
-    type=Path,
     help="The output Zarr path to write to.  Will be appended to if already exists.",
 )
 @click.option(
     "--n_processes",
     default=8,
-    type=int,
-    help="The number of processes to use for loading grib files in parallel.",
+    help=(
+        "Optional.  Defaults to 8.  The number of processes to use for loading grib"
+        " files in parallel."
+    ),
 )
 @click.option(
-    "--debug_level",
+    "--log_level",
     default="DEBUG",
     type=click.Choice(_LOG_LEVELS),
+    help="Optional.  Set the log level.",
 )
 @click.option(
     "--log_filename",
     default=None,
-    type=Optional[Path],
     help=(
-        "If not set then will default to `destination_zarr_path` with the"
+        "Optional.  If not set then will default to `destination_zarr_path` with the"
         " suffix replaced with '.log'"
     ),
 )
 @click.option(
     "--n_grib_files_per_nwp_init_time",
     default=2,
-    type=int,
     help=(
-        "The number of grib files expected per NWP initialisation time.  For example, if the search"
-        " pattern includes Wholesale1 and Wholesale2 files, then set"
+        "Optional. Defaults to 2. The number of grib files expected per NWP initialisation time."
+        "  For example, if the search pattern includes Wholesale1 and Wholesale2 files, then set"
         " n_grib_files_per_nwp_init_time to 2."
     ),
 )
 def main(
     source_grib_path_and_search_pattern: str,
-    destination_zarr_path: Path,
+    destination_zarr_path: str,
     n_processes: int,
     log_level: str,
-    log_filename: Optional[Path],
+    log_filename: Optional[str],
     n_grib_files_per_nwp_init_time: int,
 ):
     """The entry point into the script."""
+    destination_zarr_path = Path(destination_zarr_path)
     # Set up logging.
     if log_filename is None:
         log_filename = destination_zarr_path.parent / (destination_zarr_path.stem + ".log")
@@ -151,8 +156,9 @@ def main(
 
     # Get all filenames.
     logger.info(f"Getting list of all filenames in {source_grib_path_and_search_pattern}...")
-    filenames = list(glob.glob(source_grib_path_and_search_pattern))
-    logger.info(f"Got {len(filenames):,d} filenames.")
+    filenames = glob.glob(source_grib_path_and_search_pattern)
+    filenames = [Path(filename) for filename in filenames]
+    logger.info(f"Found {len(filenames):,d} grib filenames.")
     if len(filenames) == 0:
         logger.warning(
             "No files found!  Are you sure the source_grib_path_and_search_pattern is correct?"
@@ -201,17 +207,11 @@ def filter_eccodes_logging():
     class FilterEccodesWarning(logging.Filter):
         def filter(self, record) -> bool:
             """Inspect `record`. Return True to log `record`. Return False to ignore `record`."""
-            if record.getMessage().startswith("Can't read index file"):
-                logger.warning(
-                    "Failed to read grib index file."
-                    " Try deleting all .idx files from source_grib_path"
-                )
-
             return not record.getMessage() == (
                 "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
             )
 
-    logging.getLogger("cfgrib").addFilter(FilterEccodesWarning())
+    logging.getLogger("cfgrib.dataset").addFilter(FilterEccodesWarning())
 
 
 def grib_filename_to_datetime(full_grib_filename: Path) -> datetime.datetime:
@@ -280,14 +280,15 @@ def decode_and_group_grib_filenames(
         filenames, index=nwp_init_datetimes, name="full_grib_filename"
     )
     del nwp_init_datetimes
-    map_datetime_to_filename = map_datetime_to_filename.sort_index()
     map_datetime_to_filename.index.name = "nwp_init_datetime_utc"
 
     # Select only rows where there are exactly n_grib_files_per_nwp_init_time:
     def _filter_func(group):
         return group.count() == n_grib_files_per_nwp_init_time
 
-    return map_datetime_to_filename.groupby(level=0).filter(_filter_func)
+    map_datetime_to_filename = map_datetime_to_filename.groupby(level=0).filter(_filter_func)
+
+    return map_datetime_to_filename.sort_index()
 
 
 def select_grib_filenames_still_to_process(
@@ -510,21 +511,21 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
     dataset = load_grib_files_for_single_nwp_init_time(full_filenames, task_number=task_number)
     if dataset is not None:
         # Block if reader processes are getting ahead of the Zarr writing process.
-        logger.debug(f"Before previous_lock.acquire() for task number {task_number}")
+        logger.debug(f"Task number {task_number}: Before previous_lock.acquire()")
         previous_lock.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
-        logger.debug(f"After previous_lock.acquire() for task number {task_number}")
+        logger.debug(f"Task number {task_number}: After previous_lock.acquire()")
         append_to_zarr(dataset, destination_zarr_path)
     else:
         logger.warning(
-            f"Dataset is None!  For task number {task_number}, grib filenames = {full_filenames}"
+            f"Task number {task_number}: Dataset is None!  Grib filenames = {full_filenames}"
         )
 
     # Calculate timings.
     time_taken = pd.Timestamp.now() - start_time
     seconds_per_task = (time_taken / (task_number + 1)).total_seconds()
     logger.debug(
-        f"{task_number + 1:,d} tasks completed in {time_taken}"
-        f". That's {seconds_per_task:,.1f} seconds  per task."
+        f"{task_number + 1:,d} tasks (NWP init timesteps) completed in {time_taken}"
+        f". That's {seconds_per_task:,.1f} seconds per NWP init timestep."
     )
     next_lock.release()
 
@@ -559,7 +560,7 @@ def process_grib_files_in_parallel(
     # Create a list of `tasks` which include the grib filenames, the prev_lock & next_lock:
     tasks: list[dict[str, object]] = []
     previous_lock = multiprocessing_manager.Lock()  # Lock starts in a "released" state.
-    for i, (_, row) in enumerate(map_datetime_to_grib_filename.groupby(level=0)):
+    for task_number, (_, row) in enumerate(map_datetime_to_grib_filename.groupby(level=0)):
         next_lock = multiprocessing_manager.Lock()
         next_lock.acquire()
         tasks.append(
@@ -567,20 +568,25 @@ def process_grib_files_in_parallel(
                 row=row,
                 previous_lock=previous_lock,
                 next_lock=next_lock,
-                task_number=i,
+                task_number=task_number,
                 destination_zarr_path=destination_zarr_path,
                 start_time=start_time,
             )
         )
         previous_lock = next_lock
 
+    logger.info(f"About to process {len(tasks):,d} tasks using {n_processes} processes.")
+
     # Run the processes!
     with multiprocessing.Pool(processes=n_processes) as pool:
         result_iterator = pool.map(
-            func=load_grib_files_and_save_zarr_with_lock_wrapper, iterable=tasks
+            func=load_grib_files_and_save_zarr_with_lock_wrapper, iterable=tasks, chunksize=1
         )
 
     # Loop through the results to trigger any exceptions:
+    logger.debug(
+        "Almost finished! Now running through pool.map iterator to raise any final exceptions."
+    )
     try:
         for iterator in result_iterator:
             pass

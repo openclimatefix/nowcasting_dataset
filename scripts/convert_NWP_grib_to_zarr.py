@@ -1,35 +1,36 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+"""
+Useful links:
 
+* Met Office's data docs: http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+
+Known differences between the old Zarr
+(UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr)
+and the new Zarr:
+
+* Images in the old zarr were top-to-bottom.  Images in the new Zarr follow the ordering in the
+  grib files: bottom-to-top.
+* The x and y coordinates are different by 1km each.
+* The new Zarr is float16?
+* The new Zarr has a few more variables.
+
+"""
 
 import datetime
 import multiprocessing
 import re
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Union
 
 import cfgrib
-import matplotlib.pyplot as plt
 import numcodecs
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-# This notebook is research for [GitHub issue #344: Convert NWP grib files to Zarr intermediate](https://github.com/openclimatefix/nowcasting_dataset/issues/344).
-#
-# Useful links:
-#
-# * [Met Office's data docs](http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf)
-#
-# Known differences between the old Zarr (UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr) and the new zarr:
-#
-# * Images in the old zarr were top-to-bottom.  Images in the new Zarr follow the ordering in the grib files: bottom-to-top.
-# * The x and y coordinates are different by 1km each.
-# * The new Zarr is float16?
-# * The new Zarr has a few more variables.
-#
+
 # Done:
 #
 # * Merge Wholesale1 and 2 (2 includes dswrf, lcc, mcc, and hcc)
@@ -46,75 +47,15 @@ import xarray as xr
 # * Convert to float16? UPDATE: Nope, float16 results in dswrf being inf.
 # * Parallelise
 # * Restart from last `time` in existing Zarr.
+# * Convert to script
 #
 # Some outstanding questions / Todo items
 #
-# * Convert to script
+# * Tidy up code.
 # * Use click to set source and target directories, and pattern for finding source files, and number of expected grib files per NWP init datetime.
-# * Experiment with compression
+# * Experiment with compression?
 # * Separately log "bad files" to a CSV file?
 # * Check for NaNs.  cdcb has NaNs.
-# * Fix this issue (maybe it's running out of RAM?):
-#
-# ```
-# ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'
-# Loading...
-# Merging...
-# Reshaping...
-# Post-processing dataset...
-# Merging...
-# Reshaping...
-# Post-processing dataset...
-# Process ForkPoolWorker-5:
-# Process ForkPoolWorker-1:
-# Process ForkPoolWorker-4:
-# Process ForkPoolWorker-8:
-# Process ForkPoolWorker-3:
-# Process ForkPoolWorker-6:
-# Traceback (most recent call last):
-# Traceback (most recent call last):
-# Traceback (most recent call last):
-# Traceback (most recent call last):
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/pool.py", line 131, in worker
-#     put((job, i, result))
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/pool.py", line 131, in worker
-#     put((job, i, result))
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/queues.py", line 378, in put
-#     self._writer.send_bytes(obj)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/pool.py", line 131, in worker
-#     put((job, i, result))
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/queues.py", line 378, in put
-#     self._writer.send_bytes(obj)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 205, in send_bytes
-#     self._send_bytes(m[offset:offset + size])
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/queues.py", line 378, in put
-#     self._writer.send_bytes(obj)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/pool.py", line 131, in worker
-#     put((job, i, result))
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 205, in send_bytes
-#     self._send_bytes(m[offset:offset + size])
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 409, in _send_bytes
-#     self._send(header)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 409, in _send_bytes
-#     self._send(header)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 373, in _send
-#     n = write(self._handle, buf)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 205, in send_bytes
-#     self._send_bytes(m[offset:offset + size])
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/queues.py", line 378, in put
-#     self._writer.send_bytes(obj)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 373, in _send
-#     n = write(self._handle, buf)
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 205, in send_bytes
-#     self._send_bytes(m[offset:offset + size])
-#   File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/multiprocessing/connection.py", line 409, in _send_bytes
-#     self._send(header)
-# BrokenPipeError: [Errno 32] Broken pipe
-# ```
-#
-#
-
-# In[2]:
 
 
 # Define geographical domain for UKV.
@@ -137,49 +78,20 @@ NUM_ROWS = len(NORTHING)
 NUM_COLS = len(EASTING)
 
 
-# In[7]:
-
-
-# NWP_PATH = Path("/home/jack/Data/NWP/01")
-# NWP_PATH = Path("/media/jack/128GB_USB/NWPs")  # Must not include trailing slash!!!
 NWP_PATH = Path(
-    "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native"
+    "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/"
+    "UK_Met_Office/UKV/native"
 )
-
-
-# In[37]:
-
 
 DST_ZARR_PATH = Path(
-    "/mnt/storage_ssd/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/test.zarr"
+    "/mnt/storage_ssd/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/"
+    "UK_Met_Office/UKV/zarr/test.zarr"
 )
-
-
-# In[8]:
-
-
 assert NWP_PATH.exists()
 
-
-# In[9]:
-
-
 print("Getting list of all filenames...")
-
-
-# In[10]:
-
-
 filenames = list(NWP_PATH.glob("*/*/*/*Wholesale[12].grib"))
-
-
-# In[11]:
-
-
 print("Got", len(filenames), "filenames")
-
-
-# In[12]:
 
 
 def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
@@ -194,12 +106,12 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
     # Get the base_filename, which will be of the form '202101010000_u1096_ng_umqv_Wholesale1.grib'
     base_filename = full_filename.name
 
-    # Use regex to match the year, month, day, hour, minute and wholesale_number.  i.e., group the filename like this:
-    # '(2021)(01)(01)(00)(00)_u1096_ng_umqv_Wholesale(1)'.
+    # Use regex to match the year, month, day, hour, minute and wholesale_number.
+    # That is, group the filename like this: '(2021)(01)(01)(00)(00)_u1096_ng_umqv_Wholesale(1)'.
     # A quick guide to the relevant regex operators:
     #   ^ matches the beginning of the string.
     #   () defines a group.
-    #   (?P<name>...) names the group.  We can access the group with `regex_match.groupdict()[name]`.
+    #   (?P<name>...) names the group.  We can access the group with `regex_match.groupdict()[name]`
     #   \d matches a single digit.
     #   {n} matches the preceding item n times.
     #   . matches any character.
@@ -217,16 +129,14 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
     regex_match = regex_pattern.match(base_filename)
     if regex_match is None:
         raise RuntimeError(
-            f"Filename '{full_filename}' does not conform to expected regex pattern '{regex_pattern_string}'!"
+            f"Filename '{full_filename}' does not conform to expected"
+            f" regex pattern '{regex_pattern_string}'!"
         )
 
     # Convert strings to ints:
     regex_groups = {key: int(value) for key, value in regex_match.groupdict().items()}
 
     return datetime.datetime(**regex_groups)
-
-
-# In[26]:
 
 
 def decode_and_group_grib_filenames(
@@ -252,9 +162,6 @@ def decode_and_group_grib_filenames(
     # Select only rows where there are exactly n_grib_files_per_nwp_init_time:
     filter_func = lambda group: group.count() == n_grib_files_per_nwp_init_time
     return map_datetime_to_filename.groupby(level=0).filter(filter_func)
-
-
-# In[27]:
 
 
 def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr.Dataset:
@@ -287,7 +194,8 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
 
         # For temperature, we want the temperature at 1 meter above ground,
         # not at 0 meters above ground.  The early NWPs (definitely in the 2016-03-22 NWPs),
-        # heightAboveGround only has 1 entry ("1" meter above ground) and `heightAboveGround` isn't set as a dimension for `t`.
+        # heightAboveGround only has 1 entry ("1" meter above ground) and `heightAboveGround`
+        # isn't set as a dimension for `t`.
         # In later NWPs, 'heightAboveGround' has 2 values (0, 1) is a dimension for `t`.
         if "t" in ds and "heightAboveGround" in ds["t"].dims:
             ds = ds.sel(heightAboveGround=1)
@@ -327,9 +235,6 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
     return merged_ds.load()
 
 
-# In[28]:
-
-
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
     """Convert 1D into 2D array.
 
@@ -358,15 +263,9 @@ def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
     return dataset.unstack("values")
 
 
-# In[29]:
-
-
 def dataset_has_variables(dataset: xr.Dataset) -> bool:
     """Return True if `dataset` has at least one variable."""
     return len(dataset.variables) > 0
-
-
-# In[30]:
 
 
 def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
@@ -388,9 +287,6 @@ def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
     )
 
 
-# In[31]:
-
-
 def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     print("Writing to disk...", zarr_path, flush=True)
     zarr_path = Path(zarr_path)
@@ -401,8 +297,8 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     else:
         to_zarr_kwargs = dict(
             # Need to manually set the time units otherwise xarray defaults to using
-            # units of *days* (and hence cannot represent sub-day temporal resolution), which corrupts
-            # the `time` values when we appending to Zarr.  See:
+            # units of *days* (and hence cannot represent sub-day temporal resolution), which
+            # corrupts the `time` values when we appending to Zarr.  See:
             # https://github.com/pydata/xarray/issues/5969 and
             # http://xarray.pydata.org/en/stable/user-guide/io.html#time-units
             encoding={
@@ -415,9 +311,6 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
 
     dataset.to_zarr(zarr_path, **to_zarr_kwargs)
     print("Finished writing to disk!", zarr_path, flush=True)
-
-
-# In[32]:
 
 
 def load_grib_files_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.Dataset:
@@ -448,15 +341,9 @@ def load_grib_files_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.D
     return dataset_for_nwp_init_datetime
 
 
-# In[33]:
-
-
 def load_grib_files_from_groupby_tuple(groupby_tuple: tuple[pd.Timestamp, pd.Series]) -> xr.Dataset:
     full_grib_filenames = groupby_tuple[1]
     return load_grib_files_for_single_nwp_init_time(full_grib_filenames)
-
-
-# In[40]:
 
 
 def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
@@ -464,13 +351,7 @@ def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
     return dataset.init_time[-1].values
 
 
-# In[34]:
-
-
 map_datetime_to_grib_filename = decode_and_group_grib_filenames(filenames)
-
-
-# In[44]:
 
 
 # Re-start at end of Zarr.
@@ -487,15 +368,15 @@ if DST_ZARR_PATH.exists():
     ]
 
 
-# In[ ]:
-
-
-for groupby_tuple in map_datetime_to_grib_filename.groupby(level=0):
-    dataset = load_grib_files_from_groupby_tuple(groupby_tuple)
-    if dataset is None:
-        continue
-    append_to_zarr(
-        dataset,
-        # "/home/jack/data/nwp.zarr"
-        DST_ZARR_PATH,
+with multiprocessing.Pool(processes=4) as pool:
+    result_iterator = pool.imap(
+        func=load_grib_files_from_groupby_tuple,
+        iterable=map_datetime_to_grib_filename.groupby(level=0),
+        chunksize=1
     )
+    print("After pool.imap!", flush=True)
+    for dataset in result_iterator:
+        print("Got dataset from iterator!", flush=True)
+        if dataset is None:
+            continue
+        append_to_zarr(dataset, DST_ZARR_PATH)

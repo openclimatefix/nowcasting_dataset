@@ -35,7 +35,7 @@ How this script works:
 The multi-processing aspect of the code is engineered to satisfy several constraints:
 1) The destination Zarr must be appended to in strict order and only one process can append to
    the Zarr at one time.
-2) Passing large objects (such as a few hundred megabytes of NWP data) through a 
+2) Passing large objects (such as a few hundred megabytes of NWP data) through a
    multiprocessing.Queue is *really* slow:  It takes about 7 seconds to pass an xr.Dataset
    representing Wholesale1 and Wholesale2 NWP data.  This slowness is what motivates us to
    avoid passing the loaded Dataset between processes.  Instead, we don't pass large objects
@@ -51,25 +51,39 @@ on the next NWP init time to write to the destination Zarr).
 
 """
 import datetime
+import glob
 import logging
 import multiprocessing
 import re
-import time
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional, Union
 
 import cfgrib
+import click
 import numcodecs
 import numpy as np
 import pandas as pd
 import xarray as xr
-import click
-import glob
-
 
 logger = logging.getLogger(__name__)
 
 _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
+
+# Define geographical domain for UKV.
+# Taken from page 4 of http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+# To quote the PDF:
+#     "The United Kingdom domain is a 1,096km x 1,408km ~2km resolution grid.
+#      The OS National Grid corners of the domain are:"
+DY_METERS = DX_METERS = 2_000
+NORTH = 1223_000
+SOUTH = -185_000
+WEST = -239_000
+EAST = 857_000
+# Note that the UKV NWPs y is top-to-bottom.
+NORTHING = np.arange(start=NORTH, stop=SOUTH, step=-DY_METERS, dtype=np.int32)
+EASTING = np.arange(start=WEST, stop=EAST, step=DX_METERS, dtype=np.int32)
+NUM_ROWS = len(NORTHING)
+NUM_COLS = len(EASTING)
 
 
 @click.command()
@@ -77,11 +91,13 @@ _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
     "--source_grib_path_and_search_pattern",
     default=(
         "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/"
-        "UK_Met_Office/UKV/native/*/*/*/*Wholesale[12].grib"),
+        "UK_Met_Office/UKV/native/*/*/*/*Wholesale[12].grib"
+    ),
     type=str,
     help=(
         "The directory and the search pattern for the source grib files."
-        "  For example /foo/bar/*/*/*/*Wholesale[12].grib"),
+        "  For example /foo/bar/*/*/*/*Wholesale[12].grib"
+    ),
 )
 @click.option(
     "--destination_zarr_path",
@@ -105,7 +121,8 @@ _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
     type=Optional[Path],
     help=(
         "If not set then will default to `destination_zarr_path` with the"
-        " suffix replaced with '.log'"),
+        " suffix replaced with '.log'"
+    ),
 )
 @click.option(
     "--n_grib_files_per_nwp_init_time",
@@ -114,16 +131,18 @@ _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
     help=(
         "The number of grib files expected per NWP initialisation time.  For example, if the search"
         " pattern includes Wholesale1 and Wholesale2 files, then set"
-        " n_grib_files_per_nwp_init_time to 2."),
+        " n_grib_files_per_nwp_init_time to 2."
+    ),
 )
 def main(
-        source_grib_path_and_search_pattern: str,
-        destination_zarr_path: Path,
-        n_processes: int,
-        log_level: str,
-        log_filename: Optional[Path],
-        n_grib_files_per_nwp_init_time: int
+    source_grib_path_and_search_pattern: str,
+    destination_zarr_path: Path,
+    n_processes: int,
+    log_level: str,
+    log_filename: Optional[Path],
+    n_grib_files_per_nwp_init_time: int,
 ):
+    """The entry point into the script."""
     # Set up logging.
     if log_filename is None:
         log_filename = destination_zarr_path.parent / (destination_zarr_path.stem + ".log")
@@ -136,15 +155,17 @@ def main(
     logger.info(f"Got {len(filenames):,d} filenames.")
     if len(filenames) == 0:
         logger.warning(
-            "No files found!  Are you sure the source_grib_path_and_search_pattern is correct?")
+            "No files found!  Are you sure the source_grib_path_and_search_pattern is correct?"
+        )
         return
 
     # Decode, group, and filter filenames:
     map_datetime_to_grib_filename = decode_and_group_grib_filenames(
-        filenames=filenames,
-        n_grib_files_per_nwp_init_time=n_grib_files_per_nwp_init_time)
+        filenames=filenames, n_grib_files_per_nwp_init_time=n_grib_files_per_nwp_init_time
+    )
     map_datetime_to_grib_filename = select_grib_filenames_still_to_process(
-        map_datetime_to_grib_filename, destination_zarr_path)
+        map_datetime_to_grib_filename, destination_zarr_path
+    )
 
     # The main event!
     process_grib_files_in_parallel(
@@ -160,11 +181,9 @@ def configure_logging(log_level: str, log_filename: str) -> None:
     log_level = getattr(logging, log_level)  # Convert string to int.
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    handlers = [
-        logging.StreamHandler(),
-        logging.FileHandler(log_filename, mode="a")]
+    handlers = [logging.StreamHandler(), logging.FileHandler(log_filename, mode="a")]
 
     for handler in handlers:
         handler.setLevel(log_level)
@@ -173,86 +192,29 @@ def configure_logging(log_level: str, log_filename: str) -> None:
 
 
 def filter_eccodes_logging():
-    # Filter the ecCodes log warning
-    # "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
-    # generated here: https://github.com/ecmwf/cfgrib/blob/master/cfgrib/dataset.py#L402
+    """Filter the ecCodes log warning.
+
+    Filter "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
+    """
+    # The warning originates from here:
+    # https://github.com/ecmwf/cfgrib/blob/master/cfgrib/dataset.py#L402
     class FilterEccodesWarning(logging.Filter):
         def filter(self, record) -> bool:
             """Inspect `record`. Return True to log `record`. Return False to ignore `record`."""
+            if record.getMessage().startswith("Can't read index file"):
+                logger.warning(
+                    "Failed to read grib index file."
+                    " Try deleting all .idx files from source_grib_path"
+                )
+
             return not record.getMessage() == (
                 "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
             )
 
-    logging.getLogger("cfgrib.dataset").addFilter(FilterEccodesWarning())
-
-# Done:
-#
-# * Merge Wholesale1 and 2 (2 includes dswrf, lcc, mcc, and hcc)
-# * Remove dimensions we don't care about (e.g. select temperature at 1 meter, not 0 meters)
-# * Reshape images from 1D to 2D.
-# * Do we really need to convert datetimes to unix epochs before appending to zarr?  If no, submit a bug report.
-# * eccodes takes ages to load multiple datasets from each grib.  Maybe it'd be faster to pre-load each grib into ramdisk?  UPDATE: Nope, it's not faster!  What does give a big speedup, though, is using an idx file!
-# * Reshaping is pretty slow.  Maybe go back to using `np.reshape`?
-# * Experiment with when it might be fastest to load data into memory.
-# * Remove `wholesale_file_number`.  And then use a `pd.Series` instead of a DF.
-# * Zarr chunk size and compression.
-# * Write to leonardo's SSD
-# * Do we need to combine all the DataArrays into a single DataArray (with "variable" being a dimension?).  The upside is that then a single Zarr chunk can include multiple variables.  The downside is that we lose the metadata (but that's not a huge problem, maybe?)
-# * Convert to float16? UPDATE: Nope, float16 results in dswrf being inf.
-# * Parallelise
-# * Restart from last `time` in existing Zarr.
-# * Convert to script
-# * Write description of how this works.
-# * Logging (including wrapping the worker thread in a try except block to log exceptions immediately).
-# * Tidy up code.
-# * Use click to set source and target directories, and pattern for finding source files, and number of expected grib files per NWP init datetime.
-#
-# Some outstanding questions / Todo items
-#
-# * Experiment with compression?
-# * Separately log "bad files" to a CSV file?
-# * Check for NaNs.  cdcb has NaNs.
-# * If we get an error like this then remove the idx file and try again:
-"""
-Reshaping...
-Can't read index file '/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native/2017/11/25/201711250300_u1096_ng_umqv_Wholesale2.grib.923a8.idx'
-Traceback (most recent call last):
-  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 361, in from_indexpath_or_filestream
-    self = cls.from_indexpath(indexpath)
-  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 328, in from_indexpath
-    index = pickle.load(file)
-EOFError: Ran out of input
-Can't read index file '/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native/2017/11/25/201711250300_u1096_ng_umqv_Wholesale2.grib.923a8.idx'
-Traceback (most recent call last):
-  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 361, in from_indexpath_or_filestream
-    self = cls.from_indexpath(indexpath)
-  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 328, in from_indexpath
-    index = pickle.load(file)
-EOFError: Ran out of input
-"""
+    logging.getLogger("cfgrib").addFilter(FilterEccodesWarning())
 
 
-# Define geographical domain for UKV.
-# Taken from page 4 of http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
-# To quote the PDF:
-# "The United Kingdom domain is a 1,096km x 1,408km ~2km resolution grid.
-# The OS National Grid corners of the domain are:"
-
-DY_METERS = DX_METERS = 2_000
-NORTH = 1223_000
-SOUTH = -185_000
-WEST = -239_000
-EAST = 857_000
-
-# Note that the UKV NWPs y is top-to-bottom
-NORTHING = np.arange(start=NORTH, stop=SOUTH, step=-DY_METERS, dtype=np.int32)
-EASTING = np.arange(start=WEST, stop=EAST, step=DX_METERS, dtype=np.int32)
-
-NUM_ROWS = len(NORTHING)
-NUM_COLS = len(EASTING)
-
-
-def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
+def grib_filename_to_datetime(full_grib_filename: Path) -> datetime.datetime:
     """Parse the grib filename and return the datetime encoded in the filename.
 
     Returns a datetime.
@@ -262,7 +224,7 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
     Raises RuntimeError if the filename does not match the expected regex pattern.
     """
     # Get the base_filename, which will be of the form '202101010000_u1096_ng_umqv_Wholesale1.grib'
-    base_filename = full_filename.name
+    base_filename = full_grib_filename.name
 
     # Use regex to match the year, month, day, hour, minute and wholesale_number.
     # That is, group the filename like this: '(2021)(01)(01)(00)(00)_u1096_ng_umqv_Wholesale(1)'.
@@ -276,18 +238,18 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
     #   $ matches the end of the string.
     regex_pattern_string = (
         "^"  # Match the beginning of the string.
-        "(?P<year>\d{4})"  # Match the year.
-        "(?P<month>\d{2})"  # Match the month.
-        "(?P<day>\d{2})"  # Match the day.
-        "(?P<hour>\d{2})"  # Match the hour.
-        "(?P<minute>\d{2})"  # Match the minute.
-        "_u1096_ng_umqv_Wholesale\d\.grib$"  # Match the end of the string (escape the fullstop).
+        "(?P<year>\d{4})"  # noqa: W605
+        "(?P<month>\d{2})"  # noqa: W605
+        "(?P<day>\d{2})"  # noqa: W605
+        "(?P<hour>\d{2})"  # noqa: W605
+        "(?P<minute>\d{2})"  # noqa: W605
+        "_u1096_ng_umqv_Wholesale\d\.grib$"  # noqa: W605. Match the end of the string.
     )
     regex_pattern = re.compile(regex_pattern_string)
     regex_match = regex_pattern.match(base_filename)
     if regex_match is None:
         msg = (
-            f"Filename '{full_filename}' does not conform to expected"
+            f"Filename '{full_grib_filename}' does not conform to expected"
             f" regex pattern '{regex_pattern_string}'!"
         )
         logger.error(msg)
@@ -302,9 +264,11 @@ def grib_filename_to_datetime(full_filename: Path) -> datetime.datetime:
 def decode_and_group_grib_filenames(
     filenames: list[Path], n_grib_files_per_nwp_init_time: int = 2
 ) -> pd.Series:
-    """Returns a pd.Series where the index is the datetime of the NWP init time.
+    """Returns a pd.Series where the index is the NWP init time.
 
-    And the values are the full_filename of each grib file.
+    And the values are the full_grib_filename of each grib file.
+
+    Throws away any groups where there are not exactly n_grib_files_per_nwp_init_time.
     """
     n_filenames = len(filenames)
     nwp_init_datetimes = np.full(shape=n_filenames, fill_value=np.NaN, dtype="datetime64[ns]")
@@ -313,7 +277,7 @@ def decode_and_group_grib_filenames(
 
     # Swap index and values
     map_datetime_to_filename = pd.Series(
-        filenames, index=nwp_init_datetimes, name="nwp_grib_filenames"
+        filenames, index=nwp_init_datetimes, name="full_grib_filename"
     )
     del nwp_init_datetimes
     map_datetime_to_filename = map_datetime_to_filename.sort_index()
@@ -322,11 +286,13 @@ def decode_and_group_grib_filenames(
     # Select only rows where there are exactly n_grib_files_per_nwp_init_time:
     def _filter_func(group):
         return group.count() == n_grib_files_per_nwp_init_time
+
     return map_datetime_to_filename.groupby(level=0).filter(_filter_func)
 
 
 def select_grib_filenames_still_to_process(
-        map_datetime_to_grib_filename: pd.Series, destination_zarr_path: Path) -> pd.Series:
+    map_datetime_to_grib_filename: pd.Series, destination_zarr_path: Path
+) -> pd.Series:
     """Remove grib filenames for NWP init times that already exist in Zarr."""
     if destination_zarr_path.exists():
         last_nwp_init_datetime_in_zarr = get_last_nwp_init_datetime_in_zarr(destination_zarr_path)
@@ -344,7 +310,7 @@ def select_grib_filenames_still_to_process(
 def load_grib_file(full_grib_filename: Union[Path, str], verbose: bool = False) -> xr.Dataset:
     """Merges and loads all contiguous xr.Datasets from the grib file.
 
-    Removes unnecessary variables.  Picks heightAboveGround=1meter for temperature.
+    Removes unnecessary variables.  Picks heightAboveGround = 1 meter for temperature.
 
     Returns an xr.Dataset which has been loaded from disk.  Loading from disk at this point
     takes about 2 seconds for a 250 MB grib file, but speeds up reshape_1d_to_2d
@@ -447,6 +413,7 @@ def dataset_has_variables(dataset: xr.Dataset) -> bool:
 
 
 def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
+    """Get the Dataset ready for saving to Zarr."""
     logger.debug("Post-processing dataset...")
     return (
         dataset.to_array(dim="variable", name="UKV")
@@ -465,13 +432,16 @@ def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
 
 
 def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
+    """If zarr_path already exists then append to it.  Else create a new one."""
     logger.debug(f"Writing to disk {zarr_path}...")
     zarr_path = Path(zarr_path)
     if zarr_path.exists():
+        # Append to existing Zarr store.
         to_zarr_kwargs = dict(
             append_dim="init_time",
         )
     else:
+        # Create new Zarr store.
         to_zarr_kwargs = dict(
             # Need to manually set the time units otherwise xarray defaults to using
             # units of *days* (and hence cannot represent sub-day temporal resolution), which
@@ -491,7 +461,8 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
 
 
 def load_grib_files_for_single_nwp_init_time(
-        full_grib_filenames: list[Path], task_number: int) -> Union[xr.Dataset, None]:
+    full_grib_filenames: list[Path], task_number: int
+) -> Union[xr.Dataset, None]:
     """Returns processed Dataset merging all grib files specified by full_filenames.
 
     Returns None if any of the grib filenames are invalid.
@@ -521,17 +492,19 @@ def load_grib_files_for_single_nwp_init_time(
 
 
 def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
+    """Get the last NWP init datetime in the Zarr."""
     dataset = xr.open_dataset(zarr_path, engine="zarr", mode="r")
     return dataset.init_time[-1].values
 
 
 def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
-    full_filenames = task['row']
-    previous_lock = task['previous_lock']
-    next_lock = task['next_lock']
-    task_number = task['task_number']
-    destination_zarr_path = task['destination_zarr_path']
-    start_time = task['start_time']
+    """A wrapper arouund load_grib_files_for_single_nwp_init_time but with locking logic."""
+    full_filenames = task["row"]
+    previous_lock = task["previous_lock"]
+    next_lock = task["next_lock"]
+    task_number = task["task_number"]
+    destination_zarr_path = task["destination_zarr_path"]
+    start_time = task["start_time"]
 
     TIMEOUT_SECONDS = 120
     dataset = load_grib_files_for_single_nwp_init_time(full_filenames, task_number=task_number)
@@ -543,14 +516,16 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
         append_to_zarr(dataset, destination_zarr_path)
     else:
         logger.warning(
-            f"Dataset is None!  For task number {task_number}, grib filenames = {full_filenames}")
+            f"Dataset is None!  For task number {task_number}, grib filenames = {full_filenames}"
+        )
 
     # Calculate timings.
     time_taken = pd.Timestamp.now() - start_time
     seconds_per_task = (time_taken / (task_number + 1)).total_seconds()
     logger.debug(
         f"{task_number + 1:,d} tasks completed in {time_taken}"
-        f". That's {seconds_per_task:,.1f} seconds  per task.")
+        f". That's {seconds_per_task:,.1f} seconds  per task."
+    )
     next_lock.release()
 
 
@@ -563,15 +538,17 @@ def load_grib_files_and_save_zarr_with_lock_wrapper(task: dict[str, object]) -> 
     except Exception:
         logger.exception(
             f"Exception raised when processing task number {task_number},"
-            f" loading grib filenames {full_filenames}")
+            f" loading grib filenames {full_filenames}"
+        )
         raise
 
 
 def process_grib_files_in_parallel(
-        map_datetime_to_grib_filename: pd.Series,
-        destination_zarr_path: Path,
-        n_processes: int,
+    map_datetime_to_grib_filename: pd.Series,
+    destination_zarr_path: Path,
+    n_processes: int,
 ) -> None:
+    """Process grib files in parallel."""
     # To pass the shared Lock into the worker processes, we must use a Manager():
     multiprocessing_manager = multiprocessing.Manager()
 
@@ -600,7 +577,8 @@ def process_grib_files_in_parallel(
     # Run the processes!
     with multiprocessing.Pool(processes=n_processes) as pool:
         result_iterator = pool.map(
-            func=load_grib_files_and_save_zarr_with_lock_wrapper, iterable=tasks)
+            func=load_grib_files_and_save_zarr_with_lock_wrapper, iterable=tasks
+        )
 
     # Loop through the results to trigger any exceptions:
     try:

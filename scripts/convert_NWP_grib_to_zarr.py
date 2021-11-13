@@ -17,6 +17,7 @@ and the new Zarr:
 * The new Zarr has a few more variables.
 
 """
+from concurrent import futures
 import datetime
 import logging
 import multiprocessing
@@ -353,16 +354,17 @@ def load_grib_files_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.D
     dataset_for_nwp_init_datetime = reshape_1d_to_2d(dataset_for_nwp_init_datetime)
     dataset_for_nwp_init_datetime = dataset_for_nwp_init_datetime.expand_dims("time", axis=0)
     dataset_for_nwp_init_datetime = post_process_dataset(dataset_for_nwp_init_datetime)
+    print(time.time(), "Returning dataset!", flush=True)
     return dataset_for_nwp_init_datetime
 
 
 def load_grib_files_from_groupby_tuple(
     groupby_tuple: tuple[pd.Timestamp, pd.Series],
-    rate_limiting_semaphore: multiprocessing.Semaphore,
+    # rate_limiting_semaphore: multiprocessing.Semaphore,
 ) -> xr.Dataset:
     TIMEOUT_SECONDS = 120
     # Block if reader processes are getting ahead of the Zarr writing process.
-    rate_limiting_semaphore.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
+    # rate_limiting_semaphore.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
     full_grib_filenames = groupby_tuple[1]
     dataset = load_grib_files_for_single_nwp_init_time(full_grib_filenames)
     print(time.time(), "Returning dataset!", flush=True)
@@ -391,23 +393,43 @@ if DST_ZARR_PATH.exists():
     ]
 
 
-N_PROCESSES = 1
+MAX_WORKERS = 4
 # To pass the shared Semaphore into the worker processes, we must use a Manager():
-multiprocessing_manager = multiprocessing.Manager()
-rate_limiting_semaphore = multiprocessing_manager.Semaphore(value=N_PROCESSES * 2)
-load_grib_files_func = partial(
-    load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore
-)
-with multiprocessing.Pool(processes=N_PROCESSES) as pool:
-    result_iterator = pool.imap(
-        func=load_grib_files_func,
-        iterable=map_datetime_to_grib_filename.groupby(level=0),
-        chunksize=1,
-    )
-    print("After pool.imap!", flush=True)
-    for dataset in result_iterator:
+#multiprocessing_manager = multiprocessing.Manager()
+#rate_limiting_semaphore = multiprocessing_manager.Semaphore(value=MAX_WORKERS * 2)
+#load_grib_files_func = partial(
+#    load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore
+#)
+#with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
+#    result_iterator = pool.imap(
+#        func=load_grib_files_func,
+#        iterable=map_datetime_to_grib_filename.groupby(level=0),
+#        chunksize=1,
+#    )
+
+
+tasks = [row for _, row in map_datetime_to_grib_filename.groupby(level=0)]
+n_tasks = len(tasks)
+
+with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+    future_datasets = []
+
+    def _submit(row):
+        print("Submitting", row, flush=True)
+        future_dataset = executor.submit(load_grib_files_for_single_nwp_init_time, row)
+        future_datasets.append(future_dataset)
+
+    # Get MAX_WORKERS threads working away, loading grib data...
+    for row in tasks[:MAX_WORKERS]:
+        _submit(row)
+
+    for i in range(n_tasks):
+        future_dataset = future_datasets.pop(0)
+        dataset = future_dataset.result()
         print(time.time(), "Got dataset from iterator!", flush=True)
-        rate_limiting_semaphore.release()  # Unblock one reader process.
-        if dataset is None:
-            continue
-        append_to_zarr(dataset, DST_ZARR_PATH)
+#        rate_limiting_semaphore.release()  # Unblock one reader process.
+        if dataset is not None:
+            append_to_zarr(dataset, DST_ZARR_PATH)
+        if i < n_tasks - MAX_WORKERS:
+            row = tasks[i + MAX_WORKERS]
+            _submit(row)

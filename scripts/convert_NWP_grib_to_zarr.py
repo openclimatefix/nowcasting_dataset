@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""
+"""Convert numerical weather predictions from the UK Met Office "UKV" model to Zarr.
+
+This script uses multiple processes to speed up the conversion.
+
 Useful links:
 
 * Met Office's data docs: http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
@@ -16,14 +19,42 @@ and the new Zarr:
 * The new Zarr is float16?
 * The new Zarr has a few more variables.
 
+How this script works:
+
+1) Find all the .grib filenames specified by `source_path_and_search_pattern`
+2) Group the .grib filenames by the NWP initialisation datetime (which is the datetime given
+   in the grib filename).  For example, this groups together all the Wholesale1 and
+   Wholesale2 files.
+3) If the `destination_zarr_path` exists then find the last NWP init time in the Zarr,
+   and ignore all grib files with init times before that time.
+4) Use multiple worker processes to load the grib file.  Each worker process is given a list of
+   grib files associated with a single NWP init datetime.  The worker process loads these grib
+   files and does some simple post-processing, and then the worker process appends to the
+   destination zarr.
+
+The multi-processing aspect of the code is engineered to satisfy several constraints:
+1) The destination Zarr must be appended to in strict order and only one process can append to
+   the Zarr at one time.
+2) Passing large objects (such as a few hundred megabytes of NWP data) through a 
+   multiprocessing.Queue is *really* slow:  It takes about 7 seconds to pass an xr.Dataset
+   representing Wholesale1 and Wholesale2 NWP data.  This slowness is what motivates us to
+   avoid passing the loaded Dataset between processes.  Instead, we don't pass large objects
+   between processes:  A single process loads the grib files, processes, and writes the data to
+   Zarr.
+
+The code guarantees that the processes write to disk in order of the NWP init time by using a
+"chain of locks", kind of like a linked list. The iterable passed into multiprocessing.Pool.map
+is a tuple of the list of grib filenames, a "previous_lock" and a "next_lock".  When a process
+is working on task n, it cannot write to the destination Zarr until the "previous_lock" is released.
+Then a process finishes writing to disk, it release "next_lock" (which enables the process working
+on the next NWP init time to write to the destination Zarr).
+
 """
-from concurrent import futures
 import datetime
 import logging
 import multiprocessing
 import re
 import time
-from functools import partial
 from pathlib import Path
 from typing import Union
 
@@ -73,6 +104,25 @@ logging.getLogger("cfgrib.dataset").addFilter(FilterEccodesWarning())
 # * Experiment with compression?
 # * Separately log "bad files" to a CSV file?
 # * Check for NaNs.  cdcb has NaNs.
+# * Write description of how this works.
+# * If we get an error like this then remove the idx file and try again:
+"""
+Reshaping...
+Can't read index file '/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native/2017/11/25/201711250300_u1096_ng_umqv_Wholesale2.grib.923a8.idx'
+Traceback (most recent call last):
+  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 361, in from_indexpath_or_filestream
+    self = cls.from_indexpath(indexpath)
+  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 328, in from_indexpath
+    index = pickle.load(file)
+EOFError: Ran out of input
+Can't read index file '/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/native/2017/11/25/201711250300_u1096_ng_umqv_Wholesale2.grib.923a8.idx'
+Traceback (most recent call last):
+  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 361, in from_indexpath_or_filestream
+    self = cls.from_indexpath(indexpath)
+  File "/home/jack/miniconda3/envs/nowcasting_dataset/lib/python3.9/site-packages/cfgrib/messages.py", line 328, in from_indexpath
+    index = pickle.load(file)
+EOFError: Ran out of input
+"""
 
 
 # Define geographical domain for UKV.

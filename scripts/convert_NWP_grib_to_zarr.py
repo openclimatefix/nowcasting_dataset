@@ -23,6 +23,7 @@ import multiprocessing
 import re
 from pathlib import Path
 from typing import Union
+from functools import partial
 
 import cfgrib
 import numcodecs
@@ -341,7 +342,13 @@ def load_grib_files_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.D
     return dataset_for_nwp_init_datetime
 
 
-def load_grib_files_from_groupby_tuple(groupby_tuple: tuple[pd.Timestamp, pd.Series]) -> xr.Dataset:
+def load_grib_files_from_groupby_tuple(
+        groupby_tuple: tuple[pd.Timestamp, pd.Series],
+        rate_limiting_semaphore: multiprocessing.Semaphore
+) -> xr.Dataset:
+    TIMEOUT_SECONDS = 120
+    # Block if reader processes are getting ahead of the Zarr writing process.
+    rate_limiting_semaphore.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
     full_grib_filenames = groupby_tuple[1]
     return load_grib_files_for_single_nwp_init_time(full_grib_filenames)
 
@@ -368,15 +375,20 @@ if DST_ZARR_PATH.exists():
     ]
 
 
-with multiprocessing.Pool(processes=4) as pool:
+N_PROCESSES = 4
+rate_limiting_semaphore = multiprocessing.Semaphore(value=N_PROCESSES * 2)
+load_grib_files_func = partial(
+    load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore)
+with multiprocessing.Pool(processes=N_PROCESSES) as pool:
     result_iterator = pool.imap(
-        func=load_grib_files_from_groupby_tuple,
+        func=load_grib_files_func,
         iterable=map_datetime_to_grib_filename.groupby(level=0),
         chunksize=1
     )
     print("After pool.imap!", flush=True)
     for dataset in result_iterator:
         print("Got dataset from iterator!", flush=True)
+        rate_limiting_semaphore.release()  # Unblock one reader process.
         if dataset is None:
             continue
         append_to_zarr(dataset, DST_ZARR_PATH)

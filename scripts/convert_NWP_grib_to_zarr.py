@@ -17,7 +17,7 @@ and the new Zarr:
 * The new Zarr has a few more variables.
 
 """
-import warnings
+import logging
 import datetime
 import multiprocessing
 import re
@@ -31,6 +31,18 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+
+# Filter the ecCodes log warning
+# "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
+# generated here: https://github.com/ecmwf/cfgrib/blob/master/cfgrib/dataset.py#L402
+class FilterEccodesWarning(logging.Filter):
+    def filter(self, record) -> bool:
+        """Inspect `record`. Return True to log `record`. Return False to ignore `record`."""
+        return not record.getMessage() == (
+            "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'")
+
+
+logging.getLogger('cfgrib.dataset').addFilter(FilterEccodesWarning())
 
 # Done:
 #
@@ -181,11 +193,7 @@ def load_grib_file(full_filename: Union[Path, str], verbose: bool = False) -> xr
     # The grib files are "heterogeneous", so we use cfgrib.open_datasets
     # to return a list of contiguous xr.Datasets.
     # See https://github.com/ecmwf/cfgrib#automatic-filtering
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            action="ignore",
-            message="ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'")
-        datasets_from_grib = cfgrib.open_datasets(full_filename)
+    datasets_from_grib = cfgrib.open_datasets(full_filename)
     n_datasets = len(datasets_from_grib)
 
     # Get each dataset into the right shape for merging:

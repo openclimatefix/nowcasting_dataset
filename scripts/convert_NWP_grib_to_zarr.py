@@ -97,7 +97,7 @@ NUM_COLS = len(EASTING)
 
 NWP_PATH = Path(
     "/mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/"
-    "UK_Met_Office/UKV/native/2017"
+    "UK_Met_Office/UKV/native"  # Must not end with trailing slash!
 )
 
 DST_ZARR_PATH = Path(
@@ -107,7 +107,7 @@ DST_ZARR_PATH = Path(
 assert NWP_PATH.exists()
 
 print("Getting list of all filenames...")
-filenames = list(NWP_PATH.glob("*/*/*Wholesale[12].grib"))
+filenames = list(NWP_PATH.glob("*/*/*/*Wholesale[12].grib"))
 print("Got", len(filenames), "filenames")
 
 

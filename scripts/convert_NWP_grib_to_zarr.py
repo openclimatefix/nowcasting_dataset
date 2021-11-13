@@ -187,7 +187,7 @@ def configure_logging(log_level: str, log_filename: str) -> None:
     log_level = getattr(logging, log_level)  # Convert string to int.
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
     handlers = [logging.StreamHandler(), logging.FileHandler(log_filename, mode="a")]
 

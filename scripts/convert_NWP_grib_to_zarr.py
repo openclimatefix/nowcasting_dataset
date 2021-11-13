@@ -67,6 +67,7 @@ logging.getLogger("cfgrib.dataset").addFilter(FilterEccodesWarning())
 #
 # Some outstanding questions / Todo items
 #
+# * Logging (including wrapping the worker thread in a try except block to log exceptions immediately).
 # * Tidy up code.
 # * Use click to set source and target directories, and pattern for finding source files, and number of expected grib files per NWP init datetime.
 # * Experiment with compression?
@@ -358,17 +359,24 @@ def load_grib_files_for_single_nwp_init_time(full_filenames: list[Path]) -> xr.D
     return dataset_for_nwp_init_datetime
 
 
-def load_grib_files_from_groupby_tuple(
-    groupby_tuple: tuple[pd.Timestamp, pd.Series],
-    # rate_limiting_semaphore: multiprocessing.Semaphore,
-) -> xr.Dataset:
+def load_grib_files_and_save_zarr_with_lock(task: tuple) -> None:
+    full_filenames, previous_lock, next_lock, task_number = task
+
     TIMEOUT_SECONDS = 120
-    # Block if reader processes are getting ahead of the Zarr writing process.
-    # rate_limiting_semaphore.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
-    full_grib_filenames = groupby_tuple[1]
-    dataset = load_grib_files_for_single_nwp_init_time(full_grib_filenames)
-    print(time.time(), "Returning dataset!", flush=True)
-    return dataset
+    dataset = load_grib_files_for_single_nwp_init_time(full_filenames)
+    if dataset is not None:
+        # Block if reader processes are getting ahead of the Zarr writing process.
+        print("Just before previous_lock.acquire() for task number", task_number, flush=True)
+        try:
+            previous_lock.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
+        except Exception as e:
+            print(e)
+            raise
+        print("After previous_lock.acquire() for task number", task_number, flush=True)
+        append_to_zarr(dataset, DST_ZARR_PATH)
+    else:
+        print("Dataset is None!", flush=True)
+    next_lock.release()
 
 
 def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
@@ -393,24 +401,32 @@ if DST_ZARR_PATH.exists():
     ]
 
 
-MAX_WORKERS = 4
-# To pass the shared Semaphore into the worker processes, we must use a Manager():
-#multiprocessing_manager = multiprocessing.Manager()
+MAX_WORKERS = 8
+# To pass the shared Lock into the worker processes, we must use a Manager():
+multiprocessing_manager = multiprocessing.Manager()
 #rate_limiting_semaphore = multiprocessing_manager.Semaphore(value=MAX_WORKERS * 2)
 #load_grib_files_func = partial(
 #    load_grib_files_from_groupby_tuple, rate_limiting_semaphore=rate_limiting_semaphore
 #)
-#with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
-#    result_iterator = pool.imap(
-#        func=load_grib_files_func,
-#        iterable=map_datetime_to_grib_filename.groupby(level=0),
-#        chunksize=1,
-#    )
+
+tasks = []
+previous_lock = multiprocessing_manager.Lock()  # Lock starts released.
+for i, (_, row) in enumerate(map_datetime_to_grib_filename.groupby(level=0)):
+    next_lock = multiprocessing_manager.Lock()
+    next_lock.acquire()
+    tasks.append((row, previous_lock, next_lock, i))
+    previous_lock = next_lock
 
 
-tasks = [row for _, row in map_datetime_to_grib_filename.groupby(level=0)]
-n_tasks = len(tasks)
+with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
+    pool.map(
+        func=load_grib_files_and_save_zarr_with_lock,
+        iterable=tasks,
+        chunksize=1,
+    )
 
+
+"""
 with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
     future_datasets = []
 
@@ -433,3 +449,4 @@ with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         if i < n_tasks - MAX_WORKERS:
             row = tasks[i + MAX_WORKERS]
             _submit(row)
+"""

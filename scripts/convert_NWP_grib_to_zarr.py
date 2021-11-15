@@ -99,6 +99,19 @@ EASTING = np.arange(start=WEST, stop=EAST, step=DX_METERS, dtype=np.int32)
 NUM_ROWS = len(NORTHING)
 NUM_COLS = len(EASTING)
 
+# Define a set of grib variables to delete in load_grib_file().
+VARS_TO_DELETE = (
+    "unknown",
+    "valid_time",
+    "heightAboveGround",
+    "heightAboveGroundLayer",
+    "atmosphere",
+    "cloudBase",
+    "surface",
+    "meanSea",
+    "level",
+)
+
 
 @click.command()
 @click.option(
@@ -194,12 +207,17 @@ def main(
 
 
 def configure_logging(log_level: str, log_filename: str) -> None:
-    """Configure logger for this script."""
+    """Configure logger for this script.
+
+    Args:
+      log_level: String like "DEBUG".
+      log_filename: The full filename of the log file.
+    """
     assert log_level in _LOG_LEVELS
     log_level = getattr(logging, log_level)  # Convert string to int.
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s processID=%(process)d %(message)s")
 
     handlers = [logging.StreamHandler(), logging.FileHandler(log_filename, mode="a")]
 
@@ -210,9 +228,9 @@ def configure_logging(log_level: str, log_filename: str) -> None:
 
 
 def filter_eccodes_logging():
-    """Filter the ecCodes log warning.
+    """Filter out "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
 
-    Filter "ecCodes provides no latitudes/longitudes for gridType='transverse_mercator'"
+    Filter out this warning because it is not useful, and just adds noise to the log.
     """
     # The warning originates from here:
     # https://github.com/ecmwf/cfgrib/blob/master/cfgrib/dataset.py#L402
@@ -230,7 +248,7 @@ def grib_filename_to_datetime(full_grib_filename: Path) -> datetime.datetime:
     """Parse the grib filename and return the datetime encoded in the filename.
 
     Returns a datetime.
-      For example, if the filename is '202101010000_u1096_ng_umqv_Wholesale1.grib',
+      For example, if the filename is '/foo/202101010000_u1096_ng_umqv_Wholesale1.grib',
       then the returned datetime will be datetime(year=2021, month=1, day=1, hour=0, minute=0).
 
     Raises RuntimeError if the filename does not match the expected regex pattern.
@@ -238,12 +256,13 @@ def grib_filename_to_datetime(full_grib_filename: Path) -> datetime.datetime:
     # Get the base_filename, which will be of the form '202101010000_u1096_ng_umqv_Wholesale1.grib'
     base_filename = full_grib_filename.name
 
-    # Use regex to match the year, month, day, hour, minute and wholesale_number.
-    # That is, group the filename like this: '(2021)(01)(01)(00)(00)_u1096_ng_umqv_Wholesale(1)'.
+    # Use regex to match the year, month, day, hour, and minute.
+    # That is, group the filename as shown in these brackets:
+    #   (2021)(01)(01)(00)(00)_u1096_ng_umqv_Wholesale1.grib
     # A quick guide to the relevant regex operators:
     #   ^ matches the beginning of the string.
     #   () defines a group.
-    #   (?P<name>...) names the group.  We can access the group with `regex_match.groupdict()[name]`
+    #   (?P<name>...) names the group.  We can access the group with regex_match.groupdict()[<name>]
     #   \d matches a single digit.
     #   {n} matches the preceding item n times.
     #   . matches any character.
@@ -282,12 +301,13 @@ def decode_and_group_grib_filenames(
 
     Throws away any groups where there are not exactly n_grib_files_per_nwp_init_time.
     """
+    # Create a 1D array of NWP initialisation times (decoded from the grib filenames):
     n_filenames = len(filenames)
     nwp_init_datetimes = np.full(shape=n_filenames, fill_value=np.NaN, dtype="datetime64[ns]")
     for i, filename in enumerate(filenames):
         nwp_init_datetimes[i] = grib_filename_to_datetime(filename)
 
-    # Swap index and values
+    # Create a pd.Series where each row maps an NWP init datetime to the full grib filename:
     map_datetime_to_filename = pd.Series(
         filenames, index=nwp_init_datetimes, name="full_grib_filename"
     )
@@ -320,8 +340,14 @@ def select_grib_filenames_still_to_process(
     return map_datetime_to_grib_filename
 
 
+def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
+    """Get the last NWP init datetime in the Zarr."""
+    dataset = xr.open_dataset(zarr_path, engine="zarr", mode="r")
+    return dataset.init_time[-1].values
+
+
 def load_grib_file(full_grib_filename: Union[Path, str], verbose: bool = False) -> xr.Dataset:
-    """Merges and loads all contiguous xr.Datasets from the grib file.
+    """Merges and loads all contiguous xr.Datasets for a single grib file.
 
     Removes unnecessary variables.  Picks heightAboveGround = 1 meter for temperature.
 
@@ -333,43 +359,31 @@ def load_grib_file(full_grib_filename: Union[Path, str], verbose: bool = False) 
       full_grib_filename:  The full filename (including the path) of a single grib file.
       verbose:  If True then print out some useful debugging information.
     """
-    # The grib files are "heterogeneous", so we use cfgrib.open_datasets
-    # to return a list of contiguous xr.Datasets.
+    # The grib files are "heterogeneous" so we cannot use xr.open_dataset().
+    # Instead we use cfgrib.open_datasets() which returns a *list* of contiguous xr.Datasets.
     # See https://github.com/ecmwf/cfgrib#automatic-filtering
     logger.debug(f"Opening {full_grib_filename}...")
-    datasets_from_grib = cfgrib.open_datasets(full_grib_filename)
+    datasets_from_grib: list[xr.Dataset] = cfgrib.open_datasets(full_grib_filename)
     n_datasets = len(datasets_from_grib)
 
     # Get each dataset into the right shape for merging:
-    # Loop round the datasets using an index (instead of `for ds in datasets_from_grib`)
-    # because we will be modifying each dataset:
+    # We use `for i in range(n_datasets)` instead of `for ds in datasets_from_grib`
+    # because the loop modifies each dataset:
     for i in range(n_datasets):
         ds = datasets_from_grib[i]
 
         if verbose:
             print("\nDataset", i, "before processing:\n", ds, "\n")
 
-        # For temperature, we want the temperature at 1 meter above ground,
-        # not at 0 meters above ground.  The early NWPs (definitely in the 2016-03-22 NWPs),
-        # heightAboveGround only has 1 entry ("1" meter above ground) and `heightAboveGround`
-        # isn't set as a dimension for `t`.
+        # We want the temperature at 1 meter above ground, not at 0 meters above ground.
+        # In the early NWPs (definitely in the 2016-03-22 NWPs), `heightAboveGround` only has
+        # 1 entry ("1" meter above ground) and `heightAboveGround` isn't set as a dimension for `t`.
         # In later NWPs, 'heightAboveGround' has 2 values (0, 1) is a dimension for `t`.
         if "t" in ds and "heightAboveGround" in ds["t"].dims:
             ds = ds.sel(heightAboveGround=1)
 
         # Delete unnecessary variables.
-        vars_to_delete = [
-            "unknown",
-            "valid_time",
-            "heightAboveGround",
-            "heightAboveGroundLayer",
-            "atmosphere",
-            "cloudBase",
-            "surface",
-            "meanSea",
-            "level",
-        ]
-        for var_name in vars_to_delete:
+        for var_name in VARS_TO_DELETE:
             try:
                 del ds[var_name]
             except KeyError as e:
@@ -384,10 +398,10 @@ def load_grib_file(full_grib_filename: Union[Path, str], verbose: bool = False) 
             print("**************************************************")
 
         datasets_from_grib[i] = ds
-        del ds
+        del ds  # Save memory.
 
     merged_ds = xr.merge(datasets_from_grib)
-    del datasets_from_grib  # Save memory
+    del datasets_from_grib  # Save memory.
     logger.debug(f"Loading {full_grib_filename}...")
     return merged_ds.load()
 
@@ -395,16 +409,16 @@ def load_grib_file(full_grib_filename: Union[Path, str], verbose: bool = False) 
 def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
     """Convert 1D into 2D array.
 
-    For each `step`, the pixel values in the grib files represent a 2D image.  But, in the grib,
-    the values are in a flat 1D array (indexed by the `values` dimension).
+    In the grib files, the pixel values are in a flat 1D array (indexed by the `values` dimension).
     The ordering of the pixels in the grib are left to right, bottom to top.
 
-    We reshape every data variable at once using this trick.
+    This function replaces the `values` dimension with an `x` and `y` dimension,
+    and, for each step, reshapes the images to be 2D.
     """
     # Adapted from https://stackoverflow.com/a/62667154
 
     # Don't reshape yet.  Instead just create new coordinates,
-    # which give the `x` and `y` position of each position in the `values` dimension:
+    # which give the `x` and `y` position for each position in the `values` dimension:
     dataset = dataset.assign_coords(
         {
             "x": ("values", np.tile(EASTING, reps=NUM_ROWS)),
@@ -412,7 +426,7 @@ def reshape_1d_to_2d(dataset: xr.Dataset) -> xr.Dataset:
         }
     )
 
-    # Now set "values" to be a MultiIndex, indexed by `y` and `x`:
+    # Now set `values` to be a MultiIndex, indexed by `y` and `x`:
     dataset = dataset.set_index(values=("y", "x"))
 
     # Now unstack.  This gets rid of the `values` dimension and indexes
@@ -426,7 +440,21 @@ def dataset_has_variables(dataset: xr.Dataset) -> bool:
 
 
 def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
-    """Get the Dataset ready for saving to Zarr."""
+    """Get the Dataset ready for saving to Zarr.
+
+    Convert the Dataset (with differet DataArrays for each NWP variable)
+    to a single DataArray with a `variable` dimension.  We do this so each
+    Zarr chunk can hold multiple NWP variables (which is useful because
+    we often load all the NWP variables at once).
+
+    Rename `time` to `init_time` (because `time` is ambiguous.  NWPs have two "times":
+    the initialisation time and the target time).
+
+    Rechunk the Dataset.  Rechunking at this step (instead of specifying chunks using the
+    `dataset.to_zarr(encoding=...)`) has two advantages:  1) We can name the dimensions; and
+    2) Chunking at this stage converts the Dataset into a Dask dataset, which adds a second
+    level of parallelism.
+    """
     logger.debug("Post-processing dataset...")
     return (
         dataset.to_array(dim="variable", name="UKV")
@@ -445,7 +473,19 @@ def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
 
 
 def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
-    """If zarr_path already exists then append to the init_time dim.  Else create a new Zarr."""
+    """If zarr_path already exists then append to the init_time dim.  Else create a new Zarr.
+
+    If creating a new Zarr, then this function sets the units for representing time to
+    "nanoseconds since 1970-01-01" (which is the encoding used by `numpy.datetime64[ns]`) otherwise,
+    by default, xarray defaults representing time as an integer numbers of *days* and hence cannot
+    represent sub-day temporal resolution and corrupts the `init_time` values when we
+    append to Zarr.  See:
+        https://github.com/pydata/xarray/issues/5969   and
+        http://xarray.pydata.org/en/stable/user-guide/io.html#time-units
+
+    Also sets the compressor to `numcodecs.Blosc(cname="zstd", clevel=5)` which has been shown
+    to provide a good balance of speed and small file sizes in empirical testing.
+    """
     zarr_path = Path(zarr_path)
     if zarr_path.exists():
         # Append to existing Zarr store.
@@ -455,11 +495,6 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     else:
         # Create new Zarr store.
         to_zarr_kwargs = dict(
-            # We need to manually set the units for representing time otherwise xarray defaults to
-            # integer numbers of *days* and hence cannot represent sub-day temporal resolution
-            # and corrupts the `init_time` values when we appending to Zarr.  See:
-            # https://github.com/pydata/xarray/issues/5969   and
-            # http://xarray.pydata.org/en/stable/user-guide/io.html#time-units
             encoding={
                 "init_time": {"units": "nanoseconds since 1970-01-01"},
                 "UKV": {
@@ -474,14 +509,14 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
 def load_grib_files_for_single_nwp_init_time(
     full_grib_filenames: list[Path], task_number: int
 ) -> Union[xr.Dataset, None]:
-    """Returns processed Dataset merging all grib files specified by full_filenames.
+    """Returns processed Dataset merging all grib files specified by full_grib_filenames.
 
-    Returns None if any of the grib filenames are invalid.
+    Returns None if any of the grib files are invalid.
     """
     assert len(full_grib_filenames) > 0
     datasets_for_nwp_init_datetime = []
     for full_grib_filename in full_grib_filenames:
-        logger.debug(f"Task #{task_number} opening {full_grib_filename}")
+        logger.debug(f"Task #{task_number}: Opening {full_grib_filename}")
         try:
             dataset_for_filename = load_grib_file(full_grib_filename)
         except EOFError as e:
@@ -492,25 +527,41 @@ def load_grib_files_for_single_nwp_init_time(
         else:
             if dataset_has_variables(dataset_for_filename):
                 datasets_for_nwp_init_datetime.append(dataset_for_filename)
-    logger.debug(f"Task #{task_number} merging datasets...")
+            else:
+                logger.warning(f"{full_grib_filename} has no variables!")
+                return
+    logger.debug(f"Task #{task_number}: Merging datasets...")
     dataset_for_nwp_init_datetime = xr.merge(datasets_for_nwp_init_datetime)
-    del datasets_for_nwp_init_datetime
-    logger.debug(f"Task #{task_number} reshaping datasets...")
+    del datasets_for_nwp_init_datetime  # Save memory.
+    logger.debug(f"Task #{task_number}: Reshaping datasets...")
     dataset_for_nwp_init_datetime = reshape_1d_to_2d(dataset_for_nwp_init_datetime)
     dataset_for_nwp_init_datetime = dataset_for_nwp_init_datetime.expand_dims("time", axis=0)
     dataset_for_nwp_init_datetime = post_process_dataset(dataset_for_nwp_init_datetime)
     return dataset_for_nwp_init_datetime
 
 
-def get_last_nwp_init_datetime_in_zarr(zarr_path: Path) -> datetime.datetime:
-    """Get the last NWP init datetime in the Zarr."""
-    dataset = xr.open_dataset(zarr_path, engine="zarr", mode="r")
-    return dataset.init_time[-1].values
-
-
 def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
-    """A wrapper arouund load_grib_files_for_single_nwp_init_time but with locking logic."""
-    full_filenames = task["row"]
+    """A wrapper arouund load_grib_files_for_single_nwp_init_time but with locking logic.
+
+    See the docstring at the top of this script for more information about how we use
+    a chain of multiprocessing.Locks to guarantee that only one process writes to Zarr at once,
+    and that the writing is done in strict order of the NWP init time.
+
+    Args:
+        task: A dict which contains the arguments for loading grib files.  We use a dict
+              because multiprocessing.Pool.map() requires a single iterable (and we use
+              a single iterable of dicts).  Task must contains these keys:
+              - row:  The pd.Series listing the full grib filenames to load.
+              - previous_lock: The multiprocessing.Lock which will be released by the process
+                working on the previous task.  This process will block until previous_lock
+                is released.
+              - next_lock: The multiprocessing.Lock which this process will release after
+                appending to the Zarr.  Releasing this lock will allow the next process to proceed.
+              - destination_zarr_path: The path of the Zarr to append to.
+              - start_time: The datetime at which this script started processing.  Just used to
+                log the time taken so far, and the number of seconds per task.
+    """
+    full_grib_filenames = task["row"]
     previous_lock = task["previous_lock"]
     next_lock = task["next_lock"]
     task_number = task["task_number"]
@@ -518,23 +569,30 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
     start_time = task["start_time"]
 
     TIMEOUT_SECONDS = 120
-    dataset = load_grib_files_for_single_nwp_init_time(full_filenames, task_number=task_number)
+    dataset = load_grib_files_for_single_nwp_init_time(full_grib_filenames, task_number=task_number)
     if dataset is not None:
-        # Block if reader processes are getting ahead of the Zarr writing process.
         logger.debug(f"Task #{task_number}: Before previous_lock.acquire()")
+        # Block waiting for previous processes to complete.  This ensures that the reader processes
+        # don't get ahead of the writing process; and ensures that only one process writes to the
+        # Zarr at once; and ensures that data is appended in order of the NWP init time.
         previous_lock.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
         logger.debug(f"Task #{task_number}: After previous_lock.acquire()")
         logger.debug(
-            f"Task #{task_number}: About to write NWP init time {dataset.init_time}"
+            f"Task #{task_number}: About to append NWP init time {dataset.init_time}"
             f" to {destination_zarr_path}"
         )
         append_to_zarr(dataset, destination_zarr_path)
         logger.debug(
-            f"Task #{task_number}: Finished writing NWP init time {dataset.init_time}"
+            f"Task #{task_number}: Finished appending NWP init time {dataset.init_time}"
             f" to {destination_zarr_path}"
         )
     else:
-        logger.warning(f"Task #{task_number}: Dataset is None!  Grib filenames = {full_filenames}")
+        logger.warning(
+            f"Task #{task_number}: Dataset is None!  Grib filenames = {full_grib_filenames}"
+        )
+
+    # Allow the next process to append to the Zarr:
+    next_lock.release()
 
     # Calculate timings.
     time_taken = pd.Timestamp.now() - start_time
@@ -543,19 +601,18 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
         f"{task_number + 1:,d} tasks (NWP init timesteps) completed in {time_taken}"
         f". That's {seconds_per_task:,.1f} seconds per NWP init timestep."
     )
-    next_lock.release()
 
 
 def load_grib_files_and_save_zarr_with_lock_wrapper(task: dict[str, object]) -> None:
     """Simple wrapper around load_grib_files_and_save_zarr_with_lock to catch & log exceptions."""
     try:
         task_number = task["task_number"]
-        full_filenames = task["row"]
+        full_grib_filenames = task["row"]
         load_grib_files_and_save_zarr_with_lock(task)
     except Exception:
         logger.exception(
             f"Exception raised when processing task number {task_number},"
-            f" loading grib filenames {full_filenames}"
+            f" loading grib filenames {full_grib_filenames}"
         )
         raise
 

@@ -204,10 +204,6 @@ class GSPDataSource(ImageDataSource):
         da = xr.DataArray(
             data=selected_gsp_power.values,
             dims=["time", "id"],
-            # coords=dict(
-            #     id=all_gsp_ids.values.astype(int),
-            #     time=selected_gsp_power.index.values,
-            # ),
         )
 
         # convert to dataset
@@ -217,17 +213,11 @@ class GSPDataSource(ImageDataSource):
         gsp_x_coords = xr.DataArray(
             data=gsp_x_coords.values,
             dims=["id"],
-            # coords=dict(
-            #     id_index=range(len(all_gsp_ids.values)),
-            # ),
         )
 
         gsp_y_coords = xr.DataArray(
             data=gsp_y_coords.values,
             dims=["id"],
-            # coords=dict(
-            #     id_index=range(len(all_gsp_ids.values)),
-            # ),
         )
         gsp["x_coords"] = gsp_x_coords
         gsp["y_coords"] = gsp_y_coords

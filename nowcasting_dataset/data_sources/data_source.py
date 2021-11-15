@@ -426,8 +426,6 @@ class ZarrDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        assert type(selected_data.load()) == xr.DataArray
-
         return selected_data.load().to_dataset(name="data")
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:

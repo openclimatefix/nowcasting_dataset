@@ -228,9 +228,6 @@ def create_gsp_pv_dataset(
             np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
         ),
         dims=["id"],
-        # coords=dict(
-        #     id_index=range(number_of_systems),
-        # ),
     )
 
     y_coords = xr.DataArray(
@@ -238,9 +235,6 @@ def create_gsp_pv_dataset(
             np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
         ),
         dims=["id"],
-        # coords=dict(
-        #     id_index=range(number_of_systems),
-        # ),
     )
 
     data["x_coords"] = x_coords

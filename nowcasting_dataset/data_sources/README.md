@@ -16,7 +16,7 @@ and the geospatial shape of each GSP region).
 
 General class used for making a data source. It has the following functions
 - get_batch: gets a whole batch of data for that data source. The list of 'xr.Dataset' examples are converted to
-one xr.Dataset by changing the coordinates to indexes, and then joining the example along an extra dimension.
+one xr.Dataset by changing the coordinates to indexes, and then joining the examples along an extra dimension.
 - datetime_index: gets the all available datatimes of the source
 - get_example: gets one "example" (a single consecutive sequence). Each batch is made up of multiple examples.
   Each example is a 'xr.Dataset'
@@ -33,14 +33,14 @@ General pydantic model of output of the data source. Contains the following meth
 - check_nan_and_inf: check if any values are nans or infinite
 - check_dataset_greater_than_or_equal_to: check values are >= a value
 - check_dataset_less_than_or_equal_to: check values are <= a value
-- check_dataset_not_equal: check values are!>= a value
+- check_dataset_not_equal: check values are !>= a value
 - check_data_var_dim: check the dimensions of a data variable
 
 # <X> Data Source folder
 
 Roughly each of the data source folders follows this pattern
 - A class which defines how to load the data source, how to select for batches etc. This inherits from 'data_source.DataSource',
-- A class which contains the output model of the data source, built from an xarray Dataset. This is the information used in the batches.
+- A class which contains the output model of the data source, built from a xarray Dataset. This is the information used in the batches.
 This inherits from 'datasource_output.DataSourceOutput'.
 
 

@@ -52,9 +52,6 @@ class SatelliteDataSource(ZarrDataSource):
         """Get the model that is used in the batch"""
         return Satellite
 
-    # def _dataset_to_data_source_output(output: xr.Dataset) -> Satellite:
-    #     return Satellite(output)
-
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)

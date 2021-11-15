@@ -12,7 +12,6 @@ import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +77,8 @@ class SunDataSource(DataSource):
         azimuth = azimuth.to_xarray().rename({"index": "time"})
         elevation = elevation.to_xarray().rename({"index": "time"})
 
-        sun = convert_data_array_to_dataset(azimuth).rename({"data": "azimuth"})
-        elevation = convert_data_array_to_dataset(elevation)
-        sun["elevation"] = elevation.data
+        sun = azimuth.to_dataset(name="azimuth")
+        sun["elevation"] = elevation
 
         return Sun(sun)
 

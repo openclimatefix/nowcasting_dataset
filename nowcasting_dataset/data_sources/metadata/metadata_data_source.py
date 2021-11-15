@@ -8,7 +8,6 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.utils import to_numpy
 
 
@@ -55,13 +54,11 @@ class MetadataDataSource(DataSource):
             "object_at_center_label": {"dims": ("t0_dt_index"), "data": [object_at_center_label]},
         }
 
-        data = convert_data_array_to_dataset(xr.DataArray.from_dict(d_all["t0_dt"]))
+        data = (xr.DataArray.from_dict(d_all["t0_dt"])).to_dataset()
 
         for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
             d: dict = d_all[v]
-            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename(
-                {"data": v}
-            )
+            d: xr.Dataset = (xr.DataArray.from_dict(d)).to_dataset().rename({"data": v})
             data[v] = getattr(d, v)
 
         return Metadata(data)

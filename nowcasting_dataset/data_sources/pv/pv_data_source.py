@@ -19,7 +19,6 @@ from nowcasting_dataset import geospatial, utils
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.square import get_bounding_box_mask
 
 logger = logging.getLogger(__name__)
@@ -254,40 +253,31 @@ class PVDataSource(ImageDataSource):
         )
 
         # convert to dataset
-        pv = convert_data_array_to_dataset(da)
+        pv = da.to_dataset(name="data")
 
         # add pv x coords
         x_coords = xr.DataArray(
             data=pv_system_x_coords.values,
-            dims=["id_index"],
-            coords=dict(
-                id_index=range(len(all_pv_system_ids.values)),
-            ),
+            dims=["id"],
         )
 
         y_coords = xr.DataArray(
             data=pv_system_y_coords.values,
-            dims=["id_index"],
-            coords=dict(
-                id_index=range(len(all_pv_system_ids.values)),
-            ),
+            dims=["id"],
         )
         pv_system_row_number = xr.DataArray(
             data=pv_system_row_number,
-            dims=["id_index"],
-            coords=dict(
-                id_index=range(len(all_pv_system_ids.values)),
-            ),
+            dims=["id"],
         )
         pv["x_coords"] = x_coords
         pv["y_coords"] = y_coords
         pv["pv_system_row_number"] = pv_system_row_number
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
-        pad_n = self.n_pv_systems_per_example - len(pv.id_index)
-        pv = pv.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
+        pad_n = self.n_pv_systems_per_example - len(pv.id)
+        pv = pv.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
 
-        pv.__setitem__("id_index", range(self.n_pv_systems_per_example))
+        pv.__setitem__("id", range(self.n_pv_systems_per_example))
 
         return PV(pv)
 

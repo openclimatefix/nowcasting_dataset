@@ -11,7 +11,6 @@ from rasterio.warp import Resampling
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
 
@@ -97,8 +96,8 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        # TODO: Issue #318: Coordinates should be changed just before creating a batch.
-        topo_xd = convert_data_array_to_dataset(selected_data)
+        # change to dataset
+        topo_xd = selected_data.to_dataset(name="data")
 
         return Topographic(topo_xd)
 

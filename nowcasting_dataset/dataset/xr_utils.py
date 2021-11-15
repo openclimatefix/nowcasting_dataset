@@ -13,7 +13,7 @@ import xarray as xr
 # Maybe we should move this function to fake.py?
 def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr.Dataset:
     """Join a list of xr.DataArrays into an xr.Dataset by concatenating on the example dim."""
-    datasets = [convert_data_array_to_dataset(data_arrays[i]) for i in range(len(data_arrays))]
+    datasets = [make_dim_index(data_arrays[i].to_dataset()) for i in range(len(data_arrays))]
 
     return join_list_dataset_to_batch_dataset(datasets)
 
@@ -27,15 +27,6 @@ def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset
         new_datasets.append(new_dataset)
 
     return xr.concat(new_datasets, dim="example")
-
-
-# TODO: Issue #318: Maybe remove this function and, in calling code, do data_array.to_dataset()
-# followed by make_dim_index, to make it more explicit what's happening?  At the moment,
-# in the calling code, it's not clear that the coordinates are being changed.
-def convert_data_array_to_dataset(data_xarray: xr.DataArray) -> xr.Dataset:
-    """Convert data array to dataset. Reindex dim so that it can be merged with batch"""
-    data = xr.Dataset({"data": data_xarray})
-    return make_dim_index(dataset=data)
 
 
 # TODO: Issue #318: Maybe rename this function... maybe to coord_to_range()?

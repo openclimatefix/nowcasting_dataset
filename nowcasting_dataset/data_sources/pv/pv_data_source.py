@@ -368,7 +368,12 @@ def load_solar_pv_data(
     # Convert the pv_system_id column names from strings to ints:
     pv_power_df.columns = [np.int32(col) for col in pv_power_df.columns]
 
-    return pv_power_df.tz_localize("Europe/London").tz_convert("UTC").tz_convert(None)
+    if "passiv" not in filename:
+        pv_power_df = pv_power_df.tz_localize("Europe/London").tz_convert("UTC").tz_convert(None)
+
+    logger.debug("Loading Solar PV Data: done")
+
+    return pv_power_df
 
 
 def align_pv_system_ids(

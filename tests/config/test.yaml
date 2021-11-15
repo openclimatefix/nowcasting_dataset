@@ -17,8 +17,13 @@ input_data:
   satellite:
     satellite_channels:
       - HRV
-    satellite_image_size_pixels: 64
+    satellite_image_size_pixels: 32
     satellite_zarr_path: tests/data/sat_data.zarr
+  hrvsatellite:
+    hrvsatellite_channels:
+      - HRV
+    hrvsatellite_image_size_pixels: 64
+    hrvsatellite_zarr_path: tests/data/sat_data.zarr
   sun:
     sun_zarr_path: tests/data/sun/test.zarr
   topographic:

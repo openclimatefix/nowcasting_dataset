@@ -121,7 +121,8 @@ class Satellite(DataSourceMixin):
     )
 
 
-class SatelliteHRV(Satellite):
+
+class HRVSatellite(Satellite):
     """Satellite configuration model for HRV data"""
 
     satellite_channels: tuple = Field(
@@ -185,7 +186,7 @@ class Sun(DataSourceMixin):
     """Sun configuration model"""
 
     sun_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
+        "gs://solar-pv-nowcasting-data/Sun/v1/sun.zarr/",
         description="Path to the Sun data source i.e Azimuth and Elevation",
     )
 
@@ -197,7 +198,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
-    satellite_hrv: Optional[SatelliteHRV] = None
+    hrvsatellite: Optional[HRVSatellite] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -262,7 +263,7 @@ class InputData(BaseModel):
         return cls(
             pv=PV(),
             satellite=Satellite(),
-            satellite_hrv=SatelliteHRV(),
+            hrvsatellite=HRVSatellite(),
             nwp=NWP(),
             gsp=GSP(),
             topographic=Topographic(),

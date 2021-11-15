@@ -2,6 +2,7 @@
 import logging
 from dataclasses import InitVar, dataclass
 from glob import glob
+from pathlib import Path
 from typing import Iterable, Optional
 
 import pandas as pd
@@ -138,14 +139,13 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # dataset = xr.open_dataset(
     #    zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
     # )
-
-    # Get Paths
-    zarr_paths = list(glob(zarr_path))
-    if len(zarr_paths) == 1:
+    if Path(zarr_path).exists:
         dataset = xr.open_dataset(
             zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
         )
     else:
+        # Get Paths
+        zarr_paths = list(glob(zarr_path))
         dataset = xr.open_mfdataset(
             zarr_paths, chunks=None, mode="r", engine="zarr", concat_dim="time"
         )

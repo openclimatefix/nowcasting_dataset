@@ -1,0 +1,60 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "JackKelly",
+      "name": "Jack Kelly",
+      "avatar_url": "https://avatars.githubusercontent.com/u/460756?v=4",
+      "profile": "http://jack-kelly.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jacobbieker",
+      "name": "Jacob Bieker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7170359?v=4",
+      "profile": "https://www.jacobbieker.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "peterdudfield",
+      "name": "Peter Dudfield",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34686298?v=4",
+      "profile": "https://github.com/peterdudfield",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "flowirtz",
+      "name": "Flo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6052785?v=4",
+      "profile": "https://github.com/flowirtz",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "rohancalum",
+      "name": "Rohan Nuttall",
+      "avatar_url": "https://avatars.githubusercontent.com/u/42122330?v=4",
+      "profile": "https://rohancalum.github.io/",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "nowcasting_dataset",
+  "projectOwner": "openclimatefix",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}

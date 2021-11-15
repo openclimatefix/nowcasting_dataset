@@ -166,7 +166,7 @@ class Sun(DataSourceMixin):
     """Sun configuration model"""
 
     sun_zarr_path: str = Field(
-        "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/",
+        "gs://solar-pv-nowcasting-data/Sun/v1/sun.zarr/",
         description="Path to the Sun data source i.e Azimuth and Elevation",
     )
 

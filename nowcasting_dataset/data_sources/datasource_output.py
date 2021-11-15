@@ -8,7 +8,6 @@ from typing import Tuple
 
 import numpy as np
 import xarray as xr
-from xarray.ufuncs import isinf, isnan
 
 from nowcasting_dataset.dataset.xr_utils import PydanticXArrayDataSet
 from nowcasting_dataset.filesystem.utils import makedirs
@@ -56,13 +55,13 @@ class DataSourceOutput(PydanticXArrayDataSet):
     def check_nan_and_inf(self, data: xr.Dataset, variable_name: str = None):
         """Check that all values are non NaNs and not infinite"""
 
-        if isnan(data).any():
+        if np.isnan(data).any():
             message = f"Some {self.__class__.__name__} data values are NaNs"
             message += f" ({variable_name})" if variable_name is not None else None
             logger.error(message)
             raise Exception(message)
 
-        if isinf(data).any():
+        if np.isinf(data).any():
             message = f"Some {self.__class__.__name__} data values are Infinite"
             message += f" ({variable_name})" if variable_name is not None else None
             logger.error(message)

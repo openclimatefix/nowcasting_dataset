@@ -27,17 +27,27 @@ class NWPDataSource(ZarrDataSource):
         Access using public nwp property.
       consolidated: Whether or not the Zarr store is consolidated.
       channels: The NWP forecast parameters to load. If None then don't filter.
+        See:  http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+        All of these params are "instant" (i.e. a snapshot at the target time,
+        not accumulated over some time periods).
         The available params are:
-            t     : Temperature in Kelvin.
-            dswrf : Downward short-wave radiation flux in W/m^2 (irradiance).
-            prate : Precipitation rate in kg/m^2/s.
-            r     : Relative humidty in %.
-            sde   : Snow depth in meters.
-            si10  : 10-meter wind speed in m/s.
-            vis   : Visibility in meters.
+            cdcb  : Height of lowest cloud base > 3 oktas, in meters above surface.
             lcc   : Low-level cloud cover in %.
             mcc   : Medium-level cloud cover in %.
             hcc   : High-level cloud cover in %.
+            sde   : Snow depth in meters.
+            hcct  : Height of convective cloud top, meters above surface.
+            dswrf : Downward short-wave radiation flux in W/m^2 (irradiance) at surface.
+            dlwrf : Downward long-wave radiation flux in W/m^2 (irradiance) at surface.
+            h     : Geometrical height, meters.
+            t     : Air temperature at 1 meter above surface in Kelvin.
+            r     : Relative humidty in %.
+            dpt   : Dew point temperature in Kelvin.
+            vis   : Visibility in meters.
+            si10  : Wind speed in m/s, 10 meters above surface.
+            wdir10: Wind direction in degrees, 10 meters above surface.
+            prmsl : Pressure reduce to mean sea level in Pascals.
+            prate : Precipitation rate at the surface in kg/m^2/s.
     """
 
     channels: Optional[Iterable[str]] = NWP_VARIABLE_NAMES

@@ -4,12 +4,18 @@
 """Convert numerical weather predictions from the UK Met Office "UKV" model to Zarr.
 
 This script uses multiple processes to speed up the conversion.  On leonardo (Open Climate Fix's
-on-premises Threadripper 1920x server) this takes about 3 hours of processing per year
-of NWP data.
+on-premises Threadripper 1920x server) this takes about 3 hours 15 minutes of processing per year
+of NWP data (when using just Wholesale1 and Wholesale2 files).
 
 Useful links:
 
 * Met Office's data docs: http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+
+Some basic background to NWPs:  The UK Met Office run their "UKV" model 8 times per day,
+although, to save space on disk, we only use 4 of those runs per day (at 00, 06, 12, and 18 hours
+past midnight UTC).  The time the model started running is called the "init_time".
+
+Note that the UKV data is split into multiple files per NWP initialisation time.
 
 Known differences between the old Zarr
 (UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr)
@@ -18,38 +24,41 @@ and the new Zarr:
 * Images in the old zarr were top-to-bottom.  Images in the new Zarr follow the ordering in the
   grib files: bottom-to-top.
 * The x and y coordinates are different by 1km each.
-* The new Zarr is float16?
-* The new Zarr has a few more variables.
+* The new Zarr has 17 variables.  The old Zarr had 10 variables.
 
 How this script works:
 
-1) Find all the .grib filenames specified by `source_path_and_search_pattern`
+1) The script finds all the .grib filenames specified by `source_path_and_search_pattern`
 2) Group the .grib filenames by the NWP initialisation datetime (which is the datetime given
    in the grib filename).  For example, this groups together all the Wholesale1 and
    Wholesale2 files.
 3) If the `destination_zarr_path` exists then find the last NWP init time in the Zarr,
-   and ignore all grib files with init times before that time.
-4) Use multiple worker processes to load the grib file.  Each worker process is given a list of
+   and ignore all grib files with init times before that time.  This allows the script to
+   re-start where it left off if it crashes, or if new grib files are downloaded.
+4) Use multiple worker processes.  Each worker process is given a list of
    grib files associated with a single NWP init datetime.  The worker process loads these grib
    files and does some simple post-processing, and then the worker process appends to the
    destination zarr.
 
 The multi-processing aspect of the code is engineered to satisfy several constraints:
-1) The destination Zarr must be appended to in strict order and only one process can append to
-   the Zarr at one time.
-2) Passing large objects (such as a few hundred megabytes of NWP data) through a
+1) Only a single process can append to a Zarr store at once.  And the appends must happen in strict
+   order of the NWP initialisation time.
+2) Passing large objects (such as a few hundred megabytes of NWP data) between processes via a
    multiprocessing.Queue is *really* slow:  It takes about 7 seconds to pass an xr.Dataset
-   representing Wholesale1 and Wholesale2 NWP data.  This slowness is what motivates us to
-   avoid passing the loaded Dataset between processes.  Instead, we don't pass large objects
-   between processes:  A single process loads the grib files, processes, and writes the data to
-   Zarr.
+   representing Wholesale1 and Wholesale2 NWP data through a multiprocessing.Queue.  This slowness
+   is what motivates us to avoid passing the loaded Dataset between processes.  Instead, we don't
+   pass large objects between processes:  A single process loads the grib files, processes,
+   and writes the data to Zarr.  Each xr.Dataset stays in one process.
 
 The code guarantees that the processes write to disk in order of the NWP init time by using a
 "chain of locks", kind of like a linked list. The iterable passed into multiprocessing.Pool.map
-is a tuple of the list of grib filenames, a "previous_lock" and a "next_lock".  When a process
-is working on task n, it cannot write to the destination Zarr until the "previous_lock" is released.
-Then a process finishes writing to disk, it release "next_lock" (which enables the process working
-on the next NWP init time to write to the destination Zarr).
+is a tuple of (<the list of grib filenames for one NWP init time>, <a "previous_lock">, and
+<a "next_lock">).  Just before appending to the Zarr, each process blocks until the "previous_lock"
+is released when the process working on the previous NWP init time finishes writing to the Zarr.
+The "next_lock" for task n is the "previous_lock" for task n+1:
+
+  |------TASK 0------|    |------TASK 1------|    |------TASK 2------|
+  prev_lock, next_lock == prev_lock, next_lock == prev_lock, next_lock
 
 TROUBLESHOOTING
 If you get any errors regarding .idx files then try deleting all *.idx files and trying again.
@@ -77,14 +86,14 @@ _LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
 # Define geographical domain for UKV.
 # Taken from page 4 of http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
 # To quote the PDF:
-#     "The United Kingdom domain is a 1,096km x 1,408km ~2km resolution grid.
-#      The OS National Grid corners of the domain are:"
+#     "The United Kingdom domain is a 1,096km x 1,408km ~2km resolution grid."
 DY_METERS = DX_METERS = 2_000
+#     "The OS National Grid corners of the domain are:"
 NORTH = 1223_000
 SOUTH = -185_000
 WEST = -239_000
 EAST = 857_000
-# Note that the UKV NWPs y is top-to-bottom.
+# Note that the UKV NWPs y is top-to-bottom, hence step is negative.
 NORTHING = np.arange(start=NORTH, stop=SOUTH, step=-DY_METERS, dtype=np.int32)
 EASTING = np.arange(start=WEST, stop=EAST, step=DX_METERS, dtype=np.int32)
 NUM_ROWS = len(NORTHING)
@@ -148,6 +157,7 @@ def main(
 ):
     """The entry point into the script."""
     destination_zarr_path = Path(destination_zarr_path)
+
     # Set up logging.
     if log_filename is None:
         log_filename = destination_zarr_path.parent / (destination_zarr_path.stem + ".log")
@@ -165,10 +175,12 @@ def main(
         )
         return
 
-    # Decode, group, and filter filenames:
+    # Decode and group the grib filenames:
     map_datetime_to_grib_filename = decode_and_group_grib_filenames(
         filenames=filenames, n_grib_files_per_nwp_init_time=n_grib_files_per_nwp_init_time
     )
+
+    # Remove grib filenames which have already been processed:
     map_datetime_to_grib_filename = select_grib_filenames_still_to_process(
         map_datetime_to_grib_filename, destination_zarr_path
     )
@@ -182,7 +194,7 @@ def main(
 
 
 def configure_logging(log_level: str, log_filename: str) -> None:
-    """Create and configure logger."""
+    """Configure logger for this script."""
     assert log_level in _LOG_LEVELS
     log_level = getattr(logging, log_level)  # Convert string to int.
     logger = logging.getLogger(__name__)
@@ -433,8 +445,7 @@ def post_process_dataset(dataset: xr.Dataset) -> xr.Dataset:
 
 
 def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
-    """If zarr_path already exists then append to it.  Else create a new one."""
-    logger.debug(f"Writing to disk {zarr_path}...")
+    """If zarr_path already exists then append to the init_time dim.  Else create a new Zarr."""
     zarr_path = Path(zarr_path)
     if zarr_path.exists():
         # Append to existing Zarr store.
@@ -444,10 +455,10 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
     else:
         # Create new Zarr store.
         to_zarr_kwargs = dict(
-            # Need to manually set the time units otherwise xarray defaults to using
-            # units of *days* (and hence cannot represent sub-day temporal resolution), which
-            # corrupts the `time` values when we appending to Zarr.  See:
-            # https://github.com/pydata/xarray/issues/5969 and
+            # We need to manually set the units for representing time otherwise xarray defaults to
+            # integer numbers of *days* and hence cannot represent sub-day temporal resolution
+            # and corrupts the `init_time` values when we appending to Zarr.  See:
+            # https://github.com/pydata/xarray/issues/5969   and
             # http://xarray.pydata.org/en/stable/user-guide/io.html#time-units
             encoding={
                 "init_time": {"units": "nanoseconds since 1970-01-01"},
@@ -458,7 +469,6 @@ def append_to_zarr(dataset: xr.Dataset, zarr_path: Union[str, Path]):
         )
 
     dataset.to_zarr(zarr_path, **to_zarr_kwargs)
-    logger.debug(f"Finished writing to disk! {zarr_path}")
 
 
 def load_grib_files_for_single_nwp_init_time(
@@ -471,7 +481,7 @@ def load_grib_files_for_single_nwp_init_time(
     assert len(full_grib_filenames) > 0
     datasets_for_nwp_init_datetime = []
     for full_grib_filename in full_grib_filenames:
-        logger.debug(f"Task number {task_number} opening {full_grib_filename}")
+        logger.debug(f"Task #{task_number} opening {full_grib_filename}")
         try:
             dataset_for_filename = load_grib_file(full_grib_filename)
         except EOFError as e:
@@ -482,10 +492,10 @@ def load_grib_files_for_single_nwp_init_time(
         else:
             if dataset_has_variables(dataset_for_filename):
                 datasets_for_nwp_init_datetime.append(dataset_for_filename)
-    logger.debug(f"Task number {task_number} merging datasets...")
+    logger.debug(f"Task #{task_number} merging datasets...")
     dataset_for_nwp_init_datetime = xr.merge(datasets_for_nwp_init_datetime)
     del datasets_for_nwp_init_datetime
-    logger.debug(f"Task number {task_number} reshaping datasets...")
+    logger.debug(f"Task #{task_number} reshaping datasets...")
     dataset_for_nwp_init_datetime = reshape_1d_to_2d(dataset_for_nwp_init_datetime)
     dataset_for_nwp_init_datetime = dataset_for_nwp_init_datetime.expand_dims("time", axis=0)
     dataset_for_nwp_init_datetime = post_process_dataset(dataset_for_nwp_init_datetime)
@@ -511,14 +521,20 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
     dataset = load_grib_files_for_single_nwp_init_time(full_filenames, task_number=task_number)
     if dataset is not None:
         # Block if reader processes are getting ahead of the Zarr writing process.
-        logger.debug(f"Task number {task_number}: Before previous_lock.acquire()")
+        logger.debug(f"Task #{task_number}: Before previous_lock.acquire()")
         previous_lock.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
-        logger.debug(f"Task number {task_number}: After previous_lock.acquire()")
-        append_to_zarr(dataset, destination_zarr_path)
-    else:
-        logger.warning(
-            f"Task number {task_number}: Dataset is None!  Grib filenames = {full_filenames}"
+        logger.debug(f"Task #{task_number}: After previous_lock.acquire()")
+        logger.debug(
+            f"Task #{task_number}: About to write NWP init time {dataset.init_time}"
+            f" to {destination_zarr_path}"
         )
+        append_to_zarr(dataset, destination_zarr_path)
+        logger.debug(
+            f"Task #{task_number}: Finished writing NWP init time {dataset.init_time}"
+            f" to {destination_zarr_path}"
+        )
+    else:
+        logger.warning(f"Task #{task_number}: Dataset is None!  Grib filenames = {full_filenames}")
 
     # Calculate timings.
     time_taken = pd.Timestamp.now() - start_time
@@ -531,7 +547,7 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
 
 
 def load_grib_files_and_save_zarr_with_lock_wrapper(task: dict[str, object]) -> None:
-    """Simple wrapper around load_grib_files_and_save_zarr_with_lock to catch exceptions."""
+    """Simple wrapper around load_grib_files_and_save_zarr_with_lock to catch & log exceptions."""
     try:
         task_number = task["task_number"]
         full_filenames = task["row"]

@@ -6,6 +6,10 @@
 # Then call this script with three arguments: <username> <password> <year>.  e.g.:
 # ./download_UK_Met_Office_NWPs_from_CEDA.sh foo bar 2021
 #
+# Call this script in the directory into which you want to download data.  For
+# example, if you want to download data for 2021, create a directory
+# called something like /data/2021/, and run this script from that directory.
+#
 # The Met Office data on CEDA goes back to March 2016.  This script
 # will download about 4 terabytes per year of data.
 #

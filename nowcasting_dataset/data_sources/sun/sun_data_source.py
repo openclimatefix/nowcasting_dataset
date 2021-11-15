@@ -7,6 +7,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
@@ -27,13 +28,17 @@ class SunDataSource(DataSource):
         super().__post_init__()
         self._load()
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Sun
+
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
         nd_fs_utils.check_path_exists(self.zarr_path)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Sun:
+    ) -> xr.Dataset:
         """
         Get example data from t0_dt and x and y xoordinates
 

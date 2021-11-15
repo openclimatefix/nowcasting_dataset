@@ -63,6 +63,10 @@ class PVDataSource(ImageDataSource):
         self._load_pv_power()
         self.pv_metadata, self.pv_power = align_pv_system_ids(self.pv_metadata, self.pv_power)
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return PV
+
     def _load_metadata(self):
 
         logger.debug(f"Loading PV metadata from {self.metadata_filename}")
@@ -203,7 +207,7 @@ class PVDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> PV:
+    ) -> xr.Dataset:
         """
         Get Example data for PV data
 

@@ -9,15 +9,6 @@ import numpy as np
 import xarray as xr
 
 
-# TODO: This function is only used in fake.py for testing.
-# Maybe we should move this function to fake.py?
-def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr.Dataset:
-    """Join a list of xr.DataArrays into an xr.Dataset by concatenating on the example dim."""
-    datasets = [make_dim_index(data_arrays[i].to_dataset()) for i in range(len(data_arrays))]
-
-    return join_list_dataset_to_batch_dataset(datasets)
-
-
 def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset:
     """Join a list of data sets to a dataset by expanding dims"""
 
@@ -29,9 +20,16 @@ def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset
     return xr.concat(new_datasets, dim="example")
 
 
+def convert_coordinates_to_indexes_for_list_datasets(
+    examples: List[xr.Dataset],
+) -> List[xr.Dataset]:
+    """Set the coords to be indices before joining into a batch"""
+    return [convert_coordinates_to_indexes(example) for example in examples]
+
+
 # TODO: Issue #318: Maybe rename this function... maybe to coord_to_range()?
 # Not sure what's best right now!  :)
-def make_dim_index(dataset: xr.Dataset) -> xr.Dataset:
+def convert_coordinates_to_indexes(dataset: xr.Dataset) -> xr.Dataset:
     """Reindex dims so that it can be merged with batch.
 
     For each dimension in dataset, change the coords to 0.. len(original_coords),
@@ -40,6 +38,8 @@ def make_dim_index(dataset: xr.Dataset) -> xr.Dataset:
 
     This is useful to align multiple examples into a single batch.
     """
+
+    assert type(dataset) == xr.Dataset
 
     original_dim_names = dataset.dims
 

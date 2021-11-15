@@ -45,13 +45,17 @@ class TopographicDataSource(ImageDataSource):
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
         self._meters_per_pixel = meters_per_pixel
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Topographic
+
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
         nd_fs_utils.check_path_exists(self.filename)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Topographic:
+    ) -> xr.Dataset:
         """
         Get a single example
 

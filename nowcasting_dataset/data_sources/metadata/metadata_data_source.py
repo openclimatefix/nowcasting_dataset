@@ -17,9 +17,13 @@ class MetadataDataSource(DataSource):
 
     object_at_center: str = "GSP"
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Metadata
+
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Metadata:
+    ) -> xr.Dataset:
         """
         Get example data
 
@@ -61,4 +65,4 @@ class MetadataDataSource(DataSource):
             d: xr.Dataset = (xr.DataArray.from_dict(d)).to_dataset().rename({"data": v})
             data[v] = getattr(d, v)
 
-        return Metadata(data)
+        return data

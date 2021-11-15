@@ -16,7 +16,10 @@ import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.dataset.xr_utils import join_list_dataset_to_batch_dataset, make_dim_index
+from nowcasting_dataset.dataset.xr_utils import (
+    convert_coordinates_to_indexes_for_list_datasets,
+    join_list_dataset_to_batch_dataset,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -257,10 +260,10 @@ class DataSource:
             examples = [future_example.result() for future_example in future_examples]
 
         # Get the DataSource class, this could be one of the data sources like Sun
-        cls = examples[0].__class__
+        cls = self.get_data_model_for_batch()
 
         # Set the coords to be indices before joining into a batch
-        examples = [make_dim_index(example) for example in examples]
+        examples = convert_coordinates_to_indexes_for_list_datasets(examples)
 
         # join the examples together, and cast them to the cls, so that validation can occur
         return cls(join_list_dataset_to_batch_dataset(examples))
@@ -269,6 +272,10 @@ class DataSource:
         """Returns a complete list of all available datetimes."""
         # Leave this NotImplemented if this DataSource has no concept
         # of a list of datetimes (e.g. for DatetimeDataSource).
+        raise NotImplementedError()
+
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
         raise NotImplementedError()
 
     def get_contiguous_time_periods(self) -> pd.DataFrame:
@@ -378,7 +385,7 @@ class ZarrDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> DataSourceOutput:
+    ) -> xr.Dataset:
         """
         Get Example data
 
@@ -419,7 +426,9 @@ class ZarrDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        return selected_data.load()
+        assert type(selected_data.load()) == xr.DataArray
+
+        return selected_data.load().to_dataset(name="data")
 
     def geospatial_border(self) -> List[Tuple[Number, Number]]:
         """

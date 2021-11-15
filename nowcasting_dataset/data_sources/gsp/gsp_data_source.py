@@ -72,6 +72,10 @@ class GSPDataSource(ImageDataSource):
         """Override the default sample minutes"""
         return 30
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return GSP
+
     def load(self):
         """
         Load the meta data and load the GSP power data
@@ -152,7 +156,7 @@ class GSPDataSource(ImageDataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> GSP:
+    ) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords.
 
@@ -234,7 +238,7 @@ class GSPDataSource(ImageDataSource):
 
         gsp.__setitem__("id", range(self.n_gsp_per_example))
 
-        return GSP(gsp)
+        return gsp
 
     def _get_central_gsp_id(
         self,

@@ -116,7 +116,6 @@ class NWPDataSource(ZarrDataSource):
     def _post_process_example(self, selected_data: xr.Dataset, t0_dt: pd.Timestamp) -> xr.Dataset:
         """Resamples to 5 minutely."""
 
-        print(selected_data)
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 

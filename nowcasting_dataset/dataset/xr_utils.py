@@ -27,8 +27,6 @@ def convert_coordinates_to_indexes_for_list_datasets(
     return [convert_coordinates_to_indexes(example) for example in examples]
 
 
-# TODO: Issue #318: Maybe rename this function... maybe to coord_to_range()?
-# Not sure what's best right now!  :)
 def convert_coordinates_to_indexes(dataset: xr.Dataset) -> xr.Dataset:
     """Reindex dims so that it can be merged with batch.
 

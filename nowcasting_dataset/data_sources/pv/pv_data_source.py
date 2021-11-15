@@ -283,7 +283,7 @@ class PVDataSource(ImageDataSource):
 
         pv.__setitem__("id", range(self.n_pv_systems_per_example))
 
-        return PV(pv)
+        return pv
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.

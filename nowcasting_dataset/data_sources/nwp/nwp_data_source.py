@@ -10,6 +10,7 @@ import xarray as xr
 from nowcasting_dataset import utils
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
+from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 
 _LOG = logging.getLogger(__name__)
 
@@ -76,6 +77,10 @@ class NWPDataSource(ZarrDataSource):
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.zarr_path, consolidated=self.consolidated)
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return NWP
+
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         """
         Select the numerical weather predictions for a single time slice.
@@ -108,10 +113,9 @@ class NWPDataSource(ZarrDataSource):
         selected["target_time"] = init_time + selected.step
         return selected
 
-    def _post_process_example(
-        self, selected_data: xr.DataArray, t0_dt: pd.Timestamp
-    ) -> xr.DataArray:
+    def _post_process_example(self, selected_data: xr.Dataset, t0_dt: pd.Timestamp) -> xr.Dataset:
         """Resamples to 5 minutely."""
+
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 

@@ -57,13 +57,15 @@ class DataSourceOutput(PydanticXArrayDataSet):
 
         if np.isnan(data).any():
             message = f"Some {self.__class__.__name__} data values are NaNs"
-            message += f" ({variable_name})" if variable_name is not None else None
+            if variable_name is not None:
+                message += f" ({variable_name})"
             logger.error(message)
             raise Exception(message)
 
         if np.isinf(data).any():
             message = f"Some {self.__class__.__name__} data values are Infinite"
-            message += f" ({variable_name})" if variable_name is not None else None
+            if variable_name is not None:
+                message += f" ({variable_name})"
             logger.error(message)
             raise Exception(message)
 

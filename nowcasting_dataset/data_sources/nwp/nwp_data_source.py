@@ -29,7 +29,7 @@ class NWPDataSource(ZarrDataSource):
       channels: The NWP forecast parameters to load. If None then don't filter.
         See:  http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
         All of these params are "instant" (i.e. a snapshot at the target time,
-        not accumulated over some time periods).
+        not accumulated over some time period).
         The available params are:
             cdcb  : Height of lowest cloud base > 3 oktas, in meters above surface.
             lcc   : Low-level cloud cover in %.

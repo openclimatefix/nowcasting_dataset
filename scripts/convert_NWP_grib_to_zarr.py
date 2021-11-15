@@ -578,12 +578,12 @@ def load_grib_files_and_save_zarr_with_lock(task: dict[str, object]) -> None:
         previous_lock.acquire(blocking=True, timeout=TIMEOUT_SECONDS)
         logger.debug(f"Task #{task_number}: After previous_lock.acquire()")
         logger.debug(
-            f"Task #{task_number}: About to append NWP init time {dataset.init_time}"
+            f"Task #{task_number}: About to append NWP init time {dataset.init_time.values}"
             f" to {destination_zarr_path}"
         )
         append_to_zarr(dataset, destination_zarr_path)
         logger.debug(
-            f"Task #{task_number}: Finished appending NWP init time {dataset.init_time}"
+            f"Task #{task_number}: Finished appending NWP init time {dataset.init_time.values}"
             f" to {destination_zarr_path}"
         )
     else:

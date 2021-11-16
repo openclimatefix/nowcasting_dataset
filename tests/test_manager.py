@@ -10,6 +10,7 @@ import pandas as pd
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
+from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.manager import Manager
 
 
@@ -26,8 +27,14 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
         meters_per_pixel=2000,
     )
 
+    sun = SunDataSource(
+        zarr_path=f"{local_path}/tests/data/sun/test.zarr",
+        history_minutes=30,
+        forecast_minutes=60,
+    )
+
     manager = Manager()
-    manager.data_sources = {"gsp": gsp}
+    manager.data_sources = {"gsp": gsp, "sun": sun}
     manager.data_source_which_defines_geospatial_locations = gsp
     t0_datetimes = manager.get_t0_datetimes_across_all_data_sources(freq="30T")
     locations = manager.sample_spatial_and_temporal_locations_for_examples(

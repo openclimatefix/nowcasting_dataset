@@ -30,6 +30,7 @@ input_data:
   pv:
     pv_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/passiv.netcdf
     pv_metadata_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/system_metadata_OCF_ONLY.csv
+    get_center: False
 
   #---------------------- Satellite -------------
   satellite:

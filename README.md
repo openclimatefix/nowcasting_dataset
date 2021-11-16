@@ -75,13 +75,7 @@ Download PV timeseries data from PVOutput.org using
 
 ### Numerical weather predictions from the UK Met Office
 
-Request access to the [UK Met Office data on CEDA](https://catalogue.ceda.ac.uk/uuid/f47bc62786394626b665e23b658d385f).
-
-Once you have a username and password, download using
-[`scripts/download_UK_Met_Office_NWPs_from_CEDA.sh`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/scripts/download_UK_Met_Office_NWPs_from_CEDA.sh).
-Please see the comments at the top of the script for instructions.
-
-Detailed docs of the Met Office data is available [here](http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf).
+Please use our [`nwp`](https://github.com/openclimatefix/nwp) code to download UKV NWPs and convert to Zarr.
 
 
 ### GSP-level estimates of PV outturn from PV Live Regional

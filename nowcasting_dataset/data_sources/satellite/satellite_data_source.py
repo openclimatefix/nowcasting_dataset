@@ -63,7 +63,9 @@ class SatelliteDataSource(ZarrDataSource):
 
         return data
 
-    def get_image_pixel(self, data_array: xr.DataArray, x_meters_center: Number, y_meters_center: Number) -> xr.DataArray:
+    def get_image_pixel(
+        self, data_array: xr.DataArray, x_meters_center: Number, y_meters_center: Number
+    ) -> xr.DataArray:
         """
         Gets the satellite image as a square around the center
 
@@ -81,8 +83,10 @@ class SatelliteDataSource(ZarrDataSource):
         Returns:
             The selected data around the center
         """
-        x_index = np.searchsorted(data_array.x.values, x_meters_center)-1 # To have the center fall within the pixel
-        y_index = np.searchsorted(data_array.y.values, y_meters_center)-1
+        x_index = (
+            np.searchsorted(data_array.x.values, x_meters_center) - 1
+        )  # To have the center fall within the pixel
+        y_index = np.searchsorted(data_array.y.values, y_meters_center) - 1
         min_y = y_index - (self._square.size_pixels // 2)
         min_x = x_index - (self._square.size_pixels // 2)
         assert (

@@ -166,7 +166,7 @@ def test_save_config():
 
 
 def test_run():
-    """Test to initila data sources and get batches"""
+    """Test to initialize data sources and get batches"""
 
     manager = Manager()
     local_path = Path(nowcasting_dataset.__file__).parent.parent

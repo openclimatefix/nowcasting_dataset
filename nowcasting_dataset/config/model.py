@@ -98,6 +98,11 @@ class PV(DataSourceMixin):
     )
     pv_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     pv_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    get_center: bool = Field(
+        False,
+        description="If the batches are centered on one PV system (or not). "
+        "The other options is to have one GSP at the center of a batch. ",
+    )
 
 
 class Satellite(DataSourceMixin):

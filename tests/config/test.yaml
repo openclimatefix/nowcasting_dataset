@@ -14,6 +14,7 @@ input_data:
   pv:
     pv_filename: tests/data/pv_data/test.nc
     pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
+    get_center: false
   satellite:
     satellite_channels:
       - HRV

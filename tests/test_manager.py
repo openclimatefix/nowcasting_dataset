@@ -88,7 +88,7 @@ def test_get_daylight_datetime_index():
 def test_batches():
     """Test that batches can be made"""
     filename = (
-        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
     )
 
     sat = SatelliteDataSource(
@@ -97,7 +97,7 @@ def test_batches():
         forecast_minutes=60,
         image_size_pixels=64,
         meters_per_pixel=2000,
-        channels=("HRV",),
+        channels=("IR_016",),
     )
 
     filename = (

@@ -22,7 +22,8 @@ input_data:
       - mcc
       - hcc
     nwp_image_size_pixels: 64
-    nwp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
+    # TODO: Change to storage_ssd_8tb once files have finished moving!
+    nwp_zarr_path: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr
     history_minutes: 60
 
   #---------------------- PV -------------------
@@ -47,7 +48,7 @@ input_data:
       - WV_062
       - WV_073
     satellite_image_size_pixels: 64
-    satellite_zarr_path: /mnt/storage_a/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v1/all_zarr_int16_single_timestep.zarr
+    satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_2020_02.zarr
 
   # ------------------------- Sun ------------------------
   sun:
@@ -58,7 +59,7 @@ input_data:
     topographic_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Topographic/europe_dem_1km_osgb.tif
 
 output_data:
-  filepath: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v10/
+  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v11/
 process:
   batch_size: 32
   seed: 1234

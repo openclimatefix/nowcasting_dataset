@@ -6,6 +6,10 @@
 # Then call this script with three arguments: <username> <password> <year>.  e.g.:
 # ./download_UK_Met_Office_NWPs_from_CEDA.sh foo bar 2021
 #
+# Call this script in the directory into which you want to download data.  For
+# example, if you want to download data for 2021, create a directory
+# called something like /data/2021/, and run this script from that directory.
+#
 # The Met Office data on CEDA goes back to March 2016.  This script
 # will download about 4 terabytes per year of data.
 #
@@ -13,8 +17,8 @@
 # SSH'ing into a VM or remote server.
 
 wget --user="$1" --password="$2" --recursive -nH --cut-dirs=5 --no-clobber \
---reject-regex "[[:digit:]]{8}(03|09|15|21)00.*\.grib$" \
---reject-regex "T120\.grib$" \
+--reject-regex "[[:digit:]]{8}(03|09|15|21)00.*\.grib$" \  # NOT WORKING.  TODO: Issue #389
+--reject-regex "T120\.grib$" \  # NOT WORKING.  TODO: Issue #389.
 --reject-regex "Wholesale5.*\.grib$" \
 ftp://ftp.ceda.ac.uk/badc/ukmo-nwp/data/ukv-grib/"$3"
 

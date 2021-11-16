@@ -2,6 +2,8 @@
 
 Wanted to keep this out of the testing frame works, as other repos, might want to use this
 """
+from typing import List
+
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -15,8 +17,8 @@ from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.dataset.xr_utils import (
-    convert_data_array_to_dataset,
-    join_list_data_array_to_batch_dataset,
+    convert_coordinates_to_indexes,
+    convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
 
@@ -28,7 +30,7 @@ def gsp_fake(
 ):
     """Create fake data"""
     # make batch of arrays
-    xr_arrays = [
+    xr_datasets = [
         create_gsp_pv_dataset(
             seq_length=seq_length_30,
             freq="30T",
@@ -37,8 +39,11 @@ def gsp_fake(
         for _ in range(batch_size)
     ]
 
+    # change dimensions to dimension indexes
+    xr_datasets = convert_coordinates_to_indexes_for_list_datasets(xr_datasets)
+
     # make dataset
-    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_dataset_to_batch_dataset(xr_datasets)
 
     return GSP(xr_dataset)
 
@@ -46,6 +51,9 @@ def gsp_fake(
 def metadata_fake(batch_size):
     """Make a xr dataset"""
     xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
+
+    # change to indexes
+    xr_arrays = [convert_coordinates_to_indexes(xr_array) for xr_array in xr_arrays]
 
     # make dataset
     xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
@@ -81,7 +89,7 @@ def nwp_fake(
 def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
     """Create fake data"""
     # make batch of arrays
-    xr_arrays = [
+    xr_datasets = [
         create_gsp_pv_dataset(
             seq_length=seq_length_5,
             freq="5T",
@@ -90,8 +98,11 @@ def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
         for _ in range(batch_size)
     ]
 
+    # change dimensions to dimension indexes
+    xr_datasets = convert_coordinates_to_indexes_for_list_datasets(xr_datasets)
+
     # make dataset
-    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
+    xr_dataset = join_list_dataset_to_batch_dataset(xr_datasets)
 
     return PV(xr_dataset)
 
@@ -173,6 +184,7 @@ def topographic_fake(batch_size, image_size_pixels):
                 x=np.sort(np.random.randn(image_size_pixels)),
                 y=np.sort(np.random.randn(image_size_pixels))[::-1].copy(),
             ),
+            name="data",
         )
         for _ in range(batch_size)
     ]
@@ -207,6 +219,7 @@ def create_image_array(
             )
         ),
         coords=coords,
+        name="data",
     )  # Fake data for testing!
     return image_data_array
 
@@ -220,7 +233,7 @@ def create_gsp_pv_dataset(
     """Create gsp or pv fake dataset"""
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
-        "id": np.random.randint(low=0, high=1000, size=number_of_systems),
+        "id": np.random.choice(range(1000), number_of_systems, replace=False),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     data_array = xr.DataArray(
@@ -231,22 +244,20 @@ def create_gsp_pv_dataset(
         coords=coords,
     )  # Fake data for testing!
 
-    data = convert_data_array_to_dataset(data_array)
+    data = data_array.to_dataset(name="data")
 
     x_coords = xr.DataArray(
-        data=np.sort(np.random.randn(number_of_systems)),
-        dims=["id_index"],
-        coords=dict(
-            id_index=range(number_of_systems),
+        data=np.sort(
+            np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
         ),
+        dims=["id"],
     )
 
     y_coords = xr.DataArray(
-        data=np.sort(np.random.randn(number_of_systems)),
-        dims=["id_index"],
-        coords=dict(
-            id_index=range(number_of_systems),
+        data=np.sort(
+            np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
         ),
+        dims=["id"],
     )
 
     data["x_coords"] = x_coords
@@ -288,12 +299,13 @@ def create_sun_dataset(
         coords=coords,
     )  # Fake data for testing!
 
-    data = convert_data_array_to_dataset(data_array)
-    sun = data.rename({"data": "elevation"})
-    sun["azimuth"] = data.data
+    sun = data_array.to_dataset(name="elevation")
+    sun["azimuth"] = sun.elevation
 
     sun.__setitem__("azimuth", sun.azimuth.clip(min=0, max=360))
     sun.__setitem__("elevation", sun.elevation.clip(min=-90, max=90))
+
+    sun = convert_coordinates_to_indexes(sun)
 
     return sun
 
@@ -305,11 +317,11 @@ def create_metadata_dataset() -> xr.Dataset:
         "data": pd.date_range("2021-01-01", freq="5T", periods=1) + pd.Timedelta("30T"),
     }
 
-    data = convert_data_array_to_dataset(xr.DataArray.from_dict(d))
+    data = (xr.DataArray.from_dict(d)).to_dataset(name="data")
 
     for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
         d: dict = {"dims": ("t0_dt",), "data": [np.random.randint(0, 1000)]}
-        d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename({"data": v})
+        d: xr.Dataset = (xr.DataArray.from_dict(d)).to_dataset(name=v)
         data[v] = getattr(d, v)
 
     return data
@@ -330,7 +342,7 @@ def create_datetime_dataset(
         coords=coords,
     )  # Fake data
 
-    data = convert_data_array_to_dataset(data_array)
+    data = data_array.to_dataset()
 
     ds = data.rename({"data": "day_of_year_cos"})
     ds["day_of_year_sin"] = data.rename({"data": "day_of_year_sin"}).day_of_year_sin
@@ -338,3 +350,12 @@ def create_datetime_dataset(
     ds["hour_of_day_sin"] = data.rename({"data": "hour_of_day_sin"}).hour_of_day_sin
 
     return data
+
+
+def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr.Dataset:
+    """Join a list of xr.DataArrays into an xr.Dataset by concatenating on the example dim."""
+    datasets = [
+        convert_coordinates_to_indexes(data_arrays[i].to_dataset()) for i in range(len(data_arrays))
+    ]
+
+    return join_list_dataset_to_batch_dataset(datasets)

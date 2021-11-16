@@ -50,13 +50,16 @@ class SatelliteDataSource(ZarrDataSource):
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
-    def _dataset_to_data_source_output(output: xr.Dataset) -> Satellite:
-        return Satellite(output)
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Satellite
 
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         data = self.data.sel(time=slice(start_dt, end_dt))
+
+        assert type(data) == xr.DataArray
 
         return data
 

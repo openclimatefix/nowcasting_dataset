@@ -272,7 +272,7 @@ class DataSource:
         """Returns a complete list of all available datetimes."""
         # Leave this NotImplemented if this DataSource has no concept
         # of a list of datetimes (e.g. for DatetimeDataSource).
-        raise NotImplementedError()
+        raise NotImplementedError(f"Datetime not implemented for class {self.__class__}")
 
     def get_data_model_for_batch(self):
         """Get the model that is used in the batch"""

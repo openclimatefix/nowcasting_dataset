@@ -22,7 +22,8 @@ input_data:
       - mcc
       - hcc
     nwp_image_size_pixels: 64
-    nwp_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr
+    # TODO: Change to storage_ssd_8tb once files have finished moving!
+    nwp_zarr_path: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr
     history_minutes: 60
 
   #---------------------- PV -------------------

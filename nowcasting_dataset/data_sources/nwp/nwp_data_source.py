@@ -21,33 +21,31 @@ class NWPDataSource(ZarrDataSource):
     NWP Data Source (Numerical Weather Predictions)
 
     Attributes:
-      _data: xr.DataArray of Numerical Weather Predictions, opened by open().
-        x is left-to-right.
-        y is top-to-bottom.
-        Access using public nwp property.
-      consolidated: Whether or not the Zarr store is consolidated.
-      channels: The NWP forecast parameters to load. If None then don't filter.
-        See:  http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
-        All of these params are "instant" (i.e. a snapshot at the target time,
-        not accumulated over some time period).
-        The available params are:
-            cdcb  : Height of lowest cloud base > 3 oktas, in meters above surface.
-            lcc   : Low-level cloud cover in %.
-            mcc   : Medium-level cloud cover in %.
-            hcc   : High-level cloud cover in %.
-            sde   : Snow depth in meters.
-            hcct  : Height of convective cloud top, meters above surface.
-            dswrf : Downward short-wave radiation flux in W/m^2 (irradiance) at surface.
-            dlwrf : Downward long-wave radiation flux in W/m^2 (irradiance) at surface.
-            h     : Geometrical height, meters.
-            t     : Air temperature at 1 meter above surface in Kelvin.
-            r     : Relative humidty in %.
-            dpt   : Dew point temperature in Kelvin.
-            vis   : Visibility in meters.
-            si10  : Wind speed in m/s, 10 meters above surface.
-            wdir10: Wind direction in degrees, 10 meters above surface.
-            prmsl : Pressure reduce to mean sea level in Pascals.
-            prate : Precipitation rate at the surface in kg/m^2/s.
+        _data: xr.DataArray of Numerical Weather Predictions, opened by open().
+            x is left-to-right.
+            y is bottom-to-top.
+        consolidated: Whether or not the Zarr store is consolidated.
+        channels: The NWP forecast parameters to load. If None then don't filter.
+            See:  http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+            All of these params are "instant" (i.e. a snapshot at the target time,
+            not accumulated over some time period).  The available params are:
+                cdcb  : Height of lowest cloud base > 3 oktas, in meters above surface.
+                lcc   : Low-level cloud cover in %.
+                mcc   : Medium-level cloud cover in %.
+                hcc   : High-level cloud cover in %.
+                sde   : Snow depth in meters.
+                hcct  : Height of convective cloud top, meters above surface.
+                dswrf : Downward short-wave radiation flux in W/m^2 (irradiance) at surface.
+                dlwrf : Downward long-wave radiation flux in W/m^2 (irradiance) at surface.
+                h     : Geometrical height, meters.
+                t     : Air temperature at 1 meter above surface in Kelvin.
+                r     : Relative humidty in %.
+                dpt   : Dew point temperature in Kelvin.
+                vis   : Visibility in meters.
+                si10  : Wind speed in meters per second, 10 meters above surface.
+                wdir10: Wind direction in degrees, 10 meters above surface.
+                prmsl : Pressure reduce to mean sea level in Pascals.
+                prate : Precipitation rate at the surface in kg/m^2/s.
     """
 
     channels: Optional[Iterable[str]] = NWP_VARIABLE_NAMES
@@ -76,7 +74,7 @@ class NWPDataSource(ZarrDataSource):
         """
         Open NWP data
 
-        We don't want to open_sat_data in __init__.
+        We don't want to open_nwp() in __init__.
         If we did that, then we couldn't copy NWPDataSource
         instances into separate processes.  Instead,
         call open() _after_ creating separate processes.
@@ -111,6 +109,7 @@ class NWPDataSource(ZarrDataSource):
         start_hourly = start_dt.floor("H")
         end_hourly = end_dt.ceil("H")
 
+        # TODO: Issue #398: Use NWP init time closest to t0.
         init_time_i = np.searchsorted(self.data.init_time, start_hourly.to_numpy(), side="right")
         init_time_i -= 1  # Because searchsorted() gives the index to the entry _after_.
         init_time = self.data.init_time.values[init_time_i]
@@ -141,9 +140,10 @@ class NWPDataSource(ZarrDataSource):
             nwp = self._open_data()
         else:
             nwp = self._data
-        # TODO (Jack): Comment on what's going on here.  And have a class variable something like
-        # "NWP_UPDATE_PERIOD_HOURS".  And document in the Class docstring.
-        target_times = nwp["init_time"] + nwp["step"][:3]
+        # We need to return the `target_times` (the times the NWPs are _about_).
+        # The `target_time` is the `init_time` plus the forecast horizon `step`.
+        # `step` is an array of timedeltas, so we can just add `init_time` to `step`.
+        target_times = nwp["init_time"] + nwp["step"]
         target_times = target_times.values.flatten()
         target_times = np.unique(target_times)
         target_times = np.sort(target_times)

@@ -141,6 +141,8 @@ class NWPDataSource(ZarrDataSource):
             nwp = self._open_data()
         else:
             nwp = self._data
+        # TODO (Jack): Comment on what's going on here.  And have a class variable something like
+        # "NWP_UPDATE_PERIOD_HOURS".  And document in the Class docstring.
         target_times = nwp["init_time"] + nwp["step"][:3]
         target_times = target_times.values.flatten()
         target_times = np.unique(target_times)

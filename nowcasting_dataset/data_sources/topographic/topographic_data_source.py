@@ -103,7 +103,7 @@ class TopographicDataSource(ImageDataSource):
         # change to dataset
         topo_xd = selected_data.to_dataset(name="data")
 
-        return Topographic(topo_xd)
+        return topo_xd
 
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp

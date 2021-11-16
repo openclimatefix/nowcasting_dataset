@@ -80,7 +80,7 @@ class NWPDataSource(ZarrDataSource):
         call open() _after_ creating separate processes.
         """
         data = self._open_data()
-        self._data = data["UKV"].sel(variable=list(self.channels))
+        self._data = data.sel(variable=list(self.channels))
 
     def _open_data(self) -> xr.DataArray:
         return open_nwp(self.zarr_path, consolidated=self.consolidated)
@@ -156,16 +156,15 @@ class NWPDataSource(ZarrDataSource):
         return 60
 
 
-def open_nwp(zarr_path: str, consolidated: bool) -> xr.Dataset:
+def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """
     Open The NWP data
 
     Args:
         zarr_path: zarr_path must start with 'gs://' if it's on GCP.
-        consolidated: consolidate the zarr file?
+        consolidated: Is the Zarr metadata consolidated?
 
-    Returns: nwp data
-
+    Returns: NWP data.
     """
     _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
@@ -173,9 +172,25 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.Dataset:
         zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
     )
 
-    # Sanity check.
-    # TODO: Replace this with
-    # pandas.core.indexes.base._is_strictly_monotonic_increasing()
-    assert utils.is_monotonically_increasing(nwp.init_time.astype(int))
-    assert utils.is_unique(nwp.init_time)
-    return nwp
+    ukv = nwp["UKV"]
+
+    # Sanity check that init_time is well behaved.  If not, fix it!
+    init_time = pd.DatetimeIndex(ukv["init_time"])
+    if not init_time.is_unique:
+        _LOG.warning("NWP Zarr has duplicated init_times.  Fixing...")
+        ukv = ukv.drop_duplicates(dim="init_time")
+        init_time = pd.DatetimeIndex(ukv["init_time"])
+
+    if not init_time.is_monotonic_increasing:
+        _LOG.warning("NWP Zarr init_time is not monotonic_increasing.  Fixing...")
+        while not init_time.is_monotonic_increasing:
+            diff = np.diff(init_time.view(int))
+            out_of_order = np.where(diff < 0)[0]
+            out_of_order = init_time[out_of_order]
+            ukv = ukv.drop_sel(init_time=out_of_order)
+            init_time = pd.DatetimeIndex(ukv["init_time"])
+
+    assert init_time.is_unique
+    assert init_time.is_monotonic_increasing
+
+    return ukv

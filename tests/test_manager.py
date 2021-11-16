@@ -87,9 +87,7 @@ def test_get_daylight_datetime_index():
 
 def test_batches():
     """Test that batches can be made"""
-    filename = (
-        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
-    )
+    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
 
     sat = SatelliteDataSource(
         zarr_path=filename,

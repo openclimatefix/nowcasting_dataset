@@ -38,7 +38,7 @@ def generate_satellite_test_data():
     print(hrv_sat_data)
     encoding = {"stacked_eumetsat_data": {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)}}
     sat_data = hrv_sat_data.chunk({"time": 1, "y": 704, "x": 548, "variable": 1})
-    sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding, compute = True)
+    sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding, compute=True)
     output_filename = OUTPUT_PATH / "sat_data.zarr"
     print("Writing satellite tests data to", output_filename)
     zarr_paths = list(glob.glob(SAT_FILENAME))
@@ -49,7 +49,7 @@ def generate_satellite_test_data():
     print(sat_data)
     encoding = {"stacked_eumetsat_data": {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)}}
     sat_data = sat_data.chunk({"time": 1, "y": 704, "x": 548, "variable": 1})
-    sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding, compute = True)
+    sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding, compute=True)
 
 
 if __name__ == "__main__":

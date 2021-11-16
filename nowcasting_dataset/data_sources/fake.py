@@ -189,8 +189,8 @@ def add_uk_centroid_osgb(x, y):
 def make_random_point_coords_osgb(size: int):
     """Make random coords [OSGB] for pv site, of gsp"""
     # this is about 100KM
-    x = np.sort(np.random.randint(0, 10 ** 5, size))
-    y = np.sort(np.random.randint(0, 10 ** 5, size))
+    x = np.random.randint(0, 10 ** 5, size)
+    y = np.random.randint(0, 10 ** 5, size)
 
     return add_uk_centroid_osgb(x, y)
 

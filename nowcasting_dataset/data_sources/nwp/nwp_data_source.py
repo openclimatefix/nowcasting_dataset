@@ -179,6 +179,11 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
         zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
     )
 
+    # Select the "UKV" DataArray from the "nwp" Dataset.
+    # "UKV" is the one and only DataArray in the Zarr Dataset.
+    # "UKV" stands for "United Kingdom Variable", and it the UK Met Office's high-res deterministic
+    # NWP for the UK.  All the NWP variables are represented in the `variable` dimension within
+    # the UKV DataArray.
     ukv = nwp["UKV"]
 
     # Reverse `y` so it's top-to-bottom (so ZarrDataSource.get_example() works correctly!)

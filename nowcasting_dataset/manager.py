@@ -56,6 +56,38 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
+    def configure_loggers(
+        self,
+        log_level: str,
+        names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES,
+    ) -> None:
+        """Configure loggers.
+
+        Print combined log to stdout.
+        Save combined log to self.config.output_data.filepath / combined.log
+        Save individual logs for each DataSource in
+            self.config.output_data.filepath / <data_source>.log
+        """
+        # Configure combined logger.
+        combined_log_filename = self.config.output_data.filepath / "combined.log"
+        nd_utils.configure_logging(
+            log_level=log_level,
+            logger_name=__name__,
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler(combined_log_filename, mode="a"),
+            ],
+        )
+
+        # Configure loggers for each DataSource.
+        for data_source_name in names_of_selected_data_sources:
+            log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
+            nd_utils.configure_logging(
+                log_level=log_level,
+                logger_name=f"{__name__}.data_sources.{data_source_name}",
+                handlers=[logging.FileHandler(log_filename, mode="a")],
+            )
+
     def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:

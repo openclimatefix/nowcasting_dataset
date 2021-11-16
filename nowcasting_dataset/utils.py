@@ -14,7 +14,7 @@ import xarray as xr
 import nowcasting_dataset
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.config import load, model
-from nowcasting_dataset.consts import Array
+from nowcasting_dataset.consts import LOG_LEVELS, Array
 
 logger = logging.getLogger(__name__)
 
@@ -155,3 +155,27 @@ def arg_logger(func):
         return func(*args, **kwargs)
 
     return inner_func
+
+
+def configure_logger(log_level: str, logger_name: str, handlers=list[logging.Handler]) -> None:
+    """Configure logger.
+
+    Args:
+      log_level: String representing logging level, e.g. 'DEBUG'.
+      logger_name: String.
+      handlers: A list of logging.Handler objects.
+    """
+    assert log_level in LOG_LEVELS
+    log_level = getattr(logging, log_level)  # Convert string to int.
+
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s processID=%(process)d %(message)s | %(pathname)s#L%(lineno)d"
+    )
+
+    local_logger = logging.getLogger(logger_name)
+    local_logger.setLevel(log_level)
+
+    for handler in handlers:
+        handler.setLevel(log_level)
+        handler.setFormatter(formatter)
+        local_logger.addHandler(handler)

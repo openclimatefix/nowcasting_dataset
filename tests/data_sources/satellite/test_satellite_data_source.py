@@ -65,8 +65,8 @@ def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: 
         (2000, 2000, -126_000, 128_000, 130_000, -124_000),
         (2000, 1000, -126_000, 128_000, 128_000, -126_000),
         (2001, 2001, -124_000, 130_000, 130_000, -124_000),
-        ],
-    )
+    ],
+)
 def test_hrv_get_example(hrv_sat_data_source, x, y, left, right, top, bottom):  # noqa: D103
     hrv_sat_data_source.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")

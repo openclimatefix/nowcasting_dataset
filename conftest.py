@@ -48,6 +48,7 @@ def sat_data_source(sat_filename: Path):  # noqa: D103
         channels=("IR_016",),
     )
 
+
 @pytest.fixture
 def hrv_sat_filename(use_cloud_data: bool) -> Path:  # noqa: D103
     if use_cloud_data:
@@ -66,7 +67,8 @@ def hrv_sat_data_source(hrv_sat_filename: Path):  # noqa: D103
         history_minutes=0,
         forecast_minutes=5,
         channels=("HRV",),
-        )
+    )
+
 
 @pytest.fixture
 def general_data_source():  # noqa: D103

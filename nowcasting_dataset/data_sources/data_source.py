@@ -81,7 +81,16 @@ class DataSource:
     def _get_start_dt(
         self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-        return t0_dt - self.history_duration
+
+        start_dt = t0_dt - self.history_duration
+
+        # if t0_dt is not on the hour, e.g. 13.05.
+        # Then if the history_minutes is 1 hours,
+        # we want also to load the previous time step e.g. 12.00
+        if t0_dt.minute % self.sample_period_minutes != 0:
+            start_dt -= pd.Timedelta(self.history_minutes, unit="minutes")
+
+        return start_dt
 
     def _get_end_dt(
         self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]

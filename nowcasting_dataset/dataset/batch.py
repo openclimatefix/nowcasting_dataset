@@ -57,7 +57,7 @@ class Batch(BaseModel):
 
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
-    hrv_satellite: Optional[Satellite]
+    hrvsatellite: Optional[Satellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
     sun: Optional[Sun]
@@ -69,7 +69,7 @@ class Batch(BaseModel):
         """The different data sources"""
         return [
             self.satellite,
-            self.hrv_satellite,
+            self.hrvsatellite,
             self.topographic,
             self.pv,
             self.sun,
@@ -95,7 +95,7 @@ class Batch(BaseModel):
                     configuration.input_data.satellite.satellite_channels
                 ),
             ),
-            hrv_satellite=hrv_satellite_fake(
+            hrvsatellite=hrv_satellite_fake(
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
                 satellite_image_size_pixels=satellite_image_size_pixels,
@@ -191,6 +191,7 @@ class Example(BaseModel):
 
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
+    hrvsatellite: Optional[Satellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
     sun: Optional[Sun]
@@ -202,6 +203,7 @@ class Example(BaseModel):
         """The different data sources"""
         return [
             self.satellite,
+            self.hrvsatellite,
             self.topographic,
             self.pv,
             self.sun,

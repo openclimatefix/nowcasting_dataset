@@ -1,11 +1,13 @@
 """ Geospatial functions """
 import datetime
 from numbers import Number
-from typing import Tuple
+from typing import List, Tuple, Union
 
+import numpy as np
 import pandas as pd
 import pvlib
 import pyproj
+import xarray as xr
 
 # OSGB is also called "OSGB 1936 / British National Grid -- United
 # Kingdom Ordnance Survey".  OSGB is used in many UK electricity
@@ -120,3 +122,48 @@ def calculate_azimuth_and_elevation_angle(
 
     # extract the information we want
     return solpos[["elevation", "azimuth"]]
+
+
+def get_osgb_center_from_list_of_x_and_y_osgb(
+    x_osgb: Union[xr.DataArray, List[float], np.ndarray],
+    y_osgb: Union[xr.DataArray, List[float], np.ndarray],
+) -> (float, float):
+    """
+    Get the OSGB center from OSGB coords
+
+    This gets the average of the x coordinates,
+    and the average of the y coordinates.
+
+    Args:
+        x_osgb: list of x coords in OSGB
+        y_osgb: list of y coords in OSGB
+
+    Returns: x and y center [OSGB]
+
+    """
+
+    center_x_osgb = np.mean(x_osgb)
+    center_y_osgb = np.mean(y_osgb)
+
+    return center_x_osgb, center_y_osgb
+
+
+def get_lat_lon_center_from_list_of_x_and_y_osgb(
+    x_osgb: Union[xr.DataArray, List[float], np.ndarray],
+    y_osgb: Union[xr.DataArray, List[float], np.ndarray],
+) -> (float, float):
+    """
+    Get the center lat and lon coords from a list of OSGB coords
+
+    Args:
+        x_osgb: list of x coords in OSGB
+        y_osgb: list of y coords in OSGB
+
+    Returns: x and y center [lat, lon]
+
+    """
+    center_x_osgb, center_y_osgb = get_osgb_center_from_list_of_x_and_y_osgb(
+        x_osgb=x_osgb, y_osgb=y_osgb
+    )
+
+    return osgb_to_lat_lon(center_x_osgb, center_y_osgb)

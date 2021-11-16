@@ -55,6 +55,8 @@ A pre commit hook has been installed which makes `black` run with every commit. 
 
 To test using the small amount of data stored in this repo: `py.test -s`
 
+To output debug logs while running the tests then run `py.test --log-cli-level=10`
+
 To test using the full dataset on Google Cloud, add the `--use_cloud_data` switch.
 
 

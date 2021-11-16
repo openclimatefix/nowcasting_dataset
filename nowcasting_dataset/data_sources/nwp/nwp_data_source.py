@@ -174,13 +174,15 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
 
     ukv = nwp["UKV"]
 
-    # Sanity check that init_time is well behaved.  If not, fix it!
+    # Sanity checks.
+    # If there are any duplicated init_times then drop the duplicated init_times:
     init_time = pd.DatetimeIndex(ukv["init_time"])
     if not init_time.is_unique:
         _LOG.warning("NWP Zarr has duplicated init_times.  Fixing...")
         ukv = ukv.drop_duplicates(dim="init_time")
         init_time = pd.DatetimeIndex(ukv["init_time"])
 
+    # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
     if not init_time.is_monotonic_increasing:
         _LOG.warning("NWP Zarr init_time is not monotonic_increasing.  Fixing...")
         while not init_time.is_monotonic_increasing:

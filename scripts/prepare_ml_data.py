@@ -48,6 +48,7 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
 @click.option(
     "--overwrite_batches",
     default=False,
+    is_flag=True,
     help=(
         "Overwrite any existing batches in the destination directory, for the selected"
         " DataSource(s).  If this flag is not set, and if there are existing batches,"

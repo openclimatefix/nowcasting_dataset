@@ -102,12 +102,12 @@ class Batch(BaseModel):
             pv=pv_fake(
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.pv.seq_length_5_minutes,
-                n_pv_systems_per_batch=128,
+                n_pv_systems_per_batch=configuration.input_data.pv.n_pv_systems_per_example,
             ),
             gsp=gsp_fake(
                 batch_size=batch_size,
                 seq_length_30=configuration.input_data.gsp.seq_length_30_minutes,
-                n_gsp_per_batch=32,
+                n_gsp_per_batch=configuration.input_data.gsp.n_gsp_per_example,
             ),
             sun=sun_fake(
                 batch_size=batch_size,

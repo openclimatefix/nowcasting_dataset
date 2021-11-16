@@ -158,7 +158,7 @@ def get_gsp_shape_from_eso(
     if join_duplicates:
         logger.debug("Removing duplicates by joining geometry together")
 
-        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["RegionID"])
+        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["RegionID"]).copy()
         duplicated_raw = shape_gpd[shape_gpd["RegionID"].duplicated()]
 
         for _, duplicate in duplicated_raw.iterrows():
@@ -171,7 +171,6 @@ def get_gsp_shape_from_eso(
             new_geometry = shape_gpd_no_duplicates.loc[index_other, "geometry"].union(
                 duplicate.geometry
             )
-
             # set new geometry
             shape_gpd_no_duplicates.loc[index_other, "geometry"] = new_geometry
 

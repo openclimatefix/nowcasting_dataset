@@ -182,10 +182,14 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     ukv = nwp["UKV"]
 
     # Reverse `y` so it's top-to-bottom (so ZarrDataSource.get_example() works correctly!)
-    # Adapted from:
+    # if necessary.  Adapted from:
     # https://stackoverflow.com/questions/54677161/xarray-reverse-an-array-along-one-coordinate
-    y_reversed = ukv.y[::-1]
-    ukv = ukv.reindex(y=y_reversed)
+    if ukv.y[0] < ukv.y[1]:
+        _LOG.warning(
+            "NWP y axis runs from bottom-to-top.  Will reverse y axis so it runs top-to-bottom."
+        )
+        y_reversed = ukv.y[::-1]
+        ukv = ukv.reindex(y=y_reversed)
 
     # Sanity checks.
     # If there are any duplicated init_times then drop the duplicated init_times:

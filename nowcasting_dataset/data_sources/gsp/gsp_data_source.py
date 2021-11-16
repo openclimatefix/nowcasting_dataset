@@ -18,7 +18,6 @@ from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
 from nowcasting_dataset.utils import scale_to_0_to_1
@@ -73,6 +72,10 @@ class GSPDataSource(ImageDataSource):
         """Override the default sample minutes"""
         return 30
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return GSP
+
     def load(self):
         """
         Load the meta data and load the GSP power data
@@ -121,39 +124,58 @@ class GSPDataSource(ImageDataSource):
         Returns: list of x and y locations
 
         """
-        # Pick a random GSP for each t0_datetime, and then grab
-        # their geographical location.
-        x_locations = []
-        y_locations = []
+        total_gsp_nan_count = self.gsp_power.isna().sum().sum()
+        if total_gsp_nan_count == 0:
 
-        # TODO: Issue 305: Speed up this function by removing this for loop?
-        for t0_dt in t0_datetimes:
+            # get random GSP metadata
+            indexes = list(
+                self.rng.integers(low=0, high=len(self.metadata), size=len(t0_datetimes))
+            )
+            metadata = self.metadata.iloc[indexes]
 
-            # Choose start and end times
-            start_dt = self._get_start_dt(t0_dt)
-            end_dt = self._get_end_dt(t0_dt)
+            # get x, y locations
+            x_centers_osgb = list(metadata.location_x)
+            y_centers_osgb = list(metadata.location_y)
 
-            # remove any nans
-            gsp_power = self.gsp_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+        else:
 
-            # get random index
-            random_gsp_id = self.rng.choice(gsp_power.columns)
-            meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
+            logger.warning(
+                "There are some nans in the gsp data, "
+                "so to get x,y locations we have to do a big loop"
+            )
 
-            # Make sure there is only one GSP.
-            # Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
-            # TODO: Issue #272: Further investigation on multiple GSPs may be needed.
-            metadata_for_gsp = meta_data.iloc[0]
+            # Pick a random GSP for each t0_datetime, and then grab
+            # their geographical location.
+            x_centers_osgb = []
+            y_centers_osgb = []
 
-            # Get metadata for GSP
-            x_locations.append(metadata_for_gsp.location_x)
-            y_locations.append(metadata_for_gsp.location_y)
+            for t0_dt in t0_datetimes:
 
-        return x_locations, y_locations
+                # Choose start and end times
+                start_dt = self._get_start_dt(t0_dt)
+                end_dt = self._get_end_dt(t0_dt)
+
+                # remove any nans
+                gsp_power = self.gsp_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+
+                # get random index
+                random_gsp_id = self.rng.choice(gsp_power.columns)
+                meta_data = self.metadata[(self.metadata["gsp_id"] == random_gsp_id)]
+
+                # Make sure there is only one GSP.
+                # Sometimes there are multiple gsp_ids at one location e.g. 'SELL_1'.
+                # TODO: Issue #272: Further investigation on multiple GSPs may be needed.
+                metadata_for_gsp = meta_data.iloc[0]
+
+                # Get metadata for GSP
+                x_centers_osgb.append(metadata_for_gsp.location_x)
+                y_centers_osgb.append(metadata_for_gsp.location_y)
+
+        return x_centers_osgb, y_centers_osgb
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> GSP:
+    ) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords.
 
@@ -201,41 +223,31 @@ class GSPDataSource(ImageDataSource):
         da = xr.DataArray(
             data=selected_gsp_power.values,
             dims=["time", "id"],
-            coords=dict(
-                id=all_gsp_ids.values.astype(int),
-                time=selected_gsp_power.index.values,
-            ),
         )
 
         # convert to dataset
-        gsp = convert_data_array_to_dataset(da)
+        gsp = da.to_dataset(name="data")
 
         # add gsp x coords
         gsp_x_coords = xr.DataArray(
             data=gsp_x_coords.values,
-            dims=["id_index"],
-            coords=dict(
-                id_index=range(len(all_gsp_ids.values)),
-            ),
+            dims=["id"],
         )
 
         gsp_y_coords = xr.DataArray(
             data=gsp_y_coords.values,
-            dims=["id_index"],
-            coords=dict(
-                id_index=range(len(all_gsp_ids.values)),
-            ),
+            dims=["id"],
         )
         gsp["x_coords"] = gsp_x_coords
         gsp["y_coords"] = gsp_y_coords
 
         # pad out so that there are always 32 gsp, fill with 0
-        pad_n = self.n_gsp_per_example - len(gsp.id_index)
-        gsp = gsp.pad(id_index=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
+        pad_n = self.n_gsp_per_example - len(gsp.id)
+        gsp = gsp.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
 
-        gsp.__setitem__("id_index", range(self.n_gsp_per_example))
+        gsp.__setitem__("id", range(self.n_gsp_per_example))
 
-        return GSP(gsp)
+        return gsp
 
     def _get_central_gsp_id(
         self,

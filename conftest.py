@@ -46,6 +46,7 @@ def sat_data_source(sat_filename: Path):  # noqa: D103
         history_minutes=0,
         forecast_minutes=5,
         channels=("IR_016",),
+        meters_per_pixel=6000,
     )
 
 

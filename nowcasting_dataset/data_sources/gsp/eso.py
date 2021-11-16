@@ -151,6 +151,10 @@ def get_gsp_shape_from_eso(
         # save file
         shape_gpd_to_save.to_file(local_file)
 
+    assert (
+        len(shape_gpd) > 0
+    ), f"GSP shape data is empty (save: {save_local_file}, load: {load_local_file})"
+
     # sort
     shape_gpd = shape_gpd.sort_values(by=["RegionID"])
 

@@ -72,7 +72,7 @@ class Manager:
         combined_log_filename = self.config.output_data.filepath / "combined.log"
         nd_utils.configure_logger(
             log_level=log_level,
-            logger_name=__name__,
+            logger_name="nowcasting_dataset",
             handlers=[
                 logging.StreamHandler(),
                 logging.FileHandler(combined_log_filename, mode="a"),
@@ -84,7 +84,7 @@ class Manager:
             log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
             nd_utils.configure_logger(
                 log_level=log_level,
-                logger_name=f"{__name__}.data_sources.{data_source_name}",
+                logger_name=f"nowcasting_dataset.data_sources.{data_source_name}",
                 handlers=[logging.FileHandler(log_filename, mode="a")],
             )
 
@@ -446,5 +446,7 @@ class Manager:
                     # the main process, and to wait for the worker to finish.
                     exception = future.exception()
                     if exception is not None:
-                        logger.exception(f"Worker process {data_source_name} raised exception!")
+                        logger.exception(
+                            f"Worker process {data_source_name} raised exception!\n{exception}"
+                        )
                         raise exception

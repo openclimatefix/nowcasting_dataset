@@ -1,3 +1,4 @@
+""" Test for PV live data """
 from datetime import datetime
 
 import pandas as pd
@@ -14,8 +15,8 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day():
     Test that one gsp system data can be loaded, just for one day
     """
 
-    start = datetime(2019, 1, 1, tzinfo=pytz.utc)
-    end = datetime(2019, 1, 2, tzinfo=pytz.utc)
+    start = datetime(2021, 1, 1, tzinfo=pytz.utc)
+    end = datetime(2021, 1, 2, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, number_of_gsp=1)
 
@@ -31,8 +32,8 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day_not_normalised():
     """
 
     # pick a summer day
-    start = datetime(2019, 6, 21, tzinfo=pytz.utc)
-    end = datetime(2019, 6, 22, tzinfo=pytz.utc)
+    start = datetime(2021, 6, 21, tzinfo=pytz.utc)
+    end = datetime(2021, 6, 22, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(
         start=start, end=end, number_of_gsp=1, normalize_data=False
@@ -46,12 +47,12 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day_not_normalised():
 
 
 def test_load_gsp_raw_data_from_pvlive_one_gsp():
-    """a
+    """
     Test that one gsp system data can be loaded
     """
 
-    start = datetime(2019, 1, 1, tzinfo=pytz.utc)
-    end = datetime(2019, 3, 1, tzinfo=pytz.utc)
+    start = datetime(2021, 1, 1, tzinfo=pytz.utc)
+    end = datetime(2021, 3, 1, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, number_of_gsp=1)
 
@@ -67,8 +68,8 @@ def test_load_gsp_raw_data_from_pvlive_many_gsp():
     Test that one gsp system data can be loaded
     """
 
-    start = datetime(2019, 1, 1, tzinfo=pytz.utc)
-    end = datetime(2019, 1, 2, tzinfo=pytz.utc)
+    start = datetime(2021, 1, 1, tzinfo=pytz.utc)
+    end = datetime(2021, 1, 2, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, number_of_gsp=10)
 
@@ -79,6 +80,9 @@ def test_load_gsp_raw_data_from_pvlive_many_gsp():
 
 
 def test_get_installed_capacity():
+    """
+    Test thhat we can get installed capacity
+    """
 
     installed_capacity = get_installed_capacity(maximum_number_of_gsp=10)
 

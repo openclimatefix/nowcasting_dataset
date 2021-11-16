@@ -101,7 +101,9 @@ class PV(DataSourceMixin):
     get_center: bool = Field(
         False,
         description="If the batches are centered on one PV system (or not). "
-        "The other options is to have one GSP at the center of a batch. ",
+        "The other options is to have one GSP at the center of a batch. "
+        "Typically, get_center would be set to true if and only if "
+        "PVDataSource is used to define the geospatial positions of each example.",
     )
 
 

@@ -45,9 +45,28 @@ def sat_data_source(sat_filename: Path):  # noqa: D103
         zarr_path=sat_filename,
         history_minutes=0,
         forecast_minutes=5,
-        channels=("HRV",),
+        channels=("IR_016",),
     )
 
+@pytest.fixture
+def hrv_sat_filename(use_cloud_data: bool) -> Path:  # noqa: D103
+    if use_cloud_data:
+        return consts.SAT_FILENAME
+    else:
+        filename = Path(__file__).parent.absolute() / "tests" / "data" / "hrv_sat_data.zarr"
+        assert filename.exists()
+        return filename
+
+
+@pytest.fixture
+def sat_data_source(hrv_sat_filename: Path):  # noqa: D103
+    return SatelliteDataSource(
+        image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
+        zarr_path=hrv_sat_filename,
+        history_minutes=0,
+        forecast_minutes=5,
+        channels=("HRV",),
+        )
 
 @pytest.fixture
 def general_data_source():  # noqa: D103

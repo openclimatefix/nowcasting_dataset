@@ -70,7 +70,7 @@ class Manager:
         """
         # Configure combined logger.
         combined_log_filename = self.config.output_data.filepath / "combined.log"
-        nd_utils.configure_logging(
+        nd_utils.configure_logger(
             log_level=log_level,
             logger_name=__name__,
             handlers=[
@@ -82,7 +82,7 @@ class Manager:
         # Configure loggers for each DataSource.
         for data_source_name in names_of_selected_data_sources:
             log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
-            nd_utils.configure_logging(
+            nd_utils.configure_logger(
                 log_level=log_level,
                 logger_name=f"{__name__}.data_sources.{data_source_name}",
                 handlers=[logging.FileHandler(log_filename, mode="a")],

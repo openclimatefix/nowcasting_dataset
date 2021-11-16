@@ -54,7 +54,7 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
 )
 @click.option(
     "--log_level",
-    default=logging.DEBUG,
+    default="DEBUG",
     type=click.Choice(LOG_LEVELS),
     help=("The log level represented as a string.  Defaults to DEBUG."),
 )

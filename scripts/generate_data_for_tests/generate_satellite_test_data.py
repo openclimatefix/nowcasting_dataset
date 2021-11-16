@@ -10,8 +10,8 @@ import xarray as xr
 import nowcasting_dataset
 from nowcasting_dataset import consts
 
-START = pd.Timestamp("2019-01-01T12:00")
-END = pd.Timestamp("2019-01-01T18:00")
+START = pd.Timestamp("2020-04-01T12:00")
+END = pd.Timestamp("2020-04-01T18:00")
 OUTPUT_PATH = Path(os.path.dirname(nowcasting_dataset.__file__)).parent / "tests" / "data"
 print(OUTPUT_PATH)
 

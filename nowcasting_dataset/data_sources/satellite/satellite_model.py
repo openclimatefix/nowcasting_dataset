@@ -30,3 +30,6 @@ class Satellite(DataSourceOutput):
 
 class HRVSatellite(Satellite):
     """Class to store HRV satellite data as a xr.Dataset with some validation"""
+    __slots__ = ()
+    _expected_dimensions = ("time", "x", "y", "channels")
+    _expected_data_vars = ("data",)

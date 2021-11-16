@@ -23,8 +23,8 @@ PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
 # set up variables
 filename = PV_PATH / "UK_PV_timeseries_batch.nc"
 metadata_filename = f"gs://{PV_METADATA_FILENAME}"
-start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")
-end_dt = datetime.fromisoformat("2019-01-02 00:00:00.000+00:00")
+start_dt = datetime.fromisoformat("2020-04-01 00:00:00.000+00:00")
+end_dt = datetime.fromisoformat("2020-04-02 00:00:00.000+00:00")
 
 # link to gcs
 gcs = gcsfs.GCSFileSystem(access="read_only")

@@ -58,8 +58,8 @@ def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
         "https://data.nationalgrideso.com/api/3/action/datastore_search?"
         "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
     )
-    fileobj = urllib.request.urlopen(url)
-    d = json.loads(fileobj.read())
+    with urllib.request.urlopen(url) as fileobj:
+        d = json.loads(fileobj.read())
 
     # make dataframe
     results = d["result"]["records"]

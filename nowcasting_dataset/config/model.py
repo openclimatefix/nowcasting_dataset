@@ -121,7 +121,6 @@ class Satellite(DataSourceMixin):
     )
 
 
-
 class HRVSatellite(Satellite):
     """Satellite configuration model for HRV data"""
 

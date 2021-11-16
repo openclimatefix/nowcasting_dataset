@@ -4,8 +4,11 @@ from dataclasses import InitVar, dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 
+import numpy as np
 import pandas as pd
 import xarray as xr
+from numbers import Number
+
 
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
@@ -60,6 +63,53 @@ class SatelliteDataSource(ZarrDataSource):
         assert type(data) == xr.DataArray
 
         return data
+
+    def get_image_pixel(self, data_array: xr.DataArray, x_meters_center: Number, y_meters_center: Number) -> xr.DataArray:
+        x_index = np.searchsorted(data_array.x.values, x_meters_center)-1 # To have the center fall within the pixel
+        y_index = np.searchsorted(data_array.y.values, y_meters_center)-1
+        min_y = y_index - (self._square.size_pixels // 2)
+        min_x = x_index - (self._square.size_pixels // 2)
+        assert min_y >= 0, f"Y location must be at least {(self._square.size_pixels // 2)} pixels from the edge of the area, but is {y_index} for y center of {y_meters_center}"
+        assert min_x >= 0, f"X location must be at least {(self._square.size_pixels // 2)} pixels from the edge of the area, but is {x_index} for x center of {x_meters_center}"
+        data_array = data_array.isel(x=slice(min_x, min_x + self._square.size_pixels),
+                                     y=slice(min_y,min_y + self._square.size_pixels))
+        return data_array
+
+    def get_example(
+            self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+            ) -> xr.Dataset:
+        """
+        Get Example data
+
+        Args:
+            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
+                data for historic and future depending on `history_minutes` and `future_minutes`.
+            x_meters_center: x center batch locations
+            y_meters_center: y center batch locations
+
+        Returns: Example Data
+
+        """
+        selected_data = self._get_time_slice(t0_dt)
+        selected_data = self.get_image_pixel(data_array = selected_data,
+                                             x_meters_center = x_meters_center,
+                                             y_meters_center = y_meters_center)
+
+        selected_data = self._post_process_example(selected_data, t0_dt)
+
+        if selected_data.shape != self._shape_of_example:
+            raise RuntimeError(
+                "Example is wrong shape! "
+                f"x_meters_center={x_meters_center}\n"
+                f"y_meters_center={y_meters_center}\n"
+                f"t0_dt={t0_dt}\n"
+                f"times are {selected_data.time}\n"
+                f"expected shape={self._shape_of_example}\n"
+                f"actual shape {selected_data.shape}"
+                )
+
+        return selected_data.load().to_dataset(name="data")
+
 
     def datetime_index(self, remove_night: bool = True) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes

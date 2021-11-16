@@ -128,7 +128,7 @@ class GSPDataSource(ImageDataSource):
         if total_gsp_nan_count == 0:
 
             # get random GSP metadata
-            indexes = list(np.random.choice(range(len(self.metadata)), size=len(t0_datetimes)))
+            indexes = list(self.rng.integers(low=0, high=len(self.metadata), size=len(t0_datetimes)))
             metadata = self.metadata.iloc[indexes]
 
             # get x, y locations

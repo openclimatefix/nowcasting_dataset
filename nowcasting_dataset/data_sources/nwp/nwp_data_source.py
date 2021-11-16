@@ -23,7 +23,7 @@ class NWPDataSource(ZarrDataSource):
     Attributes:
         _data: xr.DataArray of Numerical Weather Predictions, opened by open().
             x is left-to-right.
-            y is bottom-to-top.
+            y is top-to-bottom (after reversing the `y` index in open_nwp()).
         consolidated: Whether or not the Zarr store is consolidated.
         channels: The NWP forecast parameters to load. If None then don't filter.
             See:  http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
@@ -179,7 +179,22 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
         zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
     )
 
+    # Select the "UKV" DataArray from the "nwp" Dataset.
+    # "UKV" is the one and only DataArray in the Zarr Dataset.
+    # "UKV" stands for "United Kingdom Variable", and it the UK Met Office's high-res deterministic
+    # NWP for the UK.  All the NWP variables are represented in the `variable` dimension within
+    # the UKV DataArray.
     ukv = nwp["UKV"]
+
+    # Reverse `y` so it's top-to-bottom (so ZarrDataSource.get_example() works correctly!)
+    # if necessary.  Adapted from:
+    # https://stackoverflow.com/questions/54677161/xarray-reverse-an-array-along-one-coordinate
+    if ukv.y[0] < ukv.y[1]:
+        _LOG.warning(
+            "NWP y axis runs from bottom-to-top.  Will reverse y axis so it runs top-to-bottom."
+        )
+        y_reversed = ukv.y[::-1]
+        ukv = ukv.reindex(y=y_reversed)
 
     # Sanity checks.
     # If there are any duplicated init_times then drop the duplicated init_times:

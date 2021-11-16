@@ -8,7 +8,8 @@ import xarray as xr
 # Satellite data
 # TODO: remove this?
 SAT_FILENAME = "gs://" + str(
-    Path("solar-pv-nowcasting-data") / "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr"
+    Path("solar-pv-nowcasting-data")
+    / "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr"
 )
 
 # Typing

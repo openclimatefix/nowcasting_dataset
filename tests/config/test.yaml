@@ -11,6 +11,7 @@ input_data:
     nwp_image_size_pixels: 2
     nwp_zarr_path: tests/data/nwp_data/test.zarr
     history_minutes: 60
+    forecast_minutes: 60
   pv:
     pv_filename: tests/data/pv_data/test.nc
     pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv

@@ -119,6 +119,11 @@ class NWPDataSource(ZarrDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
+        # if t0_dt is not on the hour, e.g. 13.05.
+        # Then if the history_minutes is 1 hours,
+        # so start_dt will be 12.05, but we want to the 12.00 time step too
+        start_dt = start_dt.floor("H")
+
         selected_data = selected_data.sel(target_time=slice(start_dt, end_dt))
         selected_data = selected_data.rename({"target_time": "time", "variable": "channels"})
         selected_data.data = selected_data.data.astype(np.float16)
@@ -131,11 +136,12 @@ class NWPDataSource(ZarrDataSource):
             nwp = self._open_data()
         else:
             nwp = self._data
-        target_times = nwp["init_time"] + nwp["step"][:3]
+        target_times = nwp["init_time"] + nwp["step"]
         target_times = target_times.values.flatten()
         target_times = np.unique(target_times)
         target_times = np.sort(target_times)
         target_times = pd.DatetimeIndex(target_times)
+
         return target_times
 
     @property

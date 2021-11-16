@@ -70,11 +70,11 @@ def test_nwp_data_source_batch_not_on_hour():  # noqa: D103
 
     batch = nwp.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
 
-    # batch size 4
+    # batch size 1
     # channel 1
     # time series, 1 int he past, 1 now, 1 in the future
     # x,y of size 2
-    assert batch.data.shape == (4, 1, 3, 2, 2)
+    assert batch.data.shape == (1, 1, 3, 2, 2)
 
 
 def test_nwp_get_contiguous_time_periods():  # noqa: D103

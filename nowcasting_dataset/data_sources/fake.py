@@ -13,7 +13,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite, HRVSatellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.dataset.xr_utils import (
@@ -150,7 +150,7 @@ def hrv_satellite_fake(
     # make dataset
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
-    return Satellite(xr_dataset)
+    return HRVSatellite(xr_dataset)
 
 
 def sun_fake(batch_size, seq_length_5):

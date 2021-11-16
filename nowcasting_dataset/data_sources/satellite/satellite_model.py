@@ -26,3 +26,7 @@ class Satellite(DataSourceOutput):
         )
 
         return v
+
+
+class HRVSatellite(Satellite):
+    """Class to store HRV satellite data as a xr.Dataset with some validation"""

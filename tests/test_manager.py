@@ -104,8 +104,8 @@ def test_batches():
 
     gsp = GSPDataSource(
         zarr_path=filename,
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,

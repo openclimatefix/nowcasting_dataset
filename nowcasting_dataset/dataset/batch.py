@@ -26,14 +26,14 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite, HRVSatellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP]
+data_sources = [Metadata, Satellite, HRVSatellite, Topographic, PV, Sun, GSP, NWP]
 
 
 class Batch(BaseModel):
@@ -57,7 +57,7 @@ class Batch(BaseModel):
 
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
-    hrvsatellite: Optional[Satellite]
+    hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
     sun: Optional[Sun]
@@ -191,7 +191,7 @@ class Example(BaseModel):
 
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
-    hrvsatellite: Optional[Satellite]
+    hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
     sun: Optional[Sun]

@@ -65,6 +65,23 @@ class SatelliteDataSource(ZarrDataSource):
         return data
 
     def get_image_pixel(self, data_array: xr.DataArray, x_meters_center: Number, y_meters_center: Number) -> xr.DataArray:
+        """
+        Gets the satellite image as a square around the center
+
+        Ignores x and y coordinates as for the original satellite projection each pixel varies in
+        both its x and y distance from other pixels. See Issue 401 for more details.
+
+        This results, in 'real' spatial terms, each image covering about 2x as much distance in the
+        x direction as in the y direction.
+
+        Args:
+            data_array: DataArray to subselect from
+            x_meters_center: Center of the image x coordinate in OSGB coordinates
+            y_meters_center: Center of image y coordinate in OSGB coordinates
+
+        Returns:
+            The selected data around the center
+        """
         x_index = np.searchsorted(data_array.x.values, x_meters_center)-1 # To have the center fall within the pixel
         y_index = np.searchsorted(data_array.y.values, y_meters_center)-1
         min_y = y_index - (self._square.size_pixels // 2)

@@ -56,6 +56,7 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
+    # TODO: Issue #322: Write test for Manager.configure_loggers()
     def configure_loggers(
         self,
         log_level: str,

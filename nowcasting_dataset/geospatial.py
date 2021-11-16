@@ -124,12 +124,15 @@ def calculate_azimuth_and_elevation_angle(
     return solpos[["elevation", "azimuth"]]
 
 
-def get_osgb_center_from_osgb(
+def get_osgb_center_from_list_of_x_and_y_osgb(
     x_osgb: Union[xr.DataArray, List[float], np.ndarray],
     y_osgb: Union[xr.DataArray, List[float], np.ndarray],
 ) -> (float, float):
     """
-    Get the center OSGB coords from a list of OSGB coords.
+    Get the OSGB center from OSGB coords
+
+    This gets the average of the x coordinates,
+    and the average of the y coordinates.
 
     Args:
         x_osgb: list of x coords in OSGB
@@ -138,17 +141,14 @@ def get_osgb_center_from_osgb(
     Returns: x and y center [OSGB]
 
     """
-    if type(x_osgb) == xr.DataArray:
-        center_x_osgb = x_osgb.mean()
-        center_y_osgb = y_osgb.mean()
-    else:
-        center_x_osgb = np.mean(x_osgb)
-        center_y_osgb = np.mean(y_osgb)
+
+    center_x_osgb = np.mean(x_osgb)
+    center_y_osgb = np.mean(y_osgb)
 
     return center_x_osgb, center_y_osgb
 
 
-def get_lat_lon_center_from_osgb(
+def get_lat_lon_center_from_list_of_x_and_y_osgb(
     x_osgb: Union[xr.DataArray, List[float], np.ndarray],
     y_osgb: Union[xr.DataArray, List[float], np.ndarray],
 ) -> (float, float):
@@ -162,6 +162,8 @@ def get_lat_lon_center_from_osgb(
     Returns: x and y center [lat, lon]
 
     """
-    center_x_osgb, center_y_osgb = get_osgb_center_from_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
+    center_x_osgb, center_y_osgb = get_osgb_center_from_list_of_x_and_y_osgb(
+        x_osgb=x_osgb, y_osgb=y_osgb
+    )
 
     return osgb_to_lat_lon(center_x_osgb, center_y_osgb)

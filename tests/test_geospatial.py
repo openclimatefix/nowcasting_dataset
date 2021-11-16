@@ -48,7 +48,7 @@ def test_get_osgb_center_from_osgb():
     x_osgb = np.random.randint(0, 100, 10)
     y_osgb = np.random.randint(0, 100, 10)
 
-    x, y = geospatial.get_osgb_center_from_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
+    x, y = geospatial.get_osgb_center_from_list_of_x_and_y_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
 
     assert x == np.mean(x_osgb)
     assert y == np.mean(y_osgb)
@@ -59,7 +59,7 @@ def test_get_lat_lon_center_from_osgb():
     x_osgb = np.random.randint(0, 100, 10)
     y_osgb = np.random.randint(0, 100, 10)
 
-    x, y = geospatial.get_lat_lon_center_from_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
+    x, y = geospatial.get_lat_lon_center_from_list_of_x_and_y_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
 
     assert 49 < x < 50
     assert -8 < y < -7

@@ -353,7 +353,7 @@ class Configuration(BaseModel):
             "pv.pv_filename",
             "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
-            "satellite_hrv.satellite_zarr_path",
+            "hrvsatellite.hrvsatellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",
         ]

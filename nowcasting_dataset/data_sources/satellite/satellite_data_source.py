@@ -228,6 +228,6 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     data_array = dataset["stacked_eumetsat_data"]
     del dataset
     # Flip coordinates to top-left first
-    data_array = data_array.reindex(x=data_array.x[::-1], y=data_array.y[::-1])
+    data_array = data_array.reindex(x=data_array.x[::-1])
 
     return data_array

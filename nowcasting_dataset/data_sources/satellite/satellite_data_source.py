@@ -217,10 +217,13 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # about a million chunks.
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
     if Path(zarr_path).exists:
+        # For opening a single Zarr store, we can use the simpler open_dataset
         dataset = xr.open_dataset(
             zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
         )
     else:
+        # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
+        # together and create a single dataset from them
         dataset = xr.open_mfdataset(
             zarr_path, chunks=None, mode="r", engine="zarr", concat_dim="time"
         )

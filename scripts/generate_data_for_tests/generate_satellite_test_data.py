@@ -31,14 +31,17 @@ def generate_satellite_test_data():
     output_filename = OUTPUT_PATH / "hrv_sat_data.zarr"
     print("Writing satellite tests data to", output_filename)
     zarr_paths = list(glob.glob(HRV_SAT_FILENAME))
+    # This opens all the HRV satellite data
     hrv_sat_data = xr.open_mfdataset(
         zarr_paths, chunks=None, mode="r", engine="zarr", concat_dim="time"
     )
     hrv_sat_data = hrv_sat_data.sel(variable=["HRV"], time=slice(START, END))
-    print(hrv_sat_data)
+    # Adds compression and chunking
     encoding = {"stacked_eumetsat_data": {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)}}
     sat_data = hrv_sat_data.chunk({"time": 1, "y": 704, "x": 548, "variable": 1})
+    # Write the HRV data to disk
     sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding, compute=True)
+    # Now do the exact same with the non-HRV data
     output_filename = OUTPUT_PATH / "sat_data.zarr"
     print("Writing satellite tests data to", output_filename)
     zarr_paths = list(glob.glob(SAT_FILENAME))
@@ -46,7 +49,6 @@ def generate_satellite_test_data():
         zarr_paths, chunks=None, mode="r", engine="zarr", concat_dim="time"
     )
     sat_data = sat_data.sel(variable=["IR_016"], time=slice(START, END))
-    print(sat_data)
     encoding = {"stacked_eumetsat_data": {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)}}
     sat_data = sat_data.chunk({"time": 1, "y": 704, "x": 548, "variable": 1})
     sat_data.to_zarr(output_filename, mode="w", consolidated=False, encoding=encoding, compute=True)

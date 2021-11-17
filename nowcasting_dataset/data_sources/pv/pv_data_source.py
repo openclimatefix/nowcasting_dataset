@@ -272,7 +272,7 @@ class PVDataSource(ImageDataSource):
 
         # convert to dataset
         pv = da.to_dataset(name="power_mw")
-        pv["capacity_mw"] = capacity
+        pv["capacity_mwp"] = capacity
 
         # add pv x coords
         x_coords = xr.DataArray(

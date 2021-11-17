@@ -289,7 +289,7 @@ def create_gsp_pv_dataset(
         dims=["id"],
     )
 
-    data["capacity_mw"] = capacity
+    data["capacity_mwp"] = capacity
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
 

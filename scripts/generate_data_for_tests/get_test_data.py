@@ -85,8 +85,8 @@ nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr")
 ####
 # ### GSP data
 #####
+filename = "gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr"
 
-filename = "/home/jacob/nowcasting_dataset/scripts/pv_gsp.zarr"
 gsp_power = xr.open_dataset(filename, engine="zarr")
 gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
 gsp_power = gsp_power.sel(gsp_id=slice(gsp_power.gsp_id[0], gsp_power.gsp_id[20]))

@@ -128,16 +128,21 @@ class Satellite(DataSourceMixin):
     )
 
 
-class HRVSatellite(Satellite):
+class HRVSatellite(DataSourceMixin):
     """Satellite configuration model for HRV data"""
 
-    satellite_channels: tuple = Field(
+    hrvsatellite_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
+        description="The path which holds the satellite zarr.",
+        )
+
+    hrvsatellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES[0:1], description="the satellite channels that are used"
     )
     # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
     # time the number of pixels
-    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
-    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    hrvsatellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class NWP(DataSourceMixin):

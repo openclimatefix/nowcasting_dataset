@@ -228,7 +228,7 @@ class GSPDataSource(ImageDataSource):
 
         # convert to dataset
         gsp = da.to_dataset(name="data")
-        gsp["capacity_mwh"] = capacity
+        gsp["capacity_mw"] = capacity
 
         # add gsp x coords
         gsp_x_coords = xr.DataArray(

@@ -14,7 +14,7 @@ class PV(DataSourceOutput):
     _expected_dimensions = ("time", "id")
     _expected_data_vars = (
         "power_mw",
-        "capacity_mwh",
+        "capacity_mw",
         "pv_system_row_number",
         "x_coords",
         "y_coords",
@@ -27,7 +27,7 @@ class PV(DataSourceOutput):
         v.check_dataset_greater_than_or_equal_to(data=v.power_mw, min_value=0)
 
         v.check_data_var_dim(v.power_mw, ("example", "time_index", "id_index"))
-        v.check_data_var_dim(v.capacity_mwh, ("example", "id_index"))
+        v.check_data_var_dim(v.capacity_mw, ("example", "id_index"))
         v.check_data_var_dim(v.time, ("example", "time_index"))
         v.check_data_var_dim(v.x_coords, ("example", "id_index"))
         v.check_data_var_dim(v.y_coords, ("example", "id_index"))

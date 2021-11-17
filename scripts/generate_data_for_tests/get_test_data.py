@@ -48,47 +48,28 @@ with gcs.open(
 
 with io.BytesIO(file_bytes) as file:
     pv_power = xr.open_dataset(file, engine="h5netcdf")
-    print(pv_power)
     pv_power = pv_power.sel(datetime=slice(start_dt, end_dt))
-    print(pv_power)
     pv_power_df = pv_power.to_dataframe()
-    print(pv_power_df)
 
 # process data
 system_ids_xarray = [int(i) for i in pv_power.data_vars]
-print(system_ids_xarray)
 system_ids = [
     str(system_id) for system_id in pv_metadata.index.to_list() if system_id in system_ids_xarray
 ]
-print(system_ids)
 
 # only take the system ids we need
 pv_power_df = pv_power_df[system_ids]
-print(pv_power_df)
 pv_power_df = pv_power_df.dropna(axis="columns", how="all")
-print(pv_power_df)
 pv_power_df = pv_power_df.clip(lower=0, upper=5e7)
-print("After Clip")
-print(pv_power_df)
 pv_power_new = pv_power_df.to_xarray()
-print(pv_power_new)
 # Drop one with null
-print(pv_power_new.variables)
 pv_power_new = pv_power_new.drop("3000")
-print(pv_power_new)
-print(pv_power_new.notnull().all().compute())
-print(pv_power_new)
 # print(pv_power_new.dims)
 # print(pv_power_new.coords["datetime"].values)
 # save to test data
 pv_power_new.to_zarr(f"{local_path}/tests/data/pv_data/test.zarr", compute=True, mode="w")
 pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.zarr", engine="zarr")
-print(pv_power)
-pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True)
-pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.nc")
-print("NETCDF One")
-print(pv_power)
-exit()
+pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True, engine = 'h5netcdf')
 ############################
 # NWP, this makes a file that is 9.5MW big
 ###########################
@@ -97,16 +78,13 @@ exit()
 NWP_BASE_PATH = "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
 
 nwp_data_raw = open_nwp(zarr_path=NWP_BASE_PATH, consolidated=True)
-print(nwp_data_raw)
 nwp_data = nwp_data_raw.sel(variable=["t"])
-print(nwp_data)
 nwp_data = nwp_data.sel(init_time=slice(start_dt, end_dt))
 nwp_data = nwp_data.sel(variable=["t"])
 nwp_data = nwp_data.sel(step=slice(nwp_data.step[0], nwp_data.step[4]))  # take 4 hours periods
 # nwp_data = nwp_data.sel(x=slice(nwp_data.x[50], nwp_data.x[100]))
 # nwp_data = nwp_data.sel(y=slice(nwp_data.y[50], nwp_data.y[100]))
 nwp_data = xr.Dataset({"UKV": nwp_data})
-print(nwp_data)
 nwp_data.UKV.values = nwp_data.UKV.values.astype(np.float16)
 
 nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr", mode="w")
@@ -127,29 +105,6 @@ encoding = {
 }
 
 gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=encoding)
-
-# ### satellite
-
-# s = SatelliteDataSource(filename="gs://solar-pv-nowcasting-data/satellite/"
-#                                  "EUMETSAT/SEVIRI_RSS/OSGB36/"
-#                                  "all_zarr_int16_single_timestep.zarr",
-#                           history_length=6,
-#                           forecast_length=12,
-#                           image_size_pixels=64,
-#                           meters_per_pixel=2000)
-#
-# s.open()
-# start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")
-# end_dt = datetime.fromisoformat("2019-01-02 00:00:00.000+00:00")
-#
-# data_xarray = s._data
-# data_xarray = data_xarray.sel(time=slice(start_dt, end_dt))
-# data_xarray = data_xarray.sel(variable=['HRV'])
-# data_xarray = data_xarray.sel(x=slice(122000, 122001))
-#
-# data_df = data_xarray.to_dataframe()
-# TODO reduce and save
-
 
 #####################
 # SUN

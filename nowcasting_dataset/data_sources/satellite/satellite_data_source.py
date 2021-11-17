@@ -217,7 +217,7 @@ def remove_acq_time_from_dataset(dataset: xr.Dataset) -> xr.Dataset:
     Returns:
         dataset with acq_time dropped
     """
-    dataset = dataset.drop("acq_time", errors="ignore")
+    dataset = dataset.drop_vars("acq_time", errors="ignore")
     return dataset
 
 

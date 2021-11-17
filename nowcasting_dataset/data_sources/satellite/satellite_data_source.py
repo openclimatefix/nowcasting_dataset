@@ -207,6 +207,23 @@ class HRVSatelliteDataSource(SatelliteDataSource):
     meters_per_pixel: InitVar[int] = 2_000
 
 
+def remove_acq_time_from_dataset(dataset: xr.Dataset) -> xr.Dataset:
+    """
+    Preprocess datasets by dropping `acq_time`, which causes problems otherwise
+
+    Args:
+        dataset: xr.Dataset to preprocess
+
+    Returns:
+        dataset with acq_time dropped
+    """
+    try:
+        dataset = dataset.drop("acq_time")
+    except:
+        dataset = dataset
+    return dataset
+
+
 def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """Lazily opens the Zarr store.
 
@@ -233,7 +250,7 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
         # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
         # together and create a single dataset from them
         dataset = xr.open_mfdataset(
-            zarr_path, chunks=None, mode="r", engine="zarr", concat_dim="time"
+            zarr_path, chunks=None, mode="r", engine="zarr", concat_dim="time", preprocess = remove_acq_time_from_dataset
         )
 
     data_array = dataset["stacked_eumetsat_data"]

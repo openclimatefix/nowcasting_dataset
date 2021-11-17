@@ -98,7 +98,7 @@ class SunDataSource(DataSource):
         """Sun data should not be used to get batch locations"""
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
-    def datetime_index(self):
+    def datetime_index(self) -> pd.DatetimeIndex:
         """Get datetimes where elevation >= 10"""
 
         # get the lat and lon from london
@@ -125,8 +125,9 @@ class SunDataSource(DataSource):
 
         # Sun data is only for 2019, so to expand on these by
         # repeating data from 2014 to 2023
-        all_datetimes = []
-        for delta_years in range(-5, 5):
-            all_datetimes.append(datetimes + pd.offsets.DateOffset(months=12 * delta_years))
+        all_datetimes = pd.DatetimeIndex([])
+        for delta_years in range(-5, 5, 1):
+            on_year = datetimes + pd.offsets.DateOffset(months=12 * delta_years)
+            all_datetimes = all_datetimes.append(on_year)
 
         return all_datetimes

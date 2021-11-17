@@ -63,7 +63,7 @@ class SatelliteDataSource(ZarrDataSource):
 
         return data
 
-    def get_image_pixel(
+    def get_spatial_region_of_interest(
         self, data_array: xr.DataArray, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.DataArray:
         """
@@ -119,7 +119,7 @@ class SatelliteDataSource(ZarrDataSource):
 
         """
         selected_data = self._get_time_slice(t0_dt)
-        selected_data = self.get_image_pixel(
+        selected_data = self.get_spatial_region_of_interest(
             data_array=selected_data,
             x_center_osgb=x_meters_center,
             y_center_osgb=y_meters_center,

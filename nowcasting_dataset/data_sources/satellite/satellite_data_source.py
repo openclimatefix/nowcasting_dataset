@@ -250,7 +250,12 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
         # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
         # together and create a single dataset from them
         dataset = xr.open_mfdataset(
-            zarr_path, chunks=None, mode="r", engine="zarr", concat_dim="time", preprocess = remove_acq_time_from_dataset
+            zarr_path,
+            chunks=None,
+            mode="r",
+            engine="zarr",
+            concat_dim="time",
+            preprocess=remove_acq_time_from_dataset,
         )
 
     data_array = dataset["stacked_eumetsat_data"]

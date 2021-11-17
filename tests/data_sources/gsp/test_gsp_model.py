@@ -18,7 +18,7 @@ def test_gsp_validation():  # noqa: D103
 
     GSP.model_validation(gsp)
 
-    gsp.data[0, 0] = np.nan
+    gsp.power_mw[0, 0] = np.nan
     with pytest.raises(Exception):
         GSP.model_validation(gsp)
 

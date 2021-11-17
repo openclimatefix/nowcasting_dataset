@@ -100,7 +100,9 @@ def test_batches():
         channels=("IR_016",),
     )
 
-    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+    filename = (
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+    )
     hrvsat = SatelliteDataSource(
         zarr_path=filename,
         history_minutes=30,
@@ -108,7 +110,7 @@ def test_batches():
         image_size_pixels=64,
         meters_per_pixel=2000,
         channels=("HRV",),
-        )
+    )
 
     filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"

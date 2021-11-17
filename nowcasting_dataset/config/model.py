@@ -292,7 +292,7 @@ class Process(BaseModel):
         ),
     )
     split_method: split.SplitMethod = Field(
-        split.SplitMethod.DAY,
+        split.SplitMethod.DAY_RANDOM_TEST_DATE,
         description=(
             "The method used to split the t0 datetimes into train, validation and test sets."
         ),

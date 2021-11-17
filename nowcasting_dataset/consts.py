@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 
 # Satellite data
-# TODO: remove this?
+# TODO: Issue #423: Remove this?
 SAT_FILENAME = "gs://" + str(
     Path("solar-pv-nowcasting-data")
     / "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr"

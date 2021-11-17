@@ -1,5 +1,7 @@
+""" Test for ESO GSP metadata """
 import geopandas as gpd
 import pandas as pd
+import pytest
 
 from nowcasting_dataset.data_sources.gsp.eso import (
     get_gsp_metadata_from_eso,
@@ -10,7 +12,6 @@ from nowcasting_dataset.data_sources.gsp.eso import (
 def test_get_gsp_metadata_from_eso():
     """
     Test to get the gsp metadata from eso. This should take ~1 second.
-    @return:
     """
     metadata = get_gsp_metadata_from_eso()
 
@@ -26,7 +27,6 @@ def test_get_gsp_metadata_from_eso():
 def test_get_pv_gsp_shape():
     """
     Test to get the gsp metadata from eso. This should take ~1 second.
-    @return:
     """
 
     gsp_shapes = get_gsp_shape_from_eso()
@@ -41,8 +41,9 @@ def test_get_pv_gsp_shape():
 
 def test_get_pv_gsp_shape_duplicates():
     """
-    Test to get the gsp metadata from eso. This should take ~1 second. Do not remove duplicate region enteries
-    @return:
+    Test to get the gsp metadata from eso. This should take ~1 second.
+
+    Do not remove duplicate region enteries
     """
 
     gsp_shapes = get_gsp_shape_from_eso(join_duplicates=False)
@@ -55,10 +56,10 @@ def test_get_pv_gsp_shape_duplicates():
     assert "geometry" in gsp_shapes.columns
 
 
+@pytest.mark.skip("Skip this for the moment as not needed for CI")
 def test_get_pv_gsp_shape_from_eso():
     """
     Test to get the gsp metadata from eso. This should take ~1 second.
-    @return:
     """
 
     gsp_shapes = get_gsp_shape_from_eso(load_local_file=False)

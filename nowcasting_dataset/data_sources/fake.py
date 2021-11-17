@@ -94,6 +94,7 @@ def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
             seq_length=seq_length_5,
             freq="5T",
             number_of_systems=n_pv_systems_per_batch,
+            time_dependent_capacity=False,
         )
         for _ in range(batch_size)
     ]
@@ -206,6 +207,7 @@ def create_gsp_pv_dataset(
     freq="5T",
     seq_length=19,
     number_of_systems=128,
+    time_dependent_capacity: bool = True,
 ):
     """Create gsp or pv fake dataset"""
     ALL_COORDS = {
@@ -221,14 +223,20 @@ def create_gsp_pv_dataset(
         coords=coords,
     )  # Fake data for testing!
 
-    capacity = xr.DataArray(
-        np.repeat(np.random.randn(seq_length), number_of_systems)
-        .reshape(number_of_systems, seq_length)
-        .T,
-        coords=coords,
-    )  # Fake data for testing!
+    if time_dependent_capacity:
+        capacity = xr.DataArray(
+            np.repeat(np.random.randn(seq_length), number_of_systems)
+            .reshape(number_of_systems, seq_length)
+            .T,
+            coords=coords,
+        )
+    else:
+        capacity = xr.DataArray(
+            np.random.randn(number_of_systems),
+            coords=[coords[1]],
+        )
 
-    data = data_array.to_dataset(name="data")
+    data = data_array.to_dataset(name="power_mw")
 
     x_coords = xr.DataArray(
         data=np.sort(
@@ -252,7 +260,7 @@ def create_gsp_pv_dataset(
     # This is a quick way to make sure row number is different from id,
     data["pv_system_row_number"] = data["id"] + 1000
 
-    data.__setitem__("data", data.data.clip(min=0))
+    data.__setitem__("power_mw", data.power_mw.clip(min=0))
 
     return data
 

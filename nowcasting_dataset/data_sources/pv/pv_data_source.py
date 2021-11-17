@@ -107,7 +107,7 @@ class PVDataSource(ImageDataSource):
         pv_power.dropna(axis="columns", how="all", inplace=True)
         pv_power.dropna(axis="index", how="all", inplace=True)
 
-        # pv_power = utils.scale_to_0_to_1(pv_power)
+        # drop systems with over night power
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.

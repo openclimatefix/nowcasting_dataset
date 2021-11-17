@@ -31,8 +31,8 @@ def test_get_example_and_batch():  # noqa: D103
         meters_per_pixel=2000,
         filename=PV_DATA_FILENAME,
         metadata_filename=PV_METADATA_FILENAME,
-        start_dt=datetime.fromisoformat("2019-01-01 00:00:00.000+00:00"),
-        end_dt=datetime.fromisoformat("2019-01-02 00:00:00.000+00:00"),
+        start_dt=datetime.fromisoformat("2019-01-01 00:00:00.000"),
+        end_dt=datetime.fromisoformat("2019-01-02 00:00:00.000"),
         load_azimuth_and_elevation=False,
         load_from_gcs=False,
     )

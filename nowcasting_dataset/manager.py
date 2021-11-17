@@ -56,6 +56,39 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
+    # TODO: Issue #322: Write test for Manager.configure_loggers()
+    def configure_loggers(
+        self,
+        log_level: str,
+        names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES,
+    ) -> None:
+        """Configure loggers.
+
+        Print combined log to stdout.
+        Save combined log to self.config.output_data.filepath / combined.log
+        Save individual logs for each DataSource in
+            self.config.output_data.filepath / <data_source>.log
+        """
+        # Configure combined logger.
+        combined_log_filename = self.config.output_data.filepath / "combined.log"
+        nd_utils.configure_logger(
+            log_level=log_level,
+            logger_name="nowcasting_dataset",
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler(combined_log_filename, mode="a"),
+            ],
+        )
+
+        # Configure loggers for each DataSource.
+        for data_source_name in names_of_selected_data_sources:
+            log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
+            nd_utils.configure_logger(
+                log_level=log_level,
+                logger_name=f"nowcasting_dataset.data_sources.{data_source_name}",
+                handlers=[logging.FileHandler(log_filename, mode="a")],
+            )
+
     def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:
@@ -414,5 +447,7 @@ class Manager:
                     # the main process, and to wait for the worker to finish.
                     exception = future.exception()
                     if exception is not None:
-                        logger.exception(f"Worker process {data_source_name} raised exception!")
+                        logger.exception(
+                            f"Worker process {data_source_name} raised exception!\n{exception}"
+                        )
                         raise exception

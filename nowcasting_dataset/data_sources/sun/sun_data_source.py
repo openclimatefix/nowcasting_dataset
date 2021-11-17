@@ -85,7 +85,7 @@ class SunDataSource(DataSource):
         sun = azimuth.to_dataset(name="azimuth")
         sun["elevation"] = elevation
 
-        return Sun(sun)
+        return sun
 
     def _load(self):
 

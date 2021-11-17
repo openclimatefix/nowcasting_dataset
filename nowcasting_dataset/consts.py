@@ -129,3 +129,5 @@ SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME = (
     "spatial_and_temporal_locations_of_each_example.csv"
 )
 SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES = ("t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB")
+
+LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")

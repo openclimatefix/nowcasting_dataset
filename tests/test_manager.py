@@ -13,6 +13,8 @@ from nowcasting_dataset.data_sources.satellite.satellite_data_source import Sate
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.manager import Manager
 
+# TODO: Issue #322: Write test for Manager.configure_loggers()
+
 
 def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
     local_path = Path(nowcasting_dataset.__file__).parent.parent
@@ -163,3 +165,21 @@ def test_save_config():
         manager.save_yaml_configuration()
 
         assert os.path.exists(f"{dst_path}/configuration.yaml")
+
+
+def test_run():
+    """Test to initialize data sources and get batches"""
+
+    manager = Manager()
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+    manager.initialise_data_sources()
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+        manager.create_batches(overwrite_batches=True)

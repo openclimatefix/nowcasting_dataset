@@ -121,4 +121,12 @@ class SunDataSource(DataSource):
             f"out of {len(azimuth_elevation)} as elevation is < 10"
         )
 
-        return self.elevation[mask].index
+        datetimes = self.elevation[mask].index
+
+        # Sun data is only for 2019, so to expand on these by
+        # repeating data from 2014 to 2023
+        all_datetimes = []
+        for delta_years in range(-5, 5):
+            all_datetimes.append(datetimes + pd.offsets.DateOffset(months=12 * delta_years))
+
+        return all_datetimes

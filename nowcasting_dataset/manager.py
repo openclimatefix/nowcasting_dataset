@@ -166,6 +166,7 @@ class Manager:
         t0_datetimes = self.get_t0_datetimes_across_all_data_sources(
             freq=self.config.process.t0_datetime_frequency
         )
+        # TODO: move hard code values to config file #426
         split_t0_datetimes = split.split_data(
             datetimes=t0_datetimes,
             method=self.config.process.split_method,

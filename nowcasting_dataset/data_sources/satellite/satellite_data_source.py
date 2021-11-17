@@ -64,7 +64,7 @@ class SatelliteDataSource(ZarrDataSource):
         return data
 
     def get_image_pixel(
-        self, data_array: xr.DataArray, x_meters_center: Number, y_meters_center: Number
+        self, data_array: xr.DataArray, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.DataArray:
         """
         Gets the satellite image as a square around the center
@@ -77,25 +77,25 @@ class SatelliteDataSource(ZarrDataSource):
 
         Args:
             data_array: DataArray to subselect from
-            x_meters_center: Center of the image x coordinate in OSGB coordinates
-            y_meters_center: Center of image y coordinate in OSGB coordinates
+            x_center_osgb: Center of the image x coordinate in OSGB coordinates
+            y_center_osgb: Center of image y coordinate in OSGB coordinates
 
         Returns:
             The selected data around the center
         """
         x_index = (
-            np.searchsorted(data_array.x.values, x_meters_center) - 1
+            np.searchsorted(data_array.x.values, x_center_osgb) - 1
         )  # To have the center fall within the pixel
-        y_index = np.searchsorted(data_array.y.values, y_meters_center) - 1
+        y_index = np.searchsorted(data_array.y.values, y_center_osgb) - 1
         min_y = y_index - (self._square.size_pixels // 2)
         min_x = x_index - (self._square.size_pixels // 2)
         assert min_y >= 0, (
             f"Y location must be at least {(self._square.size_pixels // 2)} "
-            f"pixels from the edge of the area, but is {y_index} for y center of {y_meters_center}"
+            f"pixels from the edge of the area, but is {y_index} for y center of {y_center_osgb}"
         )
         assert min_x >= 0, (
             f"X location must be at least {(self._square.size_pixels // 2)}"
-            f" pixels from the edge of the area, but is {x_index} for x center of {x_meters_center}"
+            f" pixels from the edge of the area, but is {x_index} for x center of {x_center_osgb}"
         )
         data_array = data_array.isel(
             x=slice(min_x, min_x + self._square.size_pixels),
@@ -121,8 +121,8 @@ class SatelliteDataSource(ZarrDataSource):
         selected_data = self._get_time_slice(t0_dt)
         selected_data = self.get_image_pixel(
             data_array=selected_data,
-            x_meters_center=x_meters_center,
-            y_meters_center=y_meters_center,
+            x_center_osgb=x_meters_center,
+            y_center_osgb=y_meters_center,
         )
 
         selected_data = self._post_process_example(selected_data, t0_dt)

@@ -11,7 +11,7 @@ class GSP(DataSourceOutput):
 
     __slots__ = ()
     _expected_dimensions = ("time", "id")
-    _expected_data_vars = ("data", "pv_system_row_number", "x_coords", "y_coords")
+    _expected_data_vars = ("data", "capacity_mwh", "pv_system_row_number", "x_coords", "y_coords")
 
     @classmethod
     def model_validation(cls, v):
@@ -21,6 +21,7 @@ class GSP(DataSourceOutput):
         v.check_dataset_greater_than_or_equal_to(data=v.data, min_value=0)
 
         v.check_data_var_dim(v.data, ("example", "time_index", "id_index"))
+        v.check_data_var_dim(v.capacity_mwh, ("example", "time_index", "id_index"))
         v.check_data_var_dim(v.time, ("example", "time_index"))
         v.check_data_var_dim(v.x_coords, ("example", "id_index"))
         v.check_data_var_dim(v.y_coords, ("example", "id_index"))

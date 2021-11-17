@@ -221,6 +221,13 @@ def create_gsp_pv_dataset(
         coords=coords,
     )  # Fake data for testing!
 
+    capacity = xr.DataArray(
+        np.repeat(np.random.randn(seq_length), number_of_systems)
+        .reshape(number_of_systems, seq_length)
+        .T,
+        coords=coords,
+    )  # Fake data for testing!
+
     data = data_array.to_dataset(name="data")
 
     x_coords = xr.DataArray(
@@ -237,6 +244,7 @@ def create_gsp_pv_dataset(
         dims=["id"],
     )
 
+    data["capacity_mwh"] = capacity
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
 

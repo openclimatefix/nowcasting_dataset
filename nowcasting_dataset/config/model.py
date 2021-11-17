@@ -134,7 +134,7 @@ class HRVSatellite(DataSourceMixin):
     hrvsatellite_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
         description="The path which holds the satellite zarr.",
-        )
+    )
 
     hrvsatellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES[0:1], description="the satellite channels that are used"

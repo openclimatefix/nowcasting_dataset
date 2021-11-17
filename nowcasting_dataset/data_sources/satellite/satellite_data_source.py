@@ -89,14 +89,14 @@ class SatelliteDataSource(ZarrDataSource):
         y_index = np.searchsorted(data_array.y.values, y_meters_center) - 1
         min_y = y_index - (self._square.size_pixels // 2)
         min_x = x_index - (self._square.size_pixels // 2)
-        assert (
-            min_y >= 0
-        ), f"Y location must be at least {(self._square.size_pixels // 2)} " \
-           f"pixels from the edge of the area, but is {y_index} for y center of {y_meters_center}"
-        assert (
-            min_x >= 0
-        ), f"X location must be at least {(self._square.size_pixels // 2)}" \
-           f" pixels from the edge of the area, but is {x_index} for x center of {x_meters_center}"
+        assert min_y >= 0, (
+            f"Y location must be at least {(self._square.size_pixels // 2)} "
+            f"pixels from the edge of the area, but is {y_index} for y center of {y_meters_center}"
+        )
+        assert min_x >= 0, (
+            f"X location must be at least {(self._square.size_pixels // 2)}"
+            f" pixels from the edge of the area, but is {x_index} for x center of {x_meters_center}"
+        )
         data_array = data_array.isel(
             x=slice(min_x, min_x + self._square.size_pixels),
             y=slice(min_y, min_y + self._square.size_pixels),

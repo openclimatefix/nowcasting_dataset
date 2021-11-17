@@ -13,6 +13,7 @@ import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
+from nowcasting_dataset.geospatial import calculate_azimuth_and_elevation_angle
 
 logger = logging.getLogger(__name__)
 
@@ -98,10 +99,26 @@ class SunDataSource(DataSource):
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
     def datetime_index(self):
-        """The datetime index of this datasource"""
-        raise NotImplementedError(
-            "Sun data should not be used for datetime_index. "
-            "This is because normally the data is available all the time, "
-            "except for when using test data. "
-            "This is becasue data from 2019 is extrapolate on to other years. "
+        """Get datetimes where elevation > 10"""
+
+        # london
+        latitude = 51
+        longitude = 0
+
+        # get elevation for all datetimes
+        azimuth_elevation = calculate_azimuth_and_elevation_angle(
+            latitude=latitude, longitude=longitude, datestamps=self.elevation.index
         )
+
+        # only select elevations > 10
+        mask = azimuth_elevation["elevation"] >= 10
+
+        # create warnings, so we know how many datetimes will be dropped.
+        # Should be slightly more than half due to
+        n_dropping = len(azimuth_elevation) - sum(mask)
+        logger.debug(
+            f"Will be dropping {n_dropping} datetimes "
+            f"out of {len(azimuth_elevation)} as elevation is < 10"
+        )
+
+        return self.elevation[mask]

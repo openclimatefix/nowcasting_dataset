@@ -115,10 +115,34 @@ class Satellite(DataSourceMixin):
         description="The path which holds the satellite zarr.",
     )
     satellite_channels: tuple = Field(
-        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
+        SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
     )
-    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
-    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    satellite_image_size_pixels: int = Field(
+        IMAGE_SIZE_PIXELS_FIELD.default // 3,
+        description="The number of pixels of the region of interest for non-HRV satellite "
+        "channels.",
+    )
+    satellite_meters_per_pixel: int = Field(
+        METERS_PER_PIXEL_FIELD.default * 3,
+        description="The number of meters per pixel for non-HRV satellite channels.",
+    )
+
+
+class HRVSatellite(DataSourceMixin):
+    """Satellite configuration model for HRV data"""
+
+    hrvsatellite_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
+        description="The path which holds the satellite zarr.",
+    )
+
+    hrvsatellite_channels: tuple = Field(
+        SAT_VARIABLE_NAMES[0:1], description="the satellite channels that are used"
+    )
+    # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
+    # time the number of pixels
+    hrvsatellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class NWP(DataSourceMixin):
@@ -185,6 +209,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
+    hrvsatellite: Optional[HRVSatellite] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -249,6 +274,7 @@ class InputData(BaseModel):
         return cls(
             pv=PV(),
             satellite=Satellite(),
+            hrvsatellite=HRVSatellite(),
             nwp=NWP(),
             gsp=GSP(),
             topographic=Topographic(),
@@ -292,7 +318,7 @@ class Process(BaseModel):
         ),
     )
     split_method: split.SplitMethod = Field(
-        split.SplitMethod.DAY,
+        split.SplitMethod.DAY_RANDOM_TEST_DATE,
         description=(
             "The method used to split the t0 datetimes into train, validation and test sets."
         ),
@@ -327,6 +353,7 @@ class Configuration(BaseModel):
             "pv.pv_filename",
             "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
+            "hrvsatellite.hrvsatellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",
         ]

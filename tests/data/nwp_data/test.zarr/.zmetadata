@@ -6,11 +6,11 @@
         },
         "UKV/.zarray": {
             "chunks": [
-                10,
+                17,
                 1,
                 1,
-                704,
-                548
+                352,
+                274
             ],
             "compressor": {
                 "blocksize": 0,
@@ -33,17 +33,23 @@
             "zarr_format": 2
         },
         "UKV/.zattrs": {
+            "Conventions": "CF-1.7",
+            "GRIB_centre": "egrr",
+            "GRIB_centreDescription": "U.K. Met Office - Exeter",
+            "GRIB_edition": 2,
+            "GRIB_subCentre": 0,
             "_ARRAY_DIMENSIONS": [
                 "variable",
                 "init_time",
                 "step",
                 "y",
                 "x"
-            ]
+            ],
+            "institution": "U.K. Met Office - Exeter"
         },
         "init_time/.zarray": {
             "chunks": [
-                5442
+                1
             ],
             "compressor": {
                 "blocksize": 0,
@@ -68,7 +74,7 @@
             "calendar": "proleptic_gregorian",
             "long_name": "initial time of forecast",
             "standard_name": "forecast_reference_time",
-            "units": "hours since 2018-01-01"
+            "units": "nanoseconds since 1970-01-01"
         },
         "step/.zarray": {
             "chunks": [
@@ -100,7 +106,7 @@
         },
         "variable/.zarray": {
             "chunks": [
-                10
+                17
             ],
             "compressor": {
                 "blocksize": 0,
@@ -109,7 +115,7 @@
                 "id": "blosc",
                 "shuffle": 1
             },
-            "dtype": "<U5",
+            "dtype": "<U6",
             "fill_value": null,
             "filters": null,
             "order": "C",
@@ -134,8 +140,8 @@
                 "id": "blosc",
                 "shuffle": 1
             },
-            "dtype": "<f8",
-            "fill_value": "NaN",
+            "dtype": "<i8",
+            "fill_value": null,
             "filters": null,
             "order": "C",
             "shape": [
@@ -159,8 +165,8 @@
                 "id": "blosc",
                 "shuffle": 1
             },
-            "dtype": "<f8",
-            "fill_value": "NaN",
+            "dtype": "<i8",
+            "fill_value": null,
             "filters": null,
             "order": "C",
             "shape": [

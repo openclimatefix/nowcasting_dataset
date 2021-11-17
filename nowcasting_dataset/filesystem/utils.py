@@ -92,10 +92,17 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
 
 
 def check_path_exists(path: Union[str, Path]):
-    """Raises a FileNotFoundError if `path` does not exist."""
+    """Raises a FileNotFoundError if `path` does not exist.
+
+    `path` can include wildcards.
+    """
     filesystem = get_filesystem(path)
     if not filesystem.exists(path):
-        raise FileNotFoundError(f"{path} does not exist!")
+        # Now try using `glob`.  Maybe `path` includes a wildcard?
+        # Try `exists` before `glob` because `glob` might be slower.
+        files = filesystem.glob(path)
+        if len(files) == 0:
+            raise FileNotFoundError(f"{path} does not exist!")
 
 
 def rename_file(remote_file: str, new_filename: str):

@@ -262,9 +262,17 @@ class PVDataSource(ImageDataSource):
             ),
         )
 
+        capacity = xr.DataArray(
+            data=selected_pv_capacity.values,
+            dims=["id"],
+            coords=dict(
+                id=all_pv_system_ids.values.astype(int),
+            ),
+        )
+
         # convert to dataset
         pv = da.to_dataset(name="power_mw")
-        pv["capacity_mwh"] = selected_pv_capacity
+        pv["capacity_mwh"] = capacity
 
         # add pv x coords
         x_coords = xr.DataArray(

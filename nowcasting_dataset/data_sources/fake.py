@@ -208,8 +208,22 @@ def create_gsp_pv_dataset(
     seq_length=19,
     number_of_systems=128,
     time_dependent_capacity: bool = True,
-):
-    """Create gsp or pv fake dataset"""
+) -> xr.Dataset:
+    """
+    Create gsp or pv fake dataset
+
+    Args:
+        dims: the dims that are made for "power_mw"
+        freq: the frequency of the time steps
+        seq_length: the time sequence length
+        number_of_systems: number of pv or gsp systems
+        time_dependent_capacity: if the capacity is time dependent.
+            GSP capacities increase over time,
+            but PV systems are the same (or should be).
+
+    Returns: xr.Dataset of fake data
+
+    """
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
         "id": np.random.choice(range(1000), number_of_systems, replace=False),

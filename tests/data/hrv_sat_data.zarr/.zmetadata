@@ -1,0 +1,180 @@
+{
+    "metadata": {
+        ".zattrs": {},
+        ".zgroup": {
+            "zarr_format": 2
+        },
+        "acq_time/.zarray": {
+            "chunks": [
+                37,
+                891
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i8",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                73,
+                891
+            ],
+            "zarr_format": 2
+        },
+        "acq_time/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "time",
+                "y"
+            ],
+            "calendar": "proleptic_gregorian",
+            "long_name": "Mean scanline acquisition time",
+            "units": "milliseconds since 2020-03-26T21:27:57.408000"
+        },
+        "stacked_eumetsat_data/.zarray": {
+            "chunks": [
+                1,
+                548,
+                704,
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "zstd",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i2",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                73,
+                1843,
+                891,
+                1
+            ],
+            "zarr_format": 2
+        },
+        "stacked_eumetsat_data/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "time",
+                "x",
+                "y",
+                "variable"
+            ],
+            "coordinates": "acq_time",
+            "meta": "{'orbital_parameters': {'projection_longitude': 9.5, 'projection_latitude': 0.0, 'projection_altitude': 35785831.0, 'satellite_nominal_longitude': 9.5, 'satellite_nominal_latitude': 0.0, 'satellite_actual_longitude': 9.1925787354899, 'satellite_actual_latitude': 0.47670744755701266, 'satellite_actual_altitude': 35787782.524384044}, 'sun_earth_distance_correction_applied': True, 'sun_earth_distance_correction_factor': 0.9953902753976911, 'units': '%', 'wavelength': WavelengthRange(min=0.5, central=0.7, max=0.9, unit='\u00b5m'), 'standard_name': 'toa_bidirectional_reflectance', 'platform_name': 'Meteosat-10', 'sensor': 'seviri', 'georef_offset_corrected': True, 'start_time': datetime.datetime(2020, 3, 26, 21, 25, 10, 313220), 'end_time': Timestamp('2020-03-26 21:30:00'), 'reader': 'seviri_l1b_native', 'area': Area ID: msg_seviri_rss_1km\nDescription: MSG SEVIRI Rapid Scanning Service area definition with 1 km resolution\nProjection: {'a': '6378169', 'h': '35785831', 'lon_0': '9.5', 'no_defs': 'None', 'proj': 'geos', 'rf': '295.488065897014', 'type': 'crs', 'units': 'm', 'x_0': '0', 'y_0': '0'}\nNumber of columns: 1843\nNumber of rows: 891\nArea extent: (28503.8289, 5088183.4999, -1814743.776, 4197063.795), 'name': 'HRV', 'resolution': 1000.134348869, 'calibration': 'reflectance', 'modifiers': (), '_satpy_id': DataID(name='HRV', wavelength=WavelengthRange(min=0.5, central=0.7, max=0.9, unit='\u00b5m'), resolution=1000.134348869, calibration=<calibration.reflectance>, modifiers=()), 'ancillary_variables': [], 'osgb_x_coords': array([[ 1347260.78970861,  1346210.5893596 ,  1345160.38427426, ...,\n         -688720.46785782,  -689951.871242  ,  -691183.51645387],\n       [ 1347022.64648326,  1345972.42557608,  1344922.19989872, ...,\n         -689084.16408769,  -690315.72056065,  -691547.51903694],\n       [ 1346784.34726589,  1345734.10578477,  1344683.85949961, ...,\n         -689448.1639533 ,  -690679.87373616,  -691911.82569837],\n       ...,\n       [ 1032877.09360205,  1031798.02144526,  1030718.87513805, ...,\n        -1359672.48508876, -1362010.43508464, -1364359.01271138],\n       [ 1032304.99563913,  1031225.86865627,  1030146.66731761, ...,\n        -1362923.03824863, -1365288.94353461, -1367666.17689064],\n       [ 1031731.86495733,  1030652.68304692,  1029573.4265744 , ...,\n        -1366253.50206751, -1368649.37096581, -1371057.35481592]]), 'osgb_y_coords': array([[-556533.00010717, -556688.40058675, -556843.57445542, ...,\n        -441006.48538256, -440677.91953044, -440348.95233414],\n       [-554851.08235763, -555006.53018389, -555161.75125699, ...,\n        -439122.88322928, -438793.96952827, -438464.65402713],\n       [-553168.51803557, -553324.01322235, -553479.28151362, ...,\n        -437238.26811026, -436909.00594465, -436579.34152191],\n       ...,\n       [1390990.50991997, 1390782.01502819, 1390574.04886237, ...,\n        2473590.0812858 , 2477615.92340366, 2481679.59052559],\n       [1394189.84598482, 1393981.26210507, 1393773.20788348, ...,\n        2486120.14270157, 2490248.58429673, 2494417.44150519],\n       [1397394.09109799, 1397185.41805531, 1396977.27560757, ...,\n        2498949.52319174, 2503188.047557  , 2507469.89993831]])}"
+        },
+        "time/.zarray": {
+            "chunks": [
+                73
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<i8",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                73
+            ],
+            "zarr_format": 2
+        },
+        "time/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "time"
+            ],
+            "calendar": "proleptic_gregorian",
+            "units": "minutes since 2020-04-01 12:00:00"
+        },
+        "variable/.zarray": {
+            "chunks": [
+                1
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<U3",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                1
+            ],
+            "zarr_format": 2
+        },
+        "variable/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "variable"
+            ]
+        },
+        "x/.zarray": {
+            "chunks": [
+                1843
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                1843
+            ],
+            "zarr_format": 2
+        },
+        "x/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "x"
+            ],
+            "units": "meter"
+        },
+        "y/.zarray": {
+            "chunks": [
+                891
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 5,
+                "cname": "lz4",
+                "id": "blosc",
+                "shuffle": 1
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                891
+            ],
+            "zarr_format": 2
+        },
+        "y/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "y"
+            ],
+            "units": "meter"
+        }
+    },
+    "zarr_consolidated_format": 1
+}

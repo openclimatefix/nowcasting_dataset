@@ -16,7 +16,7 @@ def test_get_example(test_data_folder):
 
     x = 256895.63164759654
     y = 666180.3018829626
-    start_dt = pd.Timestamp("2019-01-01 12:00:00.000")
+    start_dt = pd.Timestamp("2020-04-01 12:00:00.000")
 
     example = sun_data_source.get_example(t0_dt=start_dt, x_meters_center=x, y_meters_center=y)
 
@@ -31,7 +31,7 @@ def test_get_example_different_year(test_data_folder):
 
     x = 256895.63164759654
     y = 666180.3018829626
-    start_dt = pd.Timestamp("2021-01-01 12:00:00.000")
+    start_dt = pd.Timestamp("2021-04-01 12:00:00.000")
 
     example = sun_data_source.get_example(t0_dt=start_dt, x_meters_center=x, y_meters_center=y)
 

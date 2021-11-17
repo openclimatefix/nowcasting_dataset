@@ -8,7 +8,7 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.utils import to_numpy
 
 
 @dataclass
@@ -17,9 +17,13 @@ class MetadataDataSource(DataSource):
 
     object_at_center: str = "GSP"
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Metadata
+
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Metadata:
+    ) -> xr.Dataset:
         """
         Get example data
 
@@ -51,15 +55,13 @@ class MetadataDataSource(DataSource):
             "data": data_dict["t0_dt"],
         }
 
-        data = convert_data_array_to_dataset(xr.DataArray.from_dict(d))
+        data = (xr.DataArray.from_dict(d_all["t0_dt"])).to_dataset()
 
         for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
-            d: dict = {"dims": ("t0_dt",), "data": data_dict[v]}
-            d: xr.Dataset = convert_data_array_to_dataset(xr.DataArray.from_dict(d)).rename(
-                {"data": v}
-            )
+            d: dict = d_all[v]
+            d: xr.Dataset = (xr.DataArray.from_dict(d)).to_dataset().rename({"data": v})
             data[v] = getattr(d, v)
         data = data.drop_vars("t0_dt")
         data = data.rename({"data": "t0_dt"})
 
-        return Metadata(data)
+        return data

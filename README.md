@@ -1,4 +1,7 @@
 # nowcasting_dataset
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 Pre-prepare batches of data for use in machine learning training.
 
 This code combines several data sources including:
@@ -52,6 +55,8 @@ A pre commit hook has been installed which makes `black` run with every commit. 
 
 To test using the small amount of data stored in this repo: `py.test -s`
 
+To output debug logs while running the tests then run `py.test --log-cli-level=10`
+
 To test using the full dataset on Google Cloud, add the `--use_cloud_data` switch.
 
 
@@ -72,18 +77,12 @@ Download PV timeseries data from PVOutput.org using
 
 ### Numerical weather predictions from the UK Met Office
 
-Request access to the [UK Met Office data on CEDA](https://catalogue.ceda.ac.uk/uuid/f47bc62786394626b665e23b658d385f).
-
-Once you have a username and password, download using
-[`scripts/download_UK_Met_Office_NWPs_from_CEDA.sh`](https://github.com/openclimatefix/nowcasting_dataset/tree/main/scripts/download_UK_Met_Office_NWPs_from_CEDA.sh).
-Please see the comments at the top of the script for instructions.
-
-Detailed docs of the Met Office data is available [here](http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf).
+Please use our [`nwp`](https://github.com/openclimatefix/nwp) code to download UKV NWPs and convert to Zarr.
 
 
 ### GSP-level estimates of PV outturn from PV Live Regional
 
-TODO
+TODO - GSP
 
 
 ### Topographical data
@@ -126,3 +125,28 @@ parameters.  So, now, this code is used to pre-prepare thousands of
 batches, and save these batches to disk, each as a separate NetCDF
 file.  These files can then be loaded super-quickly at training time.
 The end result is a 12x speedup in training.
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="http://jack-kelly.com"><img src="https://avatars.githubusercontent.com/u/460756?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jack Kelly</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=JackKelly" title="Code">💻</a></td>
+    <td align="center"><a href="https://www.jacobbieker.com"><img src="https://avatars.githubusercontent.com/u/7170359?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jacob Bieker</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=jacobbieker" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/peterdudfield"><img src="https://avatars.githubusercontent.com/u/34686298?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Peter Dudfield</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=peterdudfield" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/flowirtz"><img src="https://avatars.githubusercontent.com/u/6052785?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Flo</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=flowirtz" title="Code">💻</a></td>
+    <td align="center"><a href="https://rohancalum.github.io/"><img src="https://avatars.githubusercontent.com/u/42122330?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rohan Nuttall</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=rohancalum" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/lenassero"><img src="https://avatars.githubusercontent.com/u/21358816?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Nasser Benabderrazik</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=lenassero" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

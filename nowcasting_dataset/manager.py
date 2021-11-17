@@ -59,7 +59,40 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
-    def initialize_data_sources(
+    # TODO: Issue #322: Write test for Manager.configure_loggers()
+    def configure_loggers(
+        self,
+        log_level: str,
+        names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES,
+    ) -> None:
+        """Configure loggers.
+
+        Print combined log to stdout.
+        Save combined log to self.config.output_data.filepath / combined.log
+        Save individual logs for each DataSource in
+            self.config.output_data.filepath / <data_source>.log
+        """
+        # Configure combined logger.
+        combined_log_filename = self.config.output_data.filepath / "combined.log"
+        nd_utils.configure_logger(
+            log_level=log_level,
+            logger_name="nowcasting_dataset",
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler(combined_log_filename, mode="a"),
+            ],
+        )
+
+        # Configure loggers for each DataSource.
+        for data_source_name in names_of_selected_data_sources:
+            log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
+            nd_utils.configure_logger(
+                log_level=log_level,
+                logger_name=f"nowcasting_dataset.data_sources.{data_source_name}",
+                handlers=[logging.FileHandler(log_filename, mode="a")],
+            )
+
+    def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:
         """Initialize DataSources specified in the InputData configuration.
@@ -139,8 +172,15 @@ class Manager:
         t0_datetimes = self.get_t0_datetimes_across_all_data_sources(
             freq=self.config.process.t0_datetime_frequency
         )
+        # TODO: move hard code values to config file #426
         split_t0_datetimes = split.split_data(
-            datetimes=t0_datetimes, method=self.config.process.split_method
+            datetimes=t0_datetimes,
+            method=self.config.process.split_method,
+            train_test_validation_split=(3, 0, 1),
+            train_validation_test_datetime_split=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2021-01-01"),
+            ],
         )
         for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
             n_batches = self._get_n_batches_for_split_name(split_name)
@@ -528,5 +568,7 @@ class Manager:
                     # the main process, and to wait for the worker to finish.
                     exception = future.exception()
                     if exception is not None:
-                        logger.exception(f"Worker process {data_source_name} raised exception!")
+                        logger.exception(
+                            f"Worker process {data_source_name} raised exception!\n{exception}"
+                        )
                         raise exception

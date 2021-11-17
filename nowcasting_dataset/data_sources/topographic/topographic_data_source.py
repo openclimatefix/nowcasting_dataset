@@ -11,7 +11,6 @@ from rasterio.warp import Resampling
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
 
@@ -46,13 +45,17 @@ class TopographicDataSource(ImageDataSource):
         self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
         self._meters_per_pixel = meters_per_pixel
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Topographic
+
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
         nd_fs_utils.check_path_exists(self.filename)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Topographic:
+    ) -> xr.Dataset:
         """
         Get a single example
 
@@ -97,10 +100,10 @@ class TopographicDataSource(ImageDataSource):
                 f"actual shape {selected_data.shape}"
             )
 
-        # TODO: Issue #318: Coordinates should be changed just before creating a batch.
-        topo_xd = convert_data_array_to_dataset(selected_data)
+        # change to dataset
+        topo_xd = selected_data.to_dataset(name="data")
 
-        return Topographic(topo_xd)
+        return topo_xd
 
     def _post_process_example(
         self, selected_data: xr.DataArray, t0_dt: pd.Timestamp

@@ -7,12 +7,13 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
-from nowcasting_dataset.dataset.xr_utils import convert_data_array_to_dataset
+from nowcasting_dataset.geospatial import calculate_azimuth_and_elevation_angle
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +29,17 @@ class SunDataSource(DataSource):
         super().__post_init__()
         self._load()
 
+    def get_data_model_for_batch(self):
+        """Get the model that is used in the batch"""
+        return Sun
+
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
         nd_fs_utils.check_path_exists(self.zarr_path)
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> Sun:
+    ) -> xr.Dataset:
         """
         Get example data from t0_dt and x and y xoordinates
 
@@ -78,11 +83,10 @@ class SunDataSource(DataSource):
         azimuth = azimuth.to_xarray().rename({"index": "time"})
         elevation = elevation.to_xarray().rename({"index": "time"})
 
-        sun = convert_data_array_to_dataset(azimuth).rename({"data": "azimuth"})
-        elevation = convert_data_array_to_dataset(elevation)
-        sun["elevation"] = elevation.data
+        sun = azimuth.to_dataset(name="azimuth")
+        sun["elevation"] = elevation
 
-        return Sun(sun)
+        return sun
 
     def _load(self):
 
@@ -94,11 +98,36 @@ class SunDataSource(DataSource):
         """Sun data should not be used to get batch locations"""
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
-    def datetime_index(self):
-        """The datetime index of this datasource"""
-        return NotImplementedError(
-            "Sun data should not be used for datetime_index. "
-            "This is because normally the data is available all the time, "
-            "except for when using test data. "
-            "This is becasue data from 2019 is extrapolate on to other years. "
+    def datetime_index(self) -> pd.DatetimeIndex:
+        """Get datetimes where elevation >= 10"""
+
+        # get the lat and lon from london
+        latitude = 51
+        longitude = 0
+
+        # get elevation for all datetimes
+        azimuth_elevation = calculate_azimuth_and_elevation_angle(
+            latitude=latitude, longitude=longitude, datestamps=self.elevation.index
         )
+
+        # only select elevations > 10
+        mask = azimuth_elevation["elevation"] >= 10
+
+        # create warnings, so we know how many datetimes will be dropped.
+        # Should be slightly more than half as its night time 50% of the time
+        n_dropping = len(azimuth_elevation) - sum(mask)
+        logger.debug(
+            f"Will be dropping {n_dropping} datetimes "
+            f"out of {len(azimuth_elevation)} as elevation is < 10"
+        )
+
+        datetimes = self.elevation[mask].index
+
+        # Sun data is only for 2019, so to expand on these by
+        # repeating data from 2014 to 2023
+        all_datetimes = pd.DatetimeIndex([])
+        for delta_years in range(-5, 5, 1):
+            on_year = datetimes + pd.offsets.DateOffset(months=12 * delta_years)
+            all_datetimes = all_datetimes.append(on_year)
+
+        return all_datetimes

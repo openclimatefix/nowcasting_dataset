@@ -5,22 +5,12 @@ from typing import Union
 import numpy as np
 import xarray as xr
 
-# DEFAULT PATHS
-# TODO: These should be moved elsewhere!
-BUCKET = Path("solar-pv-nowcasting-data")
-
 # Satellite data
+# TODO: Issue #423: Remove this?
 SAT_FILENAME = "gs://" + str(
-    BUCKET / "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr"
+    Path("solar-pv-nowcasting-data")
+    / "satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr"
 )
-
-# Solar PV data
-PV_PATH = BUCKET / "PV/PVOutput.org"
-PV_FILENAME = PV_PATH / "UK_PV_timeseries_batch.nc"
-PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
-
-# Numerical weather predictions
-NWP_FILENAME = "gs://" + str(BUCKET / "NWP/UK_Met_Office/UKV_zarr")
 
 # Typing
 Array = Union[xr.DataArray, np.ndarray]
@@ -61,7 +51,25 @@ Y_METERS_CENTER = "y_meters_center"
 TOPOGRAPHIC_DATA = "topo_data"
 TOPOGRAPHIC_X_COORDS = "topo_x_coords"
 TOPOGRAPHIC_Y_COORDS = "topo_y_coords"
-NWP_VARIABLE_NAMES = ("t", "dswrf", "prate", "r", "sde", "si10", "vis", "lcc", "mcc", "hcc")
+NWP_VARIABLE_NAMES = (
+    "cdcb",
+    "lcc",
+    "mcc",
+    "hcc",
+    "sde",
+    "hcct",
+    "dswrf",
+    "dlwrf",
+    "h",
+    "t",
+    "r",
+    "dpt",
+    "vis",
+    "si10",
+    "wdir10",
+    "prmsl",
+    "prate",
+)
 SAT_VARIABLE_NAMES = (
     "HRV",
     "IR_016",
@@ -107,3 +115,5 @@ SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME = (
     "spatial_and_temporal_locations_of_each_example.csv"
 )
 SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES = ("t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB")
+
+LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")

@@ -99,9 +99,9 @@ class SunDataSource(DataSource):
         raise NotImplementedError("Sun data should not be used to get batch locations")
 
     def datetime_index(self):
-        """Get datetimes where elevation > 10"""
+        """Get datetimes where elevation >= 10"""
 
-        # london
+        # get the lat and lon from london
         latitude = 51
         longitude = 0
 

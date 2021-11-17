@@ -18,8 +18,8 @@ input_data:
     get_center: false
   satellite:
     satellite_channels:
-      - HRV
-    satellite_image_size_pixels: 32
+      - IR_016
+    satellite_image_size_pixels: 24
     satellite_zarr_path: tests/data/sat_data.zarr
   hrvsatellite:
     hrvsatellite_channels:

@@ -21,7 +21,7 @@ _LOG = logging.getLogger("nowcasting_dataset")
 class SatelliteDataSource(ZarrDataSource):
     """Satellite Data Source."""
 
-    channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES
+    channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES[1:]
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
 
@@ -198,6 +198,12 @@ class SatelliteDataSource(ZarrDataSource):
 
         return datetime_index
 
+class HRVSatelliteDataSource(SatelliteDataSource):
+    """Satellite Data Source for HRV data."""
+
+    channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES[:1]
+    image_size_pixels: InitVar[int] = 128
+    meters_per_pixel: InitVar[int] = 2_000
 
 def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """Lazily opens the Zarr store.

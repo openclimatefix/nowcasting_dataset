@@ -58,7 +58,7 @@ def get_gsp_metadata_from_eso(
 
     local_file = f"{os.path.dirname(os.path.realpath(__file__))}/eso_metadata.csv"
 
-    if not os.path.isdir(local_file):
+    if not os.path.isfile(local_file):
         logger.debug("There is no local file so going to get it from ESO, and save it afterwards")
         load_local_file = False
         save_local_file = True

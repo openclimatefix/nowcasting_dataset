@@ -13,6 +13,7 @@ import xarray as xr
 
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES, open_nwp
+from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
@@ -126,7 +127,7 @@ gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=e
 # SUN
 #####################
 
-filename = "gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr/"
+filename = "gs://solar-pv-nowcasting-data/Sun/v1/sun.zarr/"
 # filename = "./scripts/sun.zarr"
 
 # open file
@@ -138,3 +139,10 @@ sun_xr["locations"] = sun_xr.locations.astype("str")
 
 # save to file
 sun_xr.to_zarr(f"{local_path}/tests/data/sun/test.zarr", mode="w")
+
+# quick check
+x = [float(v.split(",")[0]) for v in sun_xr.locations.values]
+y = [float(v.split(",")[1]) for v in sun_xr.locations.values]
+lat, lon = osgb_to_lat_lon(x, y)
+print(f"Sun latitude: maximum {max(lat)}, minimum {min(lat)}")
+print(f"Sun longitude: maximum {max(lon)}, minimum {min(lon)}")

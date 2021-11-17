@@ -58,9 +58,25 @@ pv_metadata["location_x"], pv_metadata["location_y"] = lat_lon_to_osgb(
 )
 pv_x = pv_metadata["location_x"]
 pv_y = pv_metadata["location_y"]
+print(
+    f"PV latitude: maximum {pv_metadata['latitude'].max()}, "
+    f"minimum {pv_metadata['latitude'].min()}"
+)
+print(
+    f"PV longitude: maximum {pv_metadata['longitude'].max()}, "
+    f"minimum {pv_metadata['longitude'].min()}"
+)
 
 # GSP Metadata
 gsp_metadata = get_gsp_metadata_from_eso()
+print(
+    f"GSP latitude: maximum {gsp_metadata['centroid_lat'].max()}, "
+    f"minimum {gsp_metadata['centroid_lat'].min()}"
+)
+print(
+    f"GSP longitude: maximum {gsp_metadata['centroid_lon'].max()}, "
+    f"minimum {gsp_metadata['centroid_lon'].min()}"
+)
 gsp_metadata = gsp_metadata.dropna(subset=["centroid_lon", "centroid_lat"])
 gsp_x = gsp_metadata["centroid_x"]
 gsp_y = gsp_metadata["centroid_y"]

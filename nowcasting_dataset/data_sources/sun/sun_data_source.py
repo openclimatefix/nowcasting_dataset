@@ -121,4 +121,4 @@ class SunDataSource(DataSource):
             f"out of {len(azimuth_elevation)} as elevation is < 10"
         )
 
-        return self.elevation[mask]
+        return self.elevation[mask].index

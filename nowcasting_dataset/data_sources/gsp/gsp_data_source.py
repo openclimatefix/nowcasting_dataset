@@ -46,7 +46,7 @@ class GSPDataSource(ImageDataSource):
     # end datetime, this can be None
     end_dt: Optional[datetime] = None
     # the threshold where we only taken gsp's with a maximum power, above this value.
-    threshold_mw: int = 20
+    threshold_mw: int = 0
     # get the data for the gsp at the center too.
     # This can be turned off if the center of the bounding box is of a pv system
     get_center: bool = True
@@ -378,7 +378,7 @@ def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, thre
     """
     maximum_gsp = gsp_power.max()
 
-    keep_index = maximum_gsp >= threshold_mw
+    keep_index = maximum_gsp > threshold_mw
 
     logger.debug(f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW")
     logger.debug(f"Keeping {sum(keep_index)} GSPs as maximum is greater {threshold_mw} MW")

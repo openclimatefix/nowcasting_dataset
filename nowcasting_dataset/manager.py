@@ -167,7 +167,13 @@ class Manager:
             freq=self.config.process.t0_datetime_frequency
         )
         split_t0_datetimes = split.split_data(
-            datetimes=t0_datetimes, method=self.config.process.split_method
+            datetimes=t0_datetimes,
+            method=self.config.process.split_method,
+            train_test_validation_split=(3, 0, 1),
+            train_validation_test_datetime_split=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2021-01-01"),
+            ],
         )
         for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
             n_batches = self._get_n_batches_for_split_name(split_name)

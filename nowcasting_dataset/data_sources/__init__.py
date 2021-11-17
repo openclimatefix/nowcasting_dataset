@@ -12,6 +12,8 @@ from nowcasting_dataset.data_sources.topographic.topographic_data_source import 
     TopographicDataSource,
 )
 
+# If you update MAP_DATA_SOURCE_NAME_TO_CLASS, then please also update ALL_DATA_SOURCE_NAMES in
+# nowcasting_dataset.config.model.InputData.set_forecast_and_history_minutes
 MAP_DATA_SOURCE_NAME_TO_CLASS = {
     "pv": PVDataSource,
     "satellite": SatelliteDataSource,

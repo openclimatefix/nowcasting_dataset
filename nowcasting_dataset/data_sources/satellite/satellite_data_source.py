@@ -260,4 +260,29 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # Flip coordinates to top-left first
     data_array = data_array.reindex(x=data_array.x[::-1])
 
+    # Sanity checks.
+    # If there are any duplicated init_times then drop the duplicated init_times:
+    times = pd.DatetimeIndex(data_array["time"])
+    if not times.is_unique:
+        n_duplicates = times.duplicated().sum()
+        _LOG.warning(f"Satellite Zarr has {n_duplicates:,d} duplicated times.  Fixing...")
+        data_array = data_array.drop_duplicates(dim="time")
+        times = pd.DatetimeIndex(data_array["time"])
+
+    # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
+    if not times.is_monotonic_increasing:
+        total_n_out_of_order_times = 0
+        _LOG.warning("Satellite Zarr times is not monotonic_increasing.  Fixing...")
+        while not times.is_monotonic_increasing:
+            diff = np.diff(times.view(int))
+            out_of_order = np.where(diff < 0)[0]
+            total_n_out_of_order_times += len(out_of_order)
+            out_of_order = times[out_of_order]
+            data_array = data_array.drop_sel(time=out_of_order)
+            times = pd.DatetimeIndex(data_array["init_time"])
+        _LOG.info(f"Fixed {total_n_out_of_order_times:,d} out of order init_times.")
+
+    assert times.is_unique
+    assert times.is_monotonic_increasing
+
     return data_array

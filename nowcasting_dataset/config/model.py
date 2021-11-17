@@ -249,7 +249,15 @@ class InputData(BaseModel):
         """
         # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
         # but that causes a circular import.
-        ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
+        ALL_DATA_SOURCE_NAMES = (
+            "pv",
+            "hrvsatellite",
+            "satellite",
+            "nwp",
+            "gsp",
+            "topographic",
+            "sun",
+        )
         enabled_data_sources = [
             data_source_name
             for data_source_name in ALL_DATA_SOURCE_NAMES

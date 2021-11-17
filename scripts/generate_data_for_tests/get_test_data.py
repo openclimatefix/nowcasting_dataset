@@ -66,24 +66,22 @@ pv_power_new.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc")
 ###########################
 
 # Numerical weather predictions
-NWP_BASE_PATH = (
-    "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
-)
+NWP_BASE_PATH = "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
 
 nwp_data_raw = open_nwp(zarr_path=NWP_BASE_PATH, consolidated=True)
 print(nwp_data_raw)
-nwp_data = nwp_data_raw.sel(variable=['t'])
+nwp_data = nwp_data_raw.sel(variable=["t"])
 print(nwp_data)
 nwp_data = nwp_data.sel(init_time=slice(start_dt, end_dt))
 nwp_data = nwp_data.sel(variable=["t"])
 nwp_data = nwp_data.sel(step=slice(nwp_data.step[0], nwp_data.step[4]))  # take 4 hours periods
 # nwp_data = nwp_data.sel(x=slice(nwp_data.x[50], nwp_data.x[100]))
 # nwp_data = nwp_data.sel(y=slice(nwp_data.y[50], nwp_data.y[100]))
-nwp_data = xr.Dataset({'UKV': nwp_data})
+nwp_data = xr.Dataset({"UKV": nwp_data})
 print(nwp_data)
 nwp_data.UKV.values = nwp_data.UKV.values.astype(np.float16)
 
-nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr", mode='w')
+nwp_data.to_zarr(f"{local_path}/tests/data/nwp_data/test.zarr", mode="w")
 
 ####
 # ### GSP data

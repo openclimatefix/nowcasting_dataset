@@ -114,7 +114,7 @@ class SunDataSource(DataSource):
         mask = azimuth_elevation["elevation"] >= 10
 
         # create warnings, so we know how many datetimes will be dropped.
-        # Should be slightly more than half due to
+        # Should be slightly more than half as its night time 50% of the time
         n_dropping = len(azimuth_elevation) - sum(mask)
         logger.debug(
             f"Will be dropping {n_dropping} datetimes "

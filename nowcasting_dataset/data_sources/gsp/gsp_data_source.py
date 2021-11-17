@@ -93,7 +93,7 @@ class GSPDataSource(ImageDataSource):
             self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
-        # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP where
+        # drop any gsp below a threshold mw. This is to get rid of any small GSP where
         # predicting the solar output will be harder.
         self.gsp_power, self.metadata = drop_gsp_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold_mw

@@ -140,17 +140,7 @@ def get_gsp_shape_from_eso(
         # rename the columns to full name
         shape_gpd.rename(columns=rename_load_columns, inplace=True)
         logger.debug("loading local file for GSP shape data:done")
-
-        # check that there are shapes in the loaded file
-        if len(shape_gpd) == 0:
-            logger.warning(
-                "Loaded shape file is empty, " "so going to load and save and new one from ESO"
-            )
-
-            load_local_file = False
-            save_local_file = True
-
-    if not load_local_file:
+    else:
         # call ESO website. There is a possibility that this API will be replaced and its unclear
         # if this original API will stay operational.
         url = (
@@ -181,10 +171,6 @@ def get_gsp_shape_from_eso(
 
         # save file
         shape_gpd_to_save.to_file(local_file)
-
-    assert (
-        len(shape_gpd) > 0
-    ), f"GSP shape data is empty (save: {save_local_file}, load: {load_local_file})"
 
     # sort
     shape_gpd = shape_gpd.sort_values(by=["RegionID"])

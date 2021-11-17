@@ -69,7 +69,7 @@ pv_power_new = pv_power_new.drop("3000")
 # save to test data
 pv_power_new.to_zarr(f"{local_path}/tests/data/pv_data/test.zarr", compute=True, mode="w")
 pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.zarr", engine="zarr")
-pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True, engine = 'h5netcdf')
+pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True, engine="h5netcdf")
 ############################
 # NWP, this makes a file that is 9.5MW big
 ###########################

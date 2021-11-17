@@ -12,6 +12,7 @@ import xarray as xr
 
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES, open_nwp
+
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 filename = "/home/jacob/nowcasting_dataset/scripts/pv_gsp.zarr"
 start_dt = datetime.fromisoformat("2020-04-01 00:00:00.000+00:00")

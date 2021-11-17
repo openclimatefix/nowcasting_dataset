@@ -30,14 +30,19 @@ end_dt = datetime.fromisoformat("2020-04-02 00:00:00.000+00:00")
 gcs = gcsfs.GCSFileSystem(access="read_only")
 
 # get metadata, reduce, and save to test data
-pv_metadata = pd.read_csv("gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv", index_col="system_id")
+pv_metadata = pd.read_csv(
+    "gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv",
+    index_col="system_id",
+)
 pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
 pv_metadata = pv_metadata.iloc[500:600]  # just take a few sites
 pv_metadata.to_csv(f"{local_path}/tests/data/pv_metadata/UK_PV_metadata.csv")
 
 # get pv_data
 t = time.time()
-with gcs.open("gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf", mode="rb") as file:
+with gcs.open(
+    "gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf", mode="rb"
+) as file:
     file_bytes = file.read()
 
 
@@ -73,10 +78,10 @@ pv_power_new = pv_power_new.drop("3000")
 print(pv_power_new)
 print(pv_power_new.notnull().all().compute())
 print(pv_power_new)
-#print(pv_power_new.dims)
-#print(pv_power_new.coords["datetime"].values)
+# print(pv_power_new.dims)
+# print(pv_power_new.coords["datetime"].values)
 # save to test data
-pv_power_new.to_zarr(f"{local_path}/tests/data/pv_data/test.zarr", compute=True, mode='w')
+pv_power_new.to_zarr(f"{local_path}/tests/data/pv_data/test.zarr", compute=True, mode="w")
 pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.zarr", engine="zarr")
 print(pv_power)
 pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True)

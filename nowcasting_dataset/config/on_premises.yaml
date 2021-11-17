@@ -34,7 +34,6 @@ input_data:
   #---------------------- Satellite -------------
   satellite:
     satellite_channels:
-      - HRV
       - IR_016
       - IR_039
       - IR_087
@@ -46,8 +45,14 @@ input_data:
       - VIS008
       - WV_062
       - WV_073
-    satellite_image_size_pixels: 64
-    satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_2020_02.zarr
+    satellite_image_size_pixels: 24
+    satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
+
+  hrvsatellite:
+    hrvsatellite_channels:
+      - HRV
+    hrvsatellite_image_size_pixels: 64
+    hrvsatellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/hrv_eumetsat_zarr_*
 
   # ------------------------- Sun ------------------------
   sun:

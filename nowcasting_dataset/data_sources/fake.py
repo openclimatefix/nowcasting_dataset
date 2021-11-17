@@ -13,7 +13,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.dataset.xr_utils import (
@@ -119,7 +119,7 @@ def satellite_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
-            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
+            channels=SAT_VARIABLE_NAMES[1:number_satellite_channels],
         )
         for _ in range(batch_size)
     ]
@@ -128,6 +128,29 @@ def satellite_fake(
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return Satellite(xr_dataset)
+
+
+def hrv_satellite_fake(
+    batch_size=32,
+    seq_length_5=19,
+    satellite_image_size_pixels=64,
+    number_satellite_channels=7,
+) -> Satellite:
+    """Create fake data"""
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length_5=seq_length_5,
+            image_size_pixels=satellite_image_size_pixels * 3,  # HRV images are 3x other images
+            channels=SAT_VARIABLE_NAMES[0:1],
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
+
+    return HRVSatellite(xr_dataset)
 
 
 def sun_fake(batch_size, seq_length_5):

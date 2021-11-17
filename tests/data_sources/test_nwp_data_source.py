@@ -64,7 +64,7 @@ def test_nwp_data_source_batch_not_on_hour():  # noqa: D103
 
     nwp.open()
 
-    t0_datetimes = [pd.Timestamp("2019-01-01 12:05:00")]
+    t0_datetimes = [pd.Timestamp("2020-04-01 12:05:00")]
     x = nwp._data.x[0:1].values
     y = nwp._data.y[0:1].values
 
@@ -87,7 +87,7 @@ def test_nwp_get_contiguous_time_periods():  # noqa: D103
 
     contiguous_time_periods = nwp.get_contiguous_time_periods()
     correct_time_periods = pd.DataFrame(
-        [{"start_dt": pd.Timestamp("2019-01-01 00:00"), "end_dt": pd.Timestamp("2019-01-02 04:00")}]
+        [{"start_dt": pd.Timestamp("2020-04-01 00:00"), "end_dt": pd.Timestamp("2020-04-02 04:00")}]
     )
     pd.testing.assert_frame_equal(contiguous_time_periods, correct_time_periods)
 
@@ -102,6 +102,6 @@ def test_nwp_get_contiguous_t0_time_periods():  # noqa: D103
 
     contiguous_time_periods = nwp.get_contiguous_t0_time_periods()
     correct_time_periods = pd.DataFrame(
-        [{"start_dt": pd.Timestamp("2019-01-01 01:00"), "end_dt": pd.Timestamp("2019-01-02 03:00")}]
+        [{"start_dt": pd.Timestamp("2020-04-01 01:00"), "end_dt": pd.Timestamp("2020-04-02 03:00")}]
     )
     pd.testing.assert_frame_equal(contiguous_time_periods, correct_time_periods)

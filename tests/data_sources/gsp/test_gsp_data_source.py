@@ -11,8 +11,8 @@ def test_gsp_pv_data_source_init():
 
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -25,8 +25,8 @@ def test_gsp_pv_data_source_get_locations():
 
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -53,8 +53,8 @@ def test_gsp_pv_data_source_get_example():
 
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -77,8 +77,8 @@ def test_gsp_pv_data_source_get_batch():
 
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,

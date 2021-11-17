@@ -6,8 +6,8 @@
         },
         "azimuth/.zarray": {
             "chunks": [
-                3286,
-                130
+                1643,
+                198
             ],
             "compressor": {
                 "blocksize": 0,
@@ -22,7 +22,7 @@
             "order": "C",
             "shape": [
                 289,
-                2069
+                6320
             ],
             "zarr_format": 2
         },
@@ -34,8 +34,8 @@
         },
         "elevation/.zarray": {
             "chunks": [
-                3286,
-                130
+                1643,
+                198
             ],
             "compressor": {
                 "blocksize": 0,
@@ -50,7 +50,7 @@
             "order": "C",
             "shape": [
                 289,
-                2069
+                6320
             ],
             "zarr_format": 2
         },
@@ -62,7 +62,7 @@
         },
         "locations/.zarray": {
             "chunks": [
-                1035
+                1580
             ],
             "compressor": {
                 "blocksize": 0,
@@ -76,7 +76,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                2069
+                6320
             ],
             "zarr_format": 2
         },

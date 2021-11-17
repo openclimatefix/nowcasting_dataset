@@ -14,6 +14,7 @@ from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.data_sources.data_source import DataSourceOutput
 from nowcasting_dataset.data_sources.fake import (
     gsp_fake,
+    hrv_satellite_fake,
     metadata_fake,
     nwp_fake,
     pv_fake,
@@ -25,14 +26,14 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-data_sources = [Metadata, Satellite, Topographic, PV, Sun, GSP, NWP]
+data_sources = [Metadata, Satellite, HRVSatellite, Topographic, PV, Sun, GSP, NWP]
 
 
 class Batch(BaseModel):
@@ -56,6 +57,7 @@ class Batch(BaseModel):
 
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
+    hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
     sun: Optional[Sun]
@@ -67,6 +69,7 @@ class Batch(BaseModel):
         """The different data sources"""
         return [
             self.satellite,
+            self.hrvsatellite,
             self.topographic,
             self.pv,
             self.sun,
@@ -91,6 +94,12 @@ class Batch(BaseModel):
                 number_satellite_channels=len(
                     configuration.input_data.satellite.satellite_channels
                 ),
+            ),
+            hrvsatellite=hrv_satellite_fake(
+                batch_size=batch_size,
+                seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
+                satellite_image_size_pixels=satellite_image_size_pixels,
+                number_satellite_channels=1,
             ),
             nwp=nwp_fake(
                 batch_size=batch_size,
@@ -182,6 +191,7 @@ class Example(BaseModel):
 
     metadata: Optional[Metadata]
     satellite: Optional[Satellite]
+    hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
     pv: Optional[PV]
     sun: Optional[Sun]
@@ -193,6 +203,7 @@ class Example(BaseModel):
         """The different data sources"""
         return [
             self.satellite,
+            self.hrvsatellite,
             self.topographic,
             self.pv,
             self.sun,

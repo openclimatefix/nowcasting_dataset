@@ -30,37 +30,60 @@ end_dt = datetime.fromisoformat("2020-04-02 00:00:00.000+00:00")
 gcs = gcsfs.GCSFileSystem(access="read_only")
 
 # get metadata, reduce, and save to test data
-pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
+pv_metadata = pd.read_csv("gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv", index_col="system_id")
 pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
 pv_metadata = pv_metadata.iloc[500:600]  # just take a few sites
 pv_metadata.to_csv(f"{local_path}/tests/data/pv_metadata/UK_PV_metadata.csv")
 
 # get pv_data
 t = time.time()
-with gcs.open(filename, mode="rb") as file:
+with gcs.open("gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf", mode="rb") as file:
     file_bytes = file.read()
 
 
 with io.BytesIO(file_bytes) as file:
     pv_power = xr.open_dataset(file, engine="h5netcdf")
+    print(pv_power)
     pv_power = pv_power.sel(datetime=slice(start_dt, end_dt))
+    print(pv_power)
     pv_power_df = pv_power.to_dataframe()
+    print(pv_power_df)
 
 # process data
 system_ids_xarray = [int(i) for i in pv_power.data_vars]
+print(system_ids_xarray)
 system_ids = [
     str(system_id) for system_id in pv_metadata.index.to_list() if system_id in system_ids_xarray
 ]
+print(system_ids)
 
 # only take the system ids we need
 pv_power_df = pv_power_df[system_ids]
+print(pv_power_df)
 pv_power_df = pv_power_df.dropna(axis="columns", how="all")
+print(pv_power_df)
 pv_power_df = pv_power_df.clip(lower=0, upper=5e7)
+print("After Clip")
+print(pv_power_df)
 pv_power_new = pv_power_df.to_xarray()
-
+print(pv_power_new)
+# Drop one with null
+print(pv_power_new.variables)
+pv_power_new = pv_power_new.drop("3000")
+print(pv_power_new)
+print(pv_power_new.notnull().all().compute())
+print(pv_power_new)
+#print(pv_power_new.dims)
+#print(pv_power_new.coords["datetime"].values)
 # save to test data
-pv_power_new.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc")
-
+pv_power_new.to_zarr(f"{local_path}/tests/data/pv_data/test.zarr", compute=True, mode='w')
+pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.zarr", engine="zarr")
+print(pv_power)
+pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True)
+pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.nc")
+print("NETCDF One")
+print(pv_power)
+exit()
 ############################
 # NWP, this makes a file that is 9.5MW big
 ###########################
@@ -132,6 +155,10 @@ filename = "gs://solar-pv-nowcasting-data/Sun/v1/sun.zarr/"
 
 # open file
 sun_xr = xr.open_dataset(filename, engine="zarr", mode="r", consolidated=True, chunks=None)
+
+start_dt = datetime.fromisoformat("2019-04-01 00:00:00.000+00:00")
+end_dt = datetime.fromisoformat("2019-04-02 00:00:00.000+00:00")
+
 
 # just select one date
 sun_xr = sun_xr.sel(time_5=slice(start_dt, end_dt))

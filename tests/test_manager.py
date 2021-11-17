@@ -95,10 +95,20 @@ def test_batches():
         zarr_path=filename,
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
+        image_size_pixels=24,
+        meters_per_pixel=6000,
         channels=("IR_016",),
     )
+
+    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+    hrvsat = SatelliteDataSource(
+        zarr_path=filename,
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+        channels=("HRV",),
+        )
 
     filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
@@ -128,7 +138,7 @@ def test_batches():
         manager.local_temp_path = Path(local_temp_path)
 
         # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat}
+        manager.data_sources = {"gsp": gsp, "sat": sat, "hrvsat": hrvsat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
@@ -143,6 +153,8 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsat/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
 
 
 def test_save_config():

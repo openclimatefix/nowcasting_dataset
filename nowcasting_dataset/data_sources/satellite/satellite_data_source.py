@@ -238,7 +238,7 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # seems to slow things down a lot if the Zarr store has more than
     # about a million chunks.
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
-    if Path(zarr_path).exists:
+    if Path(zarr_path).exists():
         # For opening a single Zarr store, we can use the simpler open_dataset
         dataset = xr.open_dataset(
             zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None

@@ -69,6 +69,17 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
 def test_sample_spatial_and_temporal_locations_for_no_examples():  # noqa: D103
 
     manager = Manager()
+
+    t0_datetimes = pd.DatetimeIndex([])
+    _ = manager.sample_spatial_and_temporal_locations_for_examples(
+        t0_datetimes=t0_datetimes, n_examples=0
+    )
+
+
+def test_sample_spatial_and_temporal_locations_for_examples_but_no_datetimes():  # noqa: D103
+
+    manager = Manager()
+
     t0_datetimes = pd.DatetimeIndex([])
     _ = manager.sample_spatial_and_temporal_locations_for_examples(
         t0_datetimes=t0_datetimes, n_examples=10

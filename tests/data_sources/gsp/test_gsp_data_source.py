@@ -2,6 +2,8 @@
 import os
 from datetime import datetime
 
+import pandas as pd
+
 import nowcasting_dataset
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
@@ -55,6 +57,9 @@ def test_gsp_pv_data_source_get_example():
     """Test GSP example"""
     local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 
+    start_dt = datetime(2020, 4, 1)
+    end_dt = datetime(2020, 4, 1)
+
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
         start_dt=datetime(2020, 4, 1),
@@ -73,7 +78,8 @@ def test_gsp_pv_data_source_get_example():
     assert len(example.id) == len(example.power_mw[0])
     assert len(example.x_coords) == len(example.y_coords)
     assert len(example.x_coords) > 0
-    # assert type(l[T0_DT]) == pd.Timestamp
+    assert pd.Timestamp(example.time[0].values) <= end_dt
+    assert pd.Timestamp(example.time[0].values) >= start_dt
 
 
 def test_gsp_pv_data_source_get_batch():

@@ -467,16 +467,25 @@ class Manager:
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
 
+                    # Logger messages for callbacks:
+                    callback_msg = (
+                        f"{data_source_name} has finished created batches for {split_name}!"
+                    )
+                    error_callback_msg = (
+                        f"Exception raised by {data_source_name} whilst creating batches for"
+                        f" {split_name}:\n"
+                    )
+
                     # Submit data_source.create_batches task to the worker process.
+                    logger.debug(
+                        f"About to submit create_batches task for {data_source_name}, {split_name}"
+                    )
                     async_result = pool.apply_async(
                         data_source.create_batches,
-                        **kwargs_for_create_batches,
-                        callback=lambda result: logger.info(
-                            f"{data_source_name} finish created batches for {split_name}!"
-                        ),
+                        kwds=kwargs_for_create_batches,
+                        callback=lambda result: logger.info(callback_msg),
                         error_callback=lambda exception: logger.error(
-                            f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name}: \n{exception}"
+                            error_callback_msg + str(exception)
                         ),
                     )
                     async_results_from_create_batches.append(async_result)
@@ -484,3 +493,5 @@ class Manager:
                 # Wait for all async_results to finish:
                 for async_result in async_results_from_create_batches:
                     async_result.wait()
+
+                logger.info(f"Finished creating batches for {split_name}!")

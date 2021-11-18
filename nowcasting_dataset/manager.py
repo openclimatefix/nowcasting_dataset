@@ -287,6 +287,32 @@ class Manager:
             Each row of each the DataFrame specifies the position of each example, using
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
+
+        if n_examples == 0:
+            logger.debug(
+                f"Requested {n_examples} so will" f"return zero spatial and temporal locations"
+            )
+            return pd.DataFrame(
+                {
+                    "t0_datetime_UTC": [],
+                    "x_center_OSGB": [],
+                    "y_center_OSGB": [],
+                }
+            )
+
+        if (len(t0_datetimes) == 0) and (n_examples > 0):
+            logger.warning(
+                f"Requested {n_examples} but number of t0_datetimes is {len(t0_datetimes)}. "
+                f"Will return zero spatial and temporal locations"
+            )
+            return pd.DataFrame(
+                {
+                    "t0_datetime_UTC": [],
+                    "x_center_OSGB": [],
+                    "y_center_OSGB": [],
+                }
+            )
+
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
         # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
         # multiple processors.  Currently takes about half an hour for 25,000 batches.

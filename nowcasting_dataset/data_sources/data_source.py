@@ -145,7 +145,7 @@ class DataSource:
         local_temp_path: Path,
         upload_every_n_batches: int,
         total_number_batches: int = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Create multiple batches and save them to disk.
 
@@ -506,7 +506,7 @@ class DerivedDataSource(DataSource):
             netcdf_path=kwargs["batch_path"],
             batch_idx=kwargs["batch_idx"],
             t0_datetimes=locations_for_batch.t0_datetime_UTC,
-            )
+        )
         return batch
 
     def get_batch(

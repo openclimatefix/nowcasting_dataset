@@ -296,8 +296,6 @@ class PVDataSource(ImageDataSource):
         pad_n = self.n_pv_systems_per_example - len(pv.id)
         pv = pv.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
-        pv.__setitem__("id", range(self.n_pv_systems_per_example))
-
         return pv
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:

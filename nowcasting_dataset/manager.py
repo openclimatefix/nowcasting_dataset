@@ -288,10 +288,11 @@ class Manager:
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
 
-        if n_examples == 0:
-            logger.debug(
-                f"Requested {n_examples} so will" f"return zero spatial and temporal locations"
-            )
+        logger.info("Creating spatial and temporal locations for examples.")
+        logger.debug(f"Requested {n_examples} from  {len(t0_datetimes)} t0_datetimes")
+
+        if (n_examples == 0) or ((len(t0_datetimes) == 0) and (n_examples > 0)):
+            logger.debug("Going to return zero spatial and temporal locations")
             return pd.DataFrame(
                 {
                     "t0_datetime_UTC": [],

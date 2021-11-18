@@ -379,7 +379,11 @@ class Manager:
 
         # Check if there's any work to do.
         if overwrite_batches:
-            splits_which_need_more_batches = [split_name for split_name in split.SplitName]
+            splits_which_need_more_batches = [
+                split_name
+                for split_name in split.SplitName
+                if self._get_n_batches_requested_for_split_name(split_name.value) > 0
+            ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
                 first_batches_to_create

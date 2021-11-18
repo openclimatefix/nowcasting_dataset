@@ -212,8 +212,12 @@ class GSPDataSource(ImageDataSource):
         selected_gsp_power = selected_gsp_power[all_gsp_ids]
         selected_capacity = selected_capacity[all_gsp_ids]
 
-        gsp_x_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_x
-        gsp_y_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_y
+        # get the metadata from these gsp ids in the correct order
+        gsp_ids_df = pd.DataFrame(data=all_gsp_ids, columns=["gsp_id"])
+        metadata = gsp_ids_df.merge(self.metadata, how="left", on="gsp_id")
+
+        gsp_x_coords = metadata.location_x
+        gsp_y_coords = metadata.location_y
 
         # convert to data array
         da = xr.DataArray(
@@ -325,7 +329,7 @@ class GSPDataSource(ImageDataSource):
 
         Returns: list of GSP ids that are in area of interest
         """
-        logger.debug("Getting all gsp in ROI")
+        logger.debug(f"Getting all gsp in ROI ({x_meters_center=},{y_meters_center=})")
 
         # creating bounding box
         bounding_box = self._square.bounding_box_centered_on(

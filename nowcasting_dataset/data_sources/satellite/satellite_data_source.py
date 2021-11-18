@@ -278,7 +278,6 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
         preprocess=remove_acq_time_from_dataset_and_fix_time_coords,
         consolidated=consolidated,
         combine="nested",
-        parallel=True,  # Load each dataset in parallel.
     )
 
     data_array = dataset["stacked_eumetsat_data"]

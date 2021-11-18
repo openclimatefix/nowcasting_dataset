@@ -23,6 +23,10 @@ from nowcasting_dataset.filesystem import utils as nd_fs_utils
 logger = logging.getLogger(__name__)
 
 
+# TODO: Issue #462: This should probably be configurable per DataSource.
+N_PROCESSES_PER_DATA_SOURCE = 4
+
+
 class Manager:
     """The Manager initialises and manage a dict of DataSource objects.
 
@@ -376,6 +380,7 @@ class Manager:
                 splits_which_need_more_batches.append(split_name)
         return splits_which_need_more_batches
 
+    # TODO: Issue 321: Split this up into separate functions!!!
     def create_batches(self, overwrite_batches: bool) -> None:
         """Create batches (if necessary).
 
@@ -424,21 +429,14 @@ class Manager:
 
         # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().
-        # TODO: Issue 321: Split this up into separate functions!!!
-        n_data_sources = len(self.data_sources)
+        n_processes = len(self.data_sources) * N_PROCESSES_PER_DATA_SOURCE
         nd_utils.set_fsspec_for_multiprocess()
         for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
-            with multiprocessing.Pool(processes=n_data_sources) as pool:
+            with multiprocessing.Pool(processes=n_processes) as pool:
                 async_results_from_create_batches = []
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
-
-                    # Get indexes of first batch and example. And subset locations_for_split.
-                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
-                    idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
-                    locations = locations_for_split.loc[idx_of_first_example:]
-
                     # Get paths.
                     dst_path = (
                         self.config.output_data.filepath / split_name.value / data_source_name
@@ -456,6 +454,11 @@ class Manager:
                     nd_fs_utils.makedirs(dst_path, exist_ok=True)
                     if self.save_batches_locally_and_upload:
                         nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
+
+                    # Get indexes of first batch and example. And subset locations_for_split.
+                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
+                    idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
+                    locations = locations_for_split.loc[idx_of_first_example:]
 
                     # Key word arguments to be passed into data_source.create_batches():
                     kwargs_for_create_batches = dict(

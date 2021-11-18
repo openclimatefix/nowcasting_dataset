@@ -227,7 +227,7 @@ class GSPDataSource(ImageDataSource):
         )
 
         # convert to dataset
-        gsp = da.to_dataset(name="data")
+        gsp = da.to_dataset(name="power_mw")
         gsp["capacity_mwp"] = capacity
 
         # add gsp x coords

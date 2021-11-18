@@ -66,6 +66,15 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
     assert (t0_datetimes[-1] >= locations["t0_datetime_UTC"]).all()
 
 
+def test_sample_spatial_and_temporal_locations_for_no_examples():  # noqa: D103
+
+    manager = Manager()
+    t0_datetimes = pd.DatetimeIndex([])
+    _ = manager.sample_spatial_and_temporal_locations_for_examples(
+        t0_datetimes=t0_datetimes, n_examples=10
+    )
+
+
 def test_load_yaml_configuration():  # noqa: D103
     manager = Manager()
     local_path = Path(nowcasting_dataset.__file__).parent.parent

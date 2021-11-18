@@ -245,7 +245,7 @@ class GSPDataSource(ImageDataSource):
 
         # pad out so that there are always 32 gsp, fill with 0
         pad_n = self.n_gsp_per_example - len(gsp.id)
-        gsp = gsp.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
+        gsp = gsp.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
         gsp.__setitem__("id", range(self.n_gsp_per_example))
 
@@ -356,6 +356,11 @@ class GSPDataSource(ImageDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
+        # need to floor by 30 mins.
+        # If t0 is 12.45 and history duration is 1 hours, then start_dt will be 11.45.
+        # But we need to collect data at 11.30, 12.00, and 12.30
+        start_dt = pd.to_datetime(start_dt).floor("30T")
+
         # select power and capacity for certain times
         power = self.gsp_power.loc[start_dt:end_dt]
         capacity = self.gsp_capacity.loc[start_dt:end_dt]
@@ -435,6 +440,10 @@ def load_solar_gsp_data(
     gsp_power_df = gsp_power_df.clip(lower=0, upper=5e7)
     gsp_capacity_df = gsp_capacity_df.dropna(axis="columns", how="all")
     gsp_capacity_df = gsp_capacity_df.clip(lower=0, upper=5e7)
+
+    # remove how rows of nans
+    gsp_power_df = gsp_power_df.dropna(axis="columns", how="all")
+    gsp_capacity_df = gsp_capacity_df.loc[:, gsp_power_df.columns]
 
     # make column names ints, not strings
     gsp_power_df.columns = [int(col) for col in gsp_power_df.columns]

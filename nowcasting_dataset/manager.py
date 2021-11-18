@@ -182,6 +182,18 @@ class Manager:
         for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
             path_for_csv = self.config.output_data.filepath / split_name
             n_batches_requested = self._get_n_batches_requested_for_split_name(split_name)
+            if (n_batches_requested == 0 and len(datetimes_for_split) != 0) or (
+                len(datetimes_for_split) == 0 and n_batches_requested != 0
+            ):
+                msg = (
+                    f"For split {split_name}: n_{split_name}_batches={n_batches_requested} and"
+                    f" len(datetimes_for_split)={len(datetimes_for_split)}!"
+                    " This is an error!  If n_{split_name}_batches==0 then len(datetimes_for_split)"
+                    f" must also equal 0, and visa-versa!  Please check `n_{split_name}_batches`"
+                    " and `split_method` in the config YAML!"
+                )
+                logger.error(msg)
+                raise RuntimeError(msg)
             if n_batches_requested == 0:
                 logger.info(f"0 batches requested for {split_name} so won't create {path_for_csv}")
                 continue

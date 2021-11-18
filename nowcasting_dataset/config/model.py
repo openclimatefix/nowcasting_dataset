@@ -332,7 +332,7 @@ class Process(BaseModel):
         ),
     )
     n_train_batches: int = 250
-    n_validation_batches: int = 10
+    n_validation_batches: int = 0  # Currently not using any validation batches!
     n_test_batches: int = 10
     upload_every_n_batches: int = Field(
         16,

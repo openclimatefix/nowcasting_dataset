@@ -180,23 +180,26 @@ class Manager:
             ],
         )
         for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
-            n_batches = self._get_n_batches_for_split_name(split_name)
-            n_examples = n_batches * self.config.process.batch_size
+            path_for_csv = self.config.output_data.filepath / split_name
+            n_batches_requested = self._get_n_batches_requested_for_split_name(split_name)
+            if n_batches_requested == 0:
+                logger.info(f"0 batches requested for {split_name} so won't create {path_for_csv}")
+                continue
+            n_examples = n_batches_requested * self.config.process.batch_size
             logger.debug(
-                f"Creating {n_batches:,d} batches x {self.config.process.batch_size:,d} examples"
-                f" per batch = {n_examples:,d} examples for {split_name}."
+                f"Creating {n_batches_requested:,d} batches x {self.config.process.batch_size:,d}"
+                f" examples per batch = {n_examples:,d} examples for {split_name}."
             )
             df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
                 t0_datetimes=datetimes_for_split, n_examples=n_examples
             )
             output_filename = self._filename_of_locations_csv_file(split_name)
-            path_for_csv = self.config.output_data.filepath / split_name
             logger.info(f"Making {path_for_csv} if it does not exist.")
             nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
             logger.debug(f"Writing {output_filename}")
             df_of_locations.to_csv(output_filename)
 
-    def _get_n_batches_for_split_name(self, split_name: str) -> int:
+    def _get_n_batches_requested_for_split_name(self, split_name: str) -> int:
         return getattr(self.config.process, f"n_{split_name}_batches")
 
     def _filename_of_locations_csv_file(self, split_name: str) -> Path:
@@ -287,6 +290,7 @@ class Manager:
             Each row of each the DataFrame specifies the position of each example, using
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
+        assert len(t0_datetimes) > 0
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
         # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
         # multiple processors.  Currently takes about half an hour for 25,000 batches.
@@ -341,7 +345,7 @@ class Manager:
         first_batches_to_create: dict[split.SplitName, dict[str, int]],
     ) -> bool:
         """Returns True if batches still need to be created for any DataSource."""
-        n_batches_requested = self._get_n_batches_for_split_name(split_name.value)
+        n_batches_requested = self._get_n_batches_requested_for_split_name(split_name.value)
         for data_source_name in self.data_sources:
             if first_batches_to_create[split_name][data_source_name] < n_batches_requested:
                 return True

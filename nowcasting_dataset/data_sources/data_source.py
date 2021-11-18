@@ -166,6 +166,13 @@ class DataSource:
           upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
             of batches have been created.  If 0 then will write directly to dst_path.
         """
+        logger.debug(
+            f"{len(spatial_and_temporal_locations_of_each_example)=},"
+            f" {spatial_and_temporal_locations_of_each_example.iloc[0]=},"
+            f" {spatial_and_temporal_locations_of_each_example.iloc[-1]=},"
+            f" {idx_of_first_batch=}, {batch_size=}, {dst_path=}"
+        )
+
         # Sanity checks:
         assert idx_of_first_batch >= 0
         assert batch_size > 0

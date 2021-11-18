@@ -458,14 +458,6 @@ class Manager:
                     if self.save_batches_locally_and_upload:
                         nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
 
-                    # Key word arguments to be passed into data_source.create_batches():
-                    kwargs_for_create_batches = dict(
-                        batch_size=self.config.process.batch_size,
-                        dst_path=dst_path,
-                        local_temp_path=local_temp_path,
-                        upload_every_n_batches=self.config.process.upload_every_n_batches,
-                    )
-
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
                     batch_boundaries_per_process = np.linspace(
@@ -483,15 +475,23 @@ class Manager:
                         idx_of_last_example = (
                             idx_of_last_batch_for_process * self.config.process.batch_size
                         )
-                        locations = locations_for_split.loc[
+                        locations = locations_for_split.iloc[
                             idx_of_first_example:idx_of_last_example
                         ]
 
-                        kwargs_for_create_batches.update(
-                            dict(
-                                spatial_and_temporal_locations_of_each_example=locations,
-                                idx_of_first_batch=idx_of_first_batch,
-                            )
+                        if len(locations) == 0:
+                            logger.debug(f"len(locations)==0! for {data_source_name}, {process_i=}")
+                            continue
+
+                        # Key word arguments to be passed into data_source.create_batches():
+                        # This dict must be created for each process, otherwise we pass in a copy.
+                        kwargs_for_create_batches = dict(
+                            batch_size=self.config.process.batch_size,
+                            dst_path=dst_path,
+                            local_temp_path=local_temp_path,
+                            upload_every_n_batches=self.config.process.upload_every_n_batches,
+                            spatial_and_temporal_locations_of_each_example=locations,
+                            idx_of_first_batch=idx_of_first_batch_for_process,
                         )
 
                         # Logger messages for callbacks:
@@ -501,20 +501,22 @@ class Manager:
                         )
                         error_callback_msg = (
                             f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name} and {process_i=}:\n"
+                            f" {split_name} and {process_i=}: "
                         )
 
                         # Submit data_source.create_batches task to the worker process.
                         logger.debug(
                             f"About to submit create_batches task: {data_source_name=},"
-                            f" {split_name=}, {process_i=}"
+                            f" {split_name=}, {process_i=}, {idx_of_first_example=},"
+                            f" {idx_of_last_example=},"
+                            f" {idx_of_first_batch_for_process=}, {idx_of_last_batch_for_process=}"
                         )
                         async_result = pool.apply_async(
                             data_source.create_batches,
                             kwds=kwargs_for_create_batches,
                             callback=lambda result: logger.info(callback_msg),
                             error_callback=lambda exception: logger.error(
-                                error_callback_msg + str(exception)
+                                error_callback_msg + str(type(exception)) + str(exception)
                             ),
                         )
                         async_results_from_create_batches.append(async_result)

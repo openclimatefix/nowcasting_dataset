@@ -444,7 +444,7 @@ class Manager:
                         self.config.output_data.filepath / split_name.value / data_source_name
                     )
 
-                    # TODO: Guarantee that local temp path is unique and empty.
+                    # TODO: Issue 455: Guarantee that local temp path is unique and empty.
                     local_temp_path = (
                         self.local_temp_path
                         / split_name.value

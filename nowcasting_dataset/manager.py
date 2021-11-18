@@ -432,6 +432,9 @@ class Manager:
         n_processes = len(self.data_sources) * N_PROCESSES_PER_DATA_SOURCE
         nd_utils.set_fsspec_for_multiprocess()
         for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
+            n_batches_requested_for_split = self._get_n_batches_requested_for_split_name(
+                split_name.value
+            )
             with multiprocessing.Pool(processes=n_processes) as pool:
                 async_results_from_create_batches = []
                 for worker_id, (data_source_name, data_source) in enumerate(
@@ -455,43 +458,66 @@ class Manager:
                     if self.save_batches_locally_and_upload:
                         nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
 
-                    # Get indexes of first batch and example. And subset locations_for_split.
-                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
-                    idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
-                    locations = locations_for_split.loc[idx_of_first_example:]
-
                     # Key word arguments to be passed into data_source.create_batches():
                     kwargs_for_create_batches = dict(
-                        spatial_and_temporal_locations_of_each_example=locations,
-                        idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
                         dst_path=dst_path,
                         local_temp_path=local_temp_path,
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
 
-                    # Logger messages for callbacks:
-                    callback_msg = (
-                        f"{data_source_name} has finished created batches for {split_name}!"
+                    # Get indexes of first batch and example. And subset locations_for_split.
+                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
+                    batch_boundaries_per_process = np.linspace(
+                        start=idx_of_first_batch,
+                        stop=n_batches_requested_for_split,
+                        num=N_PROCESSES_PER_DATA_SOURCE + 1,
+                        dtype=int,
                     )
-                    error_callback_msg = (
-                        f"Exception raised by {data_source_name} whilst creating batches for"
-                        f" {split_name}:\n"
-                    )
+                    for process_i in range(N_PROCESSES_PER_DATA_SOURCE):
+                        idx_of_first_batch_for_process = batch_boundaries_per_process[process_i]
+                        idx_of_last_batch_for_process = batch_boundaries_per_process[process_i + 1]
+                        idx_of_first_example = (
+                            idx_of_first_batch_for_process * self.config.process.batch_size
+                        )
+                        idx_of_last_example = (
+                            idx_of_last_batch_for_process * self.config.process.batch_size
+                        )
+                        locations = locations_for_split.loc[
+                            idx_of_first_example:idx_of_last_example
+                        ]
 
-                    # Submit data_source.create_batches task to the worker process.
-                    logger.debug(
-                        f"About to submit create_batches task for {data_source_name}, {split_name}"
-                    )
-                    async_result = pool.apply_async(
-                        data_source.create_batches,
-                        kwds=kwargs_for_create_batches,
-                        callback=lambda result: logger.info(callback_msg),
-                        error_callback=lambda exception: logger.error(
-                            error_callback_msg + str(exception)
-                        ),
-                    )
-                    async_results_from_create_batches.append(async_result)
+                        kwargs_for_create_batches.update(
+                            dict(
+                                spatial_and_temporal_locations_of_each_example=locations,
+                                idx_of_first_batch=idx_of_first_batch,
+                            )
+                        )
+
+                        # Logger messages for callbacks:
+                        callback_msg = (
+                            f"{data_source_name} has finished created batches for {split_name}"
+                            f" and {process_i=}!"
+                        )
+                        error_callback_msg = (
+                            f"Exception raised by {data_source_name} whilst creating batches for"
+                            f" {split_name} and {process_i=}:\n"
+                        )
+
+                        # Submit data_source.create_batches task to the worker process.
+                        logger.debug(
+                            f"About to submit create_batches task: {data_source_name=},"
+                            f" {split_name=}, {process_i=}"
+                        )
+                        async_result = pool.apply_async(
+                            data_source.create_batches,
+                            kwds=kwargs_for_create_batches,
+                            callback=lambda result: logger.info(callback_msg),
+                            error_callback=lambda exception: logger.error(
+                                error_callback_msg + str(exception)
+                            ),
+                        )
+                        async_results_from_create_batches.append(async_result)
 
                 # Wait for all async_results to finish:
                 for async_result in async_results_from_create_batches:

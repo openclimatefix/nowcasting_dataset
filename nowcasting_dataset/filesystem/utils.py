@@ -40,7 +40,8 @@ def get_maximum_batch_id(path: Pathy) -> int:
               Begin with 'gs://' for GCS. Begin with 's3://' for AWS S3.
               Supports wildcards *, **, ?, and [..].
 
-    Returns: The maximum batch id of data in `path`.
+    Returns: The maximum batch id of data in `path`.  If `path` exists but contains no files
+        then returns -1.
 
     Raises FileNotFoundError if `path` does not exist.
     """
@@ -57,7 +58,7 @@ def get_maximum_batch_id(path: Pathy) -> int:
     # if there is no files, return 0
     if len(filenames) == 0:
         _LOG.debug(f"Did not find any files in {path}")
-        return 0
+        return -1
 
     # Now that filenames have leading zeros (like 000001.nc), we can use lexographical sorting
     # to find the last filename, instead of having to convert all filenames to int.
@@ -92,10 +93,17 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
 
 
 def check_path_exists(path: Union[str, Path]):
-    """Raises a FileNotFoundError if `path` does not exist."""
+    """Raises a FileNotFoundError if `path` does not exist.
+
+    `path` can include wildcards.
+    """
     filesystem = get_filesystem(path)
     if not filesystem.exists(path):
-        raise FileNotFoundError(f"{path} does not exist!")
+        # Now try using `glob`.  Maybe `path` includes a wildcard?
+        # Try `exists` before `glob` because `glob` might be slower.
+        files = filesystem.glob(path)
+        if len(files) == 0:
+            raise FileNotFoundError(f"{path} does not exist!")
 
 
 def rename_file(remote_file: str, new_filename: str):

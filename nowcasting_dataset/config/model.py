@@ -98,6 +98,13 @@ class PV(DataSourceMixin):
     )
     pv_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     pv_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    get_center: bool = Field(
+        False,
+        description="If the batches are centered on one PV system (or not). "
+        "The other options is to have one GSP at the center of a batch. "
+        "Typically, get_center would be set to true if and only if "
+        "PVDataSource is used to define the geospatial positions of each example.",
+    )
 
 
 class Satellite(DataSourceMixin):
@@ -108,10 +115,34 @@ class Satellite(DataSourceMixin):
         description="The path which holds the satellite zarr.",
     )
     satellite_channels: tuple = Field(
-        SAT_VARIABLE_NAMES, description="the satellite channels that are used"
+        SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
     )
-    satellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
-    satellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    satellite_image_size_pixels: int = Field(
+        IMAGE_SIZE_PIXELS_FIELD.default // 3,
+        description="The number of pixels of the region of interest for non-HRV satellite "
+        "channels.",
+    )
+    satellite_meters_per_pixel: int = Field(
+        METERS_PER_PIXEL_FIELD.default * 3,
+        description="The number of meters per pixel for non-HRV satellite channels.",
+    )
+
+
+class HRVSatellite(DataSourceMixin):
+    """Satellite configuration model for HRV data"""
+
+    hrvsatellite_zarr_path: str = Field(
+        "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr",  # noqa: E501
+        description="The path which holds the satellite zarr.",
+    )
+
+    hrvsatellite_channels: tuple = Field(
+        SAT_VARIABLE_NAMES[0:1], description="the satellite channels that are used"
+    )
+    # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
+    # time the number of pixels
+    hrvsatellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
 class NWP(DataSourceMixin):
@@ -178,6 +209,7 @@ class InputData(BaseModel):
 
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
+    hrvsatellite: Optional[HRVSatellite] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -217,7 +249,15 @@ class InputData(BaseModel):
         """
         # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
         # but that causes a circular import.
-        ALL_DATA_SOURCE_NAMES = ("pv", "satellite", "nwp", "gsp", "topographic", "sun")
+        ALL_DATA_SOURCE_NAMES = (
+            "pv",
+            "hrvsatellite",
+            "satellite",
+            "nwp",
+            "gsp",
+            "topographic",
+            "sun",
+        )
         enabled_data_sources = [
             data_source_name
             for data_source_name in ALL_DATA_SOURCE_NAMES
@@ -242,6 +282,7 @@ class InputData(BaseModel):
         return cls(
             pv=PV(),
             satellite=Satellite(),
+            hrvsatellite=HRVSatellite(),
             nwp=NWP(),
             gsp=GSP(),
             topographic=Topographic(),
@@ -285,14 +326,34 @@ class Process(BaseModel):
         ),
     )
     split_method: split.SplitMethod = Field(
-        split.SplitMethod.DAY,
+        split.SplitMethod.DAY_RANDOM_TEST_DATE,
         description=(
             "The method used to split the t0 datetimes into train, validation and test sets."
+            " If the split method produces no t0 datetimes for any split_name, then"
+            " n_<split_name>_batches must also be set to 0."
         ),
     )
-    n_train_batches: int = 250
-    n_validation_batches: int = 10
-    n_test_batches: int = 10
+    n_train_batches: int = Field(
+        250,
+        description=(
+            "Number of train batches.  Must be 0 if split_method produces no t0 datetimes for"
+            " the train split"
+        ),
+    )
+    n_validation_batches: int = Field(
+        0,  # Currently not using any validation batches!
+        description=(
+            "Number of validation batches.  Must be 0 if split_method produces no t0 datetimes for"
+            " the validation split"
+        ),
+    )
+    n_test_batches: int = Field(
+        10,
+        description=(
+            "Number of test batches.  Must be 0 if split_method produces no t0 datetimes for"
+            " the test split."
+        ),
+    )
     upload_every_n_batches: int = Field(
         16,
         description=(
@@ -320,6 +381,7 @@ class Configuration(BaseModel):
             "pv.pv_filename",
             "pv.pv_metadata_filename",
             "satellite.satellite_zarr_path",
+            "hrvsatellite.hrvsatellite_zarr_path",
             "nwp.nwp_zarr_path",
             "gsp.gsp_zarr_path",
         ]

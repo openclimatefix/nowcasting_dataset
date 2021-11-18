@@ -15,7 +15,7 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
-from nowcasting_dataset import geospatial, utils
+from nowcasting_dataset import geospatial
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
@@ -107,7 +107,7 @@ class PVDataSource(ImageDataSource):
         pv_power.dropna(axis="columns", how="all", inplace=True)
         pv_power.dropna(axis="index", how="all", inplace=True)
 
-        pv_power = utils.scale_to_0_to_1(pv_power)
+        # drop systems with over night power
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
@@ -119,12 +119,16 @@ class PVDataSource(ImageDataSource):
         print("pv_power = {:,.1f} MB".format(pv_power.values.nbytes / 1e6))
         self.pv_power = pv_power
 
+        # get the max generation / capacity for each system
+        self.pv_capacity = pv_power.max()
+
     def _get_time_slice(self, t0_dt: pd.Timestamp) -> [pd.DataFrame]:
         # TODO: Cache this?
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
         del t0_dt  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
+        selected_pv_capacity = self.pv_capacity[selected_pv_power.columns]
 
         pv_power_zero_or_above_flag = selected_pv_power.ge(0).all()
 
@@ -133,8 +137,9 @@ class PVDataSource(ImageDataSource):
             logger.debug(f"Will be removing {n} pv systems as they have negative values")
 
         selected_pv_power = selected_pv_power.loc[:, pv_power_zero_or_above_flag]
+        selected_pv_capacity = selected_pv_capacity.loc[pv_power_zero_or_above_flag]
 
-        return selected_pv_power
+        return selected_pv_power, selected_pv_capacity
 
     def _get_central_pv_system_id(
         self,
@@ -222,7 +227,7 @@ class PVDataSource(ImageDataSource):
         """
         logger.debug("Getting PV example data")
 
-        selected_pv_power = self._get_time_slice(t0_dt)
+        selected_pv_power, selected_pv_capacity = self._get_time_slice(t0_dt)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
             x_meters_center, y_meters_center, selected_pv_power.columns
         )
@@ -239,6 +244,7 @@ class PVDataSource(ImageDataSource):
         all_pv_system_ids = all_pv_system_ids[: self.n_pv_systems_per_example]
 
         selected_pv_power = selected_pv_power[all_pv_system_ids]
+        selected_pv_capacity = selected_pv_capacity[all_pv_system_ids]
 
         pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
@@ -256,8 +262,17 @@ class PVDataSource(ImageDataSource):
             ),
         )
 
+        capacity = xr.DataArray(
+            data=selected_pv_capacity.values,
+            dims=["id"],
+            coords=dict(
+                id=all_pv_system_ids.values.astype(int),
+            ),
+        )
+
         # convert to dataset
-        pv = da.to_dataset(name="data")
+        pv = da.to_dataset(name="power_mw")
+        pv["capacity_mwp"] = capacity
 
         # add pv x coords
         x_coords = xr.DataArray(
@@ -279,9 +294,7 @@ class PVDataSource(ImageDataSource):
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id)
-        pv = pv.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
-
-        pv.__setitem__("id", range(self.n_pv_systems_per_example))
+        pv = pv.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
         return pv
 

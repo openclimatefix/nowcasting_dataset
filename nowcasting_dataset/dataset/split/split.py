@@ -49,7 +49,7 @@ SplitDateTimes = namedtuple(
 def split_data(
     datetimes: Union[List[pd.Timestamp], pd.DatetimeIndex],
     method: SplitMethod,
-    train_test_validation_split: Tuple[int] = (3, 1, 1),
+    train_test_validation_split: Tuple[int, int, int] = (3, 1, 1),
     train_test_validation_specific: TrainValidationTestSpecific = (
         default_train_test_validation_specific
     ),

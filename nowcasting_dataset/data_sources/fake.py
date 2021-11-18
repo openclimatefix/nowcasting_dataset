@@ -13,7 +13,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.dataset.xr_utils import (
@@ -95,6 +95,7 @@ def pv_fake(batch_size, seq_length_5, n_pv_systems_per_batch):
             seq_length=seq_length_5,
             freq="5T",
             number_of_systems=n_pv_systems_per_batch,
+            time_dependent_capacity=False,
         )
         for _ in range(batch_size)
     ]
@@ -120,7 +121,7 @@ def satellite_fake(
         create_image_array(
             seq_length_5=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
-            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
+            channels=SAT_VARIABLE_NAMES[1:number_satellite_channels],
         )
         for _ in range(batch_size)
     ]
@@ -129,6 +130,29 @@ def satellite_fake(
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return Satellite(xr_dataset)
+
+
+def hrv_satellite_fake(
+    batch_size=32,
+    seq_length_5=19,
+    satellite_image_size_pixels=64,
+    number_satellite_channels=7,
+) -> Satellite:
+    """Create fake data"""
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length_5=seq_length_5,
+            image_size_pixels=satellite_image_size_pixels * 3,  # HRV images are 3x other images
+            channels=SAT_VARIABLE_NAMES[0:1],
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
+
+    return HRVSatellite(xr_dataset)
 
 
 def sun_fake(batch_size, seq_length_5):
@@ -240,8 +264,23 @@ def create_gsp_pv_dataset(
     freq="5T",
     seq_length=19,
     number_of_systems=128,
-):
-    """Create gsp or pv fake dataset"""
+    time_dependent_capacity: bool = True,
+) -> xr.Dataset:
+    """
+    Create gsp or pv fake dataset
+
+    Args:
+        dims: the dims that are made for "power_mw"
+        freq: the frequency of the time steps
+        seq_length: the time sequence length
+        number_of_systems: number of pv or gsp systems
+        time_dependent_capacity: if the capacity is time dependent.
+            GSP capacities increase over time,
+            but PV systems are the same (or should be).
+
+    Returns: xr.Dataset of fake data
+
+    """
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
         "id": np.random.choice(range(1000), number_of_systems, replace=False),
@@ -268,7 +307,20 @@ def create_gsp_pv_dataset(
         coords=coords,
     )  # Fake data for testing!
 
-    data = data_array.to_dataset(name="data")
+    if time_dependent_capacity:
+        capacity = xr.DataArray(
+            np.repeat(np.random.randn(seq_length), number_of_systems)
+            .reshape(number_of_systems, seq_length)
+            .T,
+            coords=coords,
+        )
+    else:
+        capacity = xr.DataArray(
+            np.random.randn(number_of_systems),
+            coords=[coords[1]],
+        )
+
+    data = data_array.to_dataset(name="power_mw")
 
     # make random coords
     x, y = make_random_point_coords_osgb(size=number_of_systems)
@@ -287,6 +339,7 @@ def create_gsp_pv_dataset(
     x_coords.data[0] = x_coords.data.mean()
     y_coords.data[0] = y_coords.data.mean()
 
+    data["capacity_mwp"] = capacity
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords
 
@@ -294,7 +347,7 @@ def create_gsp_pv_dataset(
     # This is a quick way to make sure row number is different from id,
     data["pv_system_row_number"] = data["id"] + 1000
 
-    data.__setitem__("data", data.data.clip(min=0))
+    data.__setitem__("power_mw", data.power_mw.clip(min=0))
 
     return data
 

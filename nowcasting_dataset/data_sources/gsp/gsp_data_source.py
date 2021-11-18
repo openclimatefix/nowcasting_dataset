@@ -20,7 +20,6 @@ from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
-from nowcasting_dataset.utils import scale_to_0_to_1
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,7 @@ class GSPDataSource(ImageDataSource):
     # end datetime, this can be None
     end_dt: Optional[datetime] = None
     # the threshold where we only taken gsp's with a maximum power, above this value.
-    threshold_mw: int = 20
+    threshold_mw: int = 0
     # get the data for the gsp at the center too.
     # This can be turned off if the center of the bounding box is of a pv system
     get_center: bool = True
@@ -82,6 +81,8 @@ class GSPDataSource(ImageDataSource):
         """
         # load metadata
         self.metadata = get_gsp_metadata_from_eso()
+        self.metadata.set_index("gsp_id", drop=False, inplace=True)
+        self.metadata.index.name = ""
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
@@ -89,19 +90,15 @@ class GSPDataSource(ImageDataSource):
         )
 
         # load gsp data from file / gcp
-        self.gsp_power = load_solar_gsp_data(
+        self.gsp_power, self.gsp_capacity = load_solar_gsp_data(
             self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
         )
 
-        # drop any gsp below 20 MW (or set threshold). This is to get rid of any small GSP where
+        # drop any gsp below a threshold mw. This is to get rid of any small GSP where
         # predicting the solar output will be harder.
         self.gsp_power, self.metadata = drop_gsp_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
         )
-
-        # scale from 0 to 1
-        if self.do_scale_0_to_1:
-            self.gsp_power = scale_to_0_to_1(self.gsp_power)
 
         logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 
@@ -191,7 +188,7 @@ class GSPDataSource(ImageDataSource):
         logger.debug("Getting example data")
 
         # get the GSP power, including history and forecast
-        selected_gsp_power = self._get_time_slice(t0_dt)
+        selected_gsp_power, selected_capacity = self._get_time_slice(t0_dt)
 
         # get the main gsp id, and the ids of the gsp in the bounding box
         all_gsp_ids = self._get_gsp_ids_in_roi(
@@ -215,18 +212,34 @@ class GSPDataSource(ImageDataSource):
 
         # select the GSP power output for the selected GSP IDs
         selected_gsp_power = selected_gsp_power[all_gsp_ids]
+        selected_capacity = selected_capacity[all_gsp_ids]
 
-        gsp_x_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_x
-        gsp_y_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_y
+        # get x,y coordinates
+        gsp_x_coords = self.metadata.location_x[all_gsp_ids]
+        gsp_y_coords = self.metadata.location_y[all_gsp_ids]
 
         # convert to data array
         da = xr.DataArray(
             data=selected_gsp_power.values,
             dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
+        )
+
+        capacity = xr.DataArray(
+            data=selected_capacity.values,
+            dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
         )
 
         # convert to dataset
-        gsp = da.to_dataset(name="data")
+        gsp = da.to_dataset(name="power_mw")
+        gsp["capacity_mwp"] = capacity
 
         # add gsp x coords
         gsp_x_coords = xr.DataArray(
@@ -243,9 +256,7 @@ class GSPDataSource(ImageDataSource):
 
         # pad out so that there are always 32 gsp, fill with 0
         pad_n = self.n_gsp_per_example - len(gsp.id)
-        gsp = gsp.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
-
-        gsp.__setitem__("id", range(self.n_gsp_per_example))
+        gsp = gsp.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
         return gsp
 
@@ -317,7 +328,7 @@ class GSPDataSource(ImageDataSource):
 
         Returns: list of GSP ids that are in area of interest
         """
-        logger.debug("Getting all gsp in ROI")
+        logger.debug(f"Getting all gsp in ROI ({x_meters_center=},{y_meters_center=})")
 
         # creating bounding box
         bounding_box = self._square.bounding_box_centered_on(
@@ -354,15 +365,22 @@ class GSPDataSource(ImageDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
-        # select power for certain times
+        # need to floor by 30 mins.
+        # If t0 is 12.45 and history duration is 1 hours, then start_dt will be 11.45.
+        # But we need to collect data at 11.30, 12.00, and 12.30
+        start_dt = pd.to_datetime(start_dt).floor("30T")
+
+        # select power and capacity for certain times
         power = self.gsp_power.loc[start_dt:end_dt]
+        capacity = self.gsp_capacity.loc[start_dt:end_dt]
 
         # remove any nans
         power = power.dropna(axis="columns", how="any")
+        capacity = capacity.dropna(axis="columns", how="any")
 
         logger.debug(f"Found {len(power.columns)} GSP valid data for {t0_dt}")
 
-        return power
+        return power, capacity
 
 
 def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
@@ -378,7 +396,7 @@ def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, thre
     """
     maximum_gsp = gsp_power.max()
 
-    keep_index = maximum_gsp >= threshold_mw
+    keep_index = maximum_gsp > threshold_mw
 
     logger.debug(f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW")
     logger.debug(f"Keeping {sum(keep_index)} GSPs as maximum is greater {threshold_mw} MW")
@@ -394,7 +412,7 @@ def load_solar_gsp_data(
     zarr_path: Union[str, Path],
     start_dt: Optional[datetime] = None,
     end_dt: Optional[datetime] = None,
-) -> pd.DataFrame:
+) -> (pd.DataFrame, pd.DataFrame):
     """
     Load solar PV GSP data
 
@@ -409,30 +427,35 @@ def load_solar_gsp_data(
     logger.debug(f"Loading Solar GSP Data from {zarr_path} from {start_dt} to {end_dt}")
     # Open data - it may be quicker to open byte file first, but decided just to keep it
     # like this at the moment.
-    gsp_power = xr.open_dataset(zarr_path, engine="zarr")
-    gsp_power = gsp_power.sel(datetime_gmt=slice(start_dt, end_dt))
-
-    # make normalized data
-    # TODO nowcasting_dataset/issues/231 -move normalization to dataloader
-    gsp_power.__setitem__(
-        "generation_normalised", gsp_power.generation_mw / gsp_power.installedcapacity_mwp
-    )
+    gsp_power_and_capacity = xr.open_dataset(zarr_path, engine="zarr")
+    gsp_power_and_capacity = gsp_power_and_capacity.sel(datetime_gmt=slice(start_dt, end_dt))
 
     # make dataframe with index datetime_gmt and columns og gsp_id
-    gsp_power_df = gsp_power.to_dataframe()
-    gsp_power_df.reset_index(inplace=True)
-    gsp_power_df = gsp_power_df.pivot(
-        index="datetime_gmt", columns="gsp_id", values="generation_normalised"
+    gsp_power_and_capacity_df = gsp_power_and_capacity.to_dataframe()
+    gsp_power_and_capacity_df.reset_index(inplace=True)
+    gsp_power_df = gsp_power_and_capacity_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="generation_mw"
+    )
+
+    gsp_capacity_df = gsp_power_and_capacity_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp"
     )
 
     # Save memory
-    del gsp_power
+    del gsp_power_and_capacity
 
     # Process the data a little
     gsp_power_df = gsp_power_df.dropna(axis="columns", how="all")
     gsp_power_df = gsp_power_df.clip(lower=0, upper=5e7)
+    gsp_capacity_df = gsp_capacity_df.dropna(axis="columns", how="all")
+    gsp_capacity_df = gsp_capacity_df.clip(lower=0, upper=5e7)
+
+    # remove whole rows of nans
+    gsp_power_df = gsp_power_df.dropna(axis="columns", how="all")
+    gsp_capacity_df = gsp_capacity_df.loc[:, gsp_power_df.columns]
 
     # make column names ints, not strings
     gsp_power_df.columns = [int(col) for col in gsp_power_df.columns]
+    gsp_capacity_df.columns = [int(col) for col in gsp_capacity_df.columns]
 
-    return gsp_power_df
+    return gsp_power_df, gsp_capacity_df

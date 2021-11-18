@@ -81,6 +81,7 @@ class DataSource:
     def _get_start_dt(
         self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
+
         return t0_dt - self.history_duration
 
     def _get_end_dt(
@@ -207,7 +208,7 @@ class DataSource:
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
-            batch.to_netcdf(netcdf_filename)
+            batch.to_netcdf(netcdf_filename, engine="h5netcdf")
 
             # Upload if necessary.
             if (
@@ -266,7 +267,12 @@ class DataSource:
         examples = convert_coordinates_to_indexes_for_list_datasets(examples)
 
         # join the examples together, and cast them to the cls, so that validation can occur
-        return cls(join_list_dataset_to_batch_dataset(examples))
+        batch_one_datasource = cls(join_list_dataset_to_batch_dataset(examples))
+
+        # lets validate
+        cls.validate(batch_one_datasource)
+
+        return batch_one_datasource
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

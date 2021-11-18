@@ -37,7 +37,7 @@ def convert_coordinates_to_indexes(dataset: xr.Dataset) -> xr.Dataset:
     This is useful to align multiple examples into a single batch.
     """
 
-    assert type(dataset) == xr.Dataset
+    assert type(dataset) == xr.Dataset, f" Should be xr.Dataset but found {type(dataset)}"
 
     original_dim_names = dataset.dims
 

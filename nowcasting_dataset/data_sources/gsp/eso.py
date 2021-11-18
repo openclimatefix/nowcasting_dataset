@@ -40,33 +40,54 @@ rename_save_columns = {
 rename_load_columns = {v: k for k, v in rename_save_columns.items()}
 
 
-def get_gsp_metadata_from_eso(calculate_centroid: bool = True) -> pd.DataFrame:
+def get_gsp_metadata_from_eso(
+    calculate_centroid: bool = True, load_local_file: bool = True, save_local_file: bool = False
+) -> pd.DataFrame:
     """
     Get the metadata for the gsp, from ESO.
 
     Args:
         calculate_centroid: Load the shape file also, and calculate the Centroid
+        load_local_file: Load from a local file, not from ESO
+        save_local_file: Save to a local file, only need to do this is Data is updated.
 
     Returns: Dataframe of ESO Metadata
 
     """
     logger.debug("Getting GSP shape file")
 
-    # call ESO website. There is a possibility that this API will be replaced and its unclear if
-    # this original API will will stay operational
-    url = (
-        "https://data.nationalgrideso.com/api/3/action/datastore_search?"
-        "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
-    )
-    with urllib.request.urlopen(url) as fileobj:
-        d = json.loads(fileobj.read())
+    local_file = f"{os.path.dirname(os.path.realpath(__file__))}/eso_metadata.csv"
 
-    # make dataframe
-    results = d["result"]["records"]
-    metadata = pd.DataFrame(results)
+    if not os.path.isfile(local_file):
+        logger.debug("There is no local file so going to get it from ESO, and save it afterwards")
+        load_local_file = False
+        save_local_file = True
 
-    # drop duplicates
-    metadata = metadata.drop_duplicates(subset=["gsp_id"])
+    if load_local_file:
+        logger.debug("loading local file for ESO metadata")
+        metadata = pd.read_csv(local_file)
+        # rename the columns to full name
+        logger.debug("loading local file for ESO metadata:done")
+    else:
+        # call ESO website. There is a possibility that this API will be replaced and its unclear if
+        # this original API will will stay operational
+        url = (
+            "https://data.nationalgrideso.com/api/3/action/datastore_search?"
+            "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
+        )
+        with urllib.request.urlopen(url) as fileobj:
+            d = json.loads(fileobj.read())
+
+        # make dataframe
+        results = d["result"]["records"]
+        metadata = pd.DataFrame(results)
+
+        # drop duplicates
+        metadata = metadata.drop_duplicates(subset=["gsp_id"])
+
+    if save_local_file:
+        # save file
+        metadata.to_csv(local_file)
 
     if calculate_centroid:
         # get shape data from eso
@@ -158,7 +179,7 @@ def get_gsp_shape_from_eso(
     if join_duplicates:
         logger.debug("Removing duplicates by joining geometry together")
 
-        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["RegionID"])
+        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["RegionID"]).copy()
         duplicated_raw = shape_gpd[shape_gpd["RegionID"].duplicated()]
 
         for _, duplicate in duplicated_raw.iterrows():
@@ -171,7 +192,6 @@ def get_gsp_shape_from_eso(
             new_geometry = shape_gpd_no_duplicates.loc[index_other, "geometry"].union(
                 duplicate.geometry
             )
-
             # set new geometry
             shape_gpd_no_duplicates.loc[index_other, "geometry"] = new_geometry
 

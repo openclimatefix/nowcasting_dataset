@@ -6,7 +6,7 @@ input_data:
   default_history_minutes: 30
   gsp:
     forecast_minutes: 60
-    gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr
+    gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v3/pv_gsp.zarr
     history_minutes: 60
   nwp:
     forecast_minutes: 60
@@ -29,7 +29,7 @@ input_data:
     history_minutes: 30
     pv_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf
     pv_metadata_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv
-    get_center: False
+    get_center: false
   satellite:
     forecast_minutes: 60
     history_minutes: 30

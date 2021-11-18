@@ -11,15 +11,11 @@ from pathy import Pathy
 
 import nowcasting_dataset
 from nowcasting_dataset import utils
+from nowcasting_dataset.consts import LOG_LEVELS
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
 from nowcasting_dataset.manager import Manager
 
-# Set up logging.
-logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s at %(pathname)s#L%(lineno)d")
-logging.getLogger("nowcasting_dataset.data_source").setLevel(logging.WARNING)
-
-logger = logging.getLogger("nowcasting_dataset")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" / "on_premises.yaml"
 
@@ -48,6 +44,7 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
 @click.option(
     "--overwrite_batches",
     default=False,
+    is_flag=True,
     help=(
         "Overwrite any existing batches in the destination directory, for the selected"
         " DataSource(s).  If this flag is not set, and if there are existing batches,"
@@ -55,11 +52,18 @@ default_config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" /
         " existing batches."
     ),
 )
+@click.option(
+    "--log_level",
+    default="DEBUG",
+    type=click.Choice(LOG_LEVELS),
+    help=("The log level represented as a string.  Defaults to DEBUG."),
+)
 @utils.arg_logger
-def main(config_filename: str, data_source: list[str], overwrite_batches: bool):
+def main(config_filename: str, data_source: list[str], overwrite_batches: bool, log_level=str):
     """Generate pre-prepared batches of data."""
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
+    manager.configure_loggers(log_level=log_level, names_of_selected_data_sources=data_source)
     manager.initialise_data_sources(names_of_selected_data_sources=data_source)
     # TODO: Issue 323: maybe don't allow
     # create_files_specifying_spatial_and_temporal_locations_of_each_example to be run if a subset

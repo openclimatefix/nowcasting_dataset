@@ -11,14 +11,23 @@ input_data:
     nwp_image_size_pixels: 2
     nwp_zarr_path: tests/data/nwp_data/test.zarr
     history_minutes: 60
+    forecast_minutes: 60
   pv:
     pv_filename: tests/data/pv_data/test.nc
     pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
+    get_center: false
   satellite:
     satellite_channels:
-      - HRV
-    satellite_image_size_pixels: 64
+      - IR_016
+    satellite_image_size_pixels: 24
     satellite_zarr_path: tests/data/sat_data.zarr
+  hrvsatellite:
+    hrvsatellite_channels:
+      - HRV
+    hrvsatellite_image_size_pixels: 64
+    hrvsatellite_zarr_path: tests/data/hrv_sat_data.zarr
+    history_minutes: 30
+    forecast_minutes: 60
   sun:
     sun_zarr_path: tests/data/sun/test.zarr
   topographic:

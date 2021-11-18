@@ -1,23 +1,17 @@
 {
     "chunks": [
-        12
+        11
     ],
     "compressor": {
         "blocksize": 0,
-        "clevel": 4,
-        "cname": "zstd",
+        "clevel": 5,
+        "cname": "lz4",
         "id": "blosc",
-        "shuffle": -1
+        "shuffle": 1
     },
     "dtype": "<U6",
     "fill_value": null,
-    "filters": [
-        {
-            "astype": "<f4",
-            "dtype": "<f4",
-            "id": "delta"
-        }
-    ],
+    "filters": null,
     "order": "C",
     "shape": [
         1

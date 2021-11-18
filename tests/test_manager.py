@@ -14,13 +14,32 @@ from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.manager import Manager
 
 
+def test_configure_loggers():
+    """Test to check loggers can be configured"""
+
+    # set up
+    manager = Manager()
+
+    # make configuration
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as dst_path:
+
+        filepath = f"{dst_path}/extra_temp_folder"
+        manager.config.output_data.filepath = Path(filepath)
+
+        manager.configure_loggers(log_level="DEBUG")
+
+
 def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
     local_path = Path(nowcasting_dataset.__file__).parent.parent
 
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -53,7 +72,7 @@ def test_load_yaml_configuration():  # noqa: D103
     filename = local_path / "tests" / "config" / "test.yaml"
     manager.load_yaml_configuration(filename=filename)
     manager.initialise_data_sources()
-    assert len(manager.data_sources) == 6
+    assert len(manager.data_sources) == 7
     assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
 
 
@@ -74,14 +93,14 @@ def test_get_daylight_datetime_index():
     manager.data_source_which_defines_geospatial_locations = sat
     t0_datetimes = manager.get_t0_datetimes_across_all_data_sources(freq="5T")
 
-    # The testing sat_data.zarr has contiguous data from 12:05 to 18:00.
+    # The testing sat_data.zarr has contiguous data from 12:00 to 18:00.
     # nowcasting_datamodule.history_minutes = 30
     # nowcasting_datamodule.forecast_minutes = 60
-    # Daylight ends at 16:20.
-    # So the expected t0_datetimes start at 12:35 (12:05 + 30 minutes)
-    # and end at 15:20 (16:20 - 60 minutes)
+    # Daylight ends after 19:34.
+    # So the expected t0_datetimes start at 12:30 (12:00 + 30 minutes)
+    # and end at 17:00 (18:00 - 60 minutes)
 
-    correct_t0_datetimes = pd.date_range("2019-01-01 12:35", "2019-01-01 15:20", freq="5 min")
+    correct_t0_datetimes = pd.date_range("2020-04-01 12:30", "2020-04-01 17:00", freq="5 min")
     np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
 
 
@@ -90,6 +109,18 @@ def test_batches():
     filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
 
     sat = SatelliteDataSource(
+        zarr_path=filename,
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=24,
+        meters_per_pixel=6000,
+        channels=("IR_016",),
+    )
+
+    filename = (
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+    )
+    hrvsat = SatelliteDataSource(
         zarr_path=filename,
         history_minutes=30,
         forecast_minutes=60,
@@ -104,8 +135,8 @@ def test_batches():
 
     gsp = GSPDataSource(
         zarr_path=filename,
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -126,7 +157,7 @@ def test_batches():
         manager.local_temp_path = Path(local_temp_path)
 
         # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat}
+        manager.data_sources = {"gsp": gsp, "sat": sat, "hrvsat": hrvsat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
@@ -141,6 +172,8 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
         assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsat/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
 
 
 def test_save_config():
@@ -163,3 +196,21 @@ def test_save_config():
         manager.save_yaml_configuration()
 
         assert os.path.exists(f"{dst_path}/configuration.yaml")
+
+
+def test_run():
+    """Test to initialize data sources and get batches"""
+
+    manager = Manager()
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+    manager.initialise_data_sources()
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+        manager.create_batches(overwrite_batches=True)

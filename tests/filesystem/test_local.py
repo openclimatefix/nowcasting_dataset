@@ -36,6 +36,29 @@ def test_check_file_exists():  # noqa: D103
         check_path_exists(path=f"{tmpdirname}/test_dir")
 
 
+def test_check_file_exists_wild_card():  # noqa: D103
+
+    file1 = "test_file1.txt"
+    file2 = "test_dir/test_file2.txt"
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        local_path = Path(tmpdirname)
+
+        # add fake file to dir
+        path_and_filename_1 = os.path.join(local_path, file1)
+        with open(path_and_filename_1, "w"):
+            pass
+
+        # add fake file to dir
+        os.mkdir(f"{tmpdirname}/test_dir")
+        _ = os.path.join(local_path, file2)
+        with open(os.path.join(local_path, file2), "w"):
+            pass
+
+        # run function
+        check_path_exists(path=f"{tmpdirname}/test_d*")
+
+
 def test_makedirs():  # noqa: D103
 
     folder_1 = "test_dir_1"

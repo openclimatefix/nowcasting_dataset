@@ -6,7 +6,7 @@ input_data:
   default_history_minutes: 30
   #---------------------- GSP -------------------
   gsp:
-    gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v2/pv_gsp.zarr
+    gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v3/pv_gsp.zarr
 
   #---------------------- NWP -------------------
   nwp:

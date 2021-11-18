@@ -219,11 +219,19 @@ class GSPDataSource(ImageDataSource):
         da = xr.DataArray(
             data=selected_gsp_power.values,
             dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
         )
 
         capacity = xr.DataArray(
             data=selected_capacity.values,
             dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
         )
 
         # convert to dataset
@@ -246,8 +254,6 @@ class GSPDataSource(ImageDataSource):
         # pad out so that there are always 32 gsp, fill with 0
         pad_n = self.n_gsp_per_example - len(gsp.id)
         gsp = gsp.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
-
-        gsp.__setitem__("id", range(self.n_gsp_per_example))
 
         return gsp
 

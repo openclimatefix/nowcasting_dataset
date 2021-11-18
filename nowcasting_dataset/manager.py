@@ -185,6 +185,7 @@ class Manager:
             if (n_batches_requested == 0 and len(datetimes_for_split) != 0) or (
                 len(datetimes_for_split) == 0 and n_batches_requested != 0
             ):
+                # TODO: Issue #450: Test this scenario!
                 msg = (
                     f"For split {split_name}: n_{split_name}_batches={n_batches_requested} and"
                     f" {len(datetimes_for_split)=}!  This is an error!"

@@ -2,7 +2,6 @@
 import logging
 from dataclasses import InitVar, dataclass
 from numbers import Number
-from pathlib import Path
 from typing import Iterable, Optional
 
 import numpy as np
@@ -238,22 +237,20 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # seems to slow things down a lot if the Zarr store has more than
     # about a million chunks.
     # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
-    if Path(zarr_path).exists:
-        # For opening a single Zarr store, we can use the simpler open_dataset
-        dataset = xr.open_dataset(
-            zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
-        )
-    else:
-        # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
-        # together and create a single dataset from them
-        dataset = xr.open_mfdataset(
-            zarr_path,
-            chunks=None,
-            mode="r",
-            engine="zarr",
-            concat_dim="time",
-            preprocess=remove_acq_time_from_dataset,
-        )
+
+    # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
+    # together and create a single dataset from them.  open_mfdataset also works if zarr_path
+    # points to a specific zarr directory (with no wildcards).
+    dataset = xr.open_mfdataset(
+        zarr_path,
+        chunks=None,
+        mode="r",
+        engine="zarr",
+        concat_dim="time",
+        preprocess=remove_acq_time_from_dataset,
+        consolidated=consolidated,
+        combine="nested",
+    )
 
     data_array = dataset["stacked_eumetsat_data"]
     del dataset

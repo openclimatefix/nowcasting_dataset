@@ -187,10 +187,10 @@ class Manager:
             ):
                 msg = (
                     f"For split {split_name}: n_{split_name}_batches={n_batches_requested} and"
-                    f" len(datetimes_for_split)={len(datetimes_for_split)}!"
-                    " This is an error!  If n_{split_name}_batches==0 then len(datetimes_for_split)"
-                    f" must also equal 0, and visa-versa!  Please check `n_{split_name}_batches`"
-                    " and `split_method` in the config YAML!"
+                    f" {len(datetimes_for_split)=}!  This is an error!"
+                    f"  If n_{split_name}_batches==0 then len(datetimes_for_split) must also"
+                    f" equal 0, and visa-versa!  Please check `n_{split_name}_batches` and"
+                    " `split_method` in the config YAML!"
                 )
                 logger.error(msg)
                 raise RuntimeError(msg)

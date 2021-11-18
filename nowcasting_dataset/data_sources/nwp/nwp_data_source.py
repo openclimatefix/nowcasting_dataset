@@ -176,7 +176,11 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
     nwp = xr.open_dataset(
-        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+        zarr_path,
+        engine="zarr",
+        consolidated=consolidated,
+        mode="r",
+        chunks="auto",  # See issue #456 for why we use "auto".
     )
 
     # Select the "UKV" DataArray from the "nwp" Dataset.

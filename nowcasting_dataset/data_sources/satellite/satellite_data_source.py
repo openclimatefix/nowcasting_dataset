@@ -233,18 +233,12 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """
     _LOG.debug("Opening satellite data: %s", zarr_path)
 
-    # We load using chunks=None so xarray *doesn't* use Dask to
-    # load the Zarr chunks from disk.  Using Dask to load the data
-    # seems to slow things down a lot if the Zarr store has more than
-    # about a million chunks.
-    # See https://github.com/openclimatefix/nowcasting_dataset/issues/23
-
     # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
     # together and create a single dataset from them.  open_mfdataset also works if zarr_path
     # points to a specific zarr directory (with no wildcards).
     dataset = xr.open_mfdataset(
         zarr_path,
-        chunks=None,
+        chunks="auto",  # See issue #456 for why we use "auto".
         mode="r",
         engine="zarr",
         concat_dim="time",

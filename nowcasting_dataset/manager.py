@@ -419,23 +419,20 @@ class Manager:
             locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
                 locations_for_each_example["t0_datetime_UTC"]
             )
-            locations_for_each_example_of_each_split[split_name] = locations_for_each_example
+            if len(locations_for_each_example) > 0:
+                locations_for_each_example_of_each_split[split_name] = locations_for_each_example
 
         # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().
         # TODO: Issue 321: Split this up into separate functions!!!
         n_data_sources = len(self.data_sources)
         nd_utils.set_fsspec_for_multiprocess()
-        for split_name in splits_which_need_more_batches:
-            locations_for_split = locations_for_each_example_of_each_split[split_name]
+        for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
             with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
                 future_create_batches_jobs = []
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
-
-                    if len(locations_for_split) == 0:
-                        break
 
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]

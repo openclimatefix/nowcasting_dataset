@@ -56,7 +56,6 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
-    # TODO: Issue #322: Write test for Manager.configure_loggers()
     def configure_loggers(
         self,
         log_level: str,
@@ -69,6 +68,10 @@ class Manager:
         Save individual logs for each DataSource in
             self.config.output_data.filepath / <data_source>.log
         """
+
+        # make sure the folder exists
+        nd_fs_utils.makedirs(path=self.config.output_data.filepath)
+
         # Configure combined logger.
         combined_log_filename = self.config.output_data.filepath / "combined.log"
         nd_utils.configure_logger(

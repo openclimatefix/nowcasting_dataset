@@ -16,6 +16,7 @@ from nowcasting_dataset.manager import Manager
 
 def test_configure_loggers():
     """Test to check loggers can be configured"""
+
     # set up
     manager = Manager()
 

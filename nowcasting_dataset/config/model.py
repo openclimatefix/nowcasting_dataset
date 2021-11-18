@@ -329,11 +329,31 @@ class Process(BaseModel):
         split.SplitMethod.DAY_RANDOM_TEST_DATE,
         description=(
             "The method used to split the t0 datetimes into train, validation and test sets."
+            " If the split method produces no t0 datetimes for any split_name, then"
+            " n_<split_name>_batches must also be set to 0."
         ),
     )
-    n_train_batches: int = 250
-    n_validation_batches: int = 10
-    n_test_batches: int = 10
+    n_train_batches: int = Field(
+        250,
+        description=(
+            "Number of train batches.  Must be 0 if split_method produces no t0 datetimes for"
+            " the train split"
+        ),
+    )
+    n_validation_batches: int = Field(
+        0,  # Currently not using any validation batches!
+        description=(
+            "Number of validation batches.  Must be 0 if split_method produces no t0 datetimes for"
+            " the validation split"
+        ),
+    )
+    n_test_batches: int = Field(
+        10,
+        description=(
+            "Number of test batches.  Must be 0 if split_method produces no t0 datetimes for"
+            " the test split."
+        ),
+    )
     upload_every_n_batches: int = Field(
         16,
         description=(

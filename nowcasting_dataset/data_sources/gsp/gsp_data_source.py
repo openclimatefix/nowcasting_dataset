@@ -216,7 +216,7 @@ class GSPDataSource(ImageDataSource):
 
         # get x,y coordinates
         gsp_x_coords = self.metadata.location_x[all_gsp_ids]
-        gsp_y_coords = self.metadata.location_x[all_gsp_ids]
+        gsp_y_coords = self.metadata.location_y[all_gsp_ids]
 
         # convert to data array
         da = xr.DataArray(

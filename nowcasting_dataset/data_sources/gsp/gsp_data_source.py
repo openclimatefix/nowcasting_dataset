@@ -81,6 +81,8 @@ class GSPDataSource(ImageDataSource):
         """
         # load metadata
         self.metadata = get_gsp_metadata_from_eso()
+        self.metadata.set_index("gsp_id", drop=False, inplace=True)
+        self.metadata.index.name = ""
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(

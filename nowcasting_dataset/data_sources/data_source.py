@@ -267,7 +267,12 @@ class DataSource:
         examples = convert_coordinates_to_indexes_for_list_datasets(examples)
 
         # join the examples together, and cast them to the cls, so that validation can occur
-        return cls(join_list_dataset_to_batch_dataset(examples))
+        batch_one_datasource = cls(join_list_dataset_to_batch_dataset(examples))
+
+        # lets validate
+        cls.validate(batch_one_datasource)
+
+        return batch_one_datasource
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

@@ -294,7 +294,7 @@ class PVDataSource(ImageDataSource):
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id)
-        pv = pv.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
+        pv = pv.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
         pv.__setitem__("id", range(self.n_pv_systems_per_example))
 

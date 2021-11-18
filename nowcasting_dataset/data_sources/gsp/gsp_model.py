@@ -14,7 +14,6 @@ class GSP(DataSourceOutput):
     _expected_data_vars = (
         "power_mw",
         "capacity_mwp",
-        "pv_system_row_number",
         "x_coords",
         "y_coords",
     )
@@ -31,6 +30,5 @@ class GSP(DataSourceOutput):
         v.check_data_var_dim(v.time, ("example", "time_index"))
         v.check_data_var_dim(v.x_coords, ("example", "id_index"))
         v.check_data_var_dim(v.y_coords, ("example", "id_index"))
-        v.check_data_var_dim(v.pv_system_row_number, ("example", "id_index"))
 
         return v

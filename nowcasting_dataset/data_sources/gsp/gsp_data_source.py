@@ -216,6 +216,10 @@ class GSPDataSource(ImageDataSource):
         gsp_ids_df = pd.DataFrame(data=all_gsp_ids, columns=["gsp_id"])
         metadata = gsp_ids_df.merge(self.metadata, how="left", on="gsp_id")
 
+        # make sure the gsp_ids from the metadata are the same
+        # (and in the same order) as the gsp_ids
+        assert list(metadata["gsp_id"]) == list(all_gsp_ids)
+
         gsp_x_coords = metadata.location_x
         gsp_y_coords = metadata.location_y
 

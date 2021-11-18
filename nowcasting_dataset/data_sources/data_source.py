@@ -144,6 +144,8 @@ class DataSource:
         dst_path: Path,
         local_temp_path: Path,
         upload_every_n_batches: int,
+        total_number_batches: int = None,
+        **kwargs
     ) -> None:
         """Create multiple batches and save them to disk.
 
@@ -162,11 +164,17 @@ class DataSource:
             and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
           upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
             of batches have been created.  If 0 then will write directly to dst_path.
+          total_number_batches: Optional, if specified it will be used to
+            compute the batch size (`batch_size` will not be used in that
+            case).
         """
         # Sanity checks:
         assert idx_of_first_batch >= 0
-        assert batch_size > 0
-        assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
+
+        if total_number_batches is None:
+            assert batch_size > 0
+            assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
+
         assert upload_every_n_batches >= 0
         assert spatial_and_temporal_locations_of_each_example.columns.to_list() == list(
             SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
@@ -181,9 +189,13 @@ class DataSource:
         path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
 
         # Split locations per example into batches:
-        n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
+        if total_number_batches is not None:
+            batch_size = len(spatial_and_temporal_locations_of_each_example) // total_number_batches
+        else:
+            total_number_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
+
         locations_for_batches = []
-        for batch_idx in range(n_batches):
+        for batch_idx in range(total_number_batches):
             start_example_idx = batch_idx * batch_size
             end_example_idx = (batch_idx + 1) * batch_size
             locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
@@ -197,11 +209,7 @@ class DataSource:
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self.get_batch(
-                t0_datetimes=locations_for_batch.t0_datetime_UTC,
-                x_locations=locations_for_batch.x_center_OSGB,
-                y_locations=locations_for_batch.y_center_OSGB,
-            )
+            batch = self._get_batch(locations_for_batch, **kwargs)
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -218,6 +226,21 @@ class DataSource:
         # Upload last few batches, if necessary:
         if save_batches_locally_and_upload:
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+
+    def _get_batch(self, locations_for_batch, **kwargs):
+        """Get the batch for the given datasource. This, along with
+        `get_batch`, should be implemented in the child classes if needed.
+
+        `_get_batch` is used internally here and has a specific signature,
+        because it is called in `create_batches` which can be common to
+        different classes inheriting from `DataSource`
+        (e.g. `DerivedDataSource`).
+        """
+        return self.get_batch(
+            t0_datetimes=locations_for_batch.t0_datetime_UTC,
+            x_locations=locations_for_batch.x_center_OSGB,
+            y_locations=locations_for_batch.y_center_OSGB,
+        )
 
     # TODO: Issue #319: Standardise parameter names.
     def get_batch(
@@ -475,90 +498,16 @@ class DerivedDataSource(DataSource):
             "needed"
         )
 
-    # TODO Reduce duplication https://github.com/openclimatefix/nowcasting_dataset/issues/367
-    def create_batches(
-        self,
-        batch_path: Path,
-        spatial_and_temporal_locations_of_each_example: pd.DataFrame,
-        total_number_batches: int,
-        idx_of_first_batch: int,
-        dst_path: Path,
-        local_temp_path: Path,
-        upload_every_n_batches: int,
-        **kwargs,
-    ) -> None:
-        """Create multiple batches and save them to disk.
+    def _get_batch(self, locations_for_batch, **kwargs):
+        if not all(key in kwargs for key in ["batch_path", "batch_idx"]):
+            raise ValueError("Missing arguments 'batch_path' and 'batch_idx'")
 
-        Safe to call from worker processes.
-
-        Args:
-          batch_path: Path to where the netcdf batches are stored
-            (these will fed into the `DerivedDataSource`). This is the path to the top level path,
-            such as `foo/v10/train/`
-          spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
-            the spatial and temporal location of an example.  The number of rows must be
-            an exact multiple of `batch_size`.
-            Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
-          total_number_batches: The total number of batches to make
-          idx_of_first_batch: The batch number of the first batch to create.
-          dst_path: The final destination path for the batches.  Must exist.
-          local_temp_path: The local temporary path.  This is only required when dst_path is a
-            cloud storage bucket, so files must first be created on the VM's local disk in temp_path
-            and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
-          upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
-            of batches have been created.  If 0 then will write directly to dst_path.
-        """
-        # Sanity checks:
-        assert idx_of_first_batch >= 0
-        assert upload_every_n_batches >= 0
-        assert total_number_batches >= 0
-
-        self.open()
-
-        # Figure out where to write batches to:
-        save_batches_locally_and_upload = upload_every_n_batches > 0
-        if save_batches_locally_and_upload:
-            nd_fs_utils.delete_all_files_in_temp_path(local_temp_path)
-        path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
-
-        # Split locations per example into batches:
-        batch_size = len(spatial_and_temporal_locations_of_each_example) // total_number_batches
-        locations_for_batches = []
-        for batch_idx in range(total_number_batches):
-            start_example_idx = batch_idx * batch_size
-            end_example_idx = (batch_idx + 1) * batch_size
-            locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
-                start_example_idx:end_example_idx
-            ]
-            locations_for_batches.append(locations_for_batch)
-
-        # Loop round each batch:
-        for n_batches_processed, locations_for_batch in enumerate(locations_for_batches):
-            batch_idx = idx_of_first_batch + n_batches_processed
-            logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
-
-            # Generate batch.
-            batch = self.get_batch(
-                netcdf_path=batch_path,
-                batch_idx=batch_idx,
-                t0_datetimes=locations_for_batch.t0_datetime_UTC,
+        batch = self.get_batch(
+            netcdf_path=kwargs["batch_path"],
+            batch_idx=kwargs["batch_idx"],
+            t0_datetimes=locations_for_batch.t0_datetime_UTC,
             )
-
-            # Save batch to disk.
-            netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
-            batch.to_netcdf(netcdf_filename)
-            n_batches_processed += 1
-            # Upload if necessary.
-            if (
-                save_batches_locally_and_upload
-                and n_batches_processed > 0
-                and n_batches_processed % upload_every_n_batches == 0
-            ):
-                nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
-
-        # Upload last few batches, if necessary:
-        if save_batches_locally_and_upload:
-            nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+        return batch
 
     def get_batch(
         self,

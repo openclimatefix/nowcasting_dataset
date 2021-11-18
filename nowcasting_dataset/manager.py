@@ -1,7 +1,7 @@
 """Manager class."""
 
 import logging
-from concurrent import futures
+import multiprocessing
 from pathlib import Path
 from typing import Optional, Union
 
@@ -428,8 +428,8 @@ class Manager:
         n_data_sources = len(self.data_sources)
         nd_utils.set_fsspec_for_multiprocess()
         for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
-            with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
-                future_create_batches_jobs = []
+            with multiprocessing.Pool(processes=n_data_sources) as pool:
+                async_results_from_create_batches = []
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
@@ -443,6 +443,8 @@ class Manager:
                     dst_path = (
                         self.config.output_data.filepath / split_name.value / data_source_name
                     )
+
+                    # TODO: Guarantee that local temp path is unique and empty.
                     local_temp_path = (
                         self.local_temp_path
                         / split_name.value
@@ -455,9 +457,8 @@ class Manager:
                     if self.save_batches_locally_and_upload:
                         nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
 
-                    # Submit data_source.create_batches task to the worker process.
-                    future = executor.submit(
-                        data_source.create_batches,
+                    # Key word arguments to be passed into data_source.create_batches():
+                    kwargs_for_create_batches = dict(
                         spatial_and_temporal_locations_of_each_example=locations,
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
@@ -465,17 +466,21 @@ class Manager:
                         local_temp_path=local_temp_path,
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
-                    future_create_batches_jobs.append(future)
 
-                # Wait for all futures to finish:
-                for future, data_source_name in zip(
-                    future_create_batches_jobs, self.data_sources.keys()
-                ):
-                    # Call exception() to propagate any exceptions raised by the worker process into
-                    # the main process, and to wait for the worker to finish.
-                    exception = future.exception()
-                    if exception is not None:
-                        logger.exception(
-                            f"Worker process {data_source_name} raised exception!\n{exception}"
-                        )
-                        raise exception
+                    # Submit data_source.create_batches task to the worker process.
+                    async_result = pool.apply_async(
+                        data_source.create_batches,
+                        **kwargs_for_create_batches,
+                        callback=lambda result: logger.info(
+                            f"{data_source_name} finish created batches for {split_name}!"
+                        ),
+                        error_callback=lambda exception: logger.error(
+                            f"Exception raised by {data_source_name} whilst creating batches for"
+                            f" {split_name}: \n{exception}"
+                        ),
+                    )
+                    async_results_from_create_batches.append(async_result)
+
+                # Wait for all async_results to finish:
+                for async_result in async_results_from_create_batches:
+                    async_result.wait()

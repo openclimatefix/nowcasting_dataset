@@ -441,7 +441,7 @@ def load_solar_gsp_data(
     gsp_capacity_df = gsp_capacity_df.dropna(axis="columns", how="all")
     gsp_capacity_df = gsp_capacity_df.clip(lower=0, upper=5e7)
 
-    # remove how rows of nans
+    # remove whole rows of nans
     gsp_power_df = gsp_power_df.dropna(axis="columns", how="all")
     gsp_capacity_df = gsp_capacity_df.loc[:, gsp_power_df.columns]
 

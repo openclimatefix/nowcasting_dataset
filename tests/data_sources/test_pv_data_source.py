@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 import nowcasting_dataset
+from nowcasting_dataset.data_sources.fake import pv_fake
 from nowcasting_dataset.data_sources.pv.pv_data_source import (
     PVDataSource,
     drop_pv_systems_which_produce_overnight,
@@ -14,6 +15,16 @@ from nowcasting_dataset.data_sources.pv.pv_data_source import (
 from nowcasting_dataset.time import time_periods_to_datetime_index
 
 logger = logging.getLogger(__name__)
+
+
+def test_pv_normalized():
+    """Test pv normalization"""
+    pv = pv_fake(batch_size=4, seq_length_5=5, n_pv_systems_per_batch=6)
+
+    power_normalized = pv.power_normalized
+
+    assert (power_normalized.values >= 0).all()
+    assert (power_normalized.values <= 1).all()
 
 
 def test_get_example_and_batch():  # noqa: D103

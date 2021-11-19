@@ -1,6 +1,6 @@
 # nowcasting_dataset
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 Pre-prepare batches of data for use in machine learning training.
 
@@ -141,6 +141,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/flowirtz"><img src="https://avatars.githubusercontent.com/u/6052785?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Flo</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=flowirtz" title="Code">💻</a></td>
     <td align="center"><a href="https://rohancalum.github.io/"><img src="https://avatars.githubusercontent.com/u/42122330?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rohan Nuttall</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=rohancalum" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/lenassero"><img src="https://avatars.githubusercontent.com/u/21358816?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Nasser Benabderrazik</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=lenassero" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/vnshanmukh"><img src="https://avatars.githubusercontent.com/u/67438038?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Shanmukh Chava</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=vnshanmukh" title="Code">💻</a></td>
   </tr>
 </table>
 

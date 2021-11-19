@@ -47,6 +47,8 @@ class SatelliteDataSource(ZarrDataSource):
         """
         self._data = self._open_data()
         self._data = self._data.sel(variable=list(self.channels))
+        if "variable" in self._data.dims:
+            self._data = self._data.rename({"variable": "channels"})
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
@@ -125,7 +127,9 @@ class SatelliteDataSource(ZarrDataSource):
             y_center_osgb=y_meters_center,
         )
 
-        selected_data = selected_data.rename({"variable": "channels"})
+        if "variable" in list(selected_data.dims):
+            selected_data = selected_data.rename({"variable": "channels"})
+
         selected_data = self._post_process_example(selected_data, t0_dt)
 
         if selected_data.shape != self._shape_of_example:
@@ -281,6 +285,8 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     )
 
     data_array = dataset["stacked_eumetsat_data"]
+    if "stacked_eumetsat_data" == data_array.name:
+        data_array.name = "data"
     del dataset
 
     # Flip coordinates to top-left first

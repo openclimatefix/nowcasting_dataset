@@ -21,6 +21,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
 def gsp_fake(
@@ -196,6 +197,55 @@ def topographic_fake(batch_size, image_size_pixels):
     return Topographic(xr_dataset)
 
 
+def add_uk_centroid_osgb(x, y):
+    """
+    Add an OSGB value to make in center of UK
+
+    Args:
+        x: random values, OSGB
+        y: random values, OSGB
+
+    Returns: X,Y random coordinates [OSGB]
+    """
+
+    # get random OSGB center in the UK
+    lat = np.random.uniform(51, 55)
+    lon = np.random.uniform(-2.5, 1)
+    x_center, y_center = lat_lon_to_osgb(lat=lat, lon=lon)
+
+    # make average 0
+    x = x - x.mean()
+    y = y - y.mean()
+
+    # put in the uk
+    x = x + x_center
+    y = y + y_center
+
+    return x, y
+
+
+def create_random_point_coordinates_osgb(size: int):
+    """Make random coords [OSGB] for pv site, of gsp"""
+    # this is about 100KM
+    HUNDRED_KILOMETERS = 10 ** 5
+    x = np.random.randint(0, HUNDRED_KILOMETERS, size)
+    y = np.random.randint(0, HUNDRED_KILOMETERS, size)
+
+    return add_uk_centroid_osgb(x, y)
+
+
+def make_random_image_coords_osgb(size: int):
+    """Make random coords for image. These are ranges for the pixels"""
+
+    ONE_KILOMETER = 10 ** 3
+
+    # 4 kilometer spacing seemed about right for real satellite images
+    x = 4 * ONE_KILOMETER * np.array((range(0, size)))
+    y = 4 * ONE_KILOMETER * np.array((range(0, size)))
+
+    return add_uk_centroid_osgb(x, y)
+
+
 def create_image_array(
     dims=("time", "x", "y", "channels"),
     seq_length_5=19,
@@ -203,25 +253,28 @@ def create_image_array(
     channels=SAT_VARIABLE_NAMES,
 ):
     """Create Satellite or NWP fake image data"""
+
+    x, y = make_random_image_coords_osgb(size=image_size_pixels)
+
     ALL_COORDS = {
         "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
-        "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
-        "y": np.random.randint(low=0, high=1000, size=image_size_pixels),
+        "x": x,
+        "y": y,
         "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     image_data_array = xr.DataArray(
-        abs(
-            np.random.randn(
-                seq_length_5,
-                image_size_pixels,
-                image_size_pixels,
-                len(channels),
+        abs(  # to make sure average is about 100
+            np.random.uniform(
+                0,
+                200,
+                size=(seq_length_5, image_size_pixels, image_size_pixels, len(channels)),
             )
         ),
         coords=coords,
         name="data",
     )  # Fake data for testing!
+
     return image_data_array
 
 
@@ -252,11 +305,24 @@ def create_gsp_pv_dataset(
         "id": np.random.choice(range(1000), number_of_systems, replace=False),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+
+    # make pv yield
+    data = np.random.randn(
+        seq_length,
+        number_of_systems,
+    )
+    data = data.clip(min=0)
+
+    # smooth the data, the convolution method smooeths that data across systems first,
+    # and then a bit across time (depending what you set N)
+    N = int(seq_length / 2)
+    data = np.convolve(data.ravel(), np.ones(N) / N, mode="same").reshape(
+        (seq_length, number_of_systems)
+    )
+
+    # make into a Data Array
     data_array = xr.DataArray(
-        np.random.randn(
-            seq_length,
-            number_of_systems,
-        ),
+        data,
         coords=coords,
     )  # Fake data for testing!
 
@@ -267,19 +333,22 @@ def create_gsp_pv_dataset(
 
     data = data_array.to_dataset(name="power_mw")
 
+    # make random coords
+    x, y = create_random_point_coordinates_osgb(size=number_of_systems)
+
     x_coords = xr.DataArray(
-        data=np.sort(
-            np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
-        ),
+        data=x,
         dims=["id"],
     )
 
     y_coords = xr.DataArray(
-        data=np.sort(
-            np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
-        ),
+        data=y,
         dims=["id"],
     )
+
+    # make first coords centroid
+    x_coords.data[0] = x_coords.data.mean()
+    y_coords.data[0] = y_coords.data.mean()
 
     data["capacity_mwp"] = capacity
     data["x_coords"] = x_coords

@@ -198,31 +198,48 @@ def topographic_fake(batch_size, image_size_pixels):
 
 
 def add_uk_centroid_osgb(x, y):
-    """Add a OSGB value to make coords in center of UK"""
+    """
+    Add an OSGB value to make coords in center of UK
+
+    Args:
+        x: random values, OSGB
+        y: random values, OSGB
+
+    Returns: X,Y random coordinates [OSGB]
+    """
     lat = np.random.uniform(51, 55)
     lon = np.random.uniform(-2.5, 1)
 
     x_center, y_center = lat_lon_to_osgb(lat=lat, lon=lon)
 
+    # make average 0
+    x = x - x.mean()
+    y = y - y.mean()
+
+    # put in the uk
     x = x + x_center
     y = y + y_center
 
     return x, y
 
 
-def make_random_point_coords_osgb(size: int):
+def create_random_point_coordinates_osgb(size: int):
     """Make random coords [OSGB] for pv site, of gsp"""
     # this is about 100KM
-    x = np.random.randint(0, 10 ** 5, size)
-    y = np.random.randint(0, 10 ** 5, size)
+    HUNDRED_KILOMETERS = 10 ** 5
+    x = np.random.randint(0, HUNDRED_KILOMETERS, size)
+    y = np.random.randint(0, HUNDRED_KILOMETERS, size)
 
     return add_uk_centroid_osgb(x, y)
 
 
 def make_random_image_coords_osgb(size: int):
     """Make random coords for image. These are ranges for the pixels"""
-    x = 4 * 10 ** 3 * np.array((range(0, size)))
-    y = 4 * 10 ** 3 * np.array((range(0, size)))
+
+    ONE_KILOMETER = 10 ** 3
+
+    x = 4 * ONE_KILOMETER * np.array((range(0, size)))
+    y = 4 * ONE_KILOMETER * np.array((range(0, size)))
 
     return add_uk_centroid_osgb(x, y)
 
@@ -315,7 +332,7 @@ def create_gsp_pv_dataset(
     data = data_array.to_dataset(name="power_mw")
 
     # make random coords
-    x, y = make_random_point_coords_osgb(size=number_of_systems)
+    x, y = create_random_point_coordinates_osgb(size=number_of_systems)
 
     x_coords = xr.DataArray(
         data=x,

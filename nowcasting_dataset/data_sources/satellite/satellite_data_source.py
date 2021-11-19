@@ -127,7 +127,7 @@ class SatelliteDataSource(ZarrDataSource):
             y_center_osgb=y_meters_center,
         )
 
-        if "variable" in list(selected_data.data_vars):
+        if "variable" in list(selected_data.dims):
             selected_data = selected_data.rename({"variable": "channels"})
 
         selected_data = self._post_process_example(selected_data, t0_dt)

@@ -238,6 +238,7 @@ def make_random_image_coords_osgb(size: int):
 
     ONE_KILOMETER = 10 ** 3
 
+    # 4 kilometer spacing seemed about right for real satellite images
     x = 4 * ONE_KILOMETER * np.array((range(0, size)))
     y = 4 * ONE_KILOMETER * np.array((range(0, size)))
 

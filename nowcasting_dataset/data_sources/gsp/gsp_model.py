@@ -32,3 +32,8 @@ class GSP(DataSourceOutput):
         v.check_data_var_dim(v.y_coords, ("example", "id_index"))
 
         return v
+
+    @property
+    def power_normalized(self):
+        """Normalized power"""
+        return self.power_mw / self.capacity_mwp

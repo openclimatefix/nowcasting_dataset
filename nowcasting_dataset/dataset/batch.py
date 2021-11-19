@@ -11,7 +11,7 @@ import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.data_sources.data_source import DataSourceOutput
+from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.data_sources.fake import (
     gsp_fake,
     hrv_satellite_fake,
@@ -40,7 +40,6 @@ class Batch(BaseModel):
 
     Contains the following data sources
     - gsp, satellite, topogrpahic, sun, pv, nwp and datetime.
-    Also contains metadata of the class.
 
     All data sources are xr.Datasets
 
@@ -72,7 +71,6 @@ class Batch(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.metadata,
         ]
 
     @staticmethod
@@ -171,7 +169,9 @@ class Batch(BaseModel):
         for data_source_name, future_examples in future_examples_per_source:
             xr_dataset = future_examples.result()
 
-            batch_dict[data_source_name] = DataSourceOutput(xr_dataset)
+            data_source_class = MAP_DATA_SOURCE_NAME_TO_CLASS[data_source_name]
+
+            batch_dict[data_source_name] = data_source_class(xr_dataset)
 
         batch_dict["batch_size"] = len(batch_dict["gsp"].example)
 
@@ -185,7 +185,6 @@ class Example(BaseModel):
     Note that this is currently not really used
     """
 
-    # metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]

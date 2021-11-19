@@ -199,7 +199,7 @@ def topographic_fake(batch_size, image_size_pixels):
 
 def add_uk_centroid_osgb(x, y):
     """
-    Add an OSGB value to make coords in center of UK
+    Add an OSGB value to make in center of UK
 
     Args:
         x: random values, OSGB
@@ -207,9 +207,10 @@ def add_uk_centroid_osgb(x, y):
 
     Returns: X,Y random coordinates [OSGB]
     """
+
+    # get random OSGB center in the UK
     lat = np.random.uniform(51, 55)
     lon = np.random.uniform(-2.5, 1)
-
     x_center, y_center = lat_lon_to_osgb(lat=lat, lon=lon)
 
     # make average 0

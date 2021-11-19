@@ -170,8 +170,10 @@ class Batch(BaseModel):
             xr_dataset = future_examples.result()
 
             data_source_class = MAP_DATA_SOURCE_NAME_TO_CLASS[data_source_name]
+            print(data_source_class)
+            data_source_model = data_source_class.get_data_model_for_batch()
 
-            batch_dict[data_source_name] = data_source_class(xr_dataset)
+            batch_dict[data_source_name] = data_source_model(xr_dataset)
 
         batch_dict["batch_size"] = len(batch_dict["gsp"].example)
 

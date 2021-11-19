@@ -51,7 +51,8 @@ class SatelliteDataSource(ZarrDataSource):
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return Satellite
 

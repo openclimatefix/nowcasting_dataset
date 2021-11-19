@@ -71,7 +71,8 @@ class GSPDataSource(ImageDataSource):
         """Override the default sample minutes"""
         return 30
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return GSP
 

@@ -63,7 +63,8 @@ class PVDataSource(ImageDataSource):
         self._load_pv_power()
         self.pv_metadata, self.pv_power = align_pv_system_ids(self.pv_metadata, self.pv_power)
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return PV
 

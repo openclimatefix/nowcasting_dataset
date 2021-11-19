@@ -169,8 +169,8 @@ class Batch(BaseModel):
         for data_source_name, future_examples in future_examples_per_source:
             xr_dataset = future_examples.result()
 
+            # get data source model object
             data_source_class = MAP_DATA_SOURCE_NAME_TO_CLASS[data_source_name]
-            print(data_source_class)
             data_source_model = data_source_class.get_data_model_for_batch()
 
             batch_dict[data_source_name] = data_source_model(xr_dataset)

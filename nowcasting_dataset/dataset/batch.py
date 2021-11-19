@@ -177,7 +177,7 @@ class Batch(BaseModel):
 
             batch_dict[data_source_name] = DataSourceOutput(xr_dataset)
 
-        batch_dict["batch_size"] = len(batch_dict["metadata"].example)
+        batch_dict["batch_size"] = len(batch_dict["gsp"].example)
 
         return Batch(**batch_dict)
 
@@ -189,7 +189,7 @@ class Example(BaseModel):
     Note that this is currently not really used
     """
 
-    metadata: Optional[Metadata]
+    # metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]

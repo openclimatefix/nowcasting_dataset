@@ -22,4 +22,4 @@ black
 pre-commit
 fsspec
 pathy
-python-git
+gitpython

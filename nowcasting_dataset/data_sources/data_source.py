@@ -280,7 +280,8 @@ class DataSource:
         # of a list of datetimes (e.g. for DatetimeDataSource).
         raise NotImplementedError(f"Datetime not implemented for class {self.__class__}")
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         raise NotImplementedError()
 

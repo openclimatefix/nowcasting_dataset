@@ -29,7 +29,8 @@ class SunDataSource(DataSource):
         super().__post_init__()
         self._load()
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return Sun
 

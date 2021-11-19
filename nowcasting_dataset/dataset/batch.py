@@ -11,11 +11,10 @@ import xarray as xr
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.data_sources.data_source import DataSourceOutput
+from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.data_sources.fake import (
     gsp_fake,
     hrv_satellite_fake,
-    metadata_fake,
     nwp_fake,
     pv_fake,
     satellite_fake,
@@ -23,7 +22,6 @@ from nowcasting_dataset.data_sources.fake import (
     topographic_fake,
 )
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
@@ -33,7 +31,7 @@ from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
 
-data_sources = [Metadata, Satellite, HRVSatellite, Topographic, PV, Sun, GSP, NWP]
+data_sources = [Satellite, HRVSatellite, Topographic, PV, Sun, GSP, NWP]
 
 
 class Batch(BaseModel):
@@ -42,7 +40,6 @@ class Batch(BaseModel):
 
     Contains the following data sources
     - gsp, satellite, topogrpahic, sun, pv, nwp and datetime.
-    Also contains metadata of the class.
 
     All data sources are xr.Datasets
 
@@ -55,7 +52,6 @@ class Batch(BaseModel):
         "then this item stores one data item",
     )
 
-    metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
@@ -75,7 +71,6 @@ class Batch(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.metadata,
         ]
 
     @staticmethod
@@ -107,7 +102,6 @@ class Batch(BaseModel):
                 image_size_pixels=nwp_image_size_pixels,
                 number_nwp_channels=len(configuration.input_data.nwp.nwp_channels),
             ),
-            metadata=metadata_fake(batch_size=batch_size),
             pv=pv_fake(
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.pv.seq_length_5_minutes,
@@ -175,9 +169,13 @@ class Batch(BaseModel):
         for data_source_name, future_examples in future_examples_per_source:
             xr_dataset = future_examples.result()
 
-            batch_dict[data_source_name] = DataSourceOutput(xr_dataset)
+            # get data source model object
+            data_source_class = MAP_DATA_SOURCE_NAME_TO_CLASS[data_source_name]
+            data_source_model = data_source_class.get_data_model_for_batch()
 
-        batch_dict["batch_size"] = len(batch_dict["metadata"].example)
+            batch_dict[data_source_name] = data_source_model(xr_dataset)
+
+        batch_dict["batch_size"] = len(batch_dict["gsp"].example)
 
         return Batch(**batch_dict)
 
@@ -189,7 +187,6 @@ class Example(BaseModel):
     Note that this is currently not really used
     """
 
-    metadata: Optional[Metadata]
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
@@ -209,5 +206,4 @@ class Example(BaseModel):
             self.sun,
             self.gsp,
             self.nwp,
-            self.metadata,
         ]

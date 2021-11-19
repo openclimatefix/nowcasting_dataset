@@ -260,18 +260,7 @@ def create_gsp_pv_dataset(
         coords=coords,
     )  # Fake data for testing!
 
-    if time_dependent_capacity:
-        capacity = xr.DataArray(
-            np.repeat(np.random.randn(seq_length), number_of_systems)
-            .reshape(number_of_systems, seq_length)
-            .T,
-            coords=coords,
-        )
-    else:
-        capacity = xr.DataArray(
-            np.random.randn(number_of_systems),
-            coords=[coords[1]],
-        )
+    capacity = data_array.max(dim="time")
 
     data = data_array.to_dataset(name="power_mw")
 

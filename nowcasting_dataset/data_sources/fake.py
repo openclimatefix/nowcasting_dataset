@@ -261,6 +261,9 @@ def create_gsp_pv_dataset(
     )  # Fake data for testing!
 
     capacity = data_array.max(dim="time")
+    if time_dependent_capacity:
+        capacity = capacity.expand_dims(time=seq_length)
+        capacity.__setitem__("time", data_array.time.values)
 
     data = data_array.to_dataset(name="power_mw")
 

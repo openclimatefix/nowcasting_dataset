@@ -1,6 +1,7 @@
 """  General Data Source Class """
 import itertools
 import logging
+
 from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
@@ -152,33 +153,40 @@ class DataSource:
         Safe to call from worker processes.
 
         Args:
-          spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
-            the spatial and temporal location of an example.  The number of rows must be
-            an exact multiple of `batch_size`.
-            Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
-          idx_of_first_batch: The batch number of the first batch to create.
-          batch_size: The number of examples per batch.
-          dst_path: The final destination path for the batches.  Must exist.
-          local_temp_path: The local temporary path.  This is only required when dst_path is a
-            cloud storage bucket, so files must first be created on the VM's local disk in temp_path
-            and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
-          upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
-            of batches have been created.  If 0 then will write directly to dst_path.
-          total_number_batches: Optional, if specified it will be used to
-            compute the batch size (`batch_size` will not be used in that
-            case).
+            spatial_and_temporal_locations_of_each_example (pd.DataFrame): A DataFrame where each
+              row specifies the spatial and temporal location of an example. The number of rows
+              must be an exact multiple of `batch_size`.
+              Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
+            idx_of_first_batch (int): The batch number of the first batch to create.
+            batch_size (int): The number of examples per batch.
+            dst_path (Path): The final destination path for the batches.  Must exist.
+            local_temp_path (Path): The local temporary path.  This is only required when dst_path
+              is a cloud storage bucket, so files must first be created on the VM's local disk in
+              temp_path and then uploaded to dst_path every `upload_every_n_batches`. Must exist.
+              Will be emptied.
+            upload_every_n_batches (int): Upload the contents of temp_path to dst_path after this
+              number of batches have been created.  If 0 then will write directly to `dst_path`.
+            total_number_batches (int, optional): If specified it will be used to compute the batch
+              size (`batch_size` will not be used in that case).
+            **kwargs: Arguments specific to the `_get_batch` method.
         """
         # Sanity checks:
-        assert idx_of_first_batch >= 0
+        assert idx_of_first_batch >= 0, "The batch number of the first batch to create should be" \
+            " greater than 0"
 
         if total_number_batches is None:
-            assert batch_size > 0
+            assert batch_size > 0, "The batch size should be strictly greater than 0. Otherwise," \
+                " you should specify 'total_number_batches' to compute the batch size from" \
+                " 'spatial_and_temporal_locations_of_each_example'"
             assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
 
-        assert upload_every_n_batches >= 0
-        assert spatial_and_temporal_locations_of_each_example.columns.to_list() == list(
+        assert upload_every_n_batches >= 0, "'upload_every_n_batches' should be greater than 0"
+
+        spatial_and_temporal_locations_of_each_example_columns = spatial_and_temporal_locations_of_each_example.columns.to_list()
+        assert spatial_and_temporal_locations_of_each_example_columns == list(
             SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-        )
+        ), f"The provided data columns ({spatial_and_temporal_locations_of_each_example_columns})" \
+            f"do not match {SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES}"
 
         self.open()
 
@@ -228,12 +236,11 @@ class DataSource:
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
     def _get_batch(self, locations_for_batch, **kwargs):
-        """Get the batch for the given datasource. This, along with
-        `get_batch`, should be implemented in the child classes if needed.
+        """Get the batch for the given datasource. This, along with `get_batch`, should be
+        implemented in the child classes if needed.
 
-        `_get_batch` is used internally here and has a specific signature,
-        because it is called in `create_batches` which can be common to
-        different classes inheriting from `DataSource`
+        `_get_batch` is used internally here and has a specific signature, because it is called in
+        `create_batches` which can be common to different classes inheriting from `DataSource`
         (e.g. `DerivedDataSource`).
         """
         return self.get_batch(

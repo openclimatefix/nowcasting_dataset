@@ -98,7 +98,7 @@ class Batch(BaseModel):
             ),
             nwp=nwp_fake(
                 batch_size=batch_size,
-                seq_length_5=configuration.input_data.nwp.seq_length_5_minutes,
+                seq_length_60=configuration.input_data.nwp.seq_length_60_minutes,
                 image_size_pixels=nwp_image_size_pixels,
                 number_nwp_channels=len(configuration.input_data.nwp.nwp_channels),
             ),

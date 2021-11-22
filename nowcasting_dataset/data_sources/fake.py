@@ -64,7 +64,7 @@ def metadata_fake(batch_size):
 
 def nwp_fake(
     batch_size=32,
-    seq_length_5=19,
+    seq_length_60=2,
     image_size_pixels=64,
     number_nwp_channels=7,
 ) -> NWP:
@@ -72,9 +72,10 @@ def nwp_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
-            seq_length_5=seq_length_5,
+            seq_length=seq_length_60,
             image_size_pixels=image_size_pixels,
             channels=NWP_VARIABLE_NAMES[0:number_nwp_channels],
+            freq="60T",
         )
         for _ in range(batch_size)
     ]
@@ -119,7 +120,7 @@ def satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
-            seq_length_5=seq_length_5,
+            seq_length=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
             channels=SAT_VARIABLE_NAMES[1:number_satellite_channels],
         )
@@ -142,7 +143,7 @@ def hrv_satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
-            seq_length_5=seq_length_5,
+            seq_length=seq_length_5,
             image_size_pixels=satellite_image_size_pixels * 3,  # HRV images are 3x other images
             channels=SAT_VARIABLE_NAMES[0:1],
         )
@@ -248,16 +249,17 @@ def make_random_image_coords_osgb(size: int):
 
 def create_image_array(
     dims=("time", "x", "y", "channels"),
-    seq_length_5=19,
+    seq_length=19,
     image_size_pixels=64,
     channels=SAT_VARIABLE_NAMES,
+    freq="5T",
 ):
     """Create Satellite or NWP fake image data"""
 
     x, y = make_random_image_coords_osgb(size=image_size_pixels)
 
     ALL_COORDS = {
-        "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
+        "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
         "x": x,
         "y": y,
         "channels": np.array(channels),
@@ -268,7 +270,7 @@ def create_image_array(
             np.random.uniform(
                 0,
                 200,
-                size=(seq_length_5, image_size_pixels, image_size_pixels, len(channels)),
+                size=(seq_length, image_size_pixels, image_size_pixels, len(channels)),
             )
         ),
         coords=coords,

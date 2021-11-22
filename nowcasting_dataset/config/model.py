@@ -79,6 +79,11 @@ class DataSourceMixin(BaseModel):
         """How many steps are there in 5 minute datasets"""
         return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
 
+    @property
+    def seq_length_60_minutes(self):
+        """How many steps are there in 60 minute datasets"""
+        return int((self.history_minutes + self.forecast_minutes) / 60 + 1)
+
 
 class PV(DataSourceMixin):
     """PV configuration model"""

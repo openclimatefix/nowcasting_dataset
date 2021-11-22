@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 FIVE_MINUTES = pd.Timedelta("5 minutes")
 THIRTY_MINUTES = pd.Timedelta("30 minutes")
+ONE_HOUR = pd.Timedelta("1 hour")
 
 
 def select_daylight_datetimes(
@@ -210,7 +211,9 @@ def get_contiguous_time_periods(
     return pd.DataFrame(periods)
 
 
-def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_minutes):
+def make_random_time_vectors(
+    batch_size, seq_length_5_minutes, seq_length_30_minutes, seq_length_60_minutes
+):
     """
     Make random time vectors
 
@@ -221,17 +224,19 @@ def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_min
         batch_size: the batch size
         seq_length_5_minutes: the length of the sequence in 5 mins deltas
         seq_length_30_minutes: the length of the sequence in 30 mins deltas
+        seq_length_60_minutes: the length of the sequence in 60 mins deltas
 
     Returns:
         - t0_dt: [batch_size] random init datetimes
         - time_5: [batch_size, seq_length_5_minutes] random sequence of datetimes, with
-          5 mins deltas.
-          t0_dt is in the middle of the sequence
+            5 mins deltas. t0_dt is in the middle of the sequence
         - time_30: [batch_size, seq_length_30_minutes] random sequence of datetimes, with
-          30 mins deltas.
-        t0_dt is in the middle of the sequence
+            30 mins deltas. t0_dt is in the middle of the sequence
+        - time_60 : [batch_size, seq_length_60_minutes] random sequence of datetimes, with
+            60 mins deltas. t0_dt is in the middle of the sequence
     """
     delta_5 = pd.Timedelta(minutes=5)
+    delta_30 = pd.Timedelta(minutes=30)
     delta_30 = pd.Timedelta(minutes=30)
 
     data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
@@ -244,9 +249,14 @@ def make_random_time_vectors(batch_size, seq_length_5_minutes, seq_length_30_min
         pd.DataFrame([t0_dt + i * delta_30 for i in range(seq_length_30_minutes)])
         - int(seq_length_30_minutes / 2) * delta_5
     )
+    time_60 = (
+        pd.DataFrame([t0_dt + i * ONE_HOUR for i in range(seq_length_60_minutes)])
+        - int(seq_length_60_minutes / 2) * delta_5
+    )
 
     t0_dt = utils.to_numpy(t0_dt).astype(np.int32)
     time_5 = utils.to_numpy(time_5.T).astype(np.int32)
     time_30 = utils.to_numpy(time_30.T).astype(np.int32)
+    time_60 = utils.to_numpy(time_60.T).astype(np.int32)
 
-    return t0_dt, time_5, time_30
+    return t0_dt, time_5, time_30, time_60

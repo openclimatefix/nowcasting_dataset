@@ -109,7 +109,7 @@ class Batch(BaseModel):
             ),
             gsp=gsp_fake(
                 batch_size=batch_size,
-                seq_length_30=configuration.input_data.gsp.seq_length_30_minutes,
+                seq_length_30=configuration.input_data.gsp.seq_length_60_minutes,
                 n_gsp_per_batch=configuration.input_data.gsp.n_gsp_per_example,
             ),
             sun=sun_fake(

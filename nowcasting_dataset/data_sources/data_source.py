@@ -1,7 +1,6 @@
 """  General Data Source Class """
 import itertools
 import logging
-
 from concurrent import futures
 from dataclasses import InitVar, dataclass
 from numbers import Number
@@ -171,22 +170,29 @@ class DataSource:
             **kwargs: Arguments specific to the `_get_batch` method.
         """
         # Sanity checks:
-        assert idx_of_first_batch >= 0, "The batch number of the first batch to create should be" \
-            " greater than 0"
+        assert idx_of_first_batch >= 0, (
+            "The batch number of the first batch to create should be" " greater than 0"
+        )
 
         if total_number_batches is None:
-            assert batch_size > 0, "The batch size should be strictly greater than 0. Otherwise," \
-                " you should specify 'total_number_batches' to compute the batch size from" \
+            assert batch_size > 0, (
+                "The batch size should be strictly greater than 0. Otherwise,"
+                " you should specify 'total_number_batches' to compute the batch size from"
                 " 'spatial_and_temporal_locations_of_each_example'"
+            )
             assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
 
         assert upload_every_n_batches >= 0, "'upload_every_n_batches' should be greater than 0"
 
-        spatial_and_temporal_locations_of_each_example_columns = spatial_and_temporal_locations_of_each_example.columns.to_list()
+        spatial_and_temporal_locations_of_each_example_columns = (
+            spatial_and_temporal_locations_of_each_example.columns.to_list()
+        )
         assert spatial_and_temporal_locations_of_each_example_columns == list(
             SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-        ), f"The provided data columns ({spatial_and_temporal_locations_of_each_example_columns})" \
+        ), (
+            f"The provided data columns ({spatial_and_temporal_locations_of_each_example_columns})"
             f"do not match {SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES}"
+        )
 
         self.open()
 

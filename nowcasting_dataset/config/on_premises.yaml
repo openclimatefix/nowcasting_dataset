@@ -63,8 +63,11 @@ input_data:
     topographic_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Topographic/europe_dem_1km_osgb.tif
 
 output_data:
-  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v13_testing
+  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v14
 process:
   batch_size: 32
   seed: 1234
   upload_every_n_batches: 0 # Write directly to output_data.filepath, not to a temp directory.
+  n_train_batches: 4000
+  n_validation_batches: 0
+  n_test_batches: 400

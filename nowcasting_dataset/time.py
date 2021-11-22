@@ -213,7 +213,7 @@ def get_contiguous_time_periods(
 
 def make_random_time_vectors(
     batch_size, seq_length_5_minutes, seq_length_30_minutes, seq_length_60_minutes
-):
+) -> dict:
     """
     Make random time vectors
 
@@ -254,9 +254,9 @@ def make_random_time_vectors(
         - int(seq_length_60_minutes / 2) * delta_5
     )
 
-    t0_dt = utils.to_numpy(t0_dt).astype(np.int32)
-    time_5 = utils.to_numpy(time_5.T).astype(np.int32)
-    time_30 = utils.to_numpy(time_30.T).astype(np.int32)
-    time_60 = utils.to_numpy(time_60.T).astype(np.int32)
-
-    return t0_dt, time_5, time_30, time_60
+    return {
+        "t0_dt": utils.to_numpy(t0_dt).astype(np.int32),
+        "time_5": utils.to_numpy(time_5.T).astype(np.int32),
+        "time_30": utils.to_numpy(time_30.T).astype(np.int32),
+        "time_60": utils.to_numpy(time_60.T).astype(np.int32),
+    }

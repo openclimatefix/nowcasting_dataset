@@ -2,7 +2,7 @@
 import logging
 import random
 import warnings
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -212,7 +212,10 @@ def get_contiguous_time_periods(
 
 
 def make_random_time_vectors(
-    batch_size, seq_length_5_minutes, seq_length_30_minutes, seq_length_60_minutes
+    batch_size,
+    seq_length_5_minutes,
+    seq_length_30_minutes,
+    seq_length_60_minutes: Optional[int] = None,
 ) -> dict:
     """
     Make random time vectors
@@ -237,7 +240,9 @@ def make_random_time_vectors(
     """
     delta_5 = pd.Timedelta(minutes=5)
     delta_30 = pd.Timedelta(minutes=30)
-    delta_30 = pd.Timedelta(minutes=30)
+
+    if seq_length_60_minutes is None:
+        seq_length_60_minutes = int(seq_length_5_minutes / 12)
 
     data_range = pd.date_range("2019-01-01", "2021-01-01", freq="5T")
     t0_dt = pd.Series(random.choices(data_range, k=batch_size))

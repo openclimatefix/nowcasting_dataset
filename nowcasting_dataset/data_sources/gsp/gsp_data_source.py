@@ -419,8 +419,8 @@ def drop_gsp_by_threshold(
     dropped_gsp_names = meta_data.loc[keep_index[~keep_index].index].gsp_name
 
     logger.debug(
-        f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW:"
-        f" Dropped GSP IDs and GSP names: {dropped_gsp_names}"
+        f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW."
+        f" Dropped GSP IDs and GSP names:\n{dropped_gsp_names}"
     )
     logger.debug(f"Keeping {sum(keep_index)} GSPs as maximum is greater {threshold_mw} MW")
 
@@ -454,8 +454,9 @@ def drop_gsp_north_of_boundary(
 
     logger.debug(
         f"Dropping {sum(~keep_index)} GSPs because they are north of"
-        f" y={northern_boundary_osgb:,d}m:"
-        f" {meta_data.loc[~keep_index].gsp_name} with capacity {pv_capacity_of_dropped_gsps}"
+        f" y={northern_boundary_osgb:,d}m:\n"
+        f" {meta_data.loc[~keep_index].gsp_name}\n with capacity in MW of:\n"
+        f"{pv_capacity_of_dropped_gsps}"
     )
     logger.debug(
         f"Keeping {sum(keep_index)} GSPs because they are south of y={northern_boundary_osgb:,d}m."

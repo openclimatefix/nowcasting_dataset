@@ -54,7 +54,12 @@ class GSPDataSource(ImageDataSource):
     # scale from zero to one
     do_scale_0_to_1: bool = False
     # Drop any GSPs norther of this boundary.
-    northern_boundary_osgb: Optional[float] = None  # TODO: Use correct number!
+    # Many satellite images have a "rectangle of zeros" extending north from 1,037,047 meters
+    # (OSGB "northing" coordinate).  The largest satellite regions of interest are
+    # 144 km.  So set the boundary to be 1,037 km - (144 km / 2) = 1,036,975 meters.
+    # This results in 2 GSPs being dropped.
+    # See https://github.com/openclimatefix/Satip/issues/30
+    northern_boundary_osgb: Optional[float] = 1_036_975
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -85,7 +90,6 @@ class GSPDataSource(ImageDataSource):
         # load metadata
         self.metadata = get_gsp_metadata_from_eso()
         self.metadata.set_index("gsp_id", drop=False, inplace=True)
-        self.metadata.index.name = ""
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
@@ -408,14 +412,20 @@ def drop_gsp_by_threshold(
 
     keep_index = maximum_gsp > threshold_mw
 
-    logger.debug(f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW")
+    dropped_gsp_names = meta_data.loc[keep_index[~keep_index].index].gsp_name
+
+    logger.debug(
+        f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW:"
+        f" Dropped GSP IDs and GSP names: {dropped_gsp_names}"
+    )
     logger.debug(f"Keeping {sum(keep_index)} GSPs as maximum is greater {threshold_mw} MW")
 
-    gsp_power = gsp_power[keep_index.index]
-    gsp_ids = gsp_power.columns
-    meta_data = meta_data[meta_data["gsp_id"].isin(gsp_ids)]
+    filtered_gsp_power = gsp_power.loc[:, keep_index]
+    filtered_gsp_ids = filtered_gsp_power.columns
+    filtered_meta_data = meta_data[meta_data["gsp_id"].isin(filtered_gsp_ids)]
 
-    return gsp_power, meta_data
+    assert set(filtered_gsp_power.columns) == set(filtered_meta_data.gsp_id)
+    return filtered_gsp_power, filtered_meta_data
 
 
 def drop_gsp_north_of_boundary(
@@ -436,14 +446,18 @@ def drop_gsp_north_of_boundary(
     filtered_meta_data = meta_data.loc[keep_index]
     filtered_gsp_ids = filtered_meta_data.gsp_id
     filtered_gsp_power = gsp_power[filtered_gsp_ids]
+    pv_capacity_of_dropped_gsps = gsp_power.loc[:, ~keep_index].max()
 
     logger.debug(
-        f"Dropping {sum(~keep_index)} GSPs because they are north of {northern_boundary_osgb}."
+        f"Dropping {sum(~keep_index)} GSPs because they are north of"
+        f" y={northern_boundary_osgb:,d}m:"
+        f" {meta_data.loc[~keep_index].gsp_name} with capacity {pv_capacity_of_dropped_gsps}"
     )
     logger.debug(
-        f"Keeping {sum(keep_index)} GSPs because they are south of {northern_boundary_osgb}."
+        f"Keeping {sum(keep_index)} GSPs because they are south of y={northern_boundary_osgb:,d}m."
     )
 
+    assert set(filtered_gsp_power.columns) == set(filtered_meta_data.gsp_id)
     return filtered_gsp_power, filtered_meta_data
 
 

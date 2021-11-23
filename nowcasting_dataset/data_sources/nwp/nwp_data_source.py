@@ -34,7 +34,8 @@ class NWPDataSource(ZarrDataSource):
                 mcc   : Medium-level cloud cover in %.
                 hcc   : High-level cloud cover in %.
                 sde   : Snow depth in meters.
-                hcct  : Height of convective cloud top, meters above surface. HAS NaNs!!!
+                hcct  : Height of convective cloud top, meters above surface.
+                        WARNING: hcct has NaNs where there are no clouds forecast to exist!
                 dswrf : Downward short-wave radiation flux in W/m^2 (irradiance) at surface.
                 dlwrf : Downward long-wave radiation flux in W/m^2 (irradiance) at surface.
                 h     : Geometrical height, meters.

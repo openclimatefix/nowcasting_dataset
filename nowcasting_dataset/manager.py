@@ -129,15 +129,22 @@ class Manager:
                 self.config.input_data.data_source_which_defines_geospatial_locations
             ]
         except KeyError:
-            msg = (
-                "input_data.data_source_which_defines_geospatial_locations="
-                f"{self.config.input_data.data_source_which_defines_geospatial_locations}"
-                " is not a member of the DataSources, so cannot set"
-                " self.data_source_which_defines_geospatial_locations!"
-                f" The available DataSources are: {list(self.data_sources.keys())}"
-            )
-            logger.error(msg)
-            raise RuntimeError(msg)
+            if self._locations_csv_file_exists():
+                logger.info(
+                    f"{self.config.input_data.data_source_which_defines_geospatial_locations=}"
+                    " is not a member of the DataSources, but that does not matter because the CSV"
+                    " files which specify the locations of the examples already exists!"
+                )
+            else:
+                msg = (
+                    "input_data.data_source_which_defines_geospatial_locations="
+                    f"{self.config.input_data.data_source_which_defines_geospatial_locations}"
+                    " is not a member of the DataSources, so cannot set"
+                    " self.data_source_which_defines_geospatial_locations!"
+                    f" The available DataSources are: {list(self.data_sources.keys())}"
+                )
+                logger.error(msg)
+                raise RuntimeError(msg)
         else:
             logger.info(
                 f"DataSource `{data_source_name}` set as"

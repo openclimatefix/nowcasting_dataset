@@ -53,6 +53,8 @@ class GSPDataSource(ImageDataSource):
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
     # scale from zero to one
     do_scale_0_to_1: bool = False
+    # Drop any GSPs norther of this boundary.
+    northern_boundary_osgb: Optional[float] = None  # TODO: Use correct number!
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -100,6 +102,11 @@ class GSPDataSource(ImageDataSource):
         self.gsp_power, self.metadata = drop_gsp_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
         )
+
+        if self.northern_boundary_osgb is not None:
+            self.gsp_power, self.metadata = drop_gsp_north_of_boundary(
+                self.gsp_power, self.metadata, northern_boundary_osgb=self.northern_boundary_osgb
+            )
 
         logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 
@@ -384,7 +391,9 @@ class GSPDataSource(ImageDataSource):
         return power, capacity
 
 
-def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
+def drop_gsp_by_threshold(
+    gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Drop GSP where the max power is below a certain threshold
 
@@ -406,7 +415,36 @@ def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, thre
     gsp_ids = gsp_power.columns
     meta_data = meta_data[meta_data["gsp_id"].isin(gsp_ids)]
 
-    return gsp_power[keep_index.index], meta_data
+    return gsp_power, meta_data
+
+
+def drop_gsp_north_of_boundary(
+    gsp_power: pd.DataFrame, meta_data: pd.DataFrame, northern_boundary_osgb: float
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Drop GSPs north of northern_boundary_osgb.
+
+    Args:
+        gsp_power: GSP power data
+        meta_data: the GSP meta data
+        northern_boundary_osgb: The geospatial boundary.
+
+    Returns: power data and metadata
+    """
+
+    keep_index = meta_data.location_y < northern_boundary_osgb
+    filtered_meta_data = meta_data.loc[keep_index]
+    filtered_gsp_ids = filtered_meta_data.gsp_id
+    filtered_gsp_power = gsp_power[filtered_gsp_ids]
+
+    logger.debug(
+        f"Dropping {sum(~keep_index)} GSPs because they are north of {northern_boundary_osgb}."
+    )
+    logger.debug(
+        f"Keeping {sum(keep_index)} GSPs because they are south of {northern_boundary_osgb}."
+    )
+
+    return filtered_gsp_power, filtered_meta_data
 
 
 def load_solar_gsp_data(

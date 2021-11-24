@@ -7,6 +7,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
+from nowcasting_dataset.filesystem.utils import check_path_exists
 from nowcasting_dataset.utils import get_start_and_end_example_index
 
 
@@ -44,13 +45,23 @@ class Metadata(BaseModel):
 
         """
 
-        # if file exists, add to it
-
         filename = f"{path}/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
         metadata_dict = self.dict()
         metadata_dict.pop("batch_size")
 
-        metadata_df = pd.DataFrame(metadata_dict)
+        # if file exists, add to it
+        try:
+            check_path_exists(filename)
+        except FileNotFoundError:
+            metadata_df = pd.DataFrame(metadata_dict)
+
+        else:
+
+            metadata_df = pd.read_csv(filename)
+
+            metadata_df_extra = pd.DataFrame(metadata_dict)
+            metadata_df = metadata_df.append(metadata_df_extra)
+
         metadata_df.to_csv(filename, index=False)
 
 

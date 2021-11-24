@@ -34,8 +34,9 @@ class PVDataSource(ImageDataSource):
 
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
-    start_dt: Optional[datetime.datetime] = None
-    end_dt: Optional[datetime.datetime] = None
+    # TODO: Issue #425: Use config to set start_dt and end_dt.
+    start_dt: Optional[datetime.datetime] = pd.Timestamp("2020-01-01")
+    end_dt: Optional[datetime.datetime] = pd.Timestamp("2022-01-01")
     random_pv_system_for_given_location: Optional[bool] = True
     #: Each example will always have this many PV systems.
     #: If less than this number exist in the data then pad with NaNs.
@@ -47,6 +48,8 @@ class PVDataSource(ImageDataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        # TODO: Issue #425: Remove this logger warning.
+        logger.warning("PVDataSource is using hard-coded start_dt and end_dt!")
         self.rng = np.random.default_rng()
         self.load()
 

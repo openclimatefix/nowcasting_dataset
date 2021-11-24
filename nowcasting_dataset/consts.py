@@ -51,7 +51,23 @@ Y_METERS_CENTER = "y_meters_center"
 TOPOGRAPHIC_DATA = "topo_data"
 TOPOGRAPHIC_X_COORDS = "topo_x_coords"
 TOPOGRAPHIC_Y_COORDS = "topo_y_coords"
+
+# "Safe" default NWP variable names:
 NWP_VARIABLE_NAMES = (
+    "t",
+    "dswrf",
+    "prate",
+    "r",
+    "sde",
+    "si10",
+    "vis",
+    "lcc",
+    "mcc",
+    "hcc",
+)
+
+# A complete set of NWP variable names.  Not all are currently used.
+FULL_NWP_VARIABLE_NAMES = (
     "cdcb",
     "lcc",
     "mcc",
@@ -70,6 +86,7 @@ NWP_VARIABLE_NAMES = (
     "prmsl",
     "prate",
 )
+
 SAT_VARIABLE_NAMES = (
     "HRV",
     "IR_016",

@@ -19,8 +19,8 @@ class Satellite(DataSourceOutput):
     def model_validation(cls, v):
         """Check that all values are non negative"""
         v.check_nan_and_inf(data=v.data)
-        # put this validation back in when issue is done
-        v.check_dataset_not_equal(data=v.data, value=-1, raise_error=False)
+        # previously nans were filled with -1s, so lets make sure there are none
+        v.check_dataset_not_equal(data=v.data, value=-1)
         v.check_data_var_dim(
             v.data, ("example", "time_index", "x_index", "y_index", "channels_index")
         )

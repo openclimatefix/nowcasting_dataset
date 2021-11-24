@@ -433,7 +433,7 @@ def drop_gsp_by_threshold(
 
 
 def drop_gsp_north_of_boundary(
-    gsp_power: pd.DataFrame, meta_data: pd.DataFrame, northern_boundary_osgb: float
+    gsp_power: pd.DataFrame, meta_data: pd.DataFrame, northern_boundary_osgb: int
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Drop GSPs north of northern_boundary_osgb.

@@ -5,7 +5,10 @@ from datetime import datetime
 import pandas as pd
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.gsp.gsp_data_source import (
+    GSPDataSource,
+    drop_gsp_north_of_boundary,
+)
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 
@@ -111,3 +114,33 @@ def test_gsp_pv_data_source_get_batch():
     assert len(batch.x_coords[1]) == len(batch.y_coords[1])
     assert len(batch.x_coords[2]) > 0
     # assert T0_DT in batch[3].keys()
+
+
+def test_drop_gsp_north_of_boundary(test_data_folder):
+    """Test that dropping GSP north of a boundary works"""
+
+    gsp = GSPDataSource(
+        zarr_path=f"{test_data_folder}/gsp/test.zarr",
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+        northern_boundary_osgb=None,
+    )
+
+    # remove all gsp systems
+    gsp_power, metadata = drop_gsp_north_of_boundary(
+        gsp.gsp_power, gsp.metadata, northern_boundary_osgb=0
+    )
+    assert len(gsp_power.columns) == 0
+    assert len(metadata) == 0
+
+    # remove half the systems
+    north_osgb_median = int(gsp.metadata.location_y.median())
+    gsp_power, metadata = drop_gsp_north_of_boundary(
+        gsp.gsp_power, gsp.metadata, northern_boundary_osgb=north_osgb_median
+    )
+    assert len(gsp_power.columns) == len(gsp.gsp_power.columns) / 2
+    assert len(metadata) == len(gsp.metadata) / 2

@@ -145,10 +145,10 @@ class Batch(BaseModel):
     def load_netcdf(
         local_netcdf_path: Union[Path, str],
         batch_idx: int,
-        data_source_names: Optional[list[str]] = None,
+        data_sources_names: Optional[list[str]] = None,
     ):
         """Load batch from netcdf file"""
-        if data_source_names is None:
+        if data_sources_names is None:
             data_sources_names = Example.__fields__.keys()
 
         # set up futures executor

@@ -70,11 +70,6 @@ def hrv_sat_data_source(hrv_sat_filename: Path):  # noqa: D103
     )
 
 
-# @pytest.fixture
-# def general_data_source():  # noqa: D103
-#     return MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
-
-
 @pytest.fixture
 def gsp_data_source():  # noqa: D103
     return GSPDataSource(

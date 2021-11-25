@@ -142,7 +142,11 @@ class Batch(BaseModel):
         self.metadata.save_to_csv(path=path)
 
     @staticmethod
-    def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int, data_source_names: Optional[list[str]] = None):
+    def load_netcdf(
+        local_netcdf_path: Union[Path, str],
+        batch_idx: int,
+        data_source_names: Optional[list[str]] = None,
+    ):
         """Load batch from netcdf file"""
         if data_source_names is None:
             data_sources_names = Example.__fields__.keys()

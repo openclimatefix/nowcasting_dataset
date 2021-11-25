@@ -78,19 +78,27 @@ def load_from_csv(path, batch_idx, batch_size) -> Metadata:
     """
     filename = f"{path}/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
 
-    # read whole file
-    metadata_df = pd.read_csv(filename)
-
     # get start and end example index
     start_example_idx, end_example_idx = get_start_and_end_example_index(
         batch_idx=batch_idx, batch_size=batch_size
     )
 
-    # only select metadata we need
-    metadata_df = metadata_df.iloc[start_example_idx:end_example_idx]
+    names = ["t0_datetime_utc", "x_center_osgb", "y_center_osgb"]
+
+    # read the file
+    metadata_df = pd.read_csv(
+        filename,
+        skiprows=start_example_idx + 1,  # p+1 is to ignore header
+        nrows=batch_size,
+        names=names,
+    )
+
+    assert len(metadata_df) > 0
 
     # add batch_size
     metadata_dict = metadata_df.to_dict("list")
     metadata_dict["batch_size"] = batch_size
+
+    print(metadata_dict)
 
     return Metadata(**metadata_dict)

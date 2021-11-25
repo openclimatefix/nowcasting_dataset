@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-import nowcasting_dataset.dataset.batch
 from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
@@ -30,7 +29,8 @@ class OpticalFlowDataSource(DerivedDataSource):
 
     def get_example(
         self,
-        batch: nowcasting_dataset.dataset.batch.Batch,
+        batch,  # Of type nowcasting_dataset.dataset.batch.Batch.  But we can't use
+        # an "actual" type hint here otherwise we get a circular import error!
         example_idx: int,
         t0_datetime: pd.Timestamp,
         **kwargs
@@ -39,7 +39,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         Get Optical Flow Example data
 
         Args:
-            batch: Batch containing satellite and metadata at least
+            batch: nowcasting_dataset.dataset.batch.Batch containing satellite and metadata at least
             example_idx: The example to load and use
             t0_datetime: t0 datetime for the example
 

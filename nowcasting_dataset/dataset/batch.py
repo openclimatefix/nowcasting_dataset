@@ -181,7 +181,7 @@ class Batch(BaseModel):
             batch_dict[data_source_name] = data_source_model(xr_dataset)
 
         # load metadata
-        batch_size = len(batch_dict[data_sources_names[0]].example)
+        batch_size = len(batch_dict[list(data_sources_names)[0]].example)
         metadata = load_from_csv(path=local_netcdf_path, batch_size=batch_size, batch_idx=batch_idx)
         batch_dict["metadata"] = metadata.dict()
 

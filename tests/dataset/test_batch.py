@@ -35,11 +35,14 @@ def test_model_load_from_netcdf(configuration):  # noqa: D103
 
         assert batch.satellite is not None
 
+
 def test_model_load_partial_from_netcdf(configuration):  # noqa: D103
     with tempfile.TemporaryDirectory() as dirpath:
         Batch.fake(configuration=configuration).save_netcdf(path=dirpath, batch_i=0)
 
-        batch = Batch.load_netcdf(batch_idx=0, local_netcdf_path=dirpath, data_source_names = ["pv", "hrvsatellite"])
+        batch = Batch.load_netcdf(
+            batch_idx=0, local_netcdf_path=dirpath, data_source_names=["pv", "hrvsatellite"]
+        )
 
         assert batch.satellite is None
         assert batch.pv is not None

@@ -99,6 +99,4 @@ def load_from_csv(path, batch_idx, batch_size) -> Metadata:
     metadata_dict = metadata_df.to_dict("list")
     metadata_dict["batch_size"] = batch_size
 
-    print(metadata_dict)
-
     return Metadata(**metadata_dict)

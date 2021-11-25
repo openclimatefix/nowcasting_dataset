@@ -61,6 +61,8 @@ def metadata_fake(batch_size):
     # get random times
     all_datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
     t0_datetimes_utc = np.random.choice(all_datetimes, batch_size, replace=False)
+    # np.random.choice turns the pd.Timestamp objects into datetime.datetime objects.
+    t0_datetimes_utc = pd.to_datetime(t0_datetimes_utc)
 
     metadata_dict = {}
     metadata_dict["batch_size"] = batch_size

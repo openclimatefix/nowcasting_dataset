@@ -564,9 +564,9 @@ class DerivedDataSource(DataSource):
         import nowcasting_dataset.dataset.batch
 
         batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(netcdf_path, batch_idx=batch_idx)
-        with futures.ProcessPoolExecutor(max_workers=batch.batch_size) as executor:
+        with futures.ProcessPoolExecutor(max_workers=batch.metadata.batch_size) as executor:
             future_examples = []
-            for example_idx in range(batch.batch_size):
+            for example_idx in range(batch.metadata.batch_size):
                 future_example = executor.submit(
                     self.get_example, batch, example_idx, t0_datetimes[example_idx]
                 )

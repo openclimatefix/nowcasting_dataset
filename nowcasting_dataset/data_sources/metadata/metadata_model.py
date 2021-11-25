@@ -1,6 +1,5 @@
 """ Model for output of general/metadata data, useful for a batch """
 
-from datetime import datetime
 from typing import List
 
 import pandas as pd
@@ -21,7 +20,7 @@ class Metadata(BaseModel):
         "then this item stores one data item",
     )
 
-    t0_datetime_utc: List[datetime] = Field(
+    t0_datetime_utc: List[pd.Timestamp] = Field(
         ...,
         description="The t0s of each example ",
     )

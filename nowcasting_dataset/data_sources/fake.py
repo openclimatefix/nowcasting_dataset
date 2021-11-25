@@ -51,15 +51,23 @@ def gsp_fake(
 
 def metadata_fake(batch_size):
     """Make a xr dataset"""
-    xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
 
-    # change to indexes
-    xr_arrays = [convert_coordinates_to_indexes(xr_array) for xr_array in xr_arrays]
+    # get random OSGB center in the UK
+    lat = np.random.uniform(51, 55, batch_size)
+    lon = np.random.uniform(-2.5, 1, batch_size)
+    x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
 
-    # make dataset
-    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
+    # get random times
+    all_datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
+    t0_datetimes_utc = np.random.choice(all_datetimes, batch_size, replace=False)
 
-    return Metadata(xr_dataset)
+    metadata_dict = {}
+    metadata_dict["batch_size"] = batch_size
+    metadata_dict["x_center_osgb"] = list(x_centers_osgb)
+    metadata_dict["y_center_osgb"] = list(y_centers_osgb)
+    metadata_dict["t0_datetime_utc"] = list(t0_datetimes_utc)
+
+    return Metadata(**metadata_dict)
 
 
 def nwp_fake(
@@ -226,7 +234,7 @@ def add_uk_centroid_osgb(x, y):
 
 
 def create_random_point_coordinates_osgb(size: int):
-    """Make random coords [OSGB] for pv site, of gsp"""
+    """Make random coords [OSGB] for pv site, or gsp"""
     # this is about 100KM
     HUNDRED_KILOMETERS = 10 ** 5
     x = np.random.randint(0, HUNDRED_KILOMETERS, size)

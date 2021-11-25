@@ -20,6 +20,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
+from nowcasting_dataset.utils import get_start_and_end_example_index
 
 logger = logging.getLogger(__name__)
 
@@ -187,8 +188,10 @@ class DataSource:
         n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
         locations_for_batches = []
         for batch_idx in range(n_batches):
-            start_example_idx = batch_idx * batch_size
-            end_example_idx = (batch_idx + 1) * batch_size
+            start_example_idx, end_example_idx = get_start_and_end_example_index(
+                batch_idx=batch_idx, batch_size=batch_size
+            )
+
             locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
                 start_example_idx:end_example_idx
             ]

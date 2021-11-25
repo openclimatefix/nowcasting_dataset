@@ -142,9 +142,14 @@ class Batch(BaseModel):
         self.metadata.save_to_csv(path=path)
 
     @staticmethod
-    def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):
+    def load_netcdf(
+        local_netcdf_path: Union[Path, str],
+        batch_idx: int,
+        data_sources_names: Optional[list[str]] = None,
+    ):
         """Load batch from netcdf file"""
-        data_sources_names = Example.__fields__.keys()
+        if data_sources_names is None:
+            data_sources_names = Example.__fields__.keys()
 
         # set up futures executor
         batch_dict = {}
@@ -176,7 +181,7 @@ class Batch(BaseModel):
             batch_dict[data_source_name] = data_source_model(xr_dataset)
 
         # load metadata
-        batch_size = len(batch_dict["gsp"].example)
+        batch_size = len(batch_dict[list(data_sources_names)[0]].example)
         metadata = load_from_csv(path=local_netcdf_path, batch_size=batch_size, batch_idx=batch_idx)
         batch_dict["metadata"] = metadata.dict()
 

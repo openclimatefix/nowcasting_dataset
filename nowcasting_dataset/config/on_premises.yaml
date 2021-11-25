@@ -6,7 +6,7 @@ input_data:
   default_history_minutes: 30
   #---------------------- GSP -------------------
   gsp:
-    gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v2/pv_gsp.zarr
+    gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v3/pv_gsp.zarr
 
   #---------------------- NWP -------------------
   nwp:
@@ -22,7 +22,7 @@ input_data:
       - mcc
       - hcc
     nwp_image_size_pixels: 64
-    nwp_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr
+    nwp_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_3.zarr
     history_minutes: 60
 
   #---------------------- PV -------------------
@@ -68,8 +68,11 @@ input_data:
     opticalflow_image_size_pixels: 64
 
 output_data:
-  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v11/
+  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v15
 process:
   batch_size: 32
   seed: 1234
   upload_every_n_batches: 0 # Write directly to output_data.filepath, not to a temp directory.
+  n_train_batches: 4000
+  n_validation_batches: 0
+  n_test_batches: 400

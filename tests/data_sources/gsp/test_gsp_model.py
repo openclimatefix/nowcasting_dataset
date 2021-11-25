@@ -13,6 +13,16 @@ def test_gsp_init():  # noqa: D103
     _ = gsp_fake(batch_size=4, seq_length_30=5, n_gsp_per_batch=6)
 
 
+def test_gsp_normalized():
+    """Test gsp normalization"""
+    gsp = gsp_fake(batch_size=4, seq_length_30=5, n_gsp_per_batch=6)
+
+    power_normalized = gsp.power_normalized
+
+    assert (power_normalized.values >= 0).all()
+    assert (power_normalized.values <= 1).all()
+
+
 def test_gsp_validation():  # noqa: D103
     gsp = gsp_fake(batch_size=4, seq_length_30=5, n_gsp_per_batch=6)
 

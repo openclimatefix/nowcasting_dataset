@@ -20,7 +20,7 @@ def test_nwp():
     """Test nwp fake"""
     _ = nwp_fake(
         batch_size=4,
-        seq_length_5=13,
+        seq_length_60=2,
         image_size_pixels=64,
         number_nwp_channels=8,
     )

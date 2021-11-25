@@ -15,7 +15,6 @@ pytest
 pytest-cov
 jedi
 mypy
-neptune-client
 pydantic
 plotly
 tqdm
@@ -24,3 +23,4 @@ pre-commit
 fsspec
 pathy
 opencv-contrib-python-headless
+gitpython

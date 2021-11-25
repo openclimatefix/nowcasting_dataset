@@ -20,6 +20,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
+from nowcasting_dataset.utils import get_start_and_end_example_index
 
 logger = logging.getLogger(__name__)
 
@@ -214,8 +215,10 @@ class DataSource:
 
         locations_for_batches = []
         for batch_idx in range(total_number_batches):
-            start_example_idx = batch_idx * batch_size
-            end_example_idx = (batch_idx + 1) * batch_size
+            start_example_idx, end_example_idx = get_start_and_end_example_index(
+                batch_idx=batch_idx, batch_size=batch_size
+            )
+
             locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
                 start_example_idx:end_example_idx
             ]
@@ -246,8 +249,9 @@ class DataSource:
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
 
     def _get_batch(self, locations_for_batch, **kwargs):
-        """Get the batch for the given datasource. This, along with `get_batch`, should be
-        implemented in the child classes if needed.
+        """Get the batch for the given datasource.
+
+        This, along with `get_batch`, should be implemented in the child classes if needed.
 
         `_get_batch` is used internally here and has a specific signature, because it is called in
         `create_batches` which can be common to different classes inheriting from `DataSource`
@@ -304,7 +308,12 @@ class DataSource:
         examples = convert_coordinates_to_indexes_for_list_datasets(examples)
 
         # join the examples together, and cast them to the cls, so that validation can occur
-        return cls(join_list_dataset_to_batch_dataset(examples))
+        batch_one_datasource = cls(join_list_dataset_to_batch_dataset(examples))
+
+        # lets validate
+        cls.validate(batch_one_datasource)
+
+        return batch_one_datasource
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""
@@ -312,7 +321,8 @@ class DataSource:
         # of a list of datetimes (e.g. for DatetimeDataSource).
         raise NotImplementedError(f"Datetime not implemented for class {self.__class__}")
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         raise NotImplementedError()
 

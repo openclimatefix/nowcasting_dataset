@@ -1,27 +1,55 @@
-import numpy as np
+""" Test for Metadata class"""
+import tempfile
+
 import pandas as pd
 import pytest
 
-from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
+from nowcasting_dataset.data_sources.fake import metadata_fake
+from nowcasting_dataset.data_sources.metadata.metadata_model import load_from_csv
 
 
-def test_metadata_example():
-    data_source = MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
-    t0 = pd.Timestamp("2021-01-01")
-    x_meters_center = 1000
-    y_meters_center = 1000
-    example = data_source.get_example(
-        t0_dt=t0, x_meters_center=x_meters_center, y_meters_center=y_meters_center
-    )
-    assert "t0_dt_index" in example.coords
+def test_metadata_fake():
+    """Test fake"""
+    _ = metadata_fake(10)
 
 
-def test_metadata_batch():
-    data_source = MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
-    t0_datetimes = pd.date_range("2021-01-01", freq="5T", periods=32) + pd.Timedelta("30T")
-    x_meters_centers = np.random.random(32)
-    y_meters_centers = np.random.random(32)
-    batch = data_source.get_batch(
-        t0_datetimes=t0_datetimes, x_locations=x_meters_centers, y_locations=y_meters_centers
-    )
-    assert "t0_dt_index" in batch.coords
+def test_metadata_save():
+    """Test save"""
+    metadata = metadata_fake(10)
+
+    with tempfile.TemporaryDirectory() as local_temp_path:
+
+        metadata.save_to_csv(path=local_temp_path)
+
+
+def test_metadata_save_twice():
+    """Test save twice"""
+    metadata1 = metadata_fake(10)
+    metadata2 = metadata_fake(10)
+
+    with tempfile.TemporaryDirectory() as local_temp_path:
+        metadata1.save_to_csv(path=local_temp_path)
+        metadata2.save_to_csv(path=local_temp_path)
+
+        locations = pd.read_csv(
+            f"{local_temp_path}/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
+        )
+
+        assert len(locations) == 2 * metadata1.batch_size
+
+
+def test_metadata_save_twice_and_load():
+    """Test save twice"""
+    batch_size = 10
+    metadata1 = metadata_fake(batch_size)
+    metadata2 = metadata_fake(batch_size)
+
+    with tempfile.TemporaryDirectory() as local_temp_path:
+        metadata1.save_to_csv(path=local_temp_path)
+        metadata2.save_to_csv(path=local_temp_path)
+
+        _ = load_from_csv(path=local_temp_path, batch_idx=0, batch_size=batch_size)
+        _ = load_from_csv(path=local_temp_path, batch_idx=1, batch_size=batch_size)
+        with pytest.raises(Exception):
+            _ = load_from_csv(path=local_temp_path, batch_idx=2, batch_size=batch_size)

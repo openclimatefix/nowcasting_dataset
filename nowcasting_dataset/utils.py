@@ -179,3 +179,20 @@ def configure_logger(log_level: str, logger_name: str, handlers=list[logging.Han
         handler.setLevel(log_level)
         handler.setFormatter(formatter)
         local_logger.addHandler(handler)
+
+
+def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> (int, int):
+    """
+    Get the start and end example index
+
+    Args:
+        batch_idx: the batch number
+        batch_size: the size of the batches
+
+    Returns: start and end example index
+
+    """
+    start_example_idx = batch_idx * batch_size
+    end_example_idx = (batch_idx + 1) * batch_size
+
+    return start_example_idx, end_example_idx

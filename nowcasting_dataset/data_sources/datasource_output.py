@@ -69,13 +69,26 @@ class DataSourceOutput(PydanticXArrayDataSet):
             logger.error(message)
             raise Exception(message)
 
+    def check_nan_and_fill_warning(self, data: xr.Dataset, variable_name: str = None) -> xr.Dataset:
+        """Check that all values are non NaNs and not infinite"""
+
+        if np.isnan(data).any():
+            message = f"Some {self.__class__.__name__} data values are NaNs"
+            if variable_name is not None:
+                message += f" ({variable_name})"
+            logger.warning(message)
+            data = data.fillna(0)
+
+        return data
+
     def check_dataset_greater_than_or_equal_to(
         self, data: xr.Dataset, min_value: int, variable_name: str = None
     ):
         """Check data is greater than a certain value"""
         if (data < min_value).any():
             message = f"Some {self.__class__.__name__} data values are less than {min_value}"
-            message += f" ({variable_name})" if variable_name is not None else None
+            if variable_name is not None:
+                message += f" ({variable_name})"
             logger.error(message)
             raise Exception(message)
 
@@ -85,7 +98,8 @@ class DataSourceOutput(PydanticXArrayDataSet):
         """Check data is less than a certain value"""
         if (data > max_value).any():
             message = f"Some {self.__class__.__name__} data values are less than {max_value}"
-            message += f" ({variable_name})" if variable_name is not None else None
+            if variable_name is not None:
+                message += f" ({variable_name})"
             logger.error(message)
             raise Exception(message)
 
@@ -95,7 +109,8 @@ class DataSourceOutput(PydanticXArrayDataSet):
         """Check data is not equal than a certain value"""
         if np.isclose(data, value).any():
             message = f"Some {self.__class__.__name__} data values are equal to {value}"
-            message += f" ({variable_name})" if variable_name is not None else None
+            if variable_name is not None:
+                message += f" ({variable_name})"
             if raise_error:
                 logger.error(message)
                 raise Exception(message)

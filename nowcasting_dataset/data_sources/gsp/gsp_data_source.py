@@ -41,9 +41,11 @@ class GSPDataSource(ImageDataSource):
     # zarr_path of where the gsp data is stored
     zarr_path: Union[str, Path]
     # start datetime, this can be None
-    start_dt: Optional[datetime] = None
+    # TODO: Issue #425: Use config to set start_dt and end_dt.
+    start_dt: Optional[datetime] = pd.Timestamp("2020-01-01")
     # end datetime, this can be None
-    end_dt: Optional[datetime] = None
+    # TODO: Issue #425: Use config to set start_dt and end_dt.
+    end_dt: Optional[datetime] = pd.Timestamp("2022-01-01")
     # the threshold where we only taken gsp's with a maximum power, above this value.
     threshold_mw: int = 0
     # get the data for the gsp at the center too.
@@ -53,12 +55,21 @@ class GSPDataSource(ImageDataSource):
     n_gsp_per_example: int = DEFAULT_N_GSP_PER_EXAMPLE
     # scale from zero to one
     do_scale_0_to_1: bool = False
+    # Drop any GSPs norther of this boundary.
+    # Many satellite images have a "rectangle of zeros" extending north from 1,037,047 meters
+    # (OSGB "northing" coordinate).  The largest satellite regions of interest are
+    # 144 km.  So set the boundary to be 1,037 km - (144 km / 2) = 1,036,975 meters.
+    # This results in 2 GSPs being dropped.
+    # See https://github.com/openclimatefix/Satip/issues/30
+    northern_boundary_osgb: Optional[float] = 1_036_975
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
         Set random seed and load data
         """
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        # TODO: Issue #425: Remove this logger warning.
+        logger.warning("GSPDataSource is using hard-coded start_dt and end_dt!")
         self.rng = np.random.default_rng()
         self.load()
 
@@ -71,7 +82,8 @@ class GSPDataSource(ImageDataSource):
         """Override the default sample minutes"""
         return 30
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return GSP
 
@@ -81,6 +93,7 @@ class GSPDataSource(ImageDataSource):
         """
         # load metadata
         self.metadata = get_gsp_metadata_from_eso()
+        self.metadata.set_index("gsp_id", drop=False, inplace=True)
 
         # make location x,y in osgb
         self.metadata["location_x"], self.metadata["location_y"] = lat_lon_to_osgb(
@@ -97,6 +110,11 @@ class GSPDataSource(ImageDataSource):
         self.gsp_power, self.metadata = drop_gsp_by_threshold(
             self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
         )
+
+        if self.northern_boundary_osgb is not None:
+            self.gsp_power, self.metadata = drop_gsp_north_of_boundary(
+                self.gsp_power, self.metadata, northern_boundary_osgb=self.northern_boundary_osgb
+            )
 
         logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 
@@ -212,22 +230,31 @@ class GSPDataSource(ImageDataSource):
         selected_gsp_power = selected_gsp_power[all_gsp_ids]
         selected_capacity = selected_capacity[all_gsp_ids]
 
-        gsp_x_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_x
-        gsp_y_coords = self.metadata[self.metadata["gsp_id"].isin(all_gsp_ids)].location_y
+        # get x,y coordinates
+        gsp_x_coords = self.metadata.location_x[all_gsp_ids]
+        gsp_y_coords = self.metadata.location_y[all_gsp_ids]
 
         # convert to data array
         da = xr.DataArray(
             data=selected_gsp_power.values,
             dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
         )
 
         capacity = xr.DataArray(
             data=selected_capacity.values,
             dims=["time", "id"],
+            coords=dict(
+                id=all_gsp_ids.values.astype(int),
+                time=selected_gsp_power.index.values,
+            ),
         )
 
         # convert to dataset
-        gsp = da.to_dataset(name="data")
+        gsp = da.to_dataset(name="power_mw")
         gsp["capacity_mwp"] = capacity
 
         # add gsp x coords
@@ -245,9 +272,7 @@ class GSPDataSource(ImageDataSource):
 
         # pad out so that there are always 32 gsp, fill with 0
         pad_n = self.n_gsp_per_example - len(gsp.id)
-        gsp = gsp.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
-
-        gsp.__setitem__("id", range(self.n_gsp_per_example))
+        gsp = gsp.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
         return gsp
 
@@ -319,7 +344,7 @@ class GSPDataSource(ImageDataSource):
 
         Returns: list of GSP ids that are in area of interest
         """
-        logger.debug("Getting all gsp in ROI")
+        logger.debug(f"Getting all gsp in ROI ({x_meters_center=},{y_meters_center=})")
 
         # creating bounding box
         bounding_box = self._square.bounding_box_centered_on(
@@ -356,6 +381,11 @@ class GSPDataSource(ImageDataSource):
         start_dt = self._get_start_dt(t0_dt)
         end_dt = self._get_end_dt(t0_dt)
 
+        # need to floor by 30 mins.
+        # If t0 is 12.45 and history duration is 1 hours, then start_dt will be 11.45.
+        # But we need to collect data at 11.30, 12.00, and 12.30
+        start_dt = pd.to_datetime(start_dt).floor("30T")
+
         # select power and capacity for certain times
         power = self.gsp_power.loc[start_dt:end_dt]
         capacity = self.gsp_capacity.loc[start_dt:end_dt]
@@ -369,7 +399,9 @@ class GSPDataSource(ImageDataSource):
         return power, capacity
 
 
-def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20):
+def drop_gsp_by_threshold(
+    gsp_power: pd.DataFrame, meta_data: pd.DataFrame, threshold_mw: int = 20
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Drop GSP where the max power is below a certain threshold
 
@@ -384,14 +416,54 @@ def drop_gsp_by_threshold(gsp_power: pd.DataFrame, meta_data: pd.DataFrame, thre
 
     keep_index = maximum_gsp > threshold_mw
 
-    logger.debug(f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW")
+    dropped_gsp_names = meta_data.loc[keep_index[~keep_index].index].gsp_name
+
+    logger.debug(
+        f"Dropping {sum(~keep_index)} GSPs as maximum is not greater {threshold_mw} MW."
+        f" Dropped GSP IDs and GSP names:\n{dropped_gsp_names}"
+    )
     logger.debug(f"Keeping {sum(keep_index)} GSPs as maximum is greater {threshold_mw} MW")
 
-    gsp_power = gsp_power[keep_index.index]
-    gsp_ids = gsp_power.columns
-    meta_data = meta_data[meta_data["gsp_id"].isin(gsp_ids)]
+    filtered_gsp_power = gsp_power.loc[:, keep_index]
+    filtered_gsp_ids = filtered_gsp_power.columns
+    filtered_meta_data = meta_data[meta_data["gsp_id"].isin(filtered_gsp_ids)]
 
-    return gsp_power[keep_index.index], meta_data
+    assert set(filtered_gsp_power.columns) == set(filtered_meta_data.gsp_id)
+    return filtered_gsp_power, filtered_meta_data
+
+
+def drop_gsp_north_of_boundary(
+    gsp_power: pd.DataFrame, meta_data: pd.DataFrame, northern_boundary_osgb: int
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Drop GSPs north of northern_boundary_osgb.
+
+    Args:
+        gsp_power: GSP power data
+        meta_data: the GSP meta data
+        northern_boundary_osgb: The geospatial boundary.
+
+    Returns: power data and metadata
+    """
+
+    keep_index = meta_data.location_y < northern_boundary_osgb
+    filtered_meta_data = meta_data.loc[keep_index]
+    filtered_gsp_ids = filtered_meta_data.gsp_id
+    filtered_gsp_power = gsp_power[filtered_gsp_ids]
+    pv_capacity_of_dropped_gsps = gsp_power.loc[:, ~keep_index].max()
+
+    logger.debug(
+        f"Dropping {sum(~keep_index)} GSPs because they are north of"
+        f" y={northern_boundary_osgb:,d}m:\n"
+        f" {meta_data.loc[~keep_index].gsp_name}\n with capacity in MW of:\n"
+        f"{pv_capacity_of_dropped_gsps}"
+    )
+    logger.debug(
+        f"Keeping {sum(keep_index)} GSPs because they are south of y={northern_boundary_osgb:,d}m."
+    )
+
+    assert set(filtered_gsp_power.columns) == set(filtered_meta_data.gsp_id)
+    return filtered_gsp_power, filtered_meta_data
 
 
 def load_solar_gsp_data(
@@ -435,6 +507,10 @@ def load_solar_gsp_data(
     gsp_power_df = gsp_power_df.clip(lower=0, upper=5e7)
     gsp_capacity_df = gsp_capacity_df.dropna(axis="columns", how="all")
     gsp_capacity_df = gsp_capacity_df.clip(lower=0, upper=5e7)
+
+    # remove whole rows of nans
+    gsp_power_df = gsp_power_df.dropna(axis="columns", how="all")
+    gsp_capacity_df = gsp_capacity_df.loc[:, gsp_power_df.columns]
 
     # make column names ints, not strings
     gsp_power_df.columns = [int(col) for col in gsp_power_df.columns]

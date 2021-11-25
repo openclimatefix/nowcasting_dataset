@@ -43,7 +43,7 @@ LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 
 # get data
-data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end)
+data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, normalize_data=False)
 
 # pivot to index as datetime_gmt, and columns as gsp_id
 data_generation = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
@@ -59,7 +59,6 @@ data_capacity_xarray = xr.DataArray(
 )
 
 data_xarray = xr.merge([data_generation_xarray, data_capacity_xarray])
-data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
 
 # save config to file
 with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:

@@ -1,6 +1,7 @@
 """Manager class."""
 
 import logging
+import multiprocessing
 from concurrent import futures
 from pathlib import Path
 from typing import Optional, Union
@@ -59,7 +60,6 @@ class Manager:
         """Save configuration to the 'output_data' location"""
         config.save_yaml_configuration(configuration=self.config)
 
-    # TODO: Issue #322: Write test for Manager.configure_loggers()
     def configure_loggers(
         self,
         log_level: str,
@@ -72,6 +72,10 @@ class Manager:
         Save individual logs for each DataSource in
             self.config.output_data.filepath / <data_source>.log
         """
+
+        # make sure the folder exists
+        nd_fs_utils.makedirs(path=self.config.output_data.filepath)
+
         # Configure combined logger.
         combined_log_filename = self.config.output_data.filepath / "combined.log"
         nd_utils.configure_logger(
@@ -132,15 +136,22 @@ class Manager:
                 self.config.input_data.data_source_which_defines_geospatial_locations
             ]
         except KeyError:
-            msg = (
-                "input_data.data_source_which_defines_geospatial_locations="
-                f"{self.config.input_data.data_source_which_defines_geospatial_locations}"
-                " is not a member of the DataSources, so cannot set"
-                " self.data_source_which_defines_geospatial_locations!"
-                f" The available DataSources are: {list(self.data_sources.keys())}"
-            )
-            logger.error(msg)
-            raise RuntimeError(msg)
+            if self._locations_csv_file_exists():
+                logger.info(
+                    f"{self.config.input_data.data_source_which_defines_geospatial_locations=}"
+                    " is not a member of the DataSources, but that does not matter because the CSV"
+                    " files which specify the locations of the examples already exists!"
+                )
+            else:
+                msg = (
+                    "input_data.data_source_which_defines_geospatial_locations="
+                    f"{self.config.input_data.data_source_which_defines_geospatial_locations}"
+                    " is not a member of the DataSources, so cannot set"
+                    " self.data_source_which_defines_geospatial_locations!"
+                    f" The available DataSources are: {list(self.data_sources.keys())}"
+                )
+                logger.error(msg)
+                raise RuntimeError(msg)
         else:
             logger.info(
                 f"DataSource `{data_source_name}` set as"
@@ -183,23 +194,39 @@ class Manager:
             ],
         )
         for split_name, datetimes_for_split in split_t0_datetimes._asdict().items():
-            n_batches = self._get_n_batches_for_split_name(split_name)
-            n_examples = n_batches * self.config.process.batch_size
+            path_for_csv = self.config.output_data.filepath / split_name
+            n_batches_requested = self._get_n_batches_requested_for_split_name(split_name)
+            if (n_batches_requested == 0 and len(datetimes_for_split) != 0) or (
+                len(datetimes_for_split) == 0 and n_batches_requested != 0
+            ):
+                # TODO: Issue #450: Test this scenario!
+                msg = (
+                    f"For split {split_name}: n_{split_name}_batches={n_batches_requested} and"
+                    f" {len(datetimes_for_split)=}!  This is an error!"
+                    f"  If n_{split_name}_batches==0 then len(datetimes_for_split) must also"
+                    f" equal 0, and visa-versa!  Please check `n_{split_name}_batches` and"
+                    " `split_method` in the config YAML!"
+                )
+                logger.error(msg)
+                raise RuntimeError(msg)
+            if n_batches_requested == 0:
+                logger.info(f"0 batches requested for {split_name} so won't create {path_for_csv}")
+                continue
+            n_examples = n_batches_requested * self.config.process.batch_size
             logger.debug(
-                f"Creating {n_batches:,d} batches x {self.config.process.batch_size:,d} examples"
-                f" per batch = {n_examples:,d} examples for {split_name}."
+                f"Creating {n_batches_requested:,d} batches x {self.config.process.batch_size:,d}"
+                f" examples per batch = {n_examples:,d} examples for {split_name}."
             )
             df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
                 t0_datetimes=datetimes_for_split, n_examples=n_examples
             )
             output_filename = self._filename_of_locations_csv_file(split_name)
-            path_for_csv = self.config.output_data.filepath / split_name
             logger.info(f"Making {path_for_csv} if it does not exist.")
             nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
             logger.debug(f"Writing {output_filename}")
             df_of_locations.to_csv(output_filename)
 
-    def _get_n_batches_for_split_name(self, split_name: str) -> int:
+    def _get_n_batches_requested_for_split_name(self, split_name: str) -> int:
         return getattr(self.config.process, f"n_{split_name}_batches")
 
     def _filename_of_locations_csv_file(self, split_name: str) -> Path:
@@ -290,6 +317,7 @@ class Manager:
             Each row of each the DataFrame specifies the position of each example, using
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
+        assert len(t0_datetimes) > 0
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
         # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
         # multiple processors.  Currently takes about half an hour for 25,000 batches.
@@ -346,7 +374,7 @@ class Manager:
         first_batches_to_create: dict[split.SplitName, dict[str, int]],
     ) -> bool:
         """Returns True if batches still need to be created for any DataSource."""
-        n_batches_requested = self._get_n_batches_for_split_name(split_name.value)
+        n_batches_requested = self._get_n_batches_requested_for_split_name(split_name.value)
         for data_source_name in self.data_sources:
             if first_batches_to_create[split_name][data_source_name] < n_batches_requested:
                 return True
@@ -412,6 +440,7 @@ class Manager:
         nd_utils.set_fsspec_for_multiprocess()
         for split_name in splits_which_need_more_batches:
             locations_for_split = locations_for_each_example_of_each_split[split_name]
+            # TODO: Maybe use multiprocessing.Pool instead of ProcessPoolExecutor?
             with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
                 future_create_batches_jobs = []
                 for worker_id, (data_source_name, data_source) in enumerate(
@@ -486,7 +515,11 @@ class Manager:
 
         # Check if there's any work to do.
         if overwrite_batches:
-            splits_which_need_more_batches = [split_name for split_name in split.SplitName]
+            splits_which_need_more_batches = [
+                split_name
+                for split_name in split.SplitName
+                if self._get_n_batches_requested_for_split_name(split_name.value) > 0
+            ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
                 first_batches_to_create
@@ -509,23 +542,20 @@ class Manager:
             locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
                 locations_for_each_example["t0_datetime_UTC"]
             )
-            locations_for_each_example_of_each_split[split_name] = locations_for_each_example
+            if len(locations_for_each_example) > 0:
+                locations_for_each_example_of_each_split[split_name] = locations_for_each_example
 
         # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().
         # TODO: Issue 321: Split this up into separate functions!!!
         n_data_sources = len(self.data_sources)
         nd_utils.set_fsspec_for_multiprocess()
-        for split_name in splits_which_need_more_batches:
-            locations_for_split = locations_for_each_example_of_each_split[split_name]
-            with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
-                future_create_batches_jobs = []
+        for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
+            with multiprocessing.Pool(processes=n_data_sources) as pool:
+                async_results_from_create_batches = []
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
-
-                    if len(locations_for_split) == 0:
-                        break
 
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
@@ -536,6 +566,8 @@ class Manager:
                     dst_path = (
                         self.config.output_data.filepath / split_name.value / data_source_name
                     )
+
+                    # TODO: Issue 455: Guarantee that local temp path is unique and empty.
                     local_temp_path = (
                         self.local_temp_path
                         / split_name.value
@@ -548,9 +580,8 @@ class Manager:
                     if self.save_batches_locally_and_upload:
                         nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
 
-                    # Submit data_source.create_batches task to the worker process.
-                    future = executor.submit(
-                        data_source.create_batches,
+                    # Key word arguments to be passed into data_source.create_batches():
+                    kwargs_for_create_batches = dict(
                         spatial_and_temporal_locations_of_each_example=locations,
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
@@ -558,17 +589,32 @@ class Manager:
                         local_temp_path=local_temp_path,
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
-                    future_create_batches_jobs.append(future)
 
-                # Wait for all futures to finish:
-                for future, data_source_name in zip(
-                    future_create_batches_jobs, self.data_sources.keys()
-                ):
-                    # Call exception() to propagate any exceptions raised by the worker process into
-                    # the main process, and to wait for the worker to finish.
-                    exception = future.exception()
-                    if exception is not None:
-                        logger.exception(
-                            f"Worker process {data_source_name} raised exception!\n{exception}"
-                        )
-                        raise exception
+                    # Logger messages for callbacks:
+                    callback_msg = (
+                        f"{data_source_name} has finished created batches for {split_name}!"
+                    )
+                    error_callback_msg = (
+                        f"Exception raised by {data_source_name} whilst creating batches for"
+                        f" {split_name}:\n"
+                    )
+
+                    # Submit data_source.create_batches task to the worker process.
+                    logger.debug(
+                        f"About to submit create_batches task for {data_source_name}, {split_name}"
+                    )
+                    async_result = pool.apply_async(
+                        data_source.create_batches,
+                        kwds=kwargs_for_create_batches,
+                        callback=lambda result: logger.info(callback_msg),
+                        error_callback=lambda exception: logger.error(
+                            error_callback_msg + str(exception)
+                        ),
+                    )
+                    async_results_from_create_batches.append(async_result)
+
+                # Wait for all async_results to finish:
+                for async_result in async_results_from_create_batches:
+                    async_result.wait()
+
+                logger.info(f"Finished creating batches for {split_name}!")

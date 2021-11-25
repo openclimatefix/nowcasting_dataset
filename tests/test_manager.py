@@ -15,7 +15,24 @@ from nowcasting_dataset.data_sources.satellite.satellite_data_source import Sate
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.manager import Manager
 
-# TODO: Issue #322: Write test for Manager.configure_loggers()
+
+def test_configure_loggers():
+    """Test to check loggers can be configured"""
+
+    # set up
+    manager = Manager()
+
+    # make configuration
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as dst_path:
+
+        filepath = f"{dst_path}/extra_temp_folder"
+        manager.config.output_data.filepath = Path(filepath)
+
+        manager.configure_loggers(log_level="DEBUG")
 
 
 def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
@@ -223,7 +240,7 @@ def test_derived_batches():
         # Load batch
         from nowcasting_dataset.dataset.batch import Batch
 
-        batch = Batch.load_netcdf(os.path.join(dst_path, "train"), batch_idx=0)
+        _ = Batch.load_netcdf(os.path.join(dst_path, "train"), batch_idx=0)
 
         # make derived batches
         manager.create_derived_batches(overwrite_batches=True)

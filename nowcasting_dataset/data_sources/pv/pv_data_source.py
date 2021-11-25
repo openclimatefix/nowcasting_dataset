@@ -34,8 +34,9 @@ class PVDataSource(ImageDataSource):
 
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
-    start_dt: Optional[datetime.datetime] = None
-    end_dt: Optional[datetime.datetime] = None
+    # TODO: Issue #425: Use config to set start_dt and end_dt.
+    start_dt: Optional[datetime.datetime] = pd.Timestamp("2020-01-01")
+    end_dt: Optional[datetime.datetime] = pd.Timestamp("2022-01-01")
     random_pv_system_for_given_location: Optional[bool] = True
     #: Each example will always have this many PV systems.
     #: If less than this number exist in the data then pad with NaNs.
@@ -47,6 +48,8 @@ class PVDataSource(ImageDataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
+        # TODO: Issue #425: Remove this logger warning.
+        logger.warning("PVDataSource is using hard-coded start_dt and end_dt!")
         self.rng = np.random.default_rng()
         self.load()
 
@@ -63,7 +66,8 @@ class PVDataSource(ImageDataSource):
         self._load_pv_power()
         self.pv_metadata, self.pv_power = align_pv_system_ids(self.pv_metadata, self.pv_power)
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return PV
 
@@ -294,9 +298,7 @@ class PVDataSource(ImageDataSource):
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id)
-        pv = pv.pad(id=(0, pad_n), data=((0, 0), (0, pad_n)), constant_values=0)
-
-        pv.__setitem__("id", range(self.n_pv_systems_per_example))
+        pv = pv.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
 
         return pv
 

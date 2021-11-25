@@ -22,6 +22,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
 def gsp_fake(
@@ -51,20 +52,28 @@ def gsp_fake(
 
 def metadata_fake(batch_size):
     """Make a xr dataset"""
-    xr_arrays = [create_metadata_dataset() for _ in range(batch_size)]
 
-    # change to indexes
-    xr_arrays = [convert_coordinates_to_indexes(xr_array) for xr_array in xr_arrays]
+    # get random OSGB center in the UK
+    lat = np.random.uniform(51, 55, batch_size)
+    lon = np.random.uniform(-2.5, 1, batch_size)
+    x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
 
-    # make dataset
-    xr_dataset = join_list_dataset_to_batch_dataset(xr_arrays)
+    # get random times
+    all_datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
+    t0_datetimes_utc = np.random.choice(all_datetimes, batch_size, replace=False)
 
-    return Metadata(xr_dataset)
+    metadata_dict = {}
+    metadata_dict["batch_size"] = batch_size
+    metadata_dict["x_center_osgb"] = list(x_centers_osgb)
+    metadata_dict["y_center_osgb"] = list(y_centers_osgb)
+    metadata_dict["t0_datetime_utc"] = list(t0_datetimes_utc)
+
+    return Metadata(**metadata_dict)
 
 
 def nwp_fake(
     batch_size=32,
-    seq_length_5=19,
+    seq_length_60=2,
     image_size_pixels=64,
     number_nwp_channels=7,
 ) -> NWP:
@@ -72,9 +81,10 @@ def nwp_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
-            seq_length_5=seq_length_5,
+            seq_length=seq_length_60,
             image_size_pixels=image_size_pixels,
             channels=NWP_VARIABLE_NAMES[0:number_nwp_channels],
+            freq="60T",
         )
         for _ in range(batch_size)
     ]
@@ -119,7 +129,7 @@ def satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
-            seq_length_5=seq_length_5,
+            seq_length=seq_length_5,
             image_size_pixels=satellite_image_size_pixels,
             channels=SAT_VARIABLE_NAMES[1:number_satellite_channels],
         )
@@ -142,7 +152,7 @@ def hrv_satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
-            seq_length_5=seq_length_5,
+            seq_length=seq_length_5,
             image_size_pixels=satellite_image_size_pixels * 3,  # HRV images are 3x other images
             channels=SAT_VARIABLE_NAMES[0:1],
         )
@@ -220,32 +230,85 @@ def topographic_fake(batch_size, image_size_pixels):
     return Topographic(xr_dataset)
 
 
+def add_uk_centroid_osgb(x, y):
+    """
+    Add an OSGB value to make in center of UK
+
+    Args:
+        x: random values, OSGB
+        y: random values, OSGB
+
+    Returns: X,Y random coordinates [OSGB]
+    """
+
+    # get random OSGB center in the UK
+    lat = np.random.uniform(51, 55)
+    lon = np.random.uniform(-2.5, 1)
+    x_center, y_center = lat_lon_to_osgb(lat=lat, lon=lon)
+
+    # make average 0
+    x = x - x.mean()
+    y = y - y.mean()
+
+    # put in the uk
+    x = x + x_center
+    y = y + y_center
+
+    return x, y
+
+
+def create_random_point_coordinates_osgb(size: int):
+    """Make random coords [OSGB] for pv site, or gsp"""
+    # this is about 100KM
+    HUNDRED_KILOMETERS = 10 ** 5
+    x = np.random.randint(0, HUNDRED_KILOMETERS, size)
+    y = np.random.randint(0, HUNDRED_KILOMETERS, size)
+
+    return add_uk_centroid_osgb(x, y)
+
+
+def make_random_image_coords_osgb(size: int):
+    """Make random coords for image. These are ranges for the pixels"""
+
+    ONE_KILOMETER = 10 ** 3
+
+    # 4 kilometer spacing seemed about right for real satellite images
+    x = 4 * ONE_KILOMETER * np.array((range(0, size)))
+    y = 4 * ONE_KILOMETER * np.array((range(0, size)))
+
+    return add_uk_centroid_osgb(x, y)
+
+
 def create_image_array(
     dims=("time", "x", "y", "channels"),
-    seq_length_5=19,
+    seq_length=19,
     image_size_pixels=64,
     channels=SAT_VARIABLE_NAMES,
+    freq="5T",
 ):
     """Create Satellite or NWP fake image data"""
+
+    x, y = make_random_image_coords_osgb(size=image_size_pixels)
+
     ALL_COORDS = {
-        "time": pd.date_range("2021-01-01", freq="5T", periods=seq_length_5),
-        "x": np.random.randint(low=0, high=1000, size=image_size_pixels),
-        "y": np.random.randint(low=0, high=1000, size=image_size_pixels),
+        "time": pd.date_range("2021-01-01", freq=freq, periods=seq_length),
+        "x": x,
+        "y": y,
         "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
     image_data_array = xr.DataArray(
-        abs(
-            np.random.randn(
-                seq_length_5,
-                image_size_pixels,
-                image_size_pixels,
-                len(channels),
+        abs(  # to make sure average is about 100
+            np.random.uniform(
+                0,
+                200,
+                size=(seq_length, image_size_pixels, image_size_pixels, len(channels)),
             )
         ),
         coords=coords,
         name="data",
     )  # Fake data for testing!
+
     return image_data_array
 
 
@@ -276,42 +339,50 @@ def create_gsp_pv_dataset(
         "id": np.random.choice(range(1000), number_of_systems, replace=False),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+
+    # make pv yield
+    data = np.random.randn(
+        seq_length,
+        number_of_systems,
+    )
+    data = data.clip(min=0)
+
+    # smooth the data, the convolution method smooeths that data across systems first,
+    # and then a bit across time (depending what you set N)
+    N = int(seq_length / 2)
+    data = np.convolve(data.ravel(), np.ones(N) / N, mode="same").reshape(
+        (seq_length, number_of_systems)
+    )
+
+    # make into a Data Array
     data_array = xr.DataArray(
-        np.random.randn(
-            seq_length,
-            number_of_systems,
-        ),
+        data,
         coords=coords,
     )  # Fake data for testing!
 
+    capacity = data_array.max(dim="time")
     if time_dependent_capacity:
-        capacity = xr.DataArray(
-            np.repeat(np.random.randn(seq_length), number_of_systems)
-            .reshape(number_of_systems, seq_length)
-            .T,
-            coords=coords,
-        )
-    else:
-        capacity = xr.DataArray(
-            np.random.randn(number_of_systems),
-            coords=[coords[1]],
-        )
+        capacity = capacity.expand_dims(time=seq_length)
+        capacity.__setitem__("time", data_array.time.values)
 
     data = data_array.to_dataset(name="power_mw")
 
+    # make random coords
+    x, y = create_random_point_coordinates_osgb(size=number_of_systems)
+
     x_coords = xr.DataArray(
-        data=np.sort(
-            np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
-        ),
+        data=x,
         dims=["id"],
     )
 
     y_coords = xr.DataArray(
-        data=np.sort(
-            np.random.choice(range(2 * number_of_systems), number_of_systems, replace=False)
-        ),
+        data=y,
         dims=["id"],
     )
+
+    # make first coords centroid
+    x_coords.data[0] = x_coords.data.mean()
+    y_coords.data[0] = y_coords.data.mean()
 
     data["capacity_mwp"] = capacity
     data["x_coords"] = x_coords

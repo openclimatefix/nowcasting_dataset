@@ -35,6 +35,7 @@ class NWPDataSource(ZarrDataSource):
                 hcc   : High-level cloud cover in %.
                 sde   : Snow depth in meters.
                 hcct  : Height of convective cloud top, meters above surface.
+                        WARNING: hcct has NaNs where there are no clouds forecast to exist!
                 dswrf : Downward short-wave radiation flux in W/m^2 (irradiance) at surface.
                 dlwrf : Downward long-wave radiation flux in W/m^2 (irradiance) at surface.
                 h     : Geometrical height, meters.
@@ -69,6 +70,11 @@ class NWPDataSource(ZarrDataSource):
             image_size_pixels,
             image_size_pixels,
         )
+        _LOG.info(
+            f"NWPDataSource instantiated with {self.channels=},"
+            f" {self._square.size_pixels=},"
+            f" {self.zarr_path=}"
+        )
 
     def open(self) -> None:
         """
@@ -79,13 +85,15 @@ class NWPDataSource(ZarrDataSource):
         instances into separate processes.  Instead,
         call open() _after_ creating separate processes.
         """
-        data = self._open_data()
-        self._data = data.sel(variable=list(self.channels))
+        self._data = self._open_data()
+        np.testing.assert_array_equal(self._data["variable"].values, self.channels)
 
     def _open_data(self) -> xr.DataArray:
-        return open_nwp(self.zarr_path, consolidated=self.consolidated)
+        data = open_nwp(self.zarr_path, consolidated=self.consolidated)
+        return data.sel(variable=list(self.channels))
 
-    def get_data_model_for_batch(self):
+    @staticmethod
+    def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return NWP
 
@@ -176,7 +184,12 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
     nwp = xr.open_dataset(
-        zarr_path, engine="zarr", consolidated=consolidated, mode="r", chunks=None
+        zarr_path,
+        engine="zarr",
+        consolidated=consolidated,
+        mode="r",
+        chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto' (see issue #456)
+        # but 'auto' massively slows down reading NWPs.
     )
 
     # Select the "UKV" DataArray from the "nwp" Dataset.

@@ -9,7 +9,6 @@ from nowcasting_dataset import consts
 from nowcasting_dataset.config.load import load_yaml_configuration
 from nowcasting_dataset.data_sources import SatelliteDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 
 pytest.IMAGE_SIZE_PIXELS = 128
 
@@ -69,11 +68,6 @@ def hrv_sat_data_source(hrv_sat_filename: Path):  # noqa: D103
         forecast_minutes=5,
         channels=("HRV",),
     )
-
-
-@pytest.fixture
-def general_data_source():  # noqa: D103
-    return MetadataDataSource(history_minutes=0, forecast_minutes=5, object_at_center="GSP")
 
 
 @pytest.fixture

@@ -8,13 +8,14 @@ from pathlib import Path
 from typing import Optional, Union
 
 import xarray as xr
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.data_sources.fake import (
     gsp_fake,
     hrv_satellite_fake,
+    metadata_fake,
     nwp_fake,
     pv_fake,
     satellite_fake,
@@ -22,6 +23,7 @@ from nowcasting_dataset.data_sources.fake import (
     topographic_fake,
 )
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata, load_from_csv
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
@@ -45,12 +47,7 @@ class Batch(BaseModel):
 
     """
 
-    batch_size: int = Field(
-        ...,
-        g=0,
-        description="The size of this batch. If the batch size is 0, "
-        "then this item stores one data item",
-    )
+    metadata: Metadata
 
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
@@ -81,7 +78,7 @@ class Batch(BaseModel):
         nwp_image_size_pixels = 64
 
         return Batch(
-            batch_size=batch_size,
+            metadata=metadata_fake(batch_size=batch_size),
             satellite=satellite_fake(
                 batch_size=batch_size,
                 seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
@@ -141,10 +138,18 @@ class Batch(BaseModel):
                         path=path,
                     )
 
+        # save metadata
+        self.metadata.save_to_csv(path=path)
+
     @staticmethod
-    def load_netcdf(local_netcdf_path: Union[Path, str], batch_idx: int):
+    def load_netcdf(
+        local_netcdf_path: Union[Path, str],
+        batch_idx: int,
+        data_sources_names: Optional[list[str]] = None,
+    ):
         """Load batch from netcdf file"""
-        data_sources_names = Example.__fields__.keys()
+        if data_sources_names is None:
+            data_sources_names = Example.__fields__.keys()
 
         # set up futures executor
         batch_dict = {}
@@ -175,7 +180,10 @@ class Batch(BaseModel):
 
             batch_dict[data_source_name] = data_source_model(xr_dataset)
 
-        batch_dict["batch_size"] = len(batch_dict["gsp"].example)
+        # load metadata
+        batch_size = len(batch_dict[list(data_sources_names)[0]].example)
+        metadata = load_from_csv(path=local_netcdf_path, batch_size=batch_size, batch_idx=batch_idx)
+        batch_dict["metadata"] = metadata.dict()
 
         return Batch(**batch_dict)
 

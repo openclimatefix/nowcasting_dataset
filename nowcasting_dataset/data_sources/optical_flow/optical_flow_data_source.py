@@ -10,6 +10,7 @@ import xarray as xr
 
 from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
 _LOG = logging.getLogger("nowcasting_dataset")
 
@@ -56,6 +57,11 @@ class OpticalFlowDataSource(DerivedDataSource):
         selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_datetime)
 
         return selected_data
+
+    @staticmethod
+    def get_data_model_for_batch():
+        """Get the model that is used in the batch"""
+        return OpticalFlow
 
     def _update_dataarray_with_predictions(
         self,

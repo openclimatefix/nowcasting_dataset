@@ -21,7 +21,7 @@ class NWP(DataSourceOutput):
     def model_validation(cls, v):
         """Check that all values are not NaNs"""
 
-        v.__setitem__("data", v.check_nan_and_inf(data=v.data))
+        v.check_nan_and_inf(data=v.data)
 
         v.check_data_var_dim(
             v.data, ("example", "time_index", "x_index", "y_index", "channels_index")

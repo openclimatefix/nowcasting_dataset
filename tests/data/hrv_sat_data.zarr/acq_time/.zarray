@@ -1,6 +1,6 @@
 {
     "chunks": [
-        37,
+        26,
         891
     ],
     "compressor": {
@@ -15,7 +15,7 @@
     "filters": null,
     "order": "C",
     "shape": [
-        73,
+        26,
         891
     ],
     "zarr_format": 2

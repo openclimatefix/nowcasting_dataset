@@ -33,7 +33,7 @@
             ],
             "calendar": "proleptic_gregorian",
             "long_name": "Mean scanline acquisition time",
-            "units": "milliseconds since 2020-03-26T21:28:01.615000"
+            "units": "milliseconds since 2020-01-04T06:37:59.134000"
         },
         "stacked_eumetsat_data/.zarray": {
             "chunks": [
@@ -69,7 +69,7 @@
                 "variable"
             ],
             "coordinates": "acq_time",
-            "meta": "{'georef_offset_corrected': True, 'sensor': 'seviri', 'modifiers': (), 'platform_name': 'Meteosat-10', 'orbital_parameters': {'projection_longitude': 9.5, 'projection_latitude': 0.0, 'projection_altitude': 35785831.0, 'satellite_nominal_longitude': 9.5, 'satellite_nominal_latitude': 0.0, 'satellite_actual_longitude': 9.1925787354899, 'satellite_actual_latitude': 0.47670744755701266, 'satellite_actual_altitude': 35787782.524384044}, 'reader': 'seviri_l1b_native', 'resolution': 3000.403165817, 'end_time': Timestamp('2020-03-26 21:30:00'), 'ancillary_variables': [], 'area': Area ID: msg_seviri_rss_3km\nDescription: MSG SEVIRI Rapid Scanning Service area definition with 3 km resolution\nProjection: {'a': '6378169', 'h': '35785831', 'lon_0': '9.5', 'no_defs': 'None', 'proj': 'geos', 'rf': '295.488065897014', 'type': 'crs', 'units': 'm', 'x_0': '0', 'y_0': '0'}\nNumber of columns: 615\nNumber of rows: 298\nArea extent: (28503.8301, 5090183.9708, -1816744.1169, 4196063.8274), 'start_time': datetime.datetime(2020, 3, 26, 21, 25, 10, 313220), 'osgb_x_coords': array([[ 1346210.55078505,  1343059.92087708,  1339909.24626635, ...,\n         -685027.85504498,  -688720.6171228 ,  -692415.55329627],\n       [ 1345495.59112542,  1342344.77544207,  1339193.91414047, ...,\n         -686118.47872415,  -689812.61743344,  -693508.93498296],\n       [ 1344779.22416308,  1341628.22227581,  1338477.17385169, ...,\n         -687211.83789909,  -690907.35922077,  -694605.06415582],\n       ...,\n       [ 1033508.21511525,  1030271.04847867,  1027033.21736571, ...,\n        -1343610.55508683, -1350351.10971384, -1357170.44600748],\n       [ 1031797.90711334,  1028560.24519005,  1025321.91328616, ...,\n        -1352720.83207683, -1359673.30203925, -1366719.30551373],\n       [ 1030078.34495025,  1026840.18496355,  1023601.34942129, ...,\n        -1362461.03806662, -1369670.66481945, -1376994.34813095]]), 'osgb_y_coords': array([[-556688.1200198 , -557152.96197139, -557615.7653369 , ...,\n        -441989.44098516, -441006.14773367, -440019.24549767],\n       [-551640.56775621, -552105.83338971, -552569.0565931 , ...,\n        -436338.72103845, -435352.29980485, -434362.25726628],\n       [-546587.18105439, -547052.87073743, -547516.51413334, ...,\n        -430678.86922507, -429689.30334664, -428696.10376179],\n       ...,\n       [1381214.14479441, 1380592.6132823 , 1379975.81362708, ...,\n        2426527.56431479, 2437610.96041529, 2448972.55046348],\n       [1390782.66110956, 1390160.34845127, 1389542.79259412, ...,\n        2461733.55508542, 2473592.87239681, 2485784.86488165],\n       [1400395.15508402, 1399772.05681417, 1399153.74062639, ...,\n        2499299.65390918, 2512103.42567627, 2525315.8310667 ]])}"
+            "meta": "{'resolution': 3000.403165817, 'ancillary_variables': [], 'reader': 'seviri_l1b_native', 'area': Area ID: msg_seviri_rss_3km\nDescription: MSG SEVIRI Rapid Scanning Service area definition with 3 km resolution\nProjection: {'a': '6378169', 'h': '35785831', 'lon_0': '9.5', 'no_defs': 'None', 'proj': 'geos', 'rf': '295.488065897014', 'type': 'crs', 'units': 'm', 'x_0': '0', 'y_0': '0'}\nNumber of columns: 615\nNumber of rows: 298\nArea extent: (28503.8301, 5090183.9708, -1816744.1169, 4196063.8274), 'end_time': Timestamp('2020-01-04 06:40:00'), 'start_time': datetime.datetime(2020, 1, 4, 6, 35, 9, 345706), 'orbital_parameters': {'projection_longitude': 9.5, 'projection_latitude': 0.0, 'projection_altitude': 35785831.0, 'satellite_nominal_longitude': 9.5, 'satellite_nominal_latitude': 0.0, 'satellite_actual_longitude': 9.429925602398619, 'satellite_actual_latitude': -0.6091495420177121, 'satellite_actual_altitude': 35776668.57351005}, 'platform_name': 'Meteosat-10', 'modifiers': (), 'sensor': 'seviri', 'georef_offset_corrected': True}"
         },
         "time/.zarray": {
             "chunks": [
@@ -146,8 +146,7 @@
         "x/.zattrs": {
             "_ARRAY_DIMENSIONS": [
                 "x"
-            ],
-            "units": "meter"
+            ]
         },
         "y/.zarray": {
             "chunks": [
@@ -172,8 +171,7 @@
         "y/.zattrs": {
             "_ARRAY_DIMENSIONS": [
                 "y"
-            ],
-            "units": "meter"
+            ]
         }
     },
     "zarr_consolidated_format": 1

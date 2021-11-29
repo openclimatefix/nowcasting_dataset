@@ -411,7 +411,11 @@ class Manager:
 
         # Check if there's any work to do.
         if overwrite_batches:
-            splits_which_need_more_batches = [split_name for split_name in split.SplitName]
+            splits_which_need_more_batches = [
+                split_name
+                for split_name in split.SplitName
+                if self._get_n_batches_requested_for_split_name(split_name.value) > 0
+            ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
                 first_batches_to_create
@@ -476,7 +480,9 @@ class Manager:
                         data_source.create_batches,
                         batch_path=self.config.output_data.filepath / split_name.value,
                         spatial_and_temporal_locations_of_each_example=locations,
-                        total_number_batches=self._get_n_batches_for_split_name(split_name.value),
+                        total_number_batches=self._get_n_batches_requested_for_split_name(
+                            split_name.value
+                        ),
                         idx_of_first_batch=idx_of_first_batch,
                         batch_size=self.config.process.batch_size,
                         dst_path=dst_path,

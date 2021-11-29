@@ -33,7 +33,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         batch,  # Of type nowcasting_dataset.dataset.batch.Batch.  But we can't use
         # an "actual" type hint here otherwise we get a circular import error!
         example_idx: int,
-        t0_datetime: pd.Timestamp,
+        t0_dt: pd.Timestamp,
         **kwargs
     ) -> DataSourceOutput:
         """
@@ -42,7 +42,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         Args:
             batch: nowcasting_dataset.dataset.batch.Batch containing satellite and metadata at least
             example_idx: The example to load and use
-            t0_datetime: t0 datetime for the example
+            t0_dt: t0 datetime for the example
 
         Returns: Example Data
 
@@ -54,7 +54,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         # Only do optical flow for satellite data
         self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
 
-        selected_data = self._compute_and_return_optical_flow(self._data, t0_dt=t0_datetime)
+        selected_data = self._compute_and_return_optical_flow(self._data, t0_datetime_utc=t0_dt)
 
         return selected_data
 
@@ -114,58 +114,58 @@ class OpticalFlowDataSource(DerivedDataSource):
     def _get_previous_timesteps(
         self,
         satellite_data: xr.DataArray,
-        t0_dt: pd.Timestamp,
+        t0_datetime_utc: pd.Timestamp,
     ) -> xr.DataArray:
         """
         Get timestamp of previous
 
         Args:
             satellite_data: Satellite data to use
-            t0_dt: Timestamp
+            t0_datetime_utc: Timestamp
 
         Returns:
             The previous timesteps
         """
-        satellite_data = satellite_data.where(satellite_data.time <= t0_dt, drop=True)
+        satellite_data = satellite_data.where(satellite_data.time <= t0_datetime_utc, drop=True)
         return satellite_data
 
     def _get_number_future_timesteps(
-        self, satellite_data: xr.DataArray, t0_dt: pd.Timestamp
+        self, satellite_data: xr.DataArray, t0_datetime_utc: pd.Timestamp
     ) -> int:
         """
         Get number of future timestamps
 
         Args:
             satellite_data: Satellite data to use
-            t0_dt: The timestamp of the t0 image
+            t0_datetime_utc: The timestamp of the t0 image
 
         Returns:
             The number of future timesteps
         """
-        satellite_data = satellite_data.where(satellite_data.time > t0_dt, drop=True)
+        satellite_data = satellite_data.where(satellite_data.time > t0_datetime_utc, drop=True)
         return len(satellite_data.coords["time_index"])
 
     def _compute_and_return_optical_flow(
         self,
         satellite_data: xr.DataArray,
-        t0_dt: pd.Timestamp,
+        t0_datetime_utc: pd.Timestamp,
     ) -> xr.DataArray:
         """
         Compute and return optical flow predictions for the example
 
         Args:
             satellite_data: Satellite DataArray
-            t0_dt: t0 timestamp
+            t0_datetime_utc: t0 timestamp
 
         Returns:
             The Tensor with the optical flow predictions for t0 to forecast horizon
         """
 
         # Get the previous timestamp
-        future_timesteps = self._get_number_future_timesteps(satellite_data, t0_dt)
+        future_timesteps = self._get_number_future_timesteps(satellite_data, t0_datetime_utc)
         historical_satellite_data: xr.DataArray = self._get_previous_timesteps(
             satellite_data,
-            t0_dt=t0_dt,
+            t0_datetime_utc=t0_datetime_utc,
         )
         assert (
             len(historical_satellite_data.coords["time_index"])

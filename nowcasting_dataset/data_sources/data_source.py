@@ -140,7 +140,7 @@ class DataSource:
         pass
 
     # TODO: Issue #319: Standardise parameter names.
-    # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
+    # TODO: Issue #367: Reduce duplication.
     def create_batches(
         self,
         spatial_and_temporal_locations_of_each_example: pd.DataFrame,
@@ -230,7 +230,9 @@ class DataSource:
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self._get_batch(locations_for_batch, **kwargs)
+            batch = self._get_batch(
+                locations_for_batch=locations_for_batch, batch_idx=batch_idx, **kwargs
+            )
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -530,13 +532,15 @@ class DerivedDataSource(DataSource):
         )
 
     def _get_batch(self, locations_for_batch, **kwargs):
-        if not all(key in kwargs for key in ["batch_path", "batch_idx"]):
-            raise ValueError("Missing arguments 'batch_path' and 'batch_idx'")
+        # Sanity check:
+        for key in ["batch_path", "batch_idx"]:
+            if key not in kwargs:
+                raise ValueError(f"Argument {key} is missing! ")
 
         batch = self.get_batch(
             netcdf_path=kwargs["batch_path"],
             batch_idx=kwargs["batch_idx"],
-            t0_datetimes=locations_for_batch.t0_datetime_UTC,
+            t0_datetimes=pd.DatetimeIndex(locations_for_batch.t0_datetime_UTC),
         )
         return batch
 
@@ -564,11 +568,19 @@ class DerivedDataSource(DataSource):
         import nowcasting_dataset.dataset.batch
 
         batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(netcdf_path, batch_idx=batch_idx)
+
+        # Sanity check
+        assert len(t0_datetimes) == batch.metadata.batch_size
+        assert isinstance(t0_datetimes, pd.DatetimeIndex)
+
         with futures.ProcessPoolExecutor(max_workers=batch.metadata.batch_size) as executor:
             future_examples = []
             for example_idx in range(batch.metadata.batch_size):
                 future_example = executor.submit(
-                    self.get_example, batch, example_idx, t0_datetimes[example_idx]
+                    self.get_example,
+                    batch=batch,
+                    example_idx=example_idx,
+                    t0_dt=t0_datetimes[example_idx],
                 )
                 future_examples.append(future_example)
             examples = [future_example.result() for future_example in future_examples]

@@ -10,7 +10,6 @@ import pandas as pd
 import nowcasting_dataset
 from nowcasting_dataset.data_sources import OpticalFlowDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.metadata.metadata_data_source import MetadataDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.manager import Manager
@@ -108,10 +107,12 @@ def test_get_daylight_datetime_index():
 
 def test_batches():
     """Test that batches can be made"""
-    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+    sat_filename = (
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+    )
 
     sat = SatelliteDataSource(
-        zarr_path=filename,
+        zarr_path=sat_filename,
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=24,
@@ -119,11 +120,11 @@ def test_batches():
         channels=("IR_016",),
     )
 
-    filename = (
+    hrv_filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
     )
     hrvsat = SatelliteDataSource(
-        zarr_path=filename,
+        zarr_path=hrv_filename,
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -131,12 +132,12 @@ def test_batches():
         channels=("HRV",),
     )
 
-    filename = (
+    gsp_filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
     )
 
     gsp = GSPDataSource(
-        zarr_path=filename,
+        zarr_path=gsp_filename,
         start_dt=datetime(2020, 4, 1),
         end_dt=datetime(2020, 4, 2),
         history_minutes=30,
@@ -158,8 +159,8 @@ def test_batches():
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
-        # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat, "hrvsat": hrvsat}
+        # Set data sources
+        manager.data_sources = {"gsp": gsp, "satellite": sat, "hrvsatellite": hrvsat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
@@ -171,19 +172,22 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train")
         assert os.path.exists(f"{dst_path}/train/gsp")
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
-        assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsat/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/satellite/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/satellite/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000000.nc")
 
 
 def test_derived_batches():
     """Test that derived batches can be made"""
-    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+    sat_filename = (
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+    )
 
+    # TODO: Reduce duplication between here and test_batches()
     sat = SatelliteDataSource(
-        zarr_path=filename,
+        zarr_path=sat_filename,
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -191,14 +195,14 @@ def test_derived_batches():
         channels=("HRV",),
     )
 
-    filename = (
+    gsp_filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
     )
 
     gsp = GSPDataSource(
-        zarr_path=filename,
-        start_dt=datetime(2019, 1, 1),
-        end_dt=datetime(2019, 1, 2),
+        zarr_path=gsp_filename,
+        start_dt=datetime(2020, 4, 1),
+        end_dt=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -211,8 +215,6 @@ def test_derived_batches():
         image_size_pixels=32,
     )
 
-    meta = MetadataDataSource(forecast_minutes=60, history_minutes=30)
-
     manager = Manager()
 
     # load config
@@ -224,8 +226,8 @@ def test_derived_batches():
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
-        # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat, "metadata": meta}
+        # Set data sources
+        manager.data_sources = {"gsp": gsp, "satellite": sat}
         manager.derived_data_sources = {"opticalflow": of}
         manager.data_source_which_defines_geospatial_locations = gsp
 
@@ -236,11 +238,18 @@ def test_derived_batches():
         manager.create_batches(overwrite_batches=True)
         import glob
 
-        print(list(glob.glob(os.path.join(dst_path, "train", "*"))))
+        print("glob(dst_path / train / *)", list(glob.glob(os.path.join(dst_path, "train", "*"))))
+        print(
+            "glob(dst_path / train / satellite / *)",
+            list(glob.glob(os.path.join(dst_path, "train", "satellite", "*"))),
+        )
+
         # Load batch
         from nowcasting_dataset.dataset.batch import Batch
 
-        _ = Batch.load_netcdf(os.path.join(dst_path, "train"), batch_idx=0)
+        _ = Batch.load_netcdf(
+            os.path.join(dst_path, "train"), batch_idx=0, data_sources_names=["satellite"]
+        )
 
         # make derived batches
         manager.create_derived_batches(overwrite_batches=True)

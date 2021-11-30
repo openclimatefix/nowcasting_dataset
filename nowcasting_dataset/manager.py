@@ -17,7 +17,7 @@ from nowcasting_dataset.consts import (
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
 )
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
-from nowcasting_dataset.data_sources.data_source import DataSource, DerivedDataSource
+from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 
@@ -30,7 +30,6 @@ class Manager:
     Attrs:
       config: Configuration object.
       data_sources: dict[str, DataSource]
-      derived_data_sources: dict[str, DerivedDataSource]
       data_source_which_defines_geospatial_locations: DataSource: The DataSource used to compute the
         geospatial locations of each example.
       save_batches_locally_and_upload: bool: Set to True by `load_yaml_configuration()` if
@@ -41,7 +40,6 @@ class Manager:
     def __init__(self) -> None:  # noqa: D107
         self.config = None
         self.data_sources = {}
-        self.derived_data_sources = {}
         self.data_source_which_defines_geospatial_locations = None
 
     def load_yaml_configuration(self, filename: str) -> None:
@@ -125,10 +123,7 @@ class Manager:
             except Exception:
                 logger.exception(f"Exception whilst instantiating {data_source_name}!")
                 raise
-            if isinstance(data_source, DerivedDataSource):
-                self.derived_data_sources[data_source_name] = data_source
-            else:
-                self.data_sources[data_source_name] = data_source
+            self.data_sources[data_source_name] = data_source                
 
         # Set data_source_which_defines_geospatial_locations:
         try:
@@ -335,9 +330,7 @@ class Manager:
         )
 
     def _get_first_batches_to_create(
-        self,
-        overwrite_batches: bool,
-        data_sources: dict[str, DataSource],
+            self, overwrite_batches: bool
     ) -> dict[split.SplitName, dict[str, int]]:
         """For each SplitName & for each DataSource name, return the first batch ID to create.
 
@@ -348,7 +341,7 @@ class Manager:
         first_batches_to_create: dict[split.SplitName, dict[str, int]] = {}
         for split_name in split.SplitName:
             first_batches_to_create[split_name] = {
-                data_source_name: 0 for data_source_name in data_sources
+                data_source_name: 0 for data_source_name in self.data_sources
             }
 
         if overwrite_batches:
@@ -356,7 +349,7 @@ class Manager:
 
         # If we're not overwriting batches then find the last batch on disk.
         for split_name in split.SplitName:
-            for data_source_name in data_sources:
+            for data_source_name in self.data_sources:
                 path = (
                     self.config.output_data.filepath / split_name.value / data_source_name / "*.nc"
                 )
@@ -372,11 +365,10 @@ class Manager:
         self,
         split_name: split.SplitName,
         first_batches_to_create: dict[split.SplitName, dict[str, int]],
-        data_sources: dict[str, DataSource],
     ) -> bool:
         """Returns True if batches still need to be created for any DataSource."""
         n_batches_requested = self._get_n_batches_requested_for_split_name(split_name.value)
-        for data_source_name in data_sources:
+        for data_source_name in self.data_sources:
             if first_batches_to_create[split_name][data_source_name] < n_batches_requested:
                 return True
         return False
@@ -384,7 +376,6 @@ class Manager:
     def _find_splits_which_need_more_batches(
         self,
         first_batches_to_create: dict[split.SplitName, dict[str, int]],
-        data_sources: dict[str, DataSource],
     ) -> list[split.SplitName]:
         """Returns list of SplitNames which need more batches to be produced."""
         return [
@@ -393,11 +384,9 @@ class Manager:
             if self._check_if_more_batches_are_required_for_split(
                 split_name=split_name,
                 first_batches_to_create=first_batches_to_create,
-                data_sources=data_sources,
             )
         ]
 
-    # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(self, overwrite_batches: bool) -> None:
         """Create batches (if necessary).
 
@@ -411,9 +400,7 @@ class Manager:
             written to disk, and only create any batches which have not yet been written to disk.
         """
         logger.debug("Entering Manager.create_batches...")
-        first_batches_to_create = self._get_first_batches_to_create(
-            overwrite_batches=overwrite_batches, data_sources=self.data_sources
-        )
+        first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)
 
         # Check if there's any work to do.
         if overwrite_batches:
@@ -424,7 +411,7 @@ class Manager:
             ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
-                first_batches_to_create=first_batches_to_create, data_sources=self.data_sources
+                first_batches_to_create=first_batches_to_create
             )
             if len(splits_which_need_more_batches) == 0:
                 logger.info("All batches have already been created!  No work to do!")

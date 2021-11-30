@@ -150,7 +150,6 @@ class DataSource:
         local_temp_path: Path,
         upload_every_n_batches: int,
         total_number_batches: int = None,
-        **kwargs,
     ) -> None:
         """Create multiple batches and save them to disk.
 
@@ -172,7 +171,6 @@ class DataSource:
               number of batches have been created.  If 0 then will write directly to `dst_path`.
             total_number_batches (int, optional): If specified it will be used to compute the batch
               size (`batch_size` will not be used in that case).
-            **kwargs: Arguments specific to the `_get_batch` method.
         """
         # Sanity checks:
         assert idx_of_first_batch >= 0, (
@@ -230,9 +228,7 @@ class DataSource:
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self._get_batch(
-                locations_for_batch=locations_for_batch, batch_idx=batch_idx, **kwargs
-            )
+            batch = self.get_batch(locations_for_batch=locations_for_batch, batch_idx=batch_idx)
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
@@ -249,21 +245,6 @@ class DataSource:
         # Upload last few batches, if necessary:
         if save_batches_locally_and_upload:
             nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
-
-    def _get_batch(self, locations_for_batch, **kwargs):
-        """Get the batch for the given datasource.
-
-        This, along with `get_batch`, should be implemented in the child classes if needed.
-
-        `_get_batch` is used internally here and has a specific signature, because it is called in
-        `create_batches` which can be common to different classes inheriting from `DataSource`
-        (e.g. `DerivedDataSource`).
-        """
-        return self.get_batch(
-            t0_datetimes=locations_for_batch.t0_datetime_UTC,
-            x_locations=locations_for_batch.x_center_OSGB,
-            y_locations=locations_for_batch.y_center_OSGB,
-        )
 
     # TODO: Issue #319: Standardise parameter names.
     def get_batch(

@@ -1,5 +1,6 @@
 """Test Optical Flow Data Source"""
 import tempfile
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -21,10 +22,34 @@ def optical_flow_configuration():  # noqa: D103
     return con
 
 
-def test_optical_flow_get_example(optical_flow_configuration):  # noqa: D103
-    optical_flow_datasource = OpticalFlowDataSource(
-        number_previous_timesteps_to_use=1, image_size_pixels=32
+def _get_optical_flow_data_source(
+        sat_filename: Path,
+        number_previous_timesteps_to_use: int = 1,
+) -> OpticalFlowDataSource:
+    return OpticalFlowDataSource(
+        zarr_path=sat_filename,
+        number_previous_timesteps_to_use=number_previous_timesteps_to_use,
+        image_size_pixels=64,
+        output_image_size_pixels=32,
+        history_minutes=30,
+        forecast_minutes=120,
+        channels=("IR_016",),
     )
+
+
+def test_optical_flow_get_example(optical_flow_configuration, sat_filename: Path):  # noqa: D103
+    optical_flow_datasource = _get_optical_flow_data_source(sat_filename=sat_filename)
+    optical_flow_datasource.open()
+    t0_dt = pd.Timestamp("2020-04-01T13:00")
+    example = optical_flow_datasource.get_example(
+        t0_dt=t0_dt, x_meters_center=10_000, y_meters_center=10_000)
+    assert example.values.shape == (24, 32, 32, 1)  # timesteps, height, width, channels
+
+
+def test_optical_flow_get_example_multi_timesteps(
+        optical_flow_configuration, sat_filename: Path):  # noqa: D103
+    optical_flow_datasource = _get_optical_flow_data_source(
+        number_previous_timesteps_to_use=3, sat_filename=sat_filename)
     batch = Batch.fake(configuration=optical_flow_configuration)
     example = optical_flow_datasource.get_example(
         batch=batch, example_idx=0, t0_dt=batch.metadata.t0_datetime_utc[0]
@@ -34,41 +59,12 @@ def test_optical_flow_get_example(optical_flow_configuration):  # noqa: D103
     assert example.values.shape == (0, 32, 32, 10)  # timesteps, height, width, channels
 
 
-def test_optical_flow_get_example_multi_timesteps(optical_flow_configuration):  # noqa: D103
-    optical_flow_datasource = OpticalFlowDataSource(
-        number_previous_timesteps_to_use=3, image_size_pixels=32
-    )
-    batch = Batch.fake(configuration=optical_flow_configuration)
-    example = optical_flow_datasource.get_example(
-        batch=batch, example_idx=0, t0_dt=batch.metadata.t0_datetime_utc[0]
-    )
-    # As a nasty hack to get round #511, the number of timesteps is set to 0 for now.
-    # TODO: Issue #513: Set the number of timesteps back to 12!
-    assert example.values.shape == (0, 32, 32, 10)  # timesteps, height, width, channels
-
-
-def test_optical_flow_get_example_too_many_timesteps(optical_flow_configuration):  # noqa: D103
-    optical_flow_datasource = OpticalFlowDataSource(
-        number_previous_timesteps_to_use=300, image_size_pixels=32
-    )
+def test_optical_flow_get_example_too_many_timesteps(
+        optical_flow_configuration, sat_filename: Path):  # noqa: D103
+    optical_flow_datasource = _get_optical_flow_data_source(
+        number_previous_timesteps_to_use=300, sat_filename=sat_filename)
     batch = Batch.fake(configuration=optical_flow_configuration)
     with pytest.raises(AssertionError):
         optical_flow_datasource.get_example(
             batch=batch, example_idx=0, t0_dt=batch.metadata.t0_datetime_utc[0]
         )
-
-
-def test_optical_flow_data_source_get_batch(optical_flow_configuration):  # noqa: D103
-    optical_flow_datasource = OpticalFlowDataSource(
-        number_previous_timesteps_to_use=1, image_size_pixels=32
-    )
-    with tempfile.TemporaryDirectory() as dirpath:
-        batch = Batch.fake(configuration=optical_flow_configuration)
-        batch.save_netcdf(path=dirpath, batch_i=0)
-        t0_datetime_utc = pd.DatetimeIndex(batch.metadata.t0_datetime_utc)
-        optical_flow = optical_flow_datasource.get_batch(
-            netcdf_path=dirpath, batch_idx=0, t0_datetimes=t0_datetime_utc
-        )
-        # As a nasty hack to get round #511, the number of timesteps is set to 0 for now.
-        # TODO: Issue #513: Set the number of timesteps back to 12!
-        assert optical_flow.values.shape == (4, 0, 32, 32, 10)  # ?, timesteps, height, width, chans

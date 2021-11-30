@@ -64,8 +64,22 @@ input_data:
 
   # ------------------------- Optical Flow ---------------
   opticalflow:
-    number_previous_timesteps_to_use: 1
-    opticalflow_image_size_pixels: 20
+    opticalflow_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
+    opticalflow_number_previous_timesteps_to_use: 1
+    opticalflow_image_size_pixels: 64
+    opticalflow_output_image_size_pixels: 24
+    opticalflow_channels:
+      - IR_016
+      - IR_039
+      - IR_087
+      - IR_097
+      - IR_108
+      - IR_120
+      - IR_134
+      - VIS006
+      - VIS008
+      - WV_062
+      - WV_073
 
 output_data:
   filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v15

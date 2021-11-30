@@ -18,7 +18,7 @@ from nowcasting_dataset.consts import (
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
 )
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
-from nowcasting_dataset.data_sources.data_source import DerivedDataSource
+from nowcasting_dataset.data_sources.data_source import DataSource, DerivedDataSource
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 
@@ -338,7 +338,7 @@ class Manager:
     def _get_first_batches_to_create(
         self,
         overwrite_batches: bool,
-        data_sources: dict,
+        data_sources: dict[str, DataSource],
     ) -> dict[split.SplitName, dict[str, int]]:
         """For each SplitName & for each DataSource name, return the first batch ID to create.
 
@@ -373,25 +373,30 @@ class Manager:
         self,
         split_name: split.SplitName,
         first_batches_to_create: dict[split.SplitName, dict[str, int]],
+        data_sources: dict[str, DataSource],
     ) -> bool:
         """Returns True if batches still need to be created for any DataSource."""
         n_batches_requested = self._get_n_batches_requested_for_split_name(split_name.value)
-        for data_source_name in self.data_sources:
+        for data_source_name in data_sources:
             if first_batches_to_create[split_name][data_source_name] < n_batches_requested:
                 return True
         return False
 
     def _find_splits_which_need_more_batches(
-        self, first_batches_to_create: dict[split.SplitName, dict[str, int]]
+        self,
+        first_batches_to_create: dict[split.SplitName, dict[str, int]],
+        data_sources: dict[str, DataSource],
     ) -> list[split.SplitName]:
         """Returns list of SplitNames which need more batches to be produced."""
-        splits_which_need_more_batches = []
-        for split_name in split.SplitName:
+        return [
+            split_name
+            for split_name in split.SplitName
             if self._check_if_more_batches_are_required_for_split(
-                split_name, first_batches_to_create
-            ):
-                splits_which_need_more_batches.append(split_name)
-        return splits_which_need_more_batches
+                split_name=split_name,
+                first_batches_to_create=first_batches_to_create,
+                data_sources=data_sources,
+            )
+        ]
 
     # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_derived_batches(self, overwrite_batches: bool) -> None:
@@ -406,8 +411,9 @@ class Manager:
             written to disk, and only create any batches which have not yet been written to disk.
 
         """
+        logger.debug("Entering Manager.create_derived_batches...")
         first_batches_to_create = self._get_first_batches_to_create(
-            overwrite_batches, self.derived_data_sources
+            overwrite_batches=overwrite_batches, data_sources=self.derived_data_sources
         )
 
         # Check if there's any work to do.
@@ -419,10 +425,11 @@ class Manager:
             ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
-                first_batches_to_create
+                first_batches_to_create=first_batches_to_create,
+                data_sources=self.derived_data_sources,
             )
             if len(splits_which_need_more_batches) == 0:
-                logger.info("All batches have already been created!  No work to do!")
+                logger.info("All derived batches have already been created!  No work to do!")
                 return
 
         # Load locations for each example off disk.
@@ -516,8 +523,9 @@ class Manager:
             previously been written to disk. If False then check which batches have previously been
             written to disk, and only create any batches which have not yet been written to disk.
         """
+        logger.debug("Entering Manager.create_batches...")
         first_batches_to_create = self._get_first_batches_to_create(
-            overwrite_batches, self.data_sources
+            overwrite_batches=overwrite_batches, data_sources=self.data_sources
         )
 
         # Check if there's any work to do.
@@ -529,7 +537,7 @@ class Manager:
             ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
-                first_batches_to_create
+                first_batches_to_create=first_batches_to_create, data_sources=self.data_sources
             )
             if len(splits_which_need_more_batches) == 0:
                 logger.info("All batches have already been created!  No work to do!")

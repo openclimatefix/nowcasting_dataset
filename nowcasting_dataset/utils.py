@@ -149,9 +149,7 @@ def arg_logger(func):
     # Adapted from https://stackoverflow.com/a/23983263/732596
     @wraps(func)
     def inner_func(*args, **kwargs):
-        logger.debug(
-            f"Arguments passed into function `{func.__name__}`:" f" args={args}; kwargs={kwargs}"
-        )
+        logger.debug(f"Arguments passed into function `{func.__name__}`: {args=}; {kwargs=}")
         return func(*args, **kwargs)
 
     return inner_func

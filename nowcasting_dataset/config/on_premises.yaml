@@ -65,7 +65,7 @@ input_data:
   # ------------------------- Optical Flow ---------------
   opticalflow:
     number_previous_timesteps_to_use: 1
-    opticalflow_image_size_pixels: 64
+    opticalflow_image_size_pixels: 20
 
 output_data:
   filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v15

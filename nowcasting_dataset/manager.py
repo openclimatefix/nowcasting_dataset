@@ -453,7 +453,8 @@ class Manager:
         for split_name in splits_which_need_more_batches:
             locations_for_split = locations_for_each_example_of_each_split[split_name]
             # TODO: Maybe use multiprocessing.Pool instead of ProcessPoolExecutor?
-            with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
+            # with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
+            with nd_utils.DummyExecutor(max_workers=n_data_sources) as executor:
                 future_create_batches_jobs = []
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.derived_data_sources.items()

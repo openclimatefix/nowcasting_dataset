@@ -52,18 +52,16 @@ class OpticalFlowDataSource(DerivedDataSource):
             self.image_size_pixels = len(batch.satellite.x_index)
 
         # Only do optical flow for satellite data
-        self._data: xr.DataArray = batch.satellite.sel(example=example_idx)
-
-        selected_data = self._compute_and_return_optical_flow(self._data, t0_datetime_utc=t0_dt)
-
-        return selected_data
+        # TODO: Enable this to work with hrvsatellite too.
+        satellite_data: xr.DataArray = batch.satellite.sel(example=example_idx)
+        return self._compute_and_return_optical_flow(satellite_data, t0_datetime_utc=t0_dt)
 
     @staticmethod
     def get_data_model_for_batch():
         """Get the model that is used in the batch"""
         return OpticalFlow
 
-    def _update_dataarray_with_predictions(
+    def _put_predictions_into_data_array(
         self,
         satellite_data: xr.DataArray,
         predictions: np.ndarray,
@@ -80,36 +78,29 @@ class OpticalFlowDataSource(DerivedDataSource):
         Returns:
             The Xarray DataArray with the optical flow predictions
         """
-        # Combine all channels for a single timestep
+        # Select the timesteps for the optical flow predictions.
         satellite_data = satellite_data.isel(
             time_index=slice(
                 satellite_data.sizes["time_index"] - predictions.shape[0],
                 satellite_data.sizes["time_index"],
             )
         )
-        # Make sure its the correct size
-        buffer = (satellite_data.sizes["x_index"] - self.image_size_pixels) // 2
+        # Select the center crop.
+        border = (satellite_data.sizes["x_index"] - self.image_size_pixels) // 2
         satellite_data = satellite_data.isel(
-            x_index=slice(buffer, satellite_data.sizes["x_index"] - buffer),
-            y_index=slice(buffer, satellite_data.sizes["y_index"] - buffer),
+            x_index=slice(border, satellite_data.sizes["x_index"] - border),
+            y_index=slice(border, satellite_data.sizes["y_index"] - border),
         )
-        dataarray = xr.DataArray(
+        return xr.DataArray(
             data=predictions,
-            dims={
-                "time_index": satellite_data.dims["time_index"],
-                "x_index": satellite_data.dims["x_index"],
-                "y_index": satellite_data.dims["y_index"],
-                "channels_index": satellite_data.dims["channels_index"],
-            },
-            coords={
-                "time_index": satellite_data.coords["time_index"],
-                "x_index": satellite_data.coords["x_index"],
-                "y_index": satellite_data.coords["y_index"],
-                "channels_index": satellite_data.coords["channels_index"],
-            },
+            coords=(
+                ("time_index", satellite_data.coords["time_index"].values),
+                ("x_index", satellite_data.coords["x_index"].values),
+                ("y_index", satellite_data.coords["y_index"].values),
+                ("channels_index", satellite_data.coords["channels_index"].values),
+            ),
+            name="data",
         )
-
-        return dataarray
 
     def _get_previous_timesteps(
         self,
@@ -172,34 +163,39 @@ class OpticalFlowDataSource(DerivedDataSource):
             - self.number_previous_timesteps_to_use
             - 1
         ) >= 0, "Trying to compute flow further back than the number of historical timesteps"
-        prediction_block = np.zeros(
-            (
+
+        # TODO: Use the correct dtype.
+        n_channels = satellite_data.sizes["channels_index"]
+        prediction_block = np.full(
+            shape=(
                 future_timesteps,
                 self.image_size_pixels,
                 self.image_size_pixels,
-                satellite_data.sizes["channels_index"],
-            )
+                n_channels,
+            ),
+            fill_value=np.NaN,
         )
-        for prediction_timestep in range(future_timesteps):
-            for channel in range(0, len(historical_satellite_data.coords["channels_index"])):
-                t0 = historical_satellite_data.sel(channels_index=channel)
-                previous = historical_satellite_data.sel(channels_index=channel)
-                optical_flows = []
-                for i in range(
-                    len(historical_satellite_data.coords["time_index"]) - 1,
-                    len(historical_satellite_data.coords["time_index"])
-                    - self.number_previous_timesteps_to_use
-                    - 1,
-                    -1,
-                ):
-                    t0_image = t0.isel(time_index=i).data.values
-                    previous_image = previous.isel(time_index=i - 1).data.values
-                    optical_flow = compute_optical_flow(t0_image, previous_image)
-                    optical_flows.append(optical_flow)
-                # Average predictions
-                optical_flow = np.mean(optical_flows, axis=0)
-                # Do predictions now
-                t0_image = t0.isel(time_index=-1).data.values
+
+        for channel in range(n_channels):
+            # Compute optical flow field:
+            historical_sat_data_for_chan = historical_satellite_data.isel(channels_index=channel)
+
+            # Loop through pairs of historical images to compute optical flow fields:
+            optical_flows = []
+            n_historical_timesteps = len(historical_satellite_data.coords["time_index"])
+            end_time_i = n_historical_timesteps
+            start_time_i = end_time_i - self.number_previous_timesteps_to_use
+            for time_i in range(start_time_i, end_time_i):
+                image_0 = historical_sat_data_for_chan.isel(time_index=time_i - 1).data.values
+                image_1 = historical_sat_data_for_chan.isel(time_index=time_i).data.values
+                optical_flow = compute_optical_flow(image_1, image_0)
+                optical_flows.append(optical_flow)
+            # Average predictions
+            optical_flow = np.mean(optical_flows, axis=0)
+
+            # Compute predicted images.
+            t0_image = historical_sat_data_for_chan.isel(time_index=-1).data.values
+            for prediction_timestep in range(future_timesteps):
                 flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(t0_image, flow)
                 warped_image = crop_center(
@@ -208,10 +204,11 @@ class OpticalFlowDataSource(DerivedDataSource):
                     self.image_size_pixels,
                 )
                 prediction_block[prediction_timestep, :, :, channel] = warped_image
-        dataarray = self._update_dataarray_with_predictions(
-            satellite_data=self._data, predictions=prediction_block
+
+        data_array = self._put_predictions_into_data_array(
+            satellite_data=satellite_data, predictions=prediction_block
         )
-        return dataarray
+        return data_array
 
 
 def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:

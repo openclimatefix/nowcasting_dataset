@@ -20,7 +20,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
-from nowcasting_dataset.utils import get_start_and_end_example_index
+from nowcasting_dataset.utils import DummyExecutor, get_start_and_end_example_index
 
 logger = logging.getLogger(__name__)
 
@@ -557,7 +557,7 @@ class DerivedDataSource(DataSource):
         Args:
             netcdf_path: Path to the NetCDF files of the Batch to load
             batch_idx: The batch ID to load from those in the path
-            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
+            t0_datetimes: t0 datetimes for each example in the batch. The batch will also
                 include data for historic and future depending on `history_minutes` and
                 `future_minutes`.  The batch size is given by the length of the t0_datetimes.
 
@@ -570,10 +570,13 @@ class DerivedDataSource(DataSource):
         batch = nowcasting_dataset.dataset.batch.Batch.load_netcdf(netcdf_path, batch_idx=batch_idx)
 
         # Sanity check
-        assert len(t0_datetimes) == batch.metadata.batch_size
+        assert (
+            len(t0_datetimes) == batch.metadata.batch_size
+        ), f"{len(t0_datetimes)=} != {batch.metadata.batch_size=}"
         assert isinstance(t0_datetimes, pd.DatetimeIndex)
 
-        with futures.ProcessPoolExecutor(max_workers=batch.metadata.batch_size) as executor:
+        # with futures.ProcessPoolExecutor(max_workers=batch.metadata.batch_size) as executor:
+        with DummyExecutor(max_workers=batch.metadata.batch_size) as executor:
             future_examples = []
             for example_idx in range(batch.metadata.batch_size):
                 future_example = executor.submit(

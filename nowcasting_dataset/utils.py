@@ -3,6 +3,8 @@ import logging
 import os
 import re
 import tempfile
+import threading
+from concurrent import futures
 from functools import wraps
 
 import fsspec.asyn
@@ -194,3 +196,33 @@ def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> (int, in
     end_example_idx = (batch_idx + 1) * batch_size
 
     return start_example_idx, end_example_idx
+
+
+class DummyExecutor(futures.Executor):
+    """Drop-in replacement for ThreadPoolExecutor or ProcessPoolExecutor for easy debugging.
+
+    Adapted from https://stackoverflow.com/a/10436851/732596
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._shutdown = False
+        self._shutdownLock = threading.Lock()
+
+    def submit(self, fn, *args, **kwargs):
+        with self._shutdownLock:
+            if self._shutdown:
+                raise RuntimeError("cannot schedule new futures after shutdown")
+
+            f = futures.Future()
+            try:
+                result = fn(*args, **kwargs)
+            except BaseException as e:
+                f.set_exception(e)
+            else:
+                f.set_result(result)
+
+            return f
+
+    def shutdown(self, wait=True):
+        with self._shutdownLock:
+            self._shutdown = True

@@ -46,7 +46,8 @@ class OpticalFlowDataSource(SatelliteDataSource):
 
         """
         satellite_data: xr.Dataset = super().get_example(
-            t0_dt=t0_dt, x_meters_center=x_meters_center, y_meters_center=y_meters_center)
+            t0_dt=t0_dt, x_meters_center=x_meters_center, y_meters_center=y_meters_center
+        )
         satellite_data = satellite_data["data"]
         return self._compute_and_return_optical_flow(satellite_data, t0_datetime_utc=t0_dt)
 

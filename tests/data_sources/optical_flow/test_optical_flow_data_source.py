@@ -23,8 +23,8 @@ def optical_flow_configuration():  # noqa: D103
 
 
 def _get_optical_flow_data_source(
-        sat_filename: Path,
-        number_previous_timesteps_to_use: int = 1,
+    sat_filename: Path,
+    number_previous_timesteps_to_use: int = 1,
 ) -> OpticalFlowDataSource:
     return OpticalFlowDataSource(
         zarr_path=sat_filename,
@@ -42,14 +42,17 @@ def test_optical_flow_get_example(optical_flow_configuration, sat_filename: Path
     optical_flow_datasource.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     example = optical_flow_datasource.get_example(
-        t0_dt=t0_dt, x_meters_center=10_000, y_meters_center=10_000)
+        t0_dt=t0_dt, x_meters_center=10_000, y_meters_center=10_000
+    )
     assert example.values.shape == (24, 32, 32, 1)  # timesteps, height, width, channels
 
 
 def test_optical_flow_get_example_multi_timesteps(
-        optical_flow_configuration, sat_filename: Path):  # noqa: D103
+    optical_flow_configuration, sat_filename: Path
+):  # noqa: D103
     optical_flow_datasource = _get_optical_flow_data_source(
-        number_previous_timesteps_to_use=3, sat_filename=sat_filename)
+        number_previous_timesteps_to_use=3, sat_filename=sat_filename
+    )
     batch = Batch.fake(configuration=optical_flow_configuration)
     example = optical_flow_datasource.get_example(
         batch=batch, example_idx=0, t0_dt=batch.metadata.t0_datetime_utc[0]
@@ -60,9 +63,11 @@ def test_optical_flow_get_example_multi_timesteps(
 
 
 def test_optical_flow_get_example_too_many_timesteps(
-        optical_flow_configuration, sat_filename: Path):  # noqa: D103
+    optical_flow_configuration, sat_filename: Path
+):  # noqa: D103
     optical_flow_datasource = _get_optical_flow_data_source(
-        number_previous_timesteps_to_use=300, sat_filename=sat_filename)
+        number_previous_timesteps_to_use=300, sat_filename=sat_filename
+    )
     batch = Batch.fake(configuration=optical_flow_configuration)
     with pytest.raises(AssertionError):
         optical_flow_datasource.get_example(

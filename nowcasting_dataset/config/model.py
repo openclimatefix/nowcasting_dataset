@@ -30,7 +30,8 @@ from nowcasting_dataset.dataset.split import split
 
 IMAGE_SIZE_PIXELS = 64
 IMAGE_SIZE_PIXELS_FIELD = Field(
-    IMAGE_SIZE_PIXELS, description="The number of pixels of the region of interest.")
+    IMAGE_SIZE_PIXELS, description="The number of pixels of the region of interest."
+)
 METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
 
 
@@ -159,7 +160,8 @@ class OpticalFlow(DataSourceMixin):
         "",
         description=(
             "The satellite Zarr data to use. If in doubt, use the same value as"
-            " satellite.satellite_zarr_path.")
+            " satellite.satellite_zarr_path."
+        ),
     )
     opticalflow_meters_per_pixels: int = METERS_PER_PIXEL_FIELD
     opticalflow_number_previous_timesteps_to_use: int = Field(
@@ -167,14 +169,15 @@ class OpticalFlow(DataSourceMixin):
         description=(
             "Number of previous timesteps to use, i.e. if 1, only uses the"
             " flow between t-1 and t0 images, if 3, computes the flow between (t-3,t-2),(t-2,t-1),"
-            " and (t-1,t0) image pairs and uses the mean optical flow for future timesteps.")
+            " and (t-1,t0) image pairs and uses the mean optical flow for future timesteps."
+        ),
     )
     opticalflow_image_size_pixels: int = Field(
         IMAGE_SIZE_PIXELS * 2,
-        description="The size of the *input* images (i.e. the size of the images to load off disk)")
+        description="The size of the *input* images (i.e. the size of the images to load off disk)",
+    )
     opticalflow_output_image_size_pixels: int = Field(
-        IMAGE_SIZE_PIXELS,
-        description="The size of the images after optical flow has been applied."
+        IMAGE_SIZE_PIXELS, description="The size of the images after optical flow has been applied."
     )
     opticalflow_channels: tuple = Field(
         SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"

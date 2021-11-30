@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset.data_sources.data_source.satellite import SatelliteDataSource
+from nowcasting_dataset.data_sources import SatelliteDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 

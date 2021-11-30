@@ -17,7 +17,6 @@ from nowcasting_dataset.consts import (
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
 )
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
-from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 

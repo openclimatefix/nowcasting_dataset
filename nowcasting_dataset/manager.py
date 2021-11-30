@@ -2,7 +2,6 @@
 
 import logging
 import multiprocessing
-from concurrent import futures
 from pathlib import Path
 from typing import Optional, Union
 
@@ -397,119 +396,6 @@ class Manager:
                 data_sources=data_sources,
             )
         ]
-
-    # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
-    def create_derived_batches(self, overwrite_batches: bool) -> None:
-        """
-        Create batches of derived data sources
-
-        This loads previously created batches
-
-        Args:
-            overwrite_batches: If True then start from batch 0, regardless of which batches have
-            previously been written to disk. If False then check which batches have previously been
-            written to disk, and only create any batches which have not yet been written to disk.
-
-        """
-        logger.debug("Entering Manager.create_derived_batches...")
-        first_batches_to_create = self._get_first_batches_to_create(
-            overwrite_batches=overwrite_batches, data_sources=self.derived_data_sources
-        )
-
-        # Check if there's any work to do.
-        if overwrite_batches:
-            splits_which_need_more_batches = [
-                split_name
-                for split_name in split.SplitName
-                if self._get_n_batches_requested_for_split_name(split_name.value) > 0
-            ]
-        else:
-            splits_which_need_more_batches = self._find_splits_which_need_more_batches(
-                first_batches_to_create=first_batches_to_create,
-                data_sources=self.derived_data_sources,
-            )
-            if len(splits_which_need_more_batches) == 0:
-                logger.info("All derived batches have already been created!  No work to do!")
-                return
-
-        # Load locations for each example off disk.
-        locations_for_each_example_of_each_split: dict[split.SplitName, pd.DataFrame] = {}
-        for split_name in splits_which_need_more_batches:
-            filename = self._filename_of_locations_csv_file(split_name.value)
-            logger.info(f"Loading {filename}.")
-            locations_for_each_example = pd.read_csv(filename, index_col=0)
-            assert locations_for_each_example.columns.to_list() == list(
-                SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-            )
-            # Converting to datetimes is much faster using `pd.to_datetime()` than
-            # passing `parse_datetimes` into `pd.read_csv()`.
-            locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
-                locations_for_each_example["t0_datetime_UTC"]
-            )
-            locations_for_each_example_of_each_split[split_name] = locations_for_each_example
-
-        n_data_sources = len(self.derived_data_sources)
-        nd_utils.set_fsspec_for_multiprocess()
-        for split_name in splits_which_need_more_batches:
-            locations_for_split = locations_for_each_example_of_each_split[split_name]
-            # TODO: Maybe use multiprocessing.Pool instead of ProcessPoolExecutor?
-            # with futures.ProcessPoolExecutor(max_workers=n_data_sources) as executor:
-            with nd_utils.DummyExecutor(max_workers=n_data_sources) as executor:
-                future_create_batches_jobs = []
-                for worker_id, (data_source_name, data_source) in enumerate(
-                    self.derived_data_sources.items()
-                ):
-
-                    if len(locations_for_split) == 0:
-                        break
-
-                    # Get indexes of first batch and example. And subset locations_for_split.
-                    idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
-                    idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
-                    locations = locations_for_split.loc[idx_of_first_example:]
-
-                    # Get paths.
-                    dst_path = (
-                        self.config.output_data.filepath / split_name.value / data_source_name
-                    )
-                    local_temp_path = (
-                        self.local_temp_path
-                        / split_name.value
-                        / data_source_name
-                        / f"worker_{worker_id}"
-                    )
-
-                    # Make folders.
-                    nd_fs_utils.makedirs(dst_path, exist_ok=True)
-                    if self.save_batches_locally_and_upload:
-                        nd_fs_utils.makedirs(local_temp_path, exist_ok=True)
-
-                    # Submit data_source.create_batches task to the worker process.
-                    future = executor.submit(
-                        data_source.create_batches,
-                        batch_path=self.config.output_data.filepath / split_name.value,
-                        spatial_and_temporal_locations_of_each_example=locations,
-                        total_number_batches=self._get_n_batches_requested_for_split_name(
-                            split_name.value
-                        ),
-                        idx_of_first_batch=idx_of_first_batch,
-                        batch_size=self.config.process.batch_size,
-                        dst_path=dst_path,
-                        local_temp_path=local_temp_path,
-                        upload_every_n_batches=self.config.process.upload_every_n_batches,
-                    )
-                    future_create_batches_jobs.append(future)
-
-                # Wait for all futures to finish:
-                for future, data_source_name in zip(
-                    future_create_batches_jobs, self.derived_data_sources.keys()
-                ):
-                    # Call exception() to propagate any exceptions raised by the worker process into
-                    # the main process, and to wait for the worker to finish.
-                    exception = future.exception()
-                    if exception is not None:
-                        logger.exception(f"Worker process {data_source_name} raised exception!")
-                        raise exception
 
     # TODO: Reduce duplication: https://github.com/openclimatefix/nowcasting_dataset/issues/367
     def create_batches(self, overwrite_batches: bool) -> None:

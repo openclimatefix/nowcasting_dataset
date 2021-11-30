@@ -186,9 +186,9 @@ class OpticalFlowDataSource(DerivedDataSource):
             end_time_i = n_historical_timesteps
             start_time_i = end_time_i - self.number_previous_timesteps_to_use
             for time_i in range(start_time_i, end_time_i):
-                image_0 = historical_sat_data_for_chan.isel(time_index=time_i - 1).data.values
-                image_1 = historical_sat_data_for_chan.isel(time_index=time_i).data.values
-                optical_flow = compute_optical_flow(image_1, image_0)
+                prev_image = historical_sat_data_for_chan.isel(time_index=time_i - 1).data.values
+                next_image = historical_sat_data_for_chan.isel(time_index=time_i).data.values
+                optical_flow = compute_optical_flow(prev_image, next_image)
                 optical_flows.append(optical_flow)
             # Average predictions
             optical_flow = np.mean(optical_flows, axis=0)
@@ -197,7 +197,7 @@ class OpticalFlowDataSource(DerivedDataSource):
             t0_image = historical_sat_data_for_chan.isel(time_index=-1).data.values
             for prediction_timestep in range(future_timesteps):
                 flow = optical_flow * (prediction_timestep + 1)
-                warped_image = remap_image(t0_image, flow)
+                warped_image = remap_image(image=t0_image, flow=flow)
                 warped_image = crop_center(
                     warped_image,
                     self.image_size_pixels,
@@ -211,7 +211,7 @@ class OpticalFlowDataSource(DerivedDataSource):
         return data_array
 
 
-def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np.ndarray:
+def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.ndarray:
     """
     Compute the optical flow for a set of images
 
@@ -222,16 +222,23 @@ def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np
     Returns:
         Optical Flow field
     """
-    # Input images have to be single channel and between 0 and 1
-    image_min = np.min([t0_image, previous_image])
-    image_max = np.max([t0_image, previous_image])
-    t0_image -= image_min
-    t0_image /= image_max
-    previous_image -= image_min
-    previous_image /= image_max
-    return cv2.calcOpticalFlowFarneback(
-        prev=previous_image,
-        next=t0_image,
+    # Input images have to be single channel and uint8.
+    # TODO: Refactor this!
+    image_min = np.min([prev_image, next_image])
+    image_max = np.max([prev_image, next_image])
+    prev_image = prev_image - image_min
+    prev_image = prev_image / (image_max - image_min)
+    prev_image = prev_image * 255
+    prev_image = prev_image.astype(np.uint8)
+    next_image = next_image - image_min
+    next_image = next_image / (image_max - image_min)
+    next_image = next_image * 255
+    next_image = next_image.astype(np.uint8)
+
+    # Docs: https://docs.opencv.org/3.4/dc/d6b/group__video__track.html#ga5d10ebbd59fe09c5f650289ec0ece5af  # nopa
+    flow = cv2.calcOpticalFlowFarneback(
+        prev=prev_image,
+        next=next_image,
         flow=None,
         pyr_scale=0.5,
         levels=2,
@@ -241,6 +248,7 @@ def compute_optical_flow(t0_image: np.ndarray, previous_image: np.ndarray) -> np
         poly_sigma=0.7,
         flags=cv2.OPTFLOW_FARNEBACK_GAUSSIAN,
     )
+    return flow
 
 
 def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
@@ -259,7 +267,9 @@ def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
     remap = -flow.copy()
     remap[..., 0] += np.arange(width)  # map_x
     remap[..., 1] += np.arange(height)[:, np.newaxis]  # map_y
-    return cv2.remap(
+    # remap docs: https://docs.opencv.org/4.5.4/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4  # noqa
+    # TODO: Maybe use integer remap: docs say that might be faster?
+    remapped_image = cv2.remap(
         src=image,
         map1=remap,
         map2=None,
@@ -267,6 +277,7 @@ def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=np.NaN,
     )
+    return remapped_image
 
 
 def crop_center(image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:

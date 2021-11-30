@@ -122,7 +122,7 @@ class Manager:
             except Exception:
                 logger.exception(f"Exception whilst instantiating {data_source_name}!")
                 raise
-            self.data_sources[data_source_name] = data_source                
+            self.data_sources[data_source_name] = data_source
 
         # Set data_source_which_defines_geospatial_locations:
         try:
@@ -329,7 +329,7 @@ class Manager:
         )
 
     def _get_first_batches_to_create(
-            self, overwrite_batches: bool
+        self, overwrite_batches: bool
     ) -> dict[split.SplitName, dict[str, int]]:
         """For each SplitName & for each DataSource name, return the first batch ID to create.
 

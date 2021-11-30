@@ -169,7 +169,7 @@ def configure_logger(log_level: str, logger_name: str, handlers=list[logging.Han
     log_level = getattr(logging, log_level)  # Convert string to int.
 
     formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s processID=%(process)d %(message)s | %(pathname)s#L%(lineno)d"
+        "%(asctime)s:%(levelname)s:%(module)s#L%(lineno)d:PID=%(process)d:%(message)s"
     )
 
     local_logger = logging.getLogger(logger_name)

@@ -116,7 +116,7 @@ class DataSource:
 
         This functions may be overwritten if the sample period of the data source is not 5 minutes.
         """
-        logging.debug(
+        logger.debug(
             "Getting sample_period_minutes default of 5 minutes. "
             "This means the data is spaced 5 minutes apart"
         )

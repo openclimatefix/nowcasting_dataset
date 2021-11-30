@@ -12,7 +12,7 @@ from nowcasting_dataset.data_sources.data_source import DerivedDataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
-_LOG = logging.getLogger("nowcasting_dataset")
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass

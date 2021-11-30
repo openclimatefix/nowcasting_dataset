@@ -14,7 +14,7 @@ from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 
-_LOG = logging.getLogger("nowcasting_dataset")
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass

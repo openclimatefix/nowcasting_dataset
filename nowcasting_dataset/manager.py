@@ -92,6 +92,7 @@ class Manager:
             log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
             nd_utils.configure_logger(
                 log_level=log_level,
+                # TODO: Fix bug #467: satellite.log file is not being appended to.
                 logger_name=f"nowcasting_dataset.data_sources.{data_source_name}",
                 handlers=[logging.FileHandler(log_filename, mode="a")],
             )
@@ -242,7 +243,7 @@ class Manager:
         try:
             nd_fs_utils.check_path_exists(filename)
         except FileNotFoundError:
-            logging.info(f"{filename} does not exist!")
+            logger.info(f"{filename} does not exist!")
             return False
         else:
             logger.info(f"{filename} exists!")

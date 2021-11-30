@@ -20,6 +20,7 @@ class OpticalFlowDataSource(SatelliteDataSource):
     """
     Optical Flow Data Source, computing flow between Satellite data
 
+    TODO: This is redundant:  Use history_minutes instead.
     number_previous_timesteps_to_use: Number of previous timesteps to use, i.e. if 1, only uses the
         flow between t-1 and t0 images, if 3, computes the flow between (t-3,t-2),(t-2,t-1),
         and (t-1,t0) image pairs and uses the mean optical flow for future timesteps.
@@ -46,7 +47,8 @@ class OpticalFlowDataSource(SatelliteDataSource):
 
         """
         satellite_data: xr.Dataset = super().get_example(
-            t0_dt=t0_dt, x_meters_center=x_meters_center, y_meters_center=y_meters_center)
+            t0_dt=t0_dt, x_meters_center=x_meters_center, y_meters_center=y_meters_center
+        )
         satellite_data = satellite_data["data"]
         return self._compute_and_return_optical_flow(satellite_data, t0_datetime_utc=t0_dt)
 

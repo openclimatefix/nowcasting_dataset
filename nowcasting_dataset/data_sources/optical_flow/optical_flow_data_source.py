@@ -265,7 +265,7 @@ def remap_image(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
         map2=None,
         interpolation=cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=np.NaN,
+        borderValue=-1,
     )
     return remapped_image
 

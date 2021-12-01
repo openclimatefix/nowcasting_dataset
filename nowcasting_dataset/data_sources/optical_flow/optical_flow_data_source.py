@@ -90,7 +90,8 @@ class OpticalFlowDataSource(DataSource):
             t0_dt=t0_dt, x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
         satellite_data = satellite_data["data"]
-        return self._compute_and_return_optical_flow(satellite_data)
+        optical_flow_data_array = self._compute_and_return_optical_flow(satellite_data)
+        return optical_flow_data_array.to_dataset()
 
     @staticmethod
     def get_data_model_for_batch():

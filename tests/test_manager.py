@@ -72,7 +72,7 @@ def test_load_yaml_configuration():  # noqa: D103
     filename = local_path / "tests" / "config" / "test.yaml"
     manager.load_yaml_configuration(filename=filename)
     manager.initialise_data_sources()
-    assert len(manager.data_sources) == 7
+    assert len(manager.data_sources) == 8
     assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
 
 

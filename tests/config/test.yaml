@@ -33,8 +33,7 @@ input_data:
   topographic:
     topographic_filename: tests/data/europe_dem_2km_osgb.tif
   opticalflow:
-    number_previous_timesteps_to_use: 1
-    opticalflow_image_size_pixels: 32
+    opticalflow_input_image_size_pixels: 32
 output_data:
   filepath: not used by unittests!
 process:

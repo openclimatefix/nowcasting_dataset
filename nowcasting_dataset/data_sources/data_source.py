@@ -228,7 +228,11 @@ class DataSource:
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self.get_batch(locations_for_batch=locations_for_batch, batch_idx=batch_idx)
+            batch = self.get_batch(
+                t0_datetimes=locations_for_batch.t0_datetime_UTC,
+                x_locations=locations_for_batch.x_center_OSGB,
+                y_locations=locations_for_batch.y_center_OSGB,
+            )
 
             # Save batch to disk.
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)

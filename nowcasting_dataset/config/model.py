@@ -170,7 +170,7 @@ class OpticalFlow(DataSourceMixin):
             " For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to"
             " compute the optical flow field separately for the image pairs (t-2, t-1), and"
             " (t-1, t0) and to use the mean optical flow field."
-        )
+        ),
     )
     opticalflow_forecast_minutes: int = Field(
         120, description="Duration of the optical flow predictions.")
@@ -181,13 +181,15 @@ class OpticalFlow(DataSourceMixin):
             "The *input* image size (i.e. the image size to load off disk)."
             " This should be larger than output_image_size_pixels to provide sufficient border to"
             " mean that, even after the image has been flowed, all edges of the output image are"
-            " real pixels values, and not NaNs."),
+            " real pixels values, and not NaNs."
+        ),
     )
     opticalflow_output_image_size_pixels: int = Field(
         IMAGE_SIZE_PIXELS,
         description=(
             "The size of the images after optical flow has been applied. The output image is a"
-            " center-crop of the input image, after it has been flowed.")
+            " center-crop of the input image, after it has been flowed."
+        ),
     )
     opticalflow_channels: tuple = Field(
         SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
@@ -196,7 +198,8 @@ class OpticalFlow(DataSourceMixin):
         "SatelliteDataSource",
         description=(
             "Either SatelliteDataSource or HRVSatelliteDataSource."
-            "  The name of the DataSource that will load the satellite images."),
+            "  The name of the DataSource that will load the satellite images."
+        ),
     )
 
 

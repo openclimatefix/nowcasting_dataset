@@ -49,21 +49,23 @@ class OpticalFlowDataSource(DataSource):
         super().__post_init__()
 
         # Get round circular import problem
-        from nowcasting_dataset.data_sources import SatelliteDataSource, HRVSatelliteDataSource
+        from nowcasting_dataset.data_sources import HRVSatelliteDataSource, SatelliteDataSource
+
         _MAP_SATELLITE_DATA_SOURCE_NAME_TO_CLASS = {
             "HRVSatelliteDataSource": HRVSatelliteDataSource,
             "SatelliteDataSource": SatelliteDataSource,
         }
 
         source_data_source_class = _MAP_SATELLITE_DATA_SOURCE_NAME_TO_CLASS[
-            self.source_data_source_class_name]
+            self.source_data_source_class_name
+        ]
         self.source_data_source = source_data_source_class(
             zarr_path=self.zarr_path,
             image_size_pixels=self.input_image_size_pixels,
             history_minutes=self.history_minutes,
             forecast_minutes=0,
             channels=self.channels,
-            meters_per_pixel=self.meters_per_pixel
+            meters_per_pixel=self.meters_per_pixel,
         )
 
     def open(self):
@@ -115,9 +117,7 @@ class OpticalFlowDataSource(DataSource):
         # Select the timesteps for the optical flow predictions.
         t0_datetime_utc = satellite_data.isel(time=-1)["time"].values
         datetime_index_of_predictions = pd.date_range(
-            t0_datetime_utc,
-            periods=self.forecast_length,
-            freq=self.sample_period_duration
+            t0_datetime_utc, periods=self.forecast_length, freq=self.sample_period_duration
         )
 
         # Select the center crop.
@@ -151,9 +151,9 @@ class OpticalFlowDataSource(DataSource):
         n_channels = satellite_data.sizes["channels"]
 
         # Sanity check
-        assert len(satellite_data.coords["time"]) == self.history_length+1, (
-            f"{len(satellite_data.coords['time'])=} != {self.history_length+1=}"
-        )
+        assert (
+            len(satellite_data.coords["time"]) == self.history_length + 1
+        ), f"{len(satellite_data.coords['time'])=} != {self.history_length+1=}"
         assert n_channels == len(self.channels), f"{n_channels=} != {len(self.channels)=}"
 
         # TODO: Use the correct dtype.
@@ -176,7 +176,7 @@ class OpticalFlowDataSource(DataSource):
             # self.history_length does not include t0.
             for history_timestep in range(self.history_length):
                 prev_image = sat_data_for_chan.isel(time=history_timestep).data
-                next_image = sat_data_for_chan.isel(time=history_timestep+1).data
+                next_image = sat_data_for_chan.isel(time=history_timestep + 1).data
                 optical_flow = compute_optical_flow(prev_image, next_image)
                 optical_flows.append(optical_flow)
             # Average predictions

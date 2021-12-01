@@ -21,8 +21,7 @@ def optical_flow_configuration():  # noqa: D103
 
 
 def _get_optical_flow_data_source(
-    sat_filename: Path,
-    history_minutes: int = 5
+    sat_filename: Path, history_minutes: int = 5
 ) -> OpticalFlowDataSource:
     return OpticalFlowDataSource(
         zarr_path=sat_filename,
@@ -36,11 +35,11 @@ def _get_optical_flow_data_source(
 
 @pytest.mark.parametrize("history_minutes", [5, 15])
 def test_optical_flow_get_example(
-        optical_flow_configuration,
-        sat_filename: Path,
-        history_minutes: int):  # noqa: D103
+    optical_flow_configuration, sat_filename: Path, history_minutes: int
+):  # noqa: D103
     optical_flow_datasource = _get_optical_flow_data_source(
-        sat_filename=sat_filename, history_minutes=history_minutes)
+        sat_filename=sat_filename, history_minutes=history_minutes
+    )
     optical_flow_datasource.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     example = optical_flow_datasource.get_example(

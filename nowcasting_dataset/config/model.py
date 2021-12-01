@@ -173,7 +173,8 @@ class OpticalFlow(DataSourceMixin):
         ),
     )
     opticalflow_forecast_minutes: int = Field(
-        120, description="Duration of the optical flow predictions.")
+        120, description="Duration of the optical flow predictions."
+    )
     opticalflow_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
     opticalflow_input_image_size_pixels: int = Field(
         IMAGE_SIZE_PIXELS * 2,

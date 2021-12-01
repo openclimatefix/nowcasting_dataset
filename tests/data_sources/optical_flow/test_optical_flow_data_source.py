@@ -45,4 +45,4 @@ def test_optical_flow_get_example(
     example = optical_flow_datasource.get_example(
         t0_dt=t0_dt, x_meters_center=10_000, y_meters_center=10_000
     )
-    assert example.values.shape == (24, 32, 32, 1)  # timesteps, height, width, channels
+    assert example["data"].shape == (24, 32, 32, 1)  # timesteps, height, width, channels

@@ -163,24 +163,40 @@ class OpticalFlow(DataSourceMixin):
             " satellite.satellite_zarr_path."
         ),
     )
-    opticalflow_meters_per_pixels: int = METERS_PER_PIXEL_FIELD
-    opticalflow_number_previous_timesteps_to_use: int = Field(
-        1,
+    opticalflow_history_minutes: int = Field(
+        5,
         description=(
-            "Number of previous timesteps to use, i.e. if 1, only uses the"
-            " flow between t-1 and t0 images, if 3, computes the flow between (t-3,t-2),(t-2,t-1),"
-            " and (t-1,t0) image pairs and uses the mean optical flow for future timesteps."
-        ),
+            "Duration of historical data to use when computing the optical flow field."
+            " For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to"
+            " compute the optical flow field separately for the image pairs (t-2, t-1), and"
+            " (t-1, t0) and to use the mean optical flow field."
+        )
     )
-    opticalflow_image_size_pixels: int = Field(
+    opticalflow_forecast_minutes: int = Field(
+        120, description="Duration of the optical flow predictions.")
+    opticalflow_meters_per_pixels: int = METERS_PER_PIXEL_FIELD
+    opticalflow_input_image_size_pixels: int = Field(
         IMAGE_SIZE_PIXELS * 2,
-        description="The size of the *input* images (i.e. the size of the images to load off disk)",
+        description=(
+            "The *input* image size (i.e. the image size to load off disk)."
+            " This should be larger than output_image_size_pixels to provide sufficient border to"
+            " mean that, even after the image has been flowed, all edges of the output image are"
+            " real pixels values, and not NaNs."),
     )
     opticalflow_output_image_size_pixels: int = Field(
-        IMAGE_SIZE_PIXELS, description="The size of the images after optical flow has been applied."
+        IMAGE_SIZE_PIXELS,
+        description=(
+            "The size of the images after optical flow has been applied. The output image is a"
+            " center-crop of the input image, after it has been flowed.")
     )
     opticalflow_channels: tuple = Field(
         SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
+    )
+    opticalflow_source_data_source_class_name: str = Field(
+        "SatelliteDataSource",
+        description=(
+            "Either SatelliteDataSource or HRVSatelliteDataSource."
+            "  The name of the DataSource that will load the satellite images."),
     )
 
 

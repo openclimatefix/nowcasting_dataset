@@ -20,7 +20,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
-from nowcasting_dataset.utils import DummyExecutor, get_start_and_end_example_index
+from nowcasting_dataset.utils import get_start_and_end_example_index
 
 logger = logging.getLogger(__name__)
 
@@ -343,7 +343,7 @@ class DataSource:
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     # TODO: Issue #319: Standardise parameter names.
     def _get_time_slice(self, t0_dt: pd.Timestamp):
-        """Get a single timestep of data.  Must be overridden."""
+        """Get a single timestep of data.  Must be overridden if get_example is not overridden."""
         raise NotImplementedError()
 
     # TODO: Issue #319: Standardise parameter names.

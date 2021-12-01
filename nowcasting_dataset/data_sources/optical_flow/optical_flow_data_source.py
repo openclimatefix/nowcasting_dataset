@@ -1,14 +1,16 @@
 """ Optical Flow Data Source """
 import logging
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 from numbers import Number
+from pathlib import Path
+from typing import Iterable, Union
 
 import cv2
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-from nowcasting_dataset.data_sources import SatelliteDataSource
+from nowcasting_dataset.data_sources import DataSource
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
@@ -16,20 +18,56 @@ _LOG = logging.getLogger(__name__)
 
 
 @dataclass
-class OpticalFlowDataSource(SatelliteDataSource):
+class OpticalFlowDataSource(DataSource):
     """
     Optical Flow Data Source, computing flow between Satellite data
 
-    TODO: This is redundant:  Use history_minutes instead.
-    number_previous_timesteps_to_use: Number of previous timesteps to use, i.e. if 1, only uses the
-        flow between t-1 and t0 images, if 3, computes the flow between (t-3,t-2),(t-2,t-1),
-        and (t-1,t0) image pairs and uses the mean optical flow for future timesteps.
-    image_size_pixels: The *input* image size (i.e. the image size to load off disk).
-    output_image_size_pixels: The size of the output image.
+    history_minutes: Duration of historical data to use when computing the optical flow field.
+        For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to compute
+        the optical flow field separately for the image pairs (t-2, t-1), and (t-1, t0) and to
+        use the mean optical flow field.
+    forecast_minutes: Duration of the optical flow predictions.
+    zarr_path: The location of the intermediate satellite data to compute optical flows with.
+    input_image_size_pixels: The *input* image size (i.e. the image size to load off disk).
+        This should be larger than output_image_size_pixels to provide sufficient border to mean
+        that, even after the image has been "flowed", all edges of the output image are
+        "real" pixels values, and not NaNs.
+    output_image_size_pixels: The size of the output image.  The output image is a center-crop of
+        the input image, after it has been "flowed".
+    source_data_source_class: Either HRVSatelliteDataSource or SatelliteDataSource.
+    channels: The satellite channels to compute optical flow for.
     """
 
-    number_previous_timesteps_to_use: int = 1
-    output_image_size_pixels: int = 64
+    zarr_path: Union[Path, str]
+    channels: Iterable[str]
+    input_image_size_pixels: int = 64
+    meters_per_pixel: int = 2000
+    output_image_size_pixels: int = 32
+    source_data_source_class_name: str = "SatelliteDataSource"
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        # Get round circular import problem
+        from nowcasting_dataset.data_sources import SatelliteDataSource, HRVSatelliteDataSource
+        _MAP_SATELLITE_DATA_SOURCE_NAME_TO_CLASS = {
+            "HRVSatelliteDataSource": HRVSatelliteDataSource,
+            "SatelliteDataSource": SatelliteDataSource,
+        }
+
+        source_data_source_class = _MAP_SATELLITE_DATA_SOURCE_NAME_TO_CLASS[
+            self.source_data_source_class_name]
+        self.source_data_source = source_data_source_class(
+            zarr_path=self.zarr_path,
+            image_size_pixels=self.input_image_size_pixels,
+            history_minutes=self.history_minutes,
+            forecast_minutes=0,
+            channels=self.channels,
+            meters_per_pixel=self.meters_per_pixel
+        )
+
+    def open(self):
+        self.source_data_source.open()
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
@@ -46,11 +84,11 @@ class OpticalFlowDataSource(SatelliteDataSource):
         Returns: Example Data
 
         """
-        satellite_data: xr.Dataset = super().get_example(
+        satellite_data: xr.Dataset = self.source_data_source.get_example(
             t0_dt=t0_dt, x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
         satellite_data = satellite_data["data"]
-        return self._compute_and_return_optical_flow(satellite_data, t0_datetime_utc=t0_dt)
+        return self._compute_and_return_optical_flow(satellite_data)
 
     @staticmethod
     def get_data_model_for_batch():
@@ -75,13 +113,15 @@ class OpticalFlowDataSource(SatelliteDataSource):
             The Xarray DataArray with the optical flow predictions
         """
         # Select the timesteps for the optical flow predictions.
-        satellite_data = satellite_data.isel(
-            time=slice(
-                satellite_data.sizes["time"] - predictions.shape[0],
-                satellite_data.sizes["time"],
-            )
+        t0_datetime_utc = satellite_data.isel(time=-1)["time"].values
+        datetime_index_of_predictions = pd.date_range(
+            t0_datetime_utc,
+            periods=self.forecast_length,
+            freq=self.sample_period_duration
         )
+
         # Select the center crop.
+        # TODO: Generalise crop_center and use again here:
         border = (satellite_data.sizes["x"] - self.output_image_size_pixels) // 2
         satellite_data = satellite_data.isel(
             x=slice(border, satellite_data.sizes["x"] - border),
@@ -90,7 +130,7 @@ class OpticalFlowDataSource(SatelliteDataSource):
         return xr.DataArray(
             data=predictions,
             coords=(
-                ("time", satellite_data.coords["time"].values),
+                ("time", datetime_index_of_predictions),
                 ("x", satellite_data.coords["x"].values),
                 ("y", satellite_data.coords["y"].values),
                 ("channels", satellite_data.coords["channels"].values),
@@ -98,73 +138,28 @@ class OpticalFlowDataSource(SatelliteDataSource):
             name="data",
         )
 
-    def _get_previous_timesteps(
-        self,
-        satellite_data: xr.DataArray,
-        t0_datetime_utc: pd.Timestamp,
-    ) -> xr.DataArray:
-        """
-        Get timestamp of previous
-
-        Args:
-            satellite_data: Satellite data to use
-            t0_datetime_utc: Timestamp
-
-        Returns:
-            The previous timesteps
-        """
-        satellite_data = satellite_data.where(satellite_data.time <= t0_datetime_utc, drop=True)
-        return satellite_data
-
-    def _get_number_future_timesteps(
-        self, satellite_data: xr.DataArray, t0_datetime_utc: pd.Timestamp
-    ) -> int:
-        """
-        Get number of future timestamps
-
-        Args:
-            satellite_data: Satellite data to use
-            t0_datetime_utc: The timestamp of the t0 image
-
-        Returns:
-            The number of future timesteps
-        """
-        satellite_data = satellite_data.where(satellite_data.time > t0_datetime_utc, drop=True)
-        return len(satellite_data.coords["time"])
-
-    def _compute_and_return_optical_flow(
-        self,
-        satellite_data: xr.DataArray,
-        t0_datetime_utc: pd.Timestamp,
-    ) -> xr.DataArray:
+    def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray) -> xr.DataArray:
         """
         Compute and return optical flow predictions for the example
 
         Args:
-            satellite_data: Satellite DataArray
-            t0_datetime_utc: t0 timestamp
+            satellite_data: Satellite DataArray of historical satellite images.
 
         Returns:
             The Tensor with the optical flow predictions for t0 to forecast horizon
         """
+        n_channels = satellite_data.sizes["channels"]
 
-        # Get the previous timestamp
-        future_timesteps = self._get_number_future_timesteps(satellite_data, t0_datetime_utc)
-        historical_satellite_data: xr.DataArray = self._get_previous_timesteps(
-            satellite_data,
-            t0_datetime_utc=t0_datetime_utc,
+        # Sanity check
+        assert len(satellite_data.coords["time"]) == self.history_length+1, (
+            f"{len(satellite_data.coords['time'])=} != {self.history_length+1=}"
         )
-        assert (
-            len(historical_satellite_data.coords["time"])
-            - self.number_previous_timesteps_to_use
-            - 1
-        ) >= 0, "Trying to compute flow further back than the number of historical timesteps"
+        assert n_channels == len(self.channels), f"{n_channels=} != {len(self.channels)=}"
 
         # TODO: Use the correct dtype.
-        n_channels = satellite_data.sizes["channels"]
         prediction_block = np.full(
             shape=(
-                future_timesteps,
+                self.forecast_length,
                 self.output_image_size_pixels,
                 self.output_image_size_pixels,
                 n_channels,
@@ -172,26 +167,24 @@ class OpticalFlowDataSource(SatelliteDataSource):
             fill_value=np.NaN,
         )
 
-        for channel in range(n_channels):
+        for channel_i in range(n_channels):
             # Compute optical flow field:
-            historical_sat_data_for_chan = historical_satellite_data.isel(channels=channel)
+            sat_data_for_chan = satellite_data.isel(channels=channel_i)
 
             # Loop through pairs of historical images to compute optical flow fields:
             optical_flows = []
-            n_historical_timesteps = len(historical_satellite_data.coords["time"])
-            end_time_i = n_historical_timesteps
-            start_time_i = end_time_i - self.number_previous_timesteps_to_use
-            for time_i in range(start_time_i, end_time_i):
-                prev_image = historical_sat_data_for_chan.isel(time=time_i - 1).data
-                next_image = historical_sat_data_for_chan.isel(time=time_i).data
+            # self.history_length does not include t0.
+            for history_timestep in range(self.history_length):
+                prev_image = sat_data_for_chan.isel(time=history_timestep).data
+                next_image = sat_data_for_chan.isel(time=history_timestep+1).data
                 optical_flow = compute_optical_flow(prev_image, next_image)
                 optical_flows.append(optical_flow)
             # Average predictions
             optical_flow = np.mean(optical_flows, axis=0)
 
             # Compute predicted images.
-            t0_image = historical_sat_data_for_chan.isel(time=-1).data
-            for prediction_timestep in range(future_timesteps):
+            t0_image = sat_data_for_chan.isel(time=-1).data
+            for prediction_timestep in range(self.forecast_length):
                 flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(image=t0_image, flow=flow)
                 warped_image = crop_center(
@@ -199,7 +192,7 @@ class OpticalFlowDataSource(SatelliteDataSource):
                     self.output_image_size_pixels,
                     self.output_image_size_pixels,
                 )
-                prediction_block[prediction_timestep, :, :, channel] = warped_image
+                prediction_block[prediction_timestep, :, :, channel_i] = warped_image
 
         data_array = self._put_predictions_into_data_array(
             satellite_data=satellite_data, predictions=prediction_block

@@ -4,6 +4,7 @@ import logging
 import multiprocessing
 from pathlib import Path
 from typing import Optional, Union
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -441,6 +442,7 @@ class Manager:
         for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
             with multiprocessing.Pool(processes=n_data_sources) as pool:
                 async_results_from_create_batches = []
+                an_error_has_occured = multiprocessing.Event()
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
@@ -482,10 +484,14 @@ class Manager:
                     callback_msg = (
                         f"{data_source_name} has finished created batches for {split_name}!"
                     )
-                    error_callback_msg = (
-                        f"Exception raised by {data_source_name} whilst creating batches for"
-                        f" {split_name}:\n"
-                    )
+
+                    def _error_callback(exception):
+                        error_callback_msg = (
+                            f"Exception raised by {data_source_name} whilst creating batches for"
+                            f" {split_name}:\n"
+                        )
+                        logger.error(error_callback_msg + str(exception))
+                        an_error_has_occured.set()
 
                     # Submit data_source.create_batches task to the worker process.
                     logger.debug(
@@ -495,14 +501,16 @@ class Manager:
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,
                         callback=lambda result: logger.info(callback_msg),
-                        error_callback=lambda exception: logger.error(
-                            error_callback_msg + str(exception)
-                        ),
+                        error_callback=_error_callback,
                     )
                     async_results_from_create_batches.append(async_result)
 
                 # Wait for all async_results to finish:
                 for async_result in async_results_from_create_batches:
                     async_result.wait()
+                    if an_error_has_occured.is_set():
+                        raise RuntimeError(
+                            f"Worker process {data_source_name} raised an exception"
+                            f" whilst working on {split_name}!")
 
                 logger.info(f"Finished creating batches for {split_name}!")

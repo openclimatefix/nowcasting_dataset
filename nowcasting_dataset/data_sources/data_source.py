@@ -235,8 +235,10 @@ class DataSource:
             )
 
             # Save batch to disk.
+            # TODO: Use DataSourceOutput.save_netcdf
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
-            batch.to_netcdf(netcdf_filename, engine="h5netcdf")
+            encoding = {name: {"compression": "lzf"} for name in batch.data_vars}
+            batch.to_netcdf(netcdf_filename, engine="h5netcdf", encoding=encoding)
 
             # Upload if necessary.
             if (

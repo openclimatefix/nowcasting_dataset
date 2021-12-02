@@ -11,7 +11,6 @@ import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.data_sources import DataSource
-from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
 _LOG = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ class OpticalFlowDataSource(DataSource):
         "real" pixels values, and not NaNs.
     output_image_size_pixels: The size of the output image.  The output image is a center-crop of
         the input image, after it has been "flowed".
-    source_data_source_class: Either HRVSatelliteDataSource or SatelliteDataSource.
+    source_data_source_class_name: Either HRVSatelliteDataSource or SatelliteDataSource.
     channels: The satellite channels to compute optical flow for.
     """
 
@@ -73,7 +72,7 @@ class OpticalFlowDataSource(DataSource):
 
     def get_example(
         self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
-    ) -> DataSourceOutput:
+    ) -> xr.Dataset:
         """
         Get Optical Flow Example data
 
@@ -165,7 +164,8 @@ class OpticalFlowDataSource(DataSource):
                 self.output_image_size_pixels,
                 n_channels,
             ),
-            fill_value=np.NaN,
+            fill_value=-1,
+            dtype=np.int16,
         )
 
         for channel_i in range(n_channels):
@@ -243,9 +243,9 @@ def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.n
 
 
 def remap_image(
-        image: np.ndarray,
-        flow: np.ndarray,
-        border_mode: int = cv2.BORDER_REPLICATE,
+    image: np.ndarray,
+    flow: np.ndarray,
+    border_mode: int = cv2.BORDER_REPLICATE,
 ) -> np.ndarray:
     """
     Takes an image and warps it forwards in time according to the flow field.
@@ -292,6 +292,6 @@ def crop_center(image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:
         The cropped image
     """
     y, x = image.shape
-    startx = x // 2 - (x_size // 2)
-    starty = y // 2 - (y_size // 2)
+    startx = (x // 2) - (x_size // 2)
+    starty = (y // 2) - (y_size // 2)
     return image[starty : starty + y_size, startx : startx + x_size]

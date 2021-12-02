@@ -11,6 +11,7 @@ class OpticalFlow(DataSourceOutput):
 
     __slots__ = ()
     _expected_dimensions = ("time", "x", "y", "channels")
+    _expected_data_vars = ("data",)
 
     @classmethod
     def model_validation(cls, v):

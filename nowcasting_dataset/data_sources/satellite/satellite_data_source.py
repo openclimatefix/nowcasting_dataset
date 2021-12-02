@@ -86,23 +86,44 @@ class SatelliteDataSource(ZarrDataSource):
         Returns:
             The selected data around the center
         """
-        x_index = (
-            np.searchsorted(data_array.x.values, x_center_osgb) - 1
-        )  # To have the center fall within the pixel
-        y_index = np.searchsorted(data_array.y.values, y_center_osgb) - 1
-        min_y = y_index - (self._square.size_pixels // 2)
-        min_x = x_index - (self._square.size_pixels // 2)
-        assert min_y >= 0, (
-            f"Y location must be at least {(self._square.size_pixels // 2)} "
-            f"pixels from the edge of the area, but is {y_index} for y center of {y_center_osgb}"
+        # Get the index into x and y nearest to x_center_osgb and y_center_osgb:
+        x_index_at_center = np.searchsorted(data_array.x.values, x_center_osgb) - 1
+        y_index_at_center = np.searchsorted(data_array.y.values, y_center_osgb) - 1
+        x_and_y_index_at_center = pd.Series({"x": x_index_at_center, "y": y_index_at_center})
+        half_image_size_pixels = self._square.size_pixels // 2
+        min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
+        max_x_and_y_index = x_and_y_index_at_center + half_image_size_pixels
+
+        # Check whether the requested region of interest steps outside of the available data:
+        suggested_reduction_of_image_size_pixels = (
+            max(
+                (-min_x_and_y_index.min() if (min_x_and_y_index < 0).any() else 0),
+                (max_x_and_y_index.x - len(data_array.x)),
+                (max_x_and_y_index.y - len(data_array.y)),
+            )
+            * 2
         )
-        assert min_x >= 0, (
-            f"X location must be at least {(self._square.size_pixels // 2)}"
-            f" pixels from the edge of the area, but is {x_index} for x center of {x_center_osgb}"
-        )
+        if suggested_reduction_of_image_size_pixels > 0:
+            new_suggested_image_size_pixels = (
+                self._square.size_pixels - suggested_reduction_of_image_size_pixels
+            )
+            raise RuntimeError(
+                "Requested region of interest of satellite data steps outside of the available"
+                " geographical extent of the Zarr data.  The requested region of interest extends"
+                f" from pixel indicies"
+                f" x={min_x_and_y_index.x} to x={max_x_and_y_index.x},"
+                f" y={min_x_and_y_index.y} to y={max_x_and_y_index.y}.  In the Zarr data,"
+                f" len(x)={len(data_array.x)}, len(y)={len(data_array.y)}. Try reducing"
+                f" image_size_pixels from {self._square.size_pixels} to"
+                f" {new_suggested_image_size_pixels} pixels."
+            )
+
+        # Select the geographical region of interest.
+        # Note that isel is *exclusive* of the end of the slice.
+        # e.g. isel(x=slice(0, 3)) will return the first, second, and third values.
         data_array = data_array.isel(
-            x=slice(min_x, min_x + self._square.size_pixels),
-            y=slice(min_y, min_y + self._square.size_pixels),
+            x=slice(min_x_and_y_index.x, max_x_and_y_index.x),
+            y=slice(min_x_and_y_index.y, max_x_and_y_index.y),
         )
         return data_array
 

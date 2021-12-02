@@ -2,9 +2,9 @@
 
 import logging
 import multiprocessing
+from functools import partial
 from pathlib import Path
 from typing import Optional, Union
-from functools import partial
 
 import numpy as np
 import pandas as pd

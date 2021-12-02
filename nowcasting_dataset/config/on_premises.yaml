@@ -67,7 +67,7 @@ input_data:
     opticalflow_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
     opticalflow_history_minutes: 5
     opticalflow_forecast_minutes: 120
-    opticalflow_input_image_size_pixels: 112
+    opticalflow_input_image_size_pixels: 106
     opticalflow_output_image_size_pixels: 24
     opticalflow_source_data_source_class_name: SatelliteDataSource
     opticalflow_channels:

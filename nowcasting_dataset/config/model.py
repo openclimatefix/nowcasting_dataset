@@ -16,6 +16,8 @@ from typing import Optional, Union
 
 import git
 import pandas as pd
+
+from pathlib import Path
 from pathy import Pathy
 from pydantic import BaseModel, Field, root_validator, validator
 
@@ -368,6 +370,12 @@ class Process(BaseModel):
     )
 
     local_temp_path: str = Field("~/temp/")
+
+    @validator("local_temp_path")
+    def local_temp_path_to_path_object_expanduser(cls, v):
+        """Convert the path in string format to a `pathlib.PosixPath` object
+        and call `expanduser` on the latter."""
+        return Path(v).expanduser()
 
 
 class Configuration(BaseModel):

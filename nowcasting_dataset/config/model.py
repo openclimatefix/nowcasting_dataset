@@ -12,12 +12,11 @@ are used to validate the values of the data itself.
 
 """
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Union
 
 import git
 import pandas as pd
-
-from pathlib import Path
 from pathy import Pathy
 from pydantic import BaseModel, Field, root_validator, validator
 

@@ -344,10 +344,7 @@ def create_gsp_pv_dataset(
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
 
     # make pv yield
-    data = np.random.randn(
-        seq_length,
-        number_of_systems,
-    )
+    data = np.random.random(size=(seq_length, number_of_systems))
 
     # smooth the data, the convolution method smooths that data across systems first,
     # and then a bit across time (depending what you set N)
@@ -355,9 +352,10 @@ def create_gsp_pv_dataset(
     data = np.convolve(data.ravel(), np.ones(N) / N, mode="same").reshape(
         (seq_length, number_of_systems)
     )
-    # Need to clip at 0 *after* smoothing, because the smoothing method might push
-    # non-zero data below zero.
-    data = data.clip(min=0)
+    # Need to clip  *after* smoothing, because the smoothing method might push
+    # non-zero data below zero.  Clip at 0.1 instead of 0 so we don't get div-by-zero errors
+    # if capacity is zero (capacity is computed as the max of the random numbers).
+    data = data.clip(min=0.1)
 
     # make into a Data Array
     data_array = xr.DataArray(

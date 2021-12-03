@@ -72,12 +72,11 @@ def test_load_yaml_configuration():  # noqa: D103
     filename = local_path / "tests" / "config" / "test.yaml"
 
     manager.load_yaml_configuration(filename=filename)
-    local_temp_path = manager.local_temp_path
 
     manager.initialise_data_sources()
     assert len(manager.data_sources) == 8
     assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
-    assert isinstance(local_temp_path, Path)
+    assert isinstance(manager.config.process.local_temp_path, Path)
 
 
 def test_get_daylight_datetime_index():

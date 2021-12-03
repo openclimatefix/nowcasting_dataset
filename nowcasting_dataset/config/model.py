@@ -425,7 +425,14 @@ class Process(BaseModel):
         ),
     )
 
-    local_temp_path: Path = Field(Path("~/temp/"))
+    local_temp_path: Path = Field(
+        Path("~/temp/").expanduser(),
+        description=(
+            "This is only necessary if using a VM on a public cloud and when the finished batches"
+            " will be uploaded to a cloud bucket. This is the local temporary path on the VM."
+            "  This will be emptied."
+        ),
+    )
 
     @validator("local_temp_path")
     def local_temp_path_to_path_object_expanduser(cls, v):

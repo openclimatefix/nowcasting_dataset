@@ -142,7 +142,6 @@ class DataSource:
         dst_path: Path,
         local_temp_path: Path,
         upload_every_n_batches: int,
-        total_number_batches: int = None,
     ) -> None:
         """Create multiple batches and save them to disk.
 
@@ -150,34 +149,32 @@ class DataSource:
 
         Args:
             spatial_and_temporal_locations_of_each_example (pd.DataFrame): A DataFrame where each
-              row specifies the spatial and temporal location of an example. The number of rows
-              must be an exact multiple of `batch_size`.
-              Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
+                row specifies the spatial and temporal location of an example. The number of rows
+                must be an exact multiple of `batch_size`.
+                Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
             idx_of_first_batch (int): The batch number of the first batch to create.
             batch_size (int): The number of examples per batch.
             dst_path (Path): The final destination path for the batches.  Must exist.
             local_temp_path (Path): The local temporary path.  This is only required when dst_path
-              is a cloud storage bucket, so files must first be created on the VM's local disk in
-              temp_path and then uploaded to dst_path every `upload_every_n_batches`. Must exist.
-              Will be emptied.
+                is a cloud storage bucket, so files must first be created on the VM's local disk in
+                temp_path and then uploaded to dst_path every `upload_every_n_batches`. Must exist.
+                Will be emptied.
             upload_every_n_batches (int): Upload the contents of temp_path to dst_path after this
-              number of batches have been created.  If 0 then will write directly to `dst_path`.
-            total_number_batches (int, optional): If specified it will be used to compute the batch
-              size (`batch_size` will not be used in that case).
+                number of batches have been created.  If 0 then will write directly to `dst_path`.
         """
         # Sanity checks:
-        assert idx_of_first_batch >= 0, (
-            "The batch number of the first batch to create should be" " greater than 0"
+        assert (
+            idx_of_first_batch >= 0
+        ), "The batch number of the first batch to create should be greater than 0"
+        assert batch_size > 0, (
+            "The batch size should be strictly greater than 0. Otherwise,"
+            " you should specify 'total_number_batches' to compute the batch size from"
+            " 'spatial_and_temporal_locations_of_each_example'"
         )
-
-        if total_number_batches is None:
-            assert batch_size > 0, (
-                "The batch size should be strictly greater than 0. Otherwise,"
-                " you should specify 'total_number_batches' to compute the batch size from"
-                " 'spatial_and_temporal_locations_of_each_example'"
-            )
-            assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
-
+        assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0, (
+            f"{len(spatial_and_temporal_locations_of_each_example)=} must be"
+            f" exactly divisible by {batch_size=}"
+        )
         assert upload_every_n_batches >= 0, "'upload_every_n_batches' should be greater than 0"
 
         spatial_and_temporal_locations_of_each_example_columns = (
@@ -186,8 +183,8 @@ class DataSource:
         assert spatial_and_temporal_locations_of_each_example_columns == list(
             SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
         ), (
-            f"The provided data columns ({spatial_and_temporal_locations_of_each_example_columns})"
-            f"do not match {SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES}"
+            f"The provided data columns {spatial_and_temporal_locations_of_each_example_columns}"
+            f" do not match {SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES=}"
         )
 
         self.open()
@@ -199,13 +196,10 @@ class DataSource:
         path_to_write_to = local_temp_path if save_batches_locally_and_upload else dst_path
 
         # Split locations per example into batches:
-        if total_number_batches is not None:
-            batch_size = len(spatial_and_temporal_locations_of_each_example) // total_number_batches
-        else:
-            total_number_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
+        n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
 
         locations_for_batches = []
-        for batch_idx in range(total_number_batches):
+        for batch_idx in range(n_batches):
             start_example_idx, end_example_idx = get_start_and_end_example_index(
                 batch_idx=batch_idx, batch_size=batch_size
             )

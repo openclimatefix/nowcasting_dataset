@@ -41,11 +41,9 @@ class GSPDataSource(ImageDataSource):
     # zarr_path of where the gsp data is stored
     zarr_path: Union[str, Path]
     # start datetime, this can be None
-    # TODO: Issue #425: Use config to set start_dt and end_dt.
-    start_dt: Optional[datetime] = pd.Timestamp("2020-01-01")
+    start_datetime: Optional[datetime] = pd.Timestamp("2020-01-01")
     # end datetime, this can be None
-    # TODO: Issue #425: Use config to set start_dt and end_dt.
-    end_dt: Optional[datetime] = pd.Timestamp("2022-01-01")
+    end_datetime: Optional[datetime] = pd.Timestamp("2022-01-01")
     # the threshold where we only taken gsp's with a maximum power, above this value.
     threshold_mw: int = 0
     # get the data for the gsp at the center too.
@@ -102,7 +100,7 @@ class GSPDataSource(ImageDataSource):
 
         # load gsp data from file / gcp
         self.gsp_power, self.gsp_capacity = load_solar_gsp_data(
-            self.zarr_path, start_dt=self.start_dt, end_dt=self.end_dt
+            self.zarr_path, start_dt=self.start_datetime, end_dt=self.end_datetime
         )
 
         # drop any gsp below a threshold mw. This is to get rid of any small GSP where

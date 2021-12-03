@@ -42,8 +42,8 @@ def test_get_example_and_batch():  # noqa: D103
         meters_per_pixel=2000,
         filename=PV_DATA_FILENAME,
         metadata_filename=PV_METADATA_FILENAME,
-        start_dt=datetime.fromisoformat("2020-04-01 00:00:00.000"),
-        end_dt=datetime.fromisoformat("2020-04-02 00:00:00.000"),
+        start_datetime=datetime.fromisoformat("2020-04-01 00:00:00.000"),
+        end_datetime=datetime.fromisoformat("2020-04-02 00:00:00.000"),
         load_azimuth_and_elevation=False,
         load_from_gcs=False,
     )
@@ -75,8 +75,8 @@ def test_passive():
     pv = PVDataSource(
         filename=filename,
         metadata_filename=filename_metadata,
-        start_dt=datetime(2020, 3, 28),
-        end_dt=datetime(2020, 4, 1),
+        start_datetime=datetime(2020, 3, 28),
+        end_datetime=datetime(2020, 4, 1),
         history_minutes=60,
         forecast_minutes=30,
         image_size_pixels=64,

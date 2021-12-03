@@ -86,7 +86,22 @@ class DataSourceMixin(BaseModel):
         return int((self.history_minutes + self.forecast_minutes) / 60 + 1)
 
 
-class PV(DataSourceMixin):
+class StartEndDatetimeMixin(BaseModel):
+    """Mixin class to add start and end date"""
+
+    start_datetime: datetime = Field(
+        None,
+        description="Load date from data sources from this date. "
+        "If None, this will get overwritten by InputData.start_date. ",
+    )
+    end_datetime: datetime = Field(
+        None,
+        description="Load date from data sources up to this date. "
+        "If None, this will get overwritten by InputData.start_date. ",
+    )
+
+
+class PV(DataSourceMixin, StartEndDatetimeMixin):
     """PV configuration model"""
 
     pv_filename: str = Field(
@@ -163,7 +178,7 @@ class NWP(DataSourceMixin):
     nwp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
-class GSP(DataSourceMixin):
+class GSP(DataSourceMixin, StartEndDatetimeMixin):
     """GSP configuration model"""
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr")
@@ -174,17 +189,6 @@ class GSP(DataSourceMixin):
     )
     gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
-
-    start_date: datetime = Field(
-        None,
-        description="Load date from data sources from this date. "
-        "If None, this will get overwritten by InputData.start_date. ",
-    )
-    end_date: datetime = Field(
-        None,
-        description="Load date from data sources up to this date. "
-        "If None, this will get overwritten by InputData.start_date. ",
-    )
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
@@ -251,11 +255,11 @@ class InputData(BaseModel):
         ),
     )
 
-    start_date: datetime = Field(
-        "2020-01-01", description="Load date from data sources from this date"
+    start_datetime: datetime = Field(
+        datetime(2020, 1, 1), description="Load date from data sources from this date"
     )
-    end_date: datetime = Field(
-        "2021-09-01", description="Load date from data sources up to this date"
+    end_datetime: datetime = Field(
+        datetime(2021, 9, 1), description="Load date from data sources up to this date"
     )
 
     @property
@@ -298,7 +302,7 @@ class InputData(BaseModel):
         return values
 
     @root_validator
-    def set_start_and_end_date(cls, values):
+    def set_start_and_end_datetime(cls, values):
         """
         Set start and end date, if needed.
 
@@ -318,11 +322,11 @@ class InputData(BaseModel):
         ]
 
         for data_source_name in enabled_data_sources:
-            if values[data_source_name].start_date is None:
-                values[data_source_name].start_date = values["start_date"]
+            if values[data_source_name].start_datetime is None:
+                values[data_source_name].start_datetime = values["start_datetime"]
 
-            if values[data_source_name].end_date is None:
-                values[data_source_name].end_date = values["end_date"]
+            if values[data_source_name].end_datetime is None:
+                values[data_source_name].end_datetime = values["end_datetime"]
 
         return values
 

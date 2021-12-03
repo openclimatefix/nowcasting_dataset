@@ -19,20 +19,37 @@ _LOG = logging.getLogger(__name__)
 @dataclass
 class OpticalFlowDataSource(DataSource):
     """
-    Optical Flow Data Source, computing flow between Satellite data
+    Optical Flow Data Source.
+
+    Predicts future satellite imagery by computing the "flow" between consecutive pairs of
+    satellite images and using that flow to "warp" the most recent satellite image (the "t0 image")
+    to predict future satellite images.
+
+    Optical flow is surprisingly effective at predicting future satellite images over time horizons
+    out to about 2 hours.  After 2 hours the predictions start to go a bit crazy.  There are some
+    notable problems with optical flow predictions:
+
+    1) Optical flow doesn't understand that clouds grow, shrink, appear from "nothing", and disappear
+       into "nothing".  Optical flow just moves pixels around.
+    2) Optical flow doesn't understand that satellite images tend to get brighter as the sun rises
+       and darker as the sun sets.
+
+    Arguments for the OpticalFlowDataSource constructor:
 
     history_minutes: Duration of historical data to use when computing the optical flow field.
         For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to compute
-        the optical flow field separately for the image pairs (t-2, t-1), and (t-1, t0) and to
+        the optical flow field separately for the image pairs (t-2, t-1) and (t-1, t0) and to
         use the mean optical flow field.
     forecast_minutes: Duration of the optical flow predictions.
     zarr_path: The location of the intermediate satellite data to compute optical flows with.
     input_image_size_pixels: The *input* image size (i.e. the image size to load off disk).
-        This should be larger than output_image_size_pixels to provide sufficient border to mean
-        that, even after the image has been "flowed", all edges of the output image are
-        "real" pixels values, and not NaNs.
+        This should be significantly larger than output_image_size_pixels to provide sufficient
+        border so that, even after the image has been "flowed", all edges of the output image are
+        "real" pixels values, and not NaNs.  For a forecast horizon of 120 minutes, and an output
+        image size of 24 pixels, we have found that the input image size needs to be at least
+        128 pixels.
     output_image_size_pixels: The size of the output image.  The output image is a center-crop of
-        the input image, after it has been "flowed".
+        the input image after it has been "flowed".
     source_data_source_class_name: Either HRVSatelliteDataSource or SatelliteDataSource.
     channels: The satellite channels to compute optical flow for.
     """
@@ -206,13 +223,13 @@ def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.n
     Compute the optical flow for a set of images
 
     Args:
-        t0_image: t0 image
+        t0_image: t0 image.  Can be any dtype.
         previous_image: previous image to compute optical flow with
 
     Returns:
         Optical Flow field
     """
-    # Input images have to be single channel and uint8.
+    # cv2.calcOpticalFlowFarneback expects images to be uint8:
     # TODO: Refactor this!
     image_min = np.min([prev_image, next_image])
     image_max = np.max([prev_image, next_image])
@@ -225,7 +242,7 @@ def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.n
     next_image = next_image * 255
     next_image = next_image.astype(np.uint8)
 
-    # Docs:
+    # Docs for cv2.calcOpticalFlowFarneback:
     # https://docs.opencv.org/4.5.4/dc/d6b/group__video__track.html#ga5d10ebbd59fe09c5f650289ec0ece5af
     flow = cv2.calcOpticalFlowFarneback(
         prev=prev_image,
@@ -256,6 +273,7 @@ def remap_image(
             dimensions of the image.  The third dimension represented the x and y displacement.
         border_mode: One of cv2's BorderTypes such as cv2.BORDER_CONSTANT or cv2.BORDER_REPLICATE.
             If border_mode=cv2.BORDER_CONSTANT then the border will be set to -1.
+            For details of other border_mode settings, see the Open CV docs here:
             docs.opencv.org/4.5.4/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5
 
     Returns:  Warped image.
@@ -279,19 +297,22 @@ def remap_image(
     return remapped_image
 
 
-def crop_center(image: np.ndarray, x_size: int, y_size: int) -> np.ndarray:
+def crop_center(image: np.ndarray, output_image_size_pixels: int) -> np.ndarray:
     """
-    Crop center of numpy image
+    Crop center of a 2D numpy image.
 
     Args:
-        image: Image to crop
-        x_size: Size in x direction
-        y_size: Size in y direction
-
+        image: The input image to crop.
+        output_image_size_pixels: The requested size of the output image.
     Returns:
-        The cropped image
+        The cropped image, of size output_image_size_pixels x output_image_size_pixels
     """
-    y, x = image.shape
-    startx = (x // 2) - (x_size // 2)
-    starty = (y // 2) - (y_size // 2)
-    return image[starty : starty + y_size, startx : startx + x_size]
+    input_size_y, input_size_x = image.shape
+    assert input_size_x >= output_image_size_pixels
+    assert input_size_y >= output_image_size_pixels
+    half_output_image_size_pixels = output_image_size_pixels // 2
+    start_x = (input_size_x // 2) - half_output_image_size_pixels
+    start_y = (input_size_y // 2) - half_output_image_size_pixels
+    end_x = start_x + output_image_size_pixels
+    end_y = start_y + output_image_size_pixels
+    return image[start_y:end_y, start_x:end_x]

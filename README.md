@@ -2,6 +2,10 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+
+[![codecov](https://codecov.io/gh/openclimatefix/nowcasting_dataset/branch/main/graph/badge.svg?token=JQFI9C86GL)](https://codecov.io/gh/openclimatefix/nowcasting_api)
+
+
 Pre-prepare batches of data for use in machine learning training.
 
 This code combines several data sources including:

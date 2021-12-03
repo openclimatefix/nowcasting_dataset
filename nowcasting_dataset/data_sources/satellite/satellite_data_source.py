@@ -98,6 +98,8 @@ class SatelliteDataSource(ZarrDataSource):
         # Get the index into x and y nearest to x_center_osgb and y_center_osgb:
         x_index_at_center = np.searchsorted(data_array.x.values, x_center_osgb) - 1
         y_index_at_center = np.searchsorted(data_array.y.values, y_center_osgb) - 1
+        # Put x_index_at_center and y_index_at_center into a pd.Series so we can operate
+        # on them both in a single line of code.
         x_and_y_index_at_center = pd.Series({"x": x_index_at_center, "y": y_index_at_center})
         half_image_size_pixels = self._square.size_pixels // 2
         min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
@@ -112,6 +114,8 @@ class SatelliteDataSource(ZarrDataSource):
             )
             * 2
         )
+        # If the requested region does step outside the available data then raise an exception
+        # with a helpful message:
         if suggested_reduction_of_image_size_pixels > 0:
             new_suggested_image_size_pixels = (
                 self._square.size_pixels - suggested_reduction_of_image_size_pixels

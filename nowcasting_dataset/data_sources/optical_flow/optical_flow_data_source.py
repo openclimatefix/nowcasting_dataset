@@ -120,9 +120,7 @@ class OpticalFlowDataSource(DataSource):
         predictions: np.ndarray,
     ) -> xr.DataArray:
         """
-        Updates the dataarray with predictions
-
-         Additionally, changes the temporal size to t0+1 to forecast horizon
+        Puts optical flow predictions into an xr.DataArray.
 
         Args:
             satellite_data: Satellite data
@@ -131,25 +129,24 @@ class OpticalFlowDataSource(DataSource):
         Returns:
             The Xarray DataArray with the optical flow predictions
         """
-        # Select the timesteps for the optical flow predictions.
+        # Generate a pd.DatetimeIndex for the optical flow predictions.
         t0_datetime_utc = satellite_data.isel(time=-1)["time"].values
+        t1_datetime_utc = t0_datetime_utc + self.sample_period_duration
         datetime_index_of_predictions = pd.date_range(
-            t0_datetime_utc, periods=self.forecast_length, freq=self.sample_period_duration
+            t1_datetime_utc, periods=self.forecast_length, freq=self.sample_period_duration
         )
 
         # Select the center crop.
-        # TODO: Generalise crop_center and use again here:
-        border = (satellite_data.sizes["x"] - self.output_image_size_pixels) // 2
-        satellite_data = satellite_data.isel(
-            x=slice(border, satellite_data.sizes["x"] - border),
-            y=slice(border, satellite_data.sizes["y"] - border),
-        )
+        satellite_data_cropped = satellite_data.isel(time_index=0, channels_index=0)
+        satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels)
+
+        # Put into DataArray
         return xr.DataArray(
             data=predictions,
             coords=(
                 ("time", datetime_index_of_predictions),
-                ("x", satellite_data.coords["x"].values),
-                ("y", satellite_data.coords["y"].values),
+                ("x", satellite_data_cropped.coords["x"].values),
+                ("y", satellite_data_cropped.coords["y"].values),
                 ("channels", satellite_data.coords["channels"].values),
             ),
             name="data",
@@ -214,29 +211,41 @@ class OpticalFlowDataSource(DataSource):
         return data_array
 
 
+def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
+    """Convert multiple arrays to uint8, using the same min and max to scale all arrays.
+    """
+    # First, stack into a single numpy array so we can work on all images at the same time:
+    stacked = np.stack(arrays)
+
+    # Rescale pixel values to be in the range [0, 1]:
+    stacked -= stacked.min()
+    stacked /= stacked.max()
+
+    # Convert to uint8 (uint8 can represent integers in the range [0, 255]):
+    stacked *= 255
+    stacked = stacked.astype(np.uint8)
+
+    return tuple(stacked)
+
+
 def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.ndarray:
     """
     Compute the optical flow for a set of images
 
     Args:
-        t0_image: t0 image.  Can be any dtype.
-        previous_image: previous image to compute optical flow with
+        prev_image, next_image: A pair of images representing two timesteps.  This algorithm
+            will estimate the "movement" across these two timesteps.  Both images must be the
+            same dtype.
 
     Returns:
-        Optical Flow field
+        Dense optical flow field: A 3D array.  The first two dimension are the same size as the
+            input images.  The third dimension is of size 2 and represents the
+            displacement in x and y.
     """
+    assert prev_image.dtype == next_image.dtype
+
     # cv2.calcOpticalFlowFarneback expects images to be uint8:
-    # TODO: Refactor this!
-    image_min = np.min([prev_image, next_image])
-    image_max = np.max([prev_image, next_image])
-    prev_image = prev_image - image_min
-    prev_image = prev_image / (image_max - image_min)
-    prev_image = prev_image * 255
-    prev_image = prev_image.astype(np.uint8)
-    next_image = next_image - image_min
-    next_image = next_image / (image_max - image_min)
-    next_image = next_image * 255
-    next_image = next_image.astype(np.uint8)
+    prev_image, next_image = _convert_arrays_to_uint8(prev_image, next_image)
 
     # Docs for cv2.calcOpticalFlowFarneback:
     # https://docs.opencv.org/4.5.4/dc/d6b/group__video__track.html#ga5d10ebbd59fe09c5f650289ec0ece5af

@@ -121,6 +121,8 @@ class StartEndDatetimeMixin(BaseModel):
             logger.error(message)
             assert Exception(message)
 
+        return values
+
 
 class PV(DataSourceMixin, StartEndDatetimeMixin):
     """PV configuration model"""

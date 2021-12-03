@@ -110,42 +110,6 @@ def test_get_daylight_datetime_index():
 
 def test_batches():
     """Test that batches can be made"""
-    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
-
-    sat = SatelliteDataSource(
-        zarr_path=filename,
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=24,
-        meters_per_pixel=6000,
-        channels=("IR_016",),
-    )
-
-    filename = (
-        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
-    )
-    hrvsat = SatelliteDataSource(
-        zarr_path=filename,
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-        channels=("HRV",),
-    )
-
-    filename = (
-        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
-    )
-
-    gsp = GSPDataSource(
-        zarr_path=filename,
-        start_dt=datetime(2020, 4, 1),
-        end_dt=datetime(2020, 4, 2),
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-    )
 
     manager = Manager()
 
@@ -160,15 +124,53 @@ def test_batches():
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
+        # set up loggers
+        manager.configure_loggers(log_level="DEBUG")
+
         # just set satellite as data source
+        filename = (
+            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+        )
+
+        sat = SatelliteDataSource(
+            zarr_path=filename,
+            history_minutes=30,
+            forecast_minutes=60,
+            image_size_pixels=24,
+            meters_per_pixel=6000,
+            channels=("IR_016",),
+        )
+
+        filename = (
+            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
+        )
+        hrvsat = SatelliteDataSource(
+            zarr_path=filename,
+            history_minutes=30,
+            forecast_minutes=60,
+            image_size_pixels=64,
+            meters_per_pixel=2000,
+            channels=("HRV",),
+        )
+
+        filename = (
+            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
+        )
+
+        gsp = GSPDataSource(
+            zarr_path=filename,
+            start_dt=datetime(2020, 4, 1),
+            end_dt=datetime(2020, 4, 2),
+            history_minutes=30,
+            forecast_minutes=60,
+            image_size_pixels=64,
+            meters_per_pixel=2000,
+        )
         manager.data_sources = {"gsp": gsp, "sat": sat, "hrvsat": hrvsat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
         manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
-
-        # set up loggers
-        manager.configure_loggers(log_level="DEBUG")
 
         # make batches
         manager.create_batches(overwrite_batches=True)
@@ -183,11 +185,12 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
 
         # check logs is appended to
-        for log_file in ["combined", "satellite"]:
+        for log_file in ["combined", "gsp", "satellite"]:
             filename = f"{dst_path}/{log_file}.log"
             assert os.path.exists(filename)
             with open(filename) as f:
                 num_lines = sum(1 for line in f)
+                print(num_lines, log_file)
                 assert num_lines > 0, f"Log {filename} is empty"
 
 

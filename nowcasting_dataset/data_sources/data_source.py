@@ -171,7 +171,7 @@ class DataSource:
             f"{len(spatial_and_temporal_locations_of_each_example)=} must be"
             f" exactly divisible by {batch_size=}"
         )
-        assert upload_every_n_batches >= 0, "'upload_every_n_batches' should be greater than 0"
+        assert upload_every_n_batches >= 0, "`upload_every_n_batches` must be >= 0"
 
         spatial_and_temporal_locations_of_each_example_columns = (
             spatial_and_temporal_locations_of_each_example.columns.to_list()
@@ -193,7 +193,6 @@ class DataSource:
 
         # Split locations per example into batches:
         n_batches = len(spatial_and_temporal_locations_of_each_example) // batch_size
-
         locations_for_batches = []
         for batch_idx in range(n_batches):
             start_example_idx, end_example_idx = get_start_and_end_example_index(
@@ -218,7 +217,7 @@ class DataSource:
             )
 
             # Save batch to disk.
-            # TODO: Use DataSourceOutput.save_netcdf
+            # TODO: Issue #524: Use DataSourceOutput.save_netcdf in place of to_netcdf
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
             encoding = {name: {"compression": "lzf"} for name in batch.data_vars}
             batch.to_netcdf(netcdf_filename, engine="h5netcdf", encoding=encoding)

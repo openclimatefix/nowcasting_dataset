@@ -235,7 +235,9 @@ def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
 
     # Rescale pixel values to be in the range [0, 1]:
     stacked -= stacked.min()
-    stacked /= stacked.max()
+    stacked_max = stacked.max()
+    if stacked_max > 0.0:
+        stacked /= stacked.max()
 
     # Convert to uint8 (uint8 can represent integers in the range [0, 255]):
     stacked *= 255

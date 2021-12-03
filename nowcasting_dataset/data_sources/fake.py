@@ -343,8 +343,9 @@ def create_gsp_pv_dataset(
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
 
-    # make pv yield
-    data = np.random.random(size=(seq_length, number_of_systems))
+    # make pv yield.  randn samples from a Normal distribution (and so can go negative).
+    # The values are clipped to be positive later.
+    data = np.random.randn(seq_length, number_of_systems)
 
     # smooth the data, the convolution method smooths that data across systems first,
     # and then a bit across time (depending what you set N)

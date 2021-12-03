@@ -35,8 +35,8 @@ class PVDataSource(ImageDataSource):
     filename: Union[str, Path]
     metadata_filename: Union[str, Path]
     # TODO: Issue #425: Use config to set start_dt and end_dt.
-    start_datetime: Optional[datetime.datetime] = pd.Timestamp("2020-01-01")
-    end_datetime: Optional[datetime.datetime] = pd.Timestamp("2022-01-01")
+    start_datetime: Optional[datetime.datetime] = None
+    end_datetime: Optional[datetime.datetime] = None
     random_pv_system_for_given_location: Optional[bool] = True
     #: Each example will always have this many PV systems.
     #: If less than this number exist in the data then pad with NaNs.

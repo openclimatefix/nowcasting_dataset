@@ -41,9 +41,9 @@ class GSPDataSource(ImageDataSource):
     # zarr_path of where the gsp data is stored
     zarr_path: Union[str, Path]
     # start datetime, this can be None
-    start_datetime: Optional[datetime] = pd.Timestamp("2020-01-01")
+    start_datetime: Optional[datetime] = None
     # end datetime, this can be None
-    end_datetime: Optional[datetime] = pd.Timestamp("2022-01-01")
+    end_datetime: Optional[datetime] = None
     # the threshold where we only taken gsp's with a maximum power, above this value.
     threshold_mw: int = 0
     # get the data for the gsp at the center too.

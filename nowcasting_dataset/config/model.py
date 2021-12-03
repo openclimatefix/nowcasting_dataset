@@ -11,6 +11,7 @@ Separate Pydantic models in
 are used to validate the values of the data itself.
 
 """
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
@@ -31,6 +32,8 @@ from nowcasting_dataset.dataset.split import split
 
 IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
 METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
+
+logger = logging.getLogger(__name__)
 
 
 class General(BaseModel):
@@ -309,6 +312,19 @@ class InputData(BaseModel):
         Run through the PV and GSP data sources and  if the start or end date are not set,
         then set them to this values
         """
+
+        start_datetime = values["start_datetime"]
+        end_datetime = values["end_datetime"]
+
+        # check start datetime is less than end datetime
+        if start_datetime >= end_datetime:
+            message = (
+                f"Start datetime ({start_datetime}) "
+                f"should be less than end datetime ({end_datetime})"
+            )
+            logger.error(message)
+            assert Exception(message)
+
         # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
         # but that causes a circular import.
         ALL_DATA_SOURCE_NAMES = (
@@ -323,10 +339,10 @@ class InputData(BaseModel):
 
         for data_source_name in enabled_data_sources:
             if values[data_source_name].start_datetime is None:
-                values[data_source_name].start_datetime = values["start_datetime"]
+                values[data_source_name].start_datetime = start_datetime
 
             if values[data_source_name].end_datetime is None:
-                values[data_source_name].end_datetime = values["end_datetime"]
+                values[data_source_name].end_datetime = end_datetime
 
         return values
 

@@ -237,7 +237,10 @@ def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
     stacked -= stacked.min()
     stacked_max = stacked.max()
     if stacked_max > 0.0:
-        stacked /= stacked.max()
+        # If there is still an invalid value then we want to know about it!
+        # Adapted from https://stackoverflow.com/a/33701974/732596
+        with np.errstate(all="raise"):
+            stacked /= stacked.max()
 
     # Convert to uint8 (uint8 can represent integers in the range [0, 255]):
     stacked *= 255

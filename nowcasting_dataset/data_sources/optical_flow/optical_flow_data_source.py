@@ -157,10 +157,10 @@ class OpticalFlowDataSource(DataSource):
         Compute and return optical flow predictions for the example
 
         Args:
-            satellite_data: Satellite DataArray of historical satellite images.
+            satellite_data: Satellite DataArray of historical satellite images, up to and include t0
 
         Returns:
-            The Tensor with the optical flow predictions for t0 to forecast horizon
+            DataArray with the optical flow predictions from t1 to the forecast horizon.
         """
         n_channels = satellite_data.sizes["channels"]
 
@@ -170,7 +170,7 @@ class OpticalFlowDataSource(DataSource):
         ), f"{len(satellite_data.coords['time'])=} != {self.history_length+1=}"
         assert n_channels == len(self.channels), f"{n_channels=} != {len(self.channels)=}"
 
-        # TODO: Use the correct dtype.
+        # Pre-allocate an array, into which our optical flow prediction will be placed.
         prediction_block = np.full(
             shape=(
                 self.forecast_length,
@@ -182,11 +182,15 @@ class OpticalFlowDataSource(DataSource):
             dtype=np.int16,
         )
 
+        # Compute flow fields and optical flow predictions separately for each satellite channel
+        # because the different channels represent different physical phenomena and so,
+        # in principle, could move in different directions (e.g. water vapour vs high clouds).
         for channel_i in range(n_channels):
             # Compute optical flow field:
             sat_data_for_chan = satellite_data.isel(channels=channel_i)
 
-            # Loop through pairs of historical images to compute optical flow fields:
+            # Loop through pairs of historical images to compute optical flow fields for each
+            # pair of consecutive satellite images, and then compute the mean of those flow fields.
             optical_flows = []
             # self.history_length does not include t0.
             for history_timestep in range(self.history_length):
@@ -194,7 +198,6 @@ class OpticalFlowDataSource(DataSource):
                 next_image = sat_data_for_chan.isel(time=history_timestep + 1).data
                 optical_flow = compute_optical_flow(prev_image, next_image)
                 optical_flows.append(optical_flow)
-            # Average predictions
             optical_flow = np.mean(optical_flows, axis=0)
 
             # Compute predicted images.

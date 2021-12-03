@@ -205,11 +205,7 @@ class OpticalFlowDataSource(DataSource):
             for prediction_timestep in range(self.forecast_length):
                 flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(image=t0_image, flow=flow)
-                warped_image = crop_center(
-                    warped_image,
-                    self.output_image_size_pixels,
-                    self.output_image_size_pixels,
-                )
+                warped_image = crop_center(warped_image, self.output_image_size_pixels)
                 prediction_block[prediction_timestep, :, :, channel_i] = warped_image
 
         data_array = self._put_predictions_into_data_array(

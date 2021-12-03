@@ -34,7 +34,6 @@ class Manager:
         geospatial locations of each example.
       save_batches_locally_and_upload: bool: Set to True by `load_yaml_configuration()` if
         `config.process.upload_every_n_batches > 0`.
-      local_temp_path: Path: `config.process.local_temp_path` with `~` expanded.
     """
 
     def __init__(self) -> None:  # noqa: D107
@@ -48,8 +47,6 @@ class Manager:
         self.config = config.load_yaml_configuration(filename)
         self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
-
-        self.local_temp_path = self.config.process.local_temp_path
         logger.debug(f"config={self.config}")
 
     def save_yaml_configuration(self):
@@ -458,7 +455,7 @@ class Manager:
 
                     # TODO: Issue 455: Guarantee that local temp path is unique and empty.
                     local_temp_path = (
-                        self.local_temp_path
+                        self.config.process.local_temp_path
                         / split_name.value
                         / data_source_name
                         / f"worker_{worker_id}"

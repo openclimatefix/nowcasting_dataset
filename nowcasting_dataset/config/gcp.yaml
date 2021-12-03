@@ -4,10 +4,14 @@ general:
 input_data:
   default_forecast_minutes: 60
   default_history_minutes: 30
+
+  #---------------------- GSP -------------------
   gsp:
     forecast_minutes: 60
     gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v3/pv_gsp.zarr
     history_minutes: 60
+
+  #---------------------- NWP -------------------
   nwp:
     forecast_minutes: 60
     history_minutes: 60
@@ -24,12 +28,16 @@ input_data:
       - hcc
     nwp_image_size_pixels: 64
     nwp_zarr_path: gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
+
+  #---------------------- PV -------------------
   pv:
     forecast_minutes: 60
     history_minutes: 30
     pv_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf
     pv_metadata_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv
     get_center: false
+
+  #---------------------- Satellite -------------
   satellite:
     forecast_minutes: 60
     history_minutes: 30
@@ -48,14 +56,43 @@ input_data:
       - WV_073
     satellite_image_size_pixels: 64
     satellite_zarr_path: gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
+
+  #---------------------- HRVSatellite -------------
+  # The satellite Zarr data on GCP is the older Zarr, which contains
+  # HRV and the non-HRV channels in a single Zarr.
+
+  # ------------------------- Sun ------------------------
   sun:
     forecast_minutes: 60
     history_minutes: 30
     sun_zarr_path: gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr
+
+  # ------------------------- Topographic ----------------
   topographic:
     forecast_minutes: 60
     history_minutes: 30
     topographic_filename: gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif
+
+  # ------------------------- Optical Flow ---------------
+  opticalflow:
+    opticalflow_zarr_path: gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
+    opticalflow_history_minutes: 5
+    opticalflow_forecast_minutes: 120
+    opticalflow_input_image_size_pixels: 102
+    opticalflow_output_image_size_pixels: 24
+    opticalflow_source_data_source_class_name: SatelliteDataSource
+    opticalflow_channels:
+      - IR_016
+      - IR_039
+      - IR_087
+      - IR_097
+      - IR_108
+      - IR_120
+      - IR_134
+      - VIS006
+      - VIS008
+      - WV_062
+      - WV_073
 output_data:
   filepath: gs://solar-pv-nowcasting-data/prepared_ML_training_data/v9/
 process:

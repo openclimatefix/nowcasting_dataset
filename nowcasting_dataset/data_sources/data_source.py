@@ -166,11 +166,7 @@ class DataSource:
         assert (
             idx_of_first_batch >= 0
         ), "The batch number of the first batch to create should be greater than 0"
-        assert batch_size > 0, (
-            "The batch size should be strictly greater than 0. Otherwise,"
-            " you should specify 'total_number_batches' to compute the batch size from"
-            " 'spatial_and_temporal_locations_of_each_example'"
-        )
+        assert batch_size > 0, "The batch size should be strictly greater than 0."
         assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0, (
             f"{len(spatial_and_temporal_locations_of_each_example)=} must be"
             f" exactly divisible by {batch_size=}"

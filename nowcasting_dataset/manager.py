@@ -511,6 +511,7 @@ class Manager:
                     if an_error_has_occured.is_set():
                         raise RuntimeError(
                             f"Worker process {data_source_name} raised an exception"
-                            f" whilst working on {split_name}!")
+                            f" whilst working on {split_name}!"
+                        )
 
                 logger.info(f"Finished creating batches for {split_name}!")

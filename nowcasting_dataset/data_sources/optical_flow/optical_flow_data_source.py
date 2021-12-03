@@ -137,7 +137,7 @@ class OpticalFlowDataSource(DataSource):
         )
 
         # Select the center crop.
-        satellite_data_cropped = satellite_data.isel(time_index=0, channels_index=0)
+        satellite_data_cropped = satellite_data.isel(time=0, channels=0)
         satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels)
 
         # Put into DataArray:

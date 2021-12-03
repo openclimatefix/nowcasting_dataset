@@ -2,6 +2,7 @@
 
 import logging
 import multiprocessing
+from functools import partial
 from pathlib import Path
 from typing import Optional, Union
 
@@ -485,10 +486,13 @@ class Manager:
                             f"{data_source_name} has finished created batches for {split_name}!"
                         )
 
-                    def _error_callback(exception):
+                    def _error_callback(exception, data_source_name):
+                        # Need to pass in data_source_name rather than rely on data_source_name
+                        # in the outer scope, because otherwise the error message will contain
+                        # the wrong data_source_name (due to stuff happening concurrently!)
                         logger.exception(
                             f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name}:\n{exception.__class__.__name__}: {exception}"
+                            f" {split_name.value}\n{exception.__class__.__name__}: {exception}"
                         )
                         an_error_has_occured.set()
 
@@ -500,7 +504,7 @@ class Manager:
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,
                         callback=_callback,
-                        error_callback=_error_callback,
+                        error_callback=partial(_error_callback, data_source_name=data_source_name),
                     )
                     async_results_from_create_batches.append(async_result)
 

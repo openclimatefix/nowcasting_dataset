@@ -175,6 +175,17 @@ class GSP(DataSourceMixin):
     gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
+    start_date: datetime = Field(
+        None,
+        description="Load date from data sources from this date. "
+        "If None, this will get overwritten by InputData.start_date. ",
+    )
+    end_date: datetime = Field(
+        None,
+        description="Load date from data sources up to this date. "
+        "If None, this will get overwritten by InputData.start_date. ",
+    )
+
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
         """Validate 'history_minutes'"""
@@ -240,6 +251,13 @@ class InputData(BaseModel):
         ),
     )
 
+    start_date: datetime = Field(
+        "2020-01-01", description="Load date from data sources from this date"
+    )
+    end_date: datetime = Field(
+        "2021-09-01", description="Load date from data sources up to this date"
+    )
+
     @property
     def default_seq_length_5_minutes(self):
         """How many steps are there in 5 minute datasets"""
@@ -276,6 +294,35 @@ class InputData(BaseModel):
 
             if values[data_source_name].history_minutes is None:
                 values[data_source_name].history_minutes = values["default_history_minutes"]
+
+        return values
+
+    @root_validator
+    def set_start_and_end_date(cls, values):
+        """
+        Set start and end date, if needed.
+
+        Run through the PV and GSP data sources and  if the start or end date are not set,
+        then set them to this values
+        """
+        # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
+        # but that causes a circular import.
+        ALL_DATA_SOURCE_NAMES = (
+            "pv",
+            "gsp",
+        )
+        enabled_data_sources = [
+            data_source_name
+            for data_source_name in ALL_DATA_SOURCE_NAMES
+            if values[data_source_name] is not None
+        ]
+
+        for data_source_name in enabled_data_sources:
+            if values[data_source_name].start_date is None:
+                values[data_source_name].start_date = values["start_date"]
+
+            if values[data_source_name].end_date is None:
+                values[data_source_name].end_date = values["end_date"]
 
         return values
 
@@ -372,8 +419,12 @@ class Process(BaseModel):
 
     @validator("local_temp_path")
     def local_temp_path_to_path_object_expanduser(cls, v):
-        """Convert the path in string format to a `pathlib.PosixPath` object
-        and call `expanduser` on the latter."""
+        """
+        Convert temp path to Path
+
+        Convert the path in string format to a `pathlib.PosixPath` object
+        and call `expanduser` on the latter.
+        """
         return Path(v).expanduser()
 
 

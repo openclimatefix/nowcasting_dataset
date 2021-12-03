@@ -486,11 +486,10 @@ class Manager:
                     )
 
                     def _error_callback(exception):
-                        error_callback_msg = (
+                        logger.error(
                             f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name}:\n"
+                            f" {split_name}:\n{exception}"
                         )
-                        logger.error(error_callback_msg + str(exception))
                         an_error_has_occured.set()
 
                     # Submit data_source.create_batches task to the worker process.

@@ -140,7 +140,7 @@ class OpticalFlowDataSource(DataSource):
         satellite_data_cropped = satellite_data.isel(time_index=0, channels_index=0)
         satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels)
 
-        # Put into DataArray
+        # Put into DataArray:
         return xr.DataArray(
             data=predictions,
             coords=(
@@ -217,12 +217,16 @@ def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
     # First, stack into a single numpy array so we can work on all images at the same time:
     stacked = np.stack(arrays)
 
+    # Convert to float64 for normalisation:
+    stacked = stacked.astype(np.float64)
+
     # Rescale pixel values to be in the range [0, 1]:
     stacked -= stacked.min()
     stacked /= stacked.max()
 
     # Convert to uint8 (uint8 can represent integers in the range [0, 255]):
     stacked *= 255
+    stacked = stacked.round()
     stacked = stacked.astype(np.uint8)
 
     return tuple(stacked)

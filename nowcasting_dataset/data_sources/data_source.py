@@ -132,13 +132,6 @@ class DataSource:
         """
         pass
 
-    def check_input_paths_exist(self) -> None:
-        """Check any input paths exist.  Raise FileNotFoundError if not.
-
-        Can be overridden by child classes.
-        """
-        pass
-
     # TODO: Issue #319: Standardise parameter names.
     # TODO: Issue #367: Reduce duplication.
     def create_batches(
@@ -369,6 +362,13 @@ class DataSource:
         y_meters_center: Number,  #: Centre, in OSGB coordinates.
     ) -> xr.Dataset:
         """Must be overridden by child classes."""
+        raise NotImplementedError()
+
+    def check_input_paths_exist(self) -> None:
+        """Check any input paths exist.  Raise FileNotFoundError if not.
+
+        Must be overridden by child classes.
+        """
         raise NotImplementedError()
 
 

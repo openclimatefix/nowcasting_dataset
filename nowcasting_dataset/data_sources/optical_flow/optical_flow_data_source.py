@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources import DataSource
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
@@ -62,6 +63,11 @@ class OpticalFlowDataSource(DataSource):
     source_data_source_class_name: str = "SatelliteDataSource"
 
     def __post_init__(self):  # noqa
+        assert self.output_image_size_pixels <= self.input_image_size_pixels, (
+            "output_image_size_pixels must be equal to or smaller than input_image_size_pixels"
+            f" {self.output_image_size_pixels=}, {self.input_image_size_pixels=}"
+        )
+
         super().__post_init__()
 
         # Get round circular import problem
@@ -214,6 +220,10 @@ class OpticalFlowDataSource(DataSource):
         )
         return data_array
 
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        nd_fs_utils.check_path_exists(self.zarr_path)
+
 
 def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
     """Convert multiple arrays to uint8, using the same min and max to scale all arrays."""
@@ -249,7 +259,7 @@ def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.n
             input images.  The third dimension is of size 2 and represents the
             displacement in x and y.
     """
-    assert prev_image.dtype == next_image.dtype
+    assert prev_image.dtype == next_image.dtype, "Images must be the same dtype!"
 
     # cv2.calcOpticalFlowFarneback expects images to be uint8:
     prev_image, next_image = _convert_arrays_to_uint8(prev_image, next_image)
@@ -321,8 +331,12 @@ def crop_center(image: np.ndarray, output_image_size_pixels: int) -> np.ndarray:
         The cropped image, of size output_image_size_pixels x output_image_size_pixels
     """
     input_size_y, input_size_x = image.shape
-    assert input_size_x >= output_image_size_pixels
-    assert input_size_y >= output_image_size_pixels
+    assert (
+        input_size_x >= output_image_size_pixels
+    ), "output_image_size_pixels is larger than the input image!"
+    assert (
+        input_size_y >= output_image_size_pixels
+    ), "output_image_size_pixels is larger than the input image!"
     half_output_image_size_pixels = output_image_size_pixels // 2
     start_x = (input_size_x // 2) - half_output_image_size_pixels
     start_y = (input_size_y // 2) - half_output_image_size_pixels

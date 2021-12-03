@@ -97,6 +97,8 @@ def check_path_exists(path: Union[str, Path]):
 
     `path` can include wildcards.
     """
+    if not bool(path):
+        raise FileNotFoundError("Not a valid path!")
     filesystem = get_filesystem(path)
     if not filesystem.exists(path):
         # Now try using `glob`.  Maybe `path` includes a wildcard?

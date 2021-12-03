@@ -480,14 +480,15 @@ class Manager:
                     )
 
                     # Logger messages for callbacks:
-                    callback_msg = (
-                        f"{data_source_name} has finished created batches for {split_name}!"
-                    )
+                    def _callback(result):
+                        logger.info(
+                            f"{data_source_name} has finished created batches for {split_name}!"
+                        )
 
                     def _error_callback(exception):
-                        logger.error(
+                        logger.exception(
                             f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name}:\n{exception}"
+                            f" {split_name}:\n{exception.__class__.__name__}: {exception}"
                         )
                         an_error_has_occured.set()
 
@@ -498,7 +499,7 @@ class Manager:
                     async_result = pool.apply_async(
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,
-                        callback=lambda result: logger.info(callback_msg),
+                        callback=_callback,
                         error_callback=_error_callback,
                     )
                     async_results_from_create_batches.append(async_result)
@@ -507,9 +508,11 @@ class Manager:
                 for async_result in async_results_from_create_batches:
                     async_result.wait()
                     if an_error_has_occured.is_set():
+                        # An error has occurred but, at this point in the code, we don't know which
+                        # worker process raised the exception.  But, with luck, the worker process
+                        # will have logged an informative exception via the _error_callback func.
                         raise RuntimeError(
-                            f"Worker process {data_source_name} raised an exception"
-                            f" whilst working on {split_name}!"
+                            f"A worker process raised an exception whilst working on {split_name}!"
                         )
 
                 logger.info(f"Finished creating batches for {split_name}!")

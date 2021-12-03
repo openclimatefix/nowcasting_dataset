@@ -141,13 +141,8 @@ def load_from_zarr(
         The index is timestamps, and the columns are the x and y coordinates
 
     """
-    logger.debug("Loading sun data")
+    logger.debug(f"Loading sun data from {zarr_path}")
 
-    # It is possible to simplify the code below and do
-    # xr.open_dataset(file, engine='h5netcdf')
-    # in the first 'with' block, and delete the second 'with' block.
-    # But that takes 1 minute to load the data, where as loading into memory
-    # first and then loading from memory takes 23 seconds!
     sun = xr.open_dataset(zarr_path, engine="zarr")
 
     if (start_dt is not None) and (end_dt is not None):

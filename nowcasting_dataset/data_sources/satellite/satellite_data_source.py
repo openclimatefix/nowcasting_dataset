@@ -27,6 +27,9 @@ class SatelliteDataSource(ZarrDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
+        assert len(self.channels) > 0, "channels cannot be empty!"
+        assert image_size_pixels > 0, "image_size_pixels cannot be <= 0!"
+        assert meters_per_pixel > 0, "meters_per_pixel cannot be <= 0!"
         super().__post_init__(image_size_pixels, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (
@@ -46,9 +49,15 @@ class SatelliteDataSource(ZarrDataSource):
         call open() _after_ creating separate processes.
         """
         self._data = self._open_data()
-        self._data = self._data.sel(variable=list(self.channels))
         if "variable" in self._data.dims:
             self._data = self._data.rename({"variable": "channels"})
+        if not set(self.channels).issubset(self._data.channels.values):
+            raise RuntimeError(
+                f"One or more requested channels are not available in {self.zarr_path}!"
+                f"  Requested channels={self.channels}."
+                f"  Available channels={self._data.channels.values}"
+            )
+        self._data = self._data.sel(channels=list(self.channels))
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)

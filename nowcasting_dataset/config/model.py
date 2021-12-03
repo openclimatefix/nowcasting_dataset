@@ -425,7 +425,7 @@ class Process(BaseModel):
         ),
     )
 
-    local_temp_path: str = Field("~/temp/")
+    local_temp_path: Path = Field(Path("~/temp/"))
 
     @validator("local_temp_path")
     def local_temp_path_to_path_object_expanduser(cls, v):

@@ -92,7 +92,9 @@ def load_from_csv(path, batch_idx, batch_size) -> Metadata:
         names=names,
     )
 
-    assert len(metadata_df) > 0
+    assert (
+        len(metadata_df) > 0
+    ), f"Could not load metadata for {batch_size=} {batch_idx=} {filename=}"
 
     # add batch_size
     metadata_dict = metadata_df.to_dict("list")

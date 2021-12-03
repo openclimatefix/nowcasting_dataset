@@ -12,6 +12,7 @@ are used to validate the values of the data itself.
 
 """
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Union
 
 import git
@@ -425,6 +426,12 @@ class Process(BaseModel):
     )
 
     local_temp_path: str = Field("~/temp/")
+
+    @validator("local_temp_path")
+    def local_temp_path_to_path_object_expanduser(cls, v):
+        """Convert the path in string format to a `pathlib.PosixPath` object
+        and call `expanduser` on the latter."""
+        return Path(v).expanduser()
 
 
 class Configuration(BaseModel):

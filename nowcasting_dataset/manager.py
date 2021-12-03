@@ -49,8 +49,7 @@ class Manager:
         self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
 
-        # TODO: Issue #320: This could be done in the Pydantic model?
-        self.local_temp_path = Path(self.config.process.local_temp_path).expanduser()
+        self.local_temp_path = self.config.process.local_temp_path
         logger.debug(f"config={self.config}")
 
     def save_yaml_configuration(self):

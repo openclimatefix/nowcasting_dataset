@@ -271,15 +271,18 @@ class DataSource:
                 )
                 future_examples.append(future_example)
 
-            # Get the examples back.  future_example.result() will raise an exception
-            # if the worker thread raised an exception.
+            # Get the examples back.  Loop round each future so we can log a helpful error.
+            # If the worker thread raised an exception then the exception won't "bubble up"
+            # until we call future_example.result().
             examples = []
             for example_i, future_example in enumerate(future_examples):
                 try:
-                    examples.append(future_example.result())
+                    result = future_example.result()
                 except Exception:
                     logger.error(f"Exception when processing {example_i=}!")
                     raise
+                else:
+                    examples.append(result)
 
         # Get the DataSource class, this could be one of the data sources like Sun
         cls = self.get_data_model_for_batch()

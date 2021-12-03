@@ -212,8 +212,7 @@ class OpticalFlowDataSource(DataSource):
 
 
 def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
-    """Convert multiple arrays to uint8, using the same min and max to scale all arrays.
-    """
+    """Convert multiple arrays to uint8, using the same min and max to scale all arrays."""
     # First, stack into a single numpy array so we can work on all images at the same time:
     stacked = np.stack(arrays)
 

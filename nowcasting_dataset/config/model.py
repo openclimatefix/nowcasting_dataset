@@ -372,8 +372,12 @@ class Process(BaseModel):
 
     @validator("local_temp_path")
     def local_temp_path_to_path_object_expanduser(cls, v):
-        """Convert the path in string format to a `pathlib.PosixPath` object
-        and call `expanduser` on the latter."""
+        """
+        Convert the local path to Path
+
+        Convert the path in string format to a `pathlib.PosixPath` object
+        and call `expanduser` on the latter.
+        """
         return Path(v).expanduser()
 
 

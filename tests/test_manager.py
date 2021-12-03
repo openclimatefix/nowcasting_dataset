@@ -167,6 +167,9 @@ def test_batches():
         # make file for locations
         manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
 
+        # set up loggers
+        manager.configure_loggers(log_level="DEBUG")
+
         # make batches
         manager.create_batches(overwrite_batches=True)
 
@@ -178,6 +181,14 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
         assert os.path.exists(f"{dst_path}/train/hrvsat/000001.nc")
         assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
+
+        # check logs is appended to
+        for log_file in ["combined", "satellite"]:
+            filename = f"{dst_path}/{log_file}.log"
+            assert os.path.exists(filename)
+            with open(filename) as f:
+                num_lines = sum(1 for line in f)
+                assert num_lines > 0, f"Log {filename} is empty"
 
 
 def test_save_config():

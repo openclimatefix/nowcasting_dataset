@@ -199,16 +199,18 @@ def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> (int, in
 
 
 class DummyExecutor(futures.Executor):
-    """Drop-in replacement for ThreadPoolExecutor or ProcessPoolExecutor for easy debugging.
+    """Drop-in replacement for ThreadPoolExecutor or ProcessPoolExecutor to make debugging easier.
 
     Adapted from https://stackoverflow.com/a/10436851/732596
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialise DummyExecutor."""
         self._shutdown = False
         self._shutdownLock = threading.Lock()
 
     def submit(self, fn, *args, **kwargs):
+        """Submit task to DummyExecutor."""
         with self._shutdownLock:
             if self._shutdown:
                 raise RuntimeError("cannot schedule new futures after shutdown")
@@ -224,5 +226,6 @@ class DummyExecutor(futures.Executor):
             return f
 
     def shutdown(self, wait=True):
+        """Shutdown dummy executor."""
         with self._shutdownLock:
             self._shutdown = True

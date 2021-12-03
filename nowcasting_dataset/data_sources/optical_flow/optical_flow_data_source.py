@@ -29,8 +29,8 @@ class OpticalFlowDataSource(DataSource):
     out to about 2 hours.  After 2 hours the predictions start to go a bit crazy.  There are some
     notable problems with optical flow predictions:
 
-    1) Optical flow doesn't understand that clouds grow, shrink, appear from "nothing", and disappear
-       into "nothing".  Optical flow just moves pixels around.
+    1) Optical flow doesn't understand that clouds grow, shrink, appear from "nothing", and
+       disappear into "nothing".  Optical flow just moves pixels around.
     2) Optical flow doesn't understand that satellite images tend to get brighter as the sun rises
        and darker as the sun sets.
 
@@ -61,7 +61,7 @@ class OpticalFlowDataSource(DataSource):
     output_image_size_pixels: int = 32
     source_data_source_class_name: str = "SatelliteDataSource"
 
-    def __post_init__(self):
+    def __post_init__(self):  # noqa
         super().__post_init__()
 
         # Get round circular import problem
@@ -85,6 +85,7 @@ class OpticalFlowDataSource(DataSource):
         )
 
     def open(self):
+        """Open the underlying self.source_data_source."""
         self.source_data_source.open()
 
     def get_example(
@@ -315,6 +316,7 @@ def crop_center(image: np.ndarray, output_image_size_pixels: int) -> np.ndarray:
     Args:
         image: The input image to crop.
         output_image_size_pixels: The requested size of the output image.
+
     Returns:
         The cropped image, of size output_image_size_pixels x output_image_size_pixels
     """

@@ -348,14 +348,16 @@ def create_gsp_pv_dataset(
         seq_length,
         number_of_systems,
     )
-    data = data.clip(min=0)
 
-    # smooth the data, the convolution method smooeths that data across systems first,
+    # smooth the data, the convolution method smooths that data across systems first,
     # and then a bit across time (depending what you set N)
     N = int(seq_length / 2)
     data = np.convolve(data.ravel(), np.ones(N) / N, mode="same").reshape(
         (seq_length, number_of_systems)
     )
+    # Need to clip at 0 *after* smoothing, because the smoothing method might push
+    # non-zero data below zero.
+    data = data.clip(min=0)
 
     # make into a Data Array
     data_array = xr.DataArray(

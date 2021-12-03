@@ -93,15 +93,33 @@ class StartEndDatetimeMixin(BaseModel):
     """Mixin class to add start and end date"""
 
     start_datetime: datetime = Field(
-        None,
+        datetime(2020, 1, 1),
         description="Load date from data sources from this date. "
         "If None, this will get overwritten by InputData.start_date. ",
     )
     end_datetime: datetime = Field(
-        None,
+        datetime(2021, 9, 1),
         description="Load date from data sources up to this date. "
         "If None, this will get overwritten by InputData.start_date. ",
     )
+
+    @root_validator
+    def check_start_and_end_datetime(cls, values):
+        """
+        Make sure start datetime is before end datetime
+        """
+
+        start_datetime = values["start_datetime"]
+        end_datetime = values["end_datetime"]
+
+        # check start datetime is less than end datetime
+        if start_datetime >= end_datetime:
+            message = (
+                f"Start datetime ({start_datetime}) "
+                f"should be less than end datetime ({end_datetime})"
+            )
+            logger.error(message)
+            assert Exception(message)
 
 
 class PV(DataSourceMixin, StartEndDatetimeMixin):
@@ -258,13 +276,6 @@ class InputData(BaseModel):
         ),
     )
 
-    start_datetime: datetime = Field(
-        datetime(2020, 1, 1), description="Load date from data sources from this date"
-    )
-    end_datetime: datetime = Field(
-        datetime(2021, 9, 1), description="Load date from data sources up to this date"
-    )
-
     @property
     def default_seq_length_5_minutes(self):
         """How many steps are there in 5 minute datasets"""
@@ -301,48 +312,6 @@ class InputData(BaseModel):
 
             if values[data_source_name].history_minutes is None:
                 values[data_source_name].history_minutes = values["default_history_minutes"]
-
-        return values
-
-    @root_validator
-    def set_start_and_end_datetime(cls, values):
-        """
-        Set start and end date, if needed.
-
-        Run through the PV and GSP data sources and  if the start or end date are not set,
-        then set them to this values
-        """
-
-        start_datetime = values["start_datetime"]
-        end_datetime = values["end_datetime"]
-
-        # check start datetime is less than end datetime
-        if start_datetime >= end_datetime:
-            message = (
-                f"Start datetime ({start_datetime}) "
-                f"should be less than end datetime ({end_datetime})"
-            )
-            logger.error(message)
-            assert Exception(message)
-
-        # It would be much better to use nowcasting_dataset.data_sources.ALL_DATA_SOURCE_NAMES,
-        # but that causes a circular import.
-        ALL_DATA_SOURCE_NAMES = (
-            "pv",
-            "gsp",
-        )
-        enabled_data_sources = [
-            data_source_name
-            for data_source_name in ALL_DATA_SOURCE_NAMES
-            if values[data_source_name] is not None
-        ]
-
-        for data_source_name in enabled_data_sources:
-            if values[data_source_name].start_datetime is None:
-                values[data_source_name].start_datetime = start_datetime
-
-            if values[data_source_name].end_datetime is None:
-                values[data_source_name].end_datetime = end_datetime
 
         return values
 

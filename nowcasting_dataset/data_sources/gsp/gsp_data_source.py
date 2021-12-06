@@ -130,7 +130,7 @@ class GSPDataSource(ImageDataSource):
         This means a national forecast can then be made
 
         Args:
-            t0_datetimes: list of available t0 datetimes.
+            t0_datetimes_utc: list of available t0 datetimes.
 
         Returns:
             1. list of datetimes
@@ -138,6 +138,8 @@ class GSPDataSource(ImageDataSource):
             3. list of y locations
 
         """
+
+        logger.info("Getting all locations for each datetime")
 
         total_gsp_nan_count = self.gsp_power.isna().sum().sum()
         if total_gsp_nan_count > 0:
@@ -177,6 +179,9 @@ class GSPDataSource(ImageDataSource):
         Returns: list of x and y locations
 
         """
+
+        logger.info("Getting one location for each datetime")
+
         total_gsp_nan_count = self.gsp_power.isna().sum().sum()
         if total_gsp_nan_count == 0:
 

@@ -208,8 +208,18 @@ class Manager:
                 f"Creating {n_batches_requested:,d} batches x {self.config.process.batch_size:,d}"
                 f" examples per batch = {n_examples:,d} examples for {split_name}."
             )
+
+            # for the test set, we want to get all locations for each datetime,
+            # for the train and validation set, we just want one location for each datetime
+            if split_name == split.SplitName.TEST.value:
+                get_all_locations = True
+            else:
+                get_all_locations = False
+
             df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
-                t0_datetimes=datetimes_for_split, n_examples=n_examples
+                t0_datetimes=datetimes_for_split,
+                n_examples=n_examples,
+                get_all_locations=get_all_locations,
             )
             output_filename = self._filename_of_locations_csv_file(split_name)
             logger.info(f"Making {path_for_csv} if it does not exist.")
@@ -291,7 +301,7 @@ class Manager:
         return t0_datetimes
 
     def sample_spatial_and_temporal_locations_for_examples(
-        self, t0_datetimes: pd.DatetimeIndex, n_examples: int
+        self, t0_datetimes: pd.DatetimeIndex, n_examples: int, get_all_locations: bool = False
     ) -> pd.DataFrame:
         """
         Computes the geospatial and temporal locations for each training example.
@@ -303,6 +313,7 @@ class Manager:
             t0_datetimes: All available t0 datetimes.  Can be computed with
                 `DataSourceList.get_t0_datetimes_across_all_data_sources()`
             n_examples: The number of examples requested.
+            get_all_locations: optional to return all locations for each t0_datetime
 
         Returns:
             Each row of each the DataFrame specifies the position of each example, using
@@ -313,10 +324,26 @@ class Manager:
         # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
         # multiple processors.  Currently takes about half an hour for 25,000 batches.
         # But wait until we've implemented issue #305, as that is likely to be sufficient!
-        (
-            x_locations,
-            y_locations,
-        ) = self.data_source_which_defines_geospatial_locations.get_locations(shuffled_t0_datetimes)
+
+        if get_all_locations:
+
+            (
+                shuffled_t0_datetimes,
+                x_locations,
+                y_locations,
+            ) = self.data_source_which_defines_geospatial_locations.get_all_locations(
+                t0_datetimes_utc=shuffled_t0_datetimes
+            )
+
+        else:
+
+            (
+                x_locations,
+                y_locations,
+            ) = self.data_source_which_defines_geospatial_locations.get_locations(
+                shuffled_t0_datetimes
+            )
+
         return pd.DataFrame(
             {
                 "t0_datetime_UTC": shuffled_t0_datetimes,

@@ -340,6 +340,18 @@ class DataSource:
         """
         raise NotImplementedError()
 
+    def get_all_locations(
+        self, t0_datetimes_utc: pd.DatetimeIndex
+    ) -> Tuple[pd.DatetimeIndex, List[Number], List[Number]]:
+        """Find all valid geographical locations for each t0_datetime.
+
+        Should be overridden by DataSources which may be used to define the locations.
+
+        Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
+            Locations are in OSGB coordinates.
+        """
+        raise NotImplementedError()
+
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     # TODO: Issue #319: Standardise parameter names.
     def _get_time_slice(self, t0_dt: pd.Timestamp):

@@ -320,13 +320,32 @@ class Manager:
             columns: 't0_datetime_UTC', 'x_center_OSGB', 'y_center_OSGB'.
         """
         assert len(t0_datetimes) > 0
+        assert type(t0_datetimes) == pd.DatetimeIndex
+
+        if get_all_locations:
+            # Because we are going to get all locations for each datetime,
+            # lets divided the number of examples by the number of locations in the data source
+            number_locations = (
+                self.data_source_which_defines_geospatial_locations.get_number_locations()
+            )
+            assert n_examples % number_locations == 0, (
+                f"{n_examples=} needs to be a multiple of {number_locations=} "
+                f"because we are getting an example for each location"
+            )
+            n_examples = int(n_examples / number_locations)
+
         shuffled_t0_datetimes = np.random.choice(t0_datetimes, size=n_examples)
         # TODO: Issue #304. Speed this up by splitting the shuffled_t0_datetimes across
         # multiple processors.  Currently takes about half an hour for 25,000 batches.
         # But wait until we've implemented issue #305, as that is likely to be sufficient!
 
+        # make sure 'shuffled_t0_datetimes' is pd.DatetimeIndex
+        shuffled_t0_datetimes = pd.DatetimeIndex(shuffled_t0_datetimes)
+
         if get_all_locations:
 
+            # note that the returned 'shuffled_t0_datetimes'
+            # has duplicate datetimes for each location
             (
                 shuffled_t0_datetimes,
                 x_locations,

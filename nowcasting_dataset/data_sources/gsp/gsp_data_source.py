@@ -120,6 +120,11 @@ class GSPDataSource(ImageDataSource):
         """
         return self.gsp_power.index
 
+    def get_number_locations(self):
+        """Get the number of GSP"""
+
+        return len(self.metadata.location_x)
+
     def get_all_locations(
         self, t0_datetimes_utc: pd.DatetimeIndex
     ) -> Tuple[pd.DatetimeIndex, List[Number], List[Number]]:
@@ -163,6 +168,9 @@ class GSPDataSource(ImageDataSource):
             t0_datetimes_utc_all_gsps = pd.DatetimeIndex(x_centers_osgb_all_gsps["t0_datetime_utc"])
             x_centers_osgb_all_gsps = list(x_centers_osgb_all_gsps["location_x"])
             y_centers_osgb_all_gsps = list(y_centers_osgb_all_gsps["location_y"])
+
+            # do shuffle so one batch doesnt have all the same datetime
+            # TODO
 
             return t0_datetimes_utc_all_gsps, x_centers_osgb_all_gsps, y_centers_osgb_all_gsps
 

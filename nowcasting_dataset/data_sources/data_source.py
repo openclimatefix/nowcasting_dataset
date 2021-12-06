@@ -352,6 +352,15 @@ class DataSource:
         """
         raise NotImplementedError()
 
+    def get_number_locations(self) -> int:
+        """
+        Get the number of locations of a data source
+
+        For GSP, this could be the number of GSP
+        For PV, this could be the number of PV locations
+        """
+        raise NotImplementedError()
+
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     # TODO: Issue #319: Standardise parameter names.
     def _get_time_slice(self, t0_dt: pd.Timestamp):

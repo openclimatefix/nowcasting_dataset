@@ -199,7 +199,9 @@ def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> (int, in
 
 
 class DummyExecutor(futures.Executor):
-    """Drop-in replacement for ThreadPoolExecutor or ProcessPoolExecutor to make debugging easier.
+    """Drop-in replacement for ThreadPoolExecutor or ProcessPoolExecutor
+
+    This is currently not used in any code, but very useful when debugging.
 
     Adapted from https://stackoverflow.com/a/10436851/732596
     """

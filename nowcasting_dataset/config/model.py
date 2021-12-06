@@ -11,6 +11,7 @@ Separate Pydantic models in
 are used to validate the values of the data itself.
 
 """
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
@@ -34,6 +35,8 @@ IMAGE_SIZE_PIXELS_FIELD = Field(
     IMAGE_SIZE_PIXELS, description="The number of pixels of the region of interest."
 )
 METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
+
+logger = logging.getLogger(__name__)
 
 
 class General(BaseModel):
@@ -89,7 +92,42 @@ class DataSourceMixin(BaseModel):
         return int((self.history_minutes + self.forecast_minutes) / 60 + 1)
 
 
-class PV(DataSourceMixin):
+class StartEndDatetimeMixin(BaseModel):
+    """Mixin class to add start and end date"""
+
+    start_datetime: datetime = Field(
+        datetime(2020, 1, 1),
+        description="Load date from data sources from this date. "
+        "If None, this will get overwritten by InputData.start_date. ",
+    )
+    end_datetime: datetime = Field(
+        datetime(2021, 9, 1),
+        description="Load date from data sources up to this date. "
+        "If None, this will get overwritten by InputData.start_date. ",
+    )
+
+    @root_validator
+    def check_start_and_end_datetime(cls, values):
+        """
+        Make sure start datetime is before end datetime
+        """
+
+        start_datetime = values["start_datetime"]
+        end_datetime = values["end_datetime"]
+
+        # check start datetime is less than end datetime
+        if start_datetime >= end_datetime:
+            message = (
+                f"Start datetime ({start_datetime}) "
+                f"should be less than end datetime ({end_datetime})"
+            )
+            logger.error(message)
+            assert Exception(message)
+
+        return values
+
+
+class PV(DataSourceMixin, StartEndDatetimeMixin):
     """PV configuration model"""
 
     pv_filename: str = Field(
@@ -217,7 +255,7 @@ class NWP(DataSourceMixin):
     nwp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
-class GSP(DataSourceMixin):
+class GSP(DataSourceMixin, StartEndDatetimeMixin):
     """GSP configuration model"""
 
     gsp_zarr_path: str = Field("gs://solar-pv-nowcasting-data/PV/GSP/v2/pv_gsp.zarr")
@@ -436,9 +474,11 @@ class Process(BaseModel):
 
     @validator("local_temp_path")
     def local_temp_path_to_path_object_expanduser(cls, v):
-        """Convert the path in string format to a `pathlib.PosixPath` object.
+        """
+        Convert temp path to Path
 
-        Also calls `expanduser` on the latter.
+        Convert the path in string format to a `pathlib.PosixPath` object
+        and call `expanduser` on the latter.
         """
         return Path(v).expanduser()
 

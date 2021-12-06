@@ -478,14 +478,18 @@ class Manager:
 
                     # Logger messages for callbacks:
                     def _callback(result):
+                        """Create callback for 'pool.apply_async'"""
                         logger.info(
                             f"{data_source_name} has finished created batches for {split_name}!"
                         )
 
                     def _error_callback(exception, data_source_name):
-                        # Need to pass in data_source_name rather than rely on data_source_name
-                        # in the outer scope, because otherwise the error message will contain
-                        # the wrong data_source_name (due to stuff happening concurrently!)
+                        """Create error callback for 'pool.apply_async'
+
+                        Need to pass in data_source_name rather than rely on data_source_name
+                        in the outer scope, because otherwise the error message will contain
+                        the wrong data_source_name (due to stuff happening concurrently!)
+                        """
                         logger.exception(
                             f"Exception raised by {data_source_name} whilst creating batches for"
                             f" {split_name.value}\n{exception.__class__.__name__}: {exception}"

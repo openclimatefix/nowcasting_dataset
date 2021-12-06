@@ -120,6 +120,50 @@ class GSPDataSource(ImageDataSource):
         """
         return self.gsp_power.index
 
+    def make_all_locations(
+        self, t0_datetimes_utc: pd.DatetimeIndex
+    ) -> Tuple[pd.DatetimeIndex, List[Number], List[Number]]:
+        """
+        Make locations for all GSP
+
+        For some datetimes, return locations of all datetimes and all GSPs.
+        This means a national forecast can then be made
+
+        Args:
+            t0_datetimes: list of available t0 datetimes.
+
+        Returns:
+            1. list of datetimes
+            2. list of x locations
+            3. list of y locations
+
+        """
+
+        total_gsp_nan_count = self.gsp_power.isna().sum().sum()
+        if total_gsp_nan_count > 0:
+            assert Exception("There are nans in the GSP data. Can't get locations for all GSPs")
+        else:
+
+            t0_datetimes_utc.name = "t0_datetime_utc"
+
+            # get all locations
+            x_centers_osgb = self.metadata.location_x
+            y_centers_osgb = self.metadata.location_y
+
+            # make x centers
+            x_centers_osgb_all_gsps = pd.DataFrame(columns=t0_datetimes_utc, index=x_centers_osgb)
+            x_centers_osgb_all_gsps = x_centers_osgb_all_gsps.unstack().reset_index()
+
+            # make y centers
+            y_centers_osgb_all_gsps = pd.DataFrame(columns=t0_datetimes_utc, index=y_centers_osgb)
+            y_centers_osgb_all_gsps = y_centers_osgb_all_gsps.unstack().reset_index()
+
+            t0_datetimes_utc_all_gsps = x_centers_osgb_all_gsps["t0_datetime_utc"]
+            x_centers_osgb_all_gsps = x_centers_osgb_all_gsps["location_x"]
+            y_centers_osgb_all_gsps = y_centers_osgb_all_gsps["location_y"]
+
+            return t0_datetimes_utc_all_gsps, x_centers_osgb_all_gsps, y_centers_osgb_all_gsps
+
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
         """
         Get x and y locations. Assume that all data is available for all GSP.

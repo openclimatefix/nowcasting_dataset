@@ -66,8 +66,6 @@ class GSPDataSource(ImageDataSource):
         Set random seed and load data
         """
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        # TODO: Issue #425: Remove this logger warning.
-        logger.warning("GSPDataSource is using hard-coded start_dt and end_dt!")
         self.rng = np.random.default_rng()
         self.load()
 

@@ -48,8 +48,7 @@ class PVDataSource(ImageDataSource):
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
-        # TODO: Issue #425: Remove this logger warning.
-        logger.warning("PVDataSource is using hard-coded start_dt and end_dt!")
+
         self.rng = np.random.default_rng()
         self.load()
 

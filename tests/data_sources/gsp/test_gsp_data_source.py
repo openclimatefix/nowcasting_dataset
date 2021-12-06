@@ -90,7 +90,7 @@ def test_gsp_pv_data_source_get_all_locations():
     assert (t0_datetimes_utc_all_gsps[0:N_gsps] == t0_datetimes_utc[0]).all()
 
     # check second set of datetimes
-    assert (x_centers_osgb_all_gsps[0:N_gsps] == x_locations.values).all()
+    assert (x_centers_osgb_all_gsps[N_gsps : 2 * N_gsps] == x_locations.values).all()
     assert (t0_datetimes_utc_all_gsps[N_gsps : 2 * N_gsps] == t0_datetimes_utc[1]).all()
 
     # check all datetimes

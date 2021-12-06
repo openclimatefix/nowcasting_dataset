@@ -347,7 +347,9 @@ class DataSource:
 
         Should be overridden by DataSources which may be used to define the locations.
 
-        Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
+        Returns:  all_t0_datetimes_utc, x_locations, y_locations.
+            For each single t0_datetime, there are all possible locations.
+            Each return has length len(t0_datetimes_utc) * number_of_location
             Locations are in OSGB coordinates.
         """
         raise NotImplementedError()
@@ -356,8 +358,8 @@ class DataSource:
         """
         Get the number of locations of a data source
 
-        For GSP, this could be the number of GSP
-        For PV, this could be the number of PV locations
+        For GSP, this is the number of GSP
+        For PV, this is the number of PV locations
         """
         raise NotImplementedError()
 

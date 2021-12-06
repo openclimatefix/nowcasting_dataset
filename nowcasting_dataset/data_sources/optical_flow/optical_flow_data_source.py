@@ -12,7 +12,9 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources import DataSource
+from nowcasting_dataset.data_sources.optical_flow.format_images import crop_center, remap_image
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
+from nowcasting_dataset.dataset.xr_utils import convert_arrays_to_uint8
 
 _LOG = logging.getLogger(__name__)
 
@@ -225,31 +227,6 @@ class OpticalFlowDataSource(DataSource):
         nd_fs_utils.check_path_exists(self.zarr_path)
 
 
-def _convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
-    """Convert multiple arrays to uint8, using the same min and max to scale all arrays."""
-    # First, stack into a single numpy array so we can work on all images at the same time:
-    stacked = np.stack(arrays)
-
-    # Convert to float64 for normalisation:
-    stacked = stacked.astype(np.float64)
-
-    # Rescale pixel values to be in the range [0, 1]:
-    stacked -= stacked.min()
-    stacked_max = stacked.max()
-    if stacked_max > 0.0:
-        # If there is still an invalid value then we want to know about it!
-        # Adapted from https://stackoverflow.com/a/33701974/732596
-        with np.errstate(all="raise"):
-            stacked /= stacked.max()
-
-    # Convert to uint8 (uint8 can represent integers in the range [0, 255]):
-    stacked *= 255
-    stacked = stacked.round()
-    stacked = stacked.astype(np.uint8)
-
-    return tuple(stacked)
-
-
 def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.ndarray:
     """
     Compute the optical flow for a set of images
@@ -267,7 +244,7 @@ def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.n
     assert prev_image.dtype == next_image.dtype, "Images must be the same dtype!"
 
     # cv2.calcOpticalFlowFarneback expects images to be uint8:
-    prev_image, next_image = _convert_arrays_to_uint8(prev_image, next_image)
+    prev_image, next_image = convert_arrays_to_uint8(prev_image, next_image)
 
     # Docs for cv2.calcOpticalFlowFarneback:
     # https://docs.opencv.org/4.5.4/dc/d6b/group__video__track.html#ga5d10ebbd59fe09c5f650289ec0ece5af
@@ -284,67 +261,3 @@ def compute_optical_flow(prev_image: np.ndarray, next_image: np.ndarray) -> np.n
         flags=cv2.OPTFLOW_FARNEBACK_GAUSSIAN,
     )
     return flow
-
-
-def remap_image(
-    image: np.ndarray,
-    flow: np.ndarray,
-    border_mode: int = cv2.BORDER_REPLICATE,
-) -> np.ndarray:
-    """
-    Takes an image and warps it forwards in time according to the flow field.
-
-    Args:
-        image: The grayscale image to warp.
-        flow: A 3D array.  The first two dimensions must be the same size as the first two
-            dimensions of the image.  The third dimension represented the x and y displacement.
-        border_mode: One of cv2's BorderTypes such as cv2.BORDER_CONSTANT or cv2.BORDER_REPLICATE.
-            If border_mode=cv2.BORDER_CONSTANT then the border will be set to -1.
-            For details of other border_mode settings, see the Open CV docs here:
-            docs.opencv.org/4.5.4/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5
-
-    Returns:  Warped image.
-    """
-    # Adapted from https://github.com/opencv/opencv/issues/11068
-    height, width = flow.shape[:2]
-    remap = -flow.copy()
-    remap[..., 0] += np.arange(width)  # map_x
-    remap[..., 1] += np.arange(height)[:, np.newaxis]  # map_y
-    # remap docs:
-    # docs.opencv.org/4.5.4/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4
-    # TODO: Maybe use integer remap: docs say that might be faster?
-    remapped_image = cv2.remap(
-        src=image,
-        map1=remap,
-        map2=None,
-        interpolation=cv2.INTER_LINEAR,
-        borderMode=border_mode,
-        borderValue=-1,
-    )
-    return remapped_image
-
-
-def crop_center(image: np.ndarray, output_image_size_pixels: int) -> np.ndarray:
-    """
-    Crop center of a 2D numpy image.
-
-    Args:
-        image: The input image to crop.
-        output_image_size_pixels: The requested size of the output image.
-
-    Returns:
-        The cropped image, of size output_image_size_pixels x output_image_size_pixels
-    """
-    input_size_y, input_size_x = image.shape
-    assert (
-        input_size_x >= output_image_size_pixels
-    ), "output_image_size_pixels is larger than the input image!"
-    assert (
-        input_size_y >= output_image_size_pixels
-    ), "output_image_size_pixels is larger than the input image!"
-    half_output_image_size_pixels = output_image_size_pixels // 2
-    start_x = (input_size_x // 2) - half_output_image_size_pixels
-    start_y = (input_size_y // 2) - half_output_image_size_pixels
-    end_x = start_x + output_image_size_pixels
-    end_y = start_y + output_image_size_pixels
-    return image[start_y:end_y, start_x:end_x]

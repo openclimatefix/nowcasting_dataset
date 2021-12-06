@@ -226,7 +226,7 @@ def get_list_of_gsp_ids(maximum_number_of_gsp: Optional[int] = None) -> List[int
     if maximum_number_of_gsp is None:
         maximum_number_of_gsp = len(metadata)
     if maximum_number_of_gsp > len(metadata):
-        logging.warning(f"Only {len(metadata)} gsp available to load")
+        logger.warning(f"Only {len(metadata)} gsp available to load")
     if maximum_number_of_gsp < len(metadata):
         gsp_ids = gsp_ids[0:maximum_number_of_gsp]
 

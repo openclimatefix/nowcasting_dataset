@@ -32,6 +32,14 @@ input_data:
     sun_zarr_path: tests/data/sun/test.zarr
   topographic:
     topographic_filename: tests/data/europe_dem_2km_osgb.tif
+  opticalflow:
+    history_minutes: 5
+    forecast_minutes: 30
+    opticalflow_zarr_path: tests/data/sat_data.zarr
+    opticalflow_input_image_size_pixels: 32
+    opticalflow_output_image_size_pixels: 8
+    opticalflow_channels:
+      - IR_016
 output_data:
   filepath: not used by unittests!
 process:

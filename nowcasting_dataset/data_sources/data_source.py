@@ -116,7 +116,7 @@ class DataSource:
 
         This functions may be overwritten if the sample period of the data source is not 5 minutes.
         """
-        logging.debug(
+        logger.debug(
             "Getting sample_period_minutes default of 5 minutes. "
             "This means the data is spaced 5 minutes apart"
         )
@@ -132,14 +132,8 @@ class DataSource:
         """
         pass
 
-    def check_input_paths_exist(self) -> None:
-        """Check any input paths exist.  Raise FileNotFoundError if not.
-
-        Can be overridden by child classes.
-        """
-        pass
-
     # TODO: Issue #319: Standardise parameter names.
+    # TODO: Issue #367: Reduce duplication.
     def create_batches(
         self,
         spatial_and_temporal_locations_of_each_example: pd.DataFrame,
@@ -154,26 +148,39 @@ class DataSource:
         Safe to call from worker processes.
 
         Args:
-          spatial_and_temporal_locations_of_each_example: A DataFrame where each row specifies
-            the spatial and temporal location of an example.  The number of rows must be
-            an exact multiple of `batch_size`.
-            Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
-          idx_of_first_batch: The batch number of the first batch to create.
-          batch_size: The number of examples per batch.
-          dst_path: The final destination path for the batches.  Must exist.
-          local_temp_path: The local temporary path.  This is only required when dst_path is a
-            cloud storage bucket, so files must first be created on the VM's local disk in temp_path
-            and then uploaded to dst_path every upload_every_n_batches. Must exist. Will be emptied.
-          upload_every_n_batches: Upload the contents of temp_path to dst_path after this number
-            of batches have been created.  If 0 then will write directly to dst_path.
+            spatial_and_temporal_locations_of_each_example (pd.DataFrame): A DataFrame where each
+                row specifies the spatial and temporal location of an example. The number of rows
+                must be an exact multiple of `batch_size`.
+                Columns are: t0_datetime_UTC, x_center_OSGB, y_center_OSGB.
+            idx_of_first_batch (int): The batch number of the first batch to create.
+            batch_size (int): The number of examples per batch.
+            dst_path (Path): The final destination path for the batches.  Must exist.
+            local_temp_path (Path): The local temporary path.  This is only required when dst_path
+                is a cloud storage bucket, so files must first be created on the VM's local disk in
+                temp_path and then uploaded to dst_path every `upload_every_n_batches`. Must exist.
+                Will be emptied.
+            upload_every_n_batches (int): Upload the contents of temp_path to dst_path after this
+                number of batches have been created.  If 0 then will write directly to `dst_path`.
         """
         # Sanity checks:
-        assert idx_of_first_batch >= 0
-        assert batch_size > 0
-        assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0
-        assert upload_every_n_batches >= 0
-        assert spatial_and_temporal_locations_of_each_example.columns.to_list() == list(
+        assert (
+            idx_of_first_batch >= 0
+        ), "The batch number of the first batch to create should be greater than 0"
+        assert batch_size > 0, "The batch size should be strictly greater than 0."
+        assert len(spatial_and_temporal_locations_of_each_example) % batch_size == 0, (
+            f"{len(spatial_and_temporal_locations_of_each_example)=} must be"
+            f" exactly divisible by {batch_size=}"
+        )
+        assert upload_every_n_batches >= 0, "`upload_every_n_batches` must be >= 0"
+
+        spatial_and_temporal_locations_of_each_example_columns = (
+            spatial_and_temporal_locations_of_each_example.columns.to_list()
+        )
+        assert spatial_and_temporal_locations_of_each_example_columns == list(
             SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
+        ), (
+            f"The provided data columns {spatial_and_temporal_locations_of_each_example_columns}"
+            f" do not match {SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES=}"
         )
 
         self.open()
@@ -210,8 +217,10 @@ class DataSource:
             )
 
             # Save batch to disk.
+            # TODO: Issue #524: Use DataSourceOutput.save_netcdf in place of to_netcdf
             netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
-            batch.to_netcdf(netcdf_filename, engine="h5netcdf")
+            encoding = {name: {"compression": "lzf"} for name in batch.data_vars}
+            batch.to_netcdf(netcdf_filename, engine="h5netcdf", encoding=encoding)
 
             # Upload if necessary.
             if (
@@ -261,7 +270,19 @@ class DataSource:
                     self.get_example, t0_datetime, x_location, y_location
                 )
                 future_examples.append(future_example)
-            examples = [future_example.result() for future_example in future_examples]
+
+            # Get the examples back.  Loop round each future so we can log a helpful error.
+            # If the worker thread raised an exception then the exception won't "bubble up"
+            # until we call future_example.result().
+            examples = []
+            for example_i, future_example in enumerate(future_examples):
+                try:
+                    result = future_example.result()
+                except Exception:
+                    logger.error(f"Exception when processing {example_i=}!")
+                    raise
+                else:
+                    examples.append(result)
 
         # Get the DataSource class, this could be one of the data sources like Sun
         cls = self.get_data_model_for_batch()
@@ -322,7 +343,7 @@ class DataSource:
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
     # TODO: Issue #319: Standardise parameter names.
     def _get_time_slice(self, t0_dt: pd.Timestamp):
-        """Get a single timestep of data.  Must be overridden."""
+        """Get a single timestep of data.  Must be overridden if get_example is not overridden."""
         raise NotImplementedError()
 
     # TODO: Issue #319: Standardise parameter names.
@@ -335,11 +356,20 @@ class DataSource:
         """Must be overridden by child classes."""
         raise NotImplementedError()
 
+    def check_input_paths_exist(self) -> None:
+        """Check any input paths exist.  Raise FileNotFoundError if not.
+
+        Must be overridden by child classes.
+        """
+        raise NotImplementedError()
+
 
 @dataclass
 class ImageDataSource(DataSource):
     """
     Image Data source
+
+    Note that this is an abstract class.
 
     Args:
       image_size_pixels: Size of the width and height of the image crop

@@ -38,8 +38,8 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
 
     gsp = GSPDataSource(
         zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_dt=datetime(2020, 4, 1),
-        end_dt=datetime(2020, 4, 2),
+        start_datetime=datetime(2020, 4, 1),
+        end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -72,12 +72,11 @@ def test_load_yaml_configuration():  # noqa: D103
     filename = local_path / "tests" / "config" / "test.yaml"
 
     manager.load_yaml_configuration(filename=filename)
-    local_temp_path = manager.local_temp_path
 
     manager.initialise_data_sources()
-    assert len(manager.data_sources) == 7
+    assert len(manager.data_sources) == 8
     assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
-    assert isinstance(local_temp_path, Path)
+    assert isinstance(manager.config.process.local_temp_path, Path)
 
 
 def test_get_daylight_datetime_index():
@@ -159,14 +158,16 @@ def test_batches():
 
         gsp = GSPDataSource(
             zarr_path=filename,
-            start_dt=datetime(2020, 4, 1),
-            end_dt=datetime(2020, 4, 2),
+            start_datetime=datetime(2020, 4, 1),
+            end_datetime=datetime(2020, 4, 2),
             history_minutes=30,
             forecast_minutes=60,
             image_size_pixels=64,
             meters_per_pixel=2000,
         )
-        manager.data_sources = {"gsp": gsp, "sat": sat, "hrvsat": hrvsat}
+
+        # Set data sources
+        manager.data_sources = {"gsp": gsp, "satellite": sat, "hrvsatellite": hrvsat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
@@ -178,11 +179,11 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train")
         assert os.path.exists(f"{dst_path}/train/gsp")
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
-        assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsat/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/satellite/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/satellite/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000000.nc")
 
         # check logs is appended to
         for log_file in ["combined", "gsp", "satellite"]:

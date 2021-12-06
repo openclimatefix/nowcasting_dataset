@@ -22,4 +22,5 @@ black
 pre-commit
 fsspec
 pathy
+opencv-contrib-python-headless
 gitpython

@@ -181,6 +181,11 @@ class Batch(BaseModel):
                         filename_or_obj=local_netcdf_filename,
                     )
                     future_examples_per_source.append([data_source_name, future_examples])
+                else:
+                    _LOG.error(
+                        f"{local_netcdf_filename} does not exists,"
+                        f"this is for {data_source_name} data source"
+                    )
 
         # Collect results from each thread.
         for data_source_name, future_examples in future_examples_per_source:

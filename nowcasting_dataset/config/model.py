@@ -202,18 +202,16 @@ class OpticalFlow(DataSourceMixin):
             " satellite.satellite_zarr_path."
         ),
     )
-    opticalflow_history_minutes: int = Field(
-        5,
-        description=(
-            "Duration of historical data to use when computing the optical flow field."
-            " For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to"
-            " compute the optical flow field separately for the image pairs (t-2, t-1), and"
-            " (t-1, t0) and to use the mean optical flow field."
-        ),
-    )
-    opticalflow_forecast_minutes: int = Field(
-        120, description="Duration of the optical flow predictions."
-    )
+
+    # history_minutes, set in DataSourceMixin.
+    # Duration of historical data to use when computing the optical flow field.
+    # For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to
+    # compute the optical flow field separately for the image pairs (t-2, t-1), and
+    # (t-1, t0) and to use the mean optical flow field.
+
+    # forecast_minutes, set in DataSourceMixin.
+    # Duration of the optical flow predictions.
+
     opticalflow_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
     opticalflow_input_image_size_pixels: int = Field(
         IMAGE_SIZE_PIXELS * 2,

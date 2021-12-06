@@ -76,8 +76,8 @@ input_data:
   # ------------------------- Optical Flow ---------------
   opticalflow:
     opticalflow_zarr_path: gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
-    opticalflow_history_minutes: 5
-    opticalflow_forecast_minutes: 120
+    history_minutes: 5
+    forecast_minutes: 120
     opticalflow_input_image_size_pixels: 102
     opticalflow_output_image_size_pixels: 24
     opticalflow_source_data_source_class_name: SatelliteDataSource

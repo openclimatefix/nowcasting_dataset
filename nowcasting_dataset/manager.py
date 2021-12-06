@@ -178,7 +178,7 @@ class Manager:
         split_t0_datetimes = split.split_data(
             datetimes=t0_datetimes,
             method=self.config.process.split_method,
-            train_test_validation_split=(10, 1, 1),
+            train_test_validation_split=self.config.process.train_test_validation_split,
             train_validation_test_datetime_split=[
                 pd.Timestamp("2020-01-01"),
                 pd.Timestamp("2021-01-01"),

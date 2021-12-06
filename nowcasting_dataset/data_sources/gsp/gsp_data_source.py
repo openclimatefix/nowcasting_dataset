@@ -169,9 +169,6 @@ class GSPDataSource(ImageDataSource):
             x_centers_osgb_all_gsps = list(x_centers_osgb_all_gsps["location_x"])
             y_centers_osgb_all_gsps = list(y_centers_osgb_all_gsps["location_y"])
 
-            # do shuffle so one batch doesnt have all the same datetime
-            # TODO
-
             return t0_datetimes_utc_all_gsps, x_centers_osgb_all_gsps, y_centers_osgb_all_gsps
 
     def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:

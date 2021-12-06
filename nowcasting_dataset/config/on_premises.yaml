@@ -48,6 +48,7 @@ input_data:
     satellite_image_size_pixels: 24
     satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
 
+  #---------------------- HRVSatellite -------------
   hrvsatellite:
     hrvsatellite_channels:
       - HRV
@@ -61,6 +62,27 @@ input_data:
   # ------------------------- Topographic ----------------
   topographic:
     topographic_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Topographic/europe_dem_1km_osgb.tif
+
+  # ------------------------- Optical Flow ---------------
+  opticalflow:
+    opticalflow_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
+    history_minutes: 5
+    forecast_minutes: 120
+    opticalflow_input_image_size_pixels: 102
+    opticalflow_output_image_size_pixels: 24
+    opticalflow_source_data_source_class_name: SatelliteDataSource
+    opticalflow_channels:
+      - IR_016
+      - IR_039
+      - IR_087
+      - IR_097
+      - IR_108
+      - IR_120
+      - IR_134
+      - VIS006
+      - VIS008
+      - WV_062
+      - WV_073
 
 output_data:
   filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v15

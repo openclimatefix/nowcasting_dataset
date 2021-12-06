@@ -7,7 +7,7 @@ import fsspec
 import numpy as np
 from pathy import Pathy
 
-_LOG = logging.getLogger("nowcasting_dataset")
+_LOG = logging.getLogger(__name__)
 
 
 def upload_and_delete_local_files(dst_path: Union[str, Path], local_path: Union[str, Path]):
@@ -97,6 +97,8 @@ def check_path_exists(path: Union[str, Path]):
 
     `path` can include wildcards.
     """
+    if not path:
+        raise FileNotFoundError("Not a valid path!")
     filesystem = get_filesystem(path)
     if not filesystem.exists(path):
         # Now try using `glob`.  Maybe `path` includes a wildcard?

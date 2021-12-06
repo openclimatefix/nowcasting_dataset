@@ -12,6 +12,7 @@ from nowcasting_dataset.consts import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
@@ -60,6 +61,8 @@ def metadata_fake(batch_size):
     # get random times
     all_datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
     t0_datetimes_utc = np.random.choice(all_datetimes, batch_size, replace=False)
+    # np.random.choice turns the pd.Timestamp objects into datetime.datetime objects.
+    t0_datetimes_utc = pd.to_datetime(t0_datetimes_utc)
 
     metadata_dict = {}
     metadata_dict["batch_size"] = batch_size
@@ -162,6 +165,30 @@ def hrv_satellite_fake(
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return HRVSatellite(xr_dataset)
+
+
+def optical_flow_fake(
+    batch_size=32,
+    seq_length_5=19,
+    satellite_image_size_pixels=64,
+    number_satellite_channels=7,
+) -> OpticalFlow:
+    """Create fake data"""
+    # make batch of arrays
+    xr_arrays = [
+        create_image_array(
+            seq_length=seq_length_5,
+            freq="5T",
+            image_size_pixels=satellite_image_size_pixels,
+            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
+        )
+        for _ in range(batch_size)
+    ]
+
+    # make dataset
+    xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
+
+    return OpticalFlow(xr_dataset)
 
 
 def sun_fake(batch_size, seq_length_5):
@@ -316,19 +343,20 @@ def create_gsp_pv_dataset(
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
 
-    # make pv yield
-    data = np.random.randn(
-        seq_length,
-        number_of_systems,
-    )
-    data = data.clip(min=0)
+    # make pv yield.  randn samples from a Normal distribution (and so can go negative).
+    # The values are clipped to be positive later.
+    data = np.random.randn(seq_length, number_of_systems)
 
-    # smooth the data, the convolution method smooeths that data across systems first,
+    # smooth the data, the convolution method smooths that data across systems first,
     # and then a bit across time (depending what you set N)
     N = int(seq_length / 2)
     data = np.convolve(data.ravel(), np.ones(N) / N, mode="same").reshape(
         (seq_length, number_of_systems)
     )
+    # Need to clip  *after* smoothing, because the smoothing method might push
+    # non-zero data below zero.  Clip at 0.1 instead of 0 so we don't get div-by-zero errors
+    # if capacity is zero (capacity is computed as the max of the random numbers).
+    data = data.clip(min=0.1)
 
     # make into a Data Array
     data_array = xr.DataArray(

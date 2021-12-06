@@ -72,12 +72,11 @@ def test_load_yaml_configuration():  # noqa: D103
     filename = local_path / "tests" / "config" / "test.yaml"
 
     manager.load_yaml_configuration(filename=filename)
-    local_temp_path = manager.local_temp_path
 
     manager.initialise_data_sources()
-    assert len(manager.data_sources) == 7
+    assert len(manager.data_sources) == 8
     assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
-    assert isinstance(local_temp_path, Path)
+    assert isinstance(manager.config.process.local_temp_path, Path)
 
 
 def test_get_daylight_datetime_index():
@@ -110,10 +109,12 @@ def test_get_daylight_datetime_index():
 
 def test_batches():
     """Test that batches can be made"""
-    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+    sat_filename = (
+        Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
+    )
 
     sat = SatelliteDataSource(
-        zarr_path=filename,
+        zarr_path=sat_filename,
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=24,
@@ -121,11 +122,11 @@ def test_batches():
         channels=("IR_016",),
     )
 
-    filename = (
+    hrv_filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
     )
     hrvsat = SatelliteDataSource(
-        zarr_path=filename,
+        zarr_path=hrv_filename,
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -133,12 +134,12 @@ def test_batches():
         channels=("HRV",),
     )
 
-    filename = (
+    gsp_filename = (
         Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
     )
 
     gsp = GSPDataSource(
-        zarr_path=filename,
+        zarr_path=gsp_filename,
         start_datetime=datetime(2020, 4, 1),
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
@@ -160,8 +161,8 @@ def test_batches():
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
-        # just set satellite as data source
-        manager.data_sources = {"gsp": gsp, "sat": sat, "hrvsat": hrvsat}
+        # Set data sources
+        manager.data_sources = {"gsp": gsp, "satellite": sat, "hrvsatellite": hrvsat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
@@ -173,11 +174,11 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train")
         assert os.path.exists(f"{dst_path}/train/gsp")
         assert os.path.exists(f"{dst_path}/train/gsp/000000.nc")
-        assert os.path.exists(f"{dst_path}/train/sat/000000.nc")
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/sat/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsat/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsat/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/satellite/000000.nc")
+        assert os.path.exists(f"{dst_path}/train/satellite/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000001.nc")
+        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000000.nc")
 
 
 def test_save_config():

@@ -30,7 +30,10 @@ from nowcasting_dataset.consts import (
 )
 from nowcasting_dataset.dataset.split import split
 
-IMAGE_SIZE_PIXELS_FIELD = Field(64, description="The number of pixels of the region of interest.")
+IMAGE_SIZE_PIXELS = 64
+IMAGE_SIZE_PIXELS_FIELD = Field(
+    IMAGE_SIZE_PIXELS, description="The number of pixels of the region of interest."
+)
 METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel.")
 
 logger = logging.getLogger(__name__)
@@ -189,6 +192,55 @@ class HRVSatellite(DataSourceMixin):
     hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
+class OpticalFlow(DataSourceMixin):
+    """Optical Flow configuration model"""
+
+    opticalflow_zarr_path: str = Field(
+        "",
+        description=(
+            "The satellite Zarr data to use. If in doubt, use the same value as"
+            " satellite.satellite_zarr_path."
+        ),
+    )
+
+    # history_minutes, set in DataSourceMixin.
+    # Duration of historical data to use when computing the optical flow field.
+    # For example, set to 5 to use just two images: the t-1 and t0 images.  Set to 10 to
+    # compute the optical flow field separately for the image pairs (t-2, t-1), and
+    # (t-1, t0) and to use the mean optical flow field.
+
+    # forecast_minutes, set in DataSourceMixin.
+    # Duration of the optical flow predictions.
+
+    opticalflow_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    opticalflow_input_image_size_pixels: int = Field(
+        IMAGE_SIZE_PIXELS * 2,
+        description=(
+            "The *input* image size (i.e. the image size to load off disk)."
+            " This should be larger than output_image_size_pixels to provide sufficient border to"
+            " mean that, even after the image has been flowed, all edges of the output image are"
+            " real pixels values, and not NaNs."
+        ),
+    )
+    opticalflow_output_image_size_pixels: int = Field(
+        IMAGE_SIZE_PIXELS,
+        description=(
+            "The size of the images after optical flow has been applied. The output image is a"
+            " center-crop of the input image, after it has been flowed."
+        ),
+    )
+    opticalflow_channels: tuple = Field(
+        SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
+    )
+    opticalflow_source_data_source_class_name: str = Field(
+        "SatelliteDataSource",
+        description=(
+            "Either SatelliteDataSource or HRVSatelliteDataSource."
+            "  The name of the DataSource that will load the satellite images."
+        ),
+    )
+
+
 class NWP(DataSourceMixin):
     """NWP configuration model"""
 
@@ -254,6 +306,7 @@ class InputData(BaseModel):
     pv: Optional[PV] = None
     satellite: Optional[Satellite] = None
     hrvsatellite: Optional[HRVSatellite] = None
+    opticalflow: Optional[OpticalFlow] = None
     nwp: Optional[NWP] = None
     gsp: Optional[GSP] = None
     topographic: Optional[Topographic] = None
@@ -301,6 +354,7 @@ class InputData(BaseModel):
             "gsp",
             "topographic",
             "sun",
+            "opticalflow",
         )
         enabled_data_sources = [
             data_source_name
@@ -331,6 +385,7 @@ class InputData(BaseModel):
             gsp=GSP(),
             topographic=Topographic(),
             sun=Sun(),
+            optical_flow=OpticalFlow(),
         )
 
 
@@ -406,7 +461,14 @@ class Process(BaseModel):
         ),
     )
 
-    local_temp_path: str = Field("~/temp/")
+    local_temp_path: Path = Field(
+        Path("~/temp/").expanduser(),
+        description=(
+            "This is only necessary if using a VM on a public cloud and when the finished batches"
+            " will be uploaded to a cloud bucket. This is the local temporary path on the VM."
+            "  This will be emptied."
+        ),
+    )
 
     @validator("local_temp_path")
     def local_temp_path_to_path_object_expanduser(cls, v):

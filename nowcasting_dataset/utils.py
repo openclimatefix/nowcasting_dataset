@@ -3,6 +3,8 @@ import logging
 import os
 import re
 import tempfile
+import threading
+from concurrent import futures
 from functools import wraps
 
 import fsspec.asyn
@@ -149,9 +151,7 @@ def arg_logger(func):
     # Adapted from https://stackoverflow.com/a/23983263/732596
     @wraps(func)
     def inner_func(*args, **kwargs):
-        logger.debug(
-            f"Arguments passed into function `{func.__name__}`:" f" args={args}; kwargs={kwargs}"
-        )
+        logger.debug(f"Arguments passed into function `{func.__name__}`: {args=}; {kwargs=}")
         return func(*args, **kwargs)
 
     return inner_func
@@ -169,7 +169,7 @@ def configure_logger(log_level: str, logger_name: str, handlers=list[logging.Han
     log_level = getattr(logging, log_level)  # Convert string to int.
 
     formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s processID=%(process)d %(message)s | %(pathname)s#L%(lineno)d"
+        "%(asctime)s:%(levelname)s:%(module)s#L%(lineno)d:PID=%(process)d:%(message)s"
     )
 
     local_logger = logging.getLogger(logger_name)
@@ -196,3 +196,38 @@ def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> (int, in
     end_example_idx = (batch_idx + 1) * batch_size
 
     return start_example_idx, end_example_idx
+
+
+class DummyExecutor(futures.Executor):
+    """Drop-in replacement for ThreadPoolExecutor or ProcessPoolExecutor
+
+    This is currently not used in any code, but very useful when debugging.
+
+    Adapted from https://stackoverflow.com/a/10436851/732596
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Initialise DummyExecutor."""
+        self._shutdown = False
+        self._shutdownLock = threading.Lock()
+
+    def submit(self, fn, *args, **kwargs):
+        """Submit task to DummyExecutor."""
+        with self._shutdownLock:
+            if self._shutdown:
+                raise RuntimeError("cannot schedule new futures after shutdown")
+
+            f = futures.Future()
+            try:
+                result = fn(*args, **kwargs)
+            except BaseException as e:
+                f.set_exception(e)
+            else:
+                f.set_result(result)
+
+            return f
+
+    def shutdown(self, wait=True):
+        """Shutdown dummy executor."""
+        with self._shutdownLock:
+            self._shutdown = True

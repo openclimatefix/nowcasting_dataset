@@ -17,6 +17,7 @@ from nowcasting_dataset.data_sources.fake import (
     hrv_satellite_fake,
     metadata_fake,
     nwp_fake,
+    optical_flow_fake,
     pv_fake,
     satellite_fake,
     sun_fake,
@@ -25,6 +26,7 @@ from nowcasting_dataset.data_sources.fake import (
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata, load_from_csv
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
+from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
@@ -52,6 +54,7 @@ class Batch(BaseModel):
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
+    opticalflow: Optional[OpticalFlow]
     pv: Optional[PV]
     sun: Optional[Sun]
     gsp: Optional[GSP]
@@ -64,6 +67,7 @@ class Batch(BaseModel):
             self.satellite,
             self.hrvsatellite,
             self.topographic,
+            self.opticalflow,
             self.pv,
             self.sun,
             self.gsp,
@@ -92,6 +96,14 @@ class Batch(BaseModel):
                 seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
                 satellite_image_size_pixels=satellite_image_size_pixels,
                 number_satellite_channels=1,
+            ),
+            opticalflow=optical_flow_fake(
+                batch_size=batch_size,
+                seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
+                satellite_image_size_pixels=satellite_image_size_pixels,
+                number_satellite_channels=len(
+                    configuration.input_data.satellite.satellite_channels
+                ),
             ),
             nwp=nwp_fake(
                 batch_size=batch_size,
@@ -127,7 +139,6 @@ class Batch(BaseModel):
             path: the path where it will be saved. This can be local or in the cloud.
 
         """
-
         with futures.ThreadPoolExecutor() as executor:
             # Submit tasks to the executor.
             for data_source in self.data_sources:
@@ -162,13 +173,19 @@ class Batch(BaseModel):
                 local_netcdf_filename = os.path.join(
                     local_netcdf_path, data_source_name, get_netcdf_filename(batch_idx)
                 )
-
-                # submit task
-                future_examples = executor.submit(
-                    xr.load_dataset,
-                    filename_or_obj=local_netcdf_filename,
-                )
-                future_examples_per_source.append([data_source_name, future_examples])
+                # If the file exists, load it, otherwise data source isn't used
+                if os.path.isfile(local_netcdf_filename):
+                    # submit task
+                    future_examples = executor.submit(
+                        xr.load_dataset,
+                        filename_or_obj=local_netcdf_filename,
+                    )
+                    future_examples_per_source.append([data_source_name, future_examples])
+                else:
+                    _LOG.error(
+                        f"{local_netcdf_filename} does not exists,"
+                        f"this is for {data_source_name} data source"
+                    )
 
         # Collect results from each thread.
         for data_source_name, future_examples in future_examples_per_source:
@@ -198,6 +215,7 @@ class Example(BaseModel):
     satellite: Optional[Satellite]
     hrvsatellite: Optional[HRVSatellite]
     topographic: Optional[Topographic]
+    opticalflow: Optional[OpticalFlow]
     pv: Optional[PV]
     sun: Optional[Sun]
     gsp: Optional[GSP]
@@ -209,6 +227,7 @@ class Example(BaseModel):
         return [
             self.satellite,
             self.hrvsatellite,
+            self.opticalflow,
             self.topographic,
             self.pv,
             self.sun,

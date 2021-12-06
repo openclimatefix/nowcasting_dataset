@@ -2,6 +2,7 @@
 
 import logging
 import multiprocessing
+from functools import partial
 from pathlib import Path
 from typing import Optional, Union
 
@@ -33,7 +34,6 @@ class Manager:
         geospatial locations of each example.
       save_batches_locally_and_upload: bool: Set to True by `load_yaml_configuration()` if
         `config.process.upload_every_n_batches > 0`.
-      local_temp_path: Path: `config.process.local_temp_path` with `~` expanded.
     """
 
     def __init__(self) -> None:  # noqa: D107
@@ -47,8 +47,6 @@ class Manager:
         self.config = config.load_yaml_configuration(filename)
         self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
-
-        self.local_temp_path = self.config.process.local_temp_path
         logger.debug(f"config={self.config}")
 
     def save_yaml_configuration(self):
@@ -87,6 +85,7 @@ class Manager:
             log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
             nd_utils.configure_logger(
                 log_level=log_level,
+                # TODO: Fix bug #467: satellite.log file is not being appended to.
                 logger_name=f"nowcasting_dataset.data_sources.{data_source_name}",
                 handlers=[logging.FileHandler(log_filename, mode="a")],
             )
@@ -94,7 +93,7 @@ class Manager:
     def initialise_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:
-        """Initialise DataSources specified in the InputData configuration.
+        """Initialize DataSources specified in the InputData configuration.
 
         For each key in each DataSource's configuration object, the string `<data_source_name>_`
         is removed from the key before passing to the DataSource constructor.  This allows us to
@@ -234,7 +233,7 @@ class Manager:
         try:
             nd_fs_utils.check_path_exists(filename)
         except FileNotFoundError:
-            logging.info(f"{filename} does not exist!")
+            logger.info(f"{filename} does not exist!")
             return False
         else:
             logger.info(f"{filename} exists!")
@@ -371,16 +370,18 @@ class Manager:
         return False
 
     def _find_splits_which_need_more_batches(
-        self, first_batches_to_create: dict[split.SplitName, dict[str, int]]
+        self,
+        first_batches_to_create: dict[split.SplitName, dict[str, int]],
     ) -> list[split.SplitName]:
         """Returns list of SplitNames which need more batches to be produced."""
-        splits_which_need_more_batches = []
-        for split_name in split.SplitName:
+        return [
+            split_name
+            for split_name in split.SplitName
             if self._check_if_more_batches_are_required_for_split(
-                split_name, first_batches_to_create
-            ):
-                splits_which_need_more_batches.append(split_name)
-        return splits_which_need_more_batches
+                split_name=split_name,
+                first_batches_to_create=first_batches_to_create,
+            )
+        ]
 
     def create_batches(self, overwrite_batches: bool) -> None:
         """Create batches (if necessary).
@@ -394,6 +395,7 @@ class Manager:
             previously been written to disk. If False then check which batches have previously been
             written to disk, and only create any batches which have not yet been written to disk.
         """
+        logger.debug("Entering Manager.create_batches...")
         first_batches_to_create = self._get_first_batches_to_create(overwrite_batches)
 
         # Check if there's any work to do.
@@ -405,7 +407,7 @@ class Manager:
             ]
         else:
             splits_which_need_more_batches = self._find_splits_which_need_more_batches(
-                first_batches_to_create
+                first_batches_to_create=first_batches_to_create
             )
             if len(splits_which_need_more_batches) == 0:
                 logger.info("All batches have already been created!  No work to do!")
@@ -436,6 +438,7 @@ class Manager:
         for split_name, locations_for_split in locations_for_each_example_of_each_split.items():
             with multiprocessing.Pool(processes=n_data_sources) as pool:
                 async_results_from_create_batches = []
+                an_error_has_occured = multiprocessing.Event()
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
@@ -452,7 +455,7 @@ class Manager:
 
                     # TODO: Issue 455: Guarantee that local temp path is unique and empty.
                     local_temp_path = (
-                        self.local_temp_path
+                        self.config.process.local_temp_path
                         / split_name.value
                         / data_source_name
                         / f"worker_{worker_id}"
@@ -474,13 +477,24 @@ class Manager:
                     )
 
                     # Logger messages for callbacks:
-                    callback_msg = (
-                        f"{data_source_name} has finished created batches for {split_name}!"
-                    )
-                    error_callback_msg = (
-                        f"Exception raised by {data_source_name} whilst creating batches for"
-                        f" {split_name}:\n"
-                    )
+                    def _callback(result):
+                        """Create callback for 'pool.apply_async'"""
+                        logger.info(
+                            f"{data_source_name} has finished created batches for {split_name}!"
+                        )
+
+                    def _error_callback(exception, data_source_name):
+                        """Create error callback for 'pool.apply_async'
+
+                        Need to pass in data_source_name rather than rely on data_source_name
+                        in the outer scope, because otherwise the error message will contain
+                        the wrong data_source_name (due to stuff happening concurrently!)
+                        """
+                        logger.exception(
+                            f"Exception raised by {data_source_name} whilst creating batches for"
+                            f" {split_name.value}\n{exception.__class__.__name__}: {exception}"
+                        )
+                        an_error_has_occured.set()
 
                     # Submit data_source.create_batches task to the worker process.
                     logger.debug(
@@ -489,15 +503,20 @@ class Manager:
                     async_result = pool.apply_async(
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,
-                        callback=lambda result: logger.info(callback_msg),
-                        error_callback=lambda exception: logger.error(
-                            error_callback_msg + str(exception)
-                        ),
+                        callback=_callback,
+                        error_callback=partial(_error_callback, data_source_name=data_source_name),
                     )
                     async_results_from_create_batches.append(async_result)
 
                 # Wait for all async_results to finish:
                 for async_result in async_results_from_create_batches:
                     async_result.wait()
+                    if an_error_has_occured.is_set():
+                        # An error has occurred but, at this point in the code, we don't know which
+                        # worker process raised the exception.  But, with luck, the worker process
+                        # will have logged an informative exception via the _error_callback func.
+                        raise RuntimeError(
+                            f"A worker process raised an exception whilst working on {split_name}!"
+                        )
 
                 logger.info(f"Finished creating batches for {split_name}!")

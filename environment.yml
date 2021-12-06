@@ -2,6 +2,7 @@ name: nowcasting_dataset
 channels:
   - pvlib
   - conda-forge
+  - fastai
 dependencies:
   - python>=3.9
   - pip
@@ -16,6 +17,7 @@ dependencies:
   - xarray
   - ipykernel
   - h5netcdf # For opening NetCDF files from cloud buckets.
+  - fastai::opencv-python-headless
 
   # Cloud & distributed compute
   - gcsfs

@@ -123,3 +123,28 @@ class PydanticXArrayDataSet(xr.Dataset):
                 data_var in data_var_names
             ), f"{data_var} is not in all data_vars ({data_var_names}) in {cls.__name__}!"
         return v
+
+
+def convert_arrays_to_uint8(*arrays: tuple[np.ndarray]) -> tuple[np.ndarray]:
+    """Convert multiple arrays to uint8, using the same min and max to scale all arrays."""
+    # First, stack into a single numpy array so we can work on all images at the same time:
+    stacked = np.stack(arrays)
+
+    # Convert to float64 for normalisation:
+    stacked = stacked.astype(np.float64)
+
+    # Rescale pixel values to be in the range [0, 1]:
+    stacked -= stacked.min()
+    stacked_max = stacked.max()
+    if stacked_max > 0.0:
+        # If there is still an invalid value then we want to know about it!
+        # Adapted from https://stackoverflow.com/a/33701974/732596
+        with np.errstate(all="raise"):
+            stacked /= stacked.max()
+
+    # Convert to uint8 (uint8 can represent integers in the range [0, 255]):
+    stacked *= 255
+    stacked = stacked.round()
+    stacked = stacked.astype(np.uint8)
+
+    return tuple(stacked)

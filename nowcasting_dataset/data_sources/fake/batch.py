@@ -14,6 +14,7 @@ from nowcasting_dataset.consts import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.fake.coordinates import (
     create_random_point_coordinates_osgb,
     make_random_image_coords_osgb,
+    make_random_x_and_y_osgb_centers,
 )
 from nowcasting_dataset.data_sources.fake.utils import (
     join_list_data_array_to_batch_dataset,
@@ -43,33 +44,31 @@ def make_fake_batch(configuration: Configuration) -> dict:
 
     return dict(
         metadata=metadata,
-        satellite=satellite_fake(
-            configuration=configuration, t0_datetimes_utc=metadata.t0_datetime_utc
-        ),
+        satellite=satellite_fake(configuration=configuration, metadata=metadata),
         hrvsatellite=hrv_satellite_fake(
             configuration=configuration,
-            t0_datetimes_utc=metadata.t0_datetime_utc,
+            metadata=metadata,
         ),
         opticalflow=optical_flow_fake(
             configuration=configuration,
-            t0_datetimes_utc=metadata.t0_datetime_utc,
+            metadata=metadata,
         ),
         nwp=nwp_fake(
             configuration=configuration,
-            t0_datetimes_utc=metadata.t0_datetime_utc,
+            metadata=metadata,
         ),
         pv=pv_fake(
             configuration=configuration,
-            t0_datetimes_utc=metadata.t0_datetime_utc,
+            metadata=metadata,
         ),
         gsp=gsp_fake(
             configuration=configuration,
-            t0_datetimes_utc=metadata.t0_datetime_utc,
+            metadata=metadata,
         ),
         sun=sun_fake(
             batch_size=batch_size,
             seq_length_5=configuration.input_data.sun.seq_length_5_minutes,
-            t0_datetimes_utc=metadata.t0_datetime_utc,
+            metadata=metadata,
         ),
         topographic=topographic_fake(
             batch_size=batch_size,
@@ -80,7 +79,7 @@ def make_fake_batch(configuration: Configuration) -> dict:
 
 def gsp_fake(
     configuration: Configuration = None,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ):
     """Create fake data"""
 
@@ -93,8 +92,10 @@ def gsp_fake(
     history_seq_length = configuration.input_data.gsp.history_seq_length_30_minutes
     n_gsp_per_batch = configuration.input_data.gsp.n_gsp_per_example
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
 
     # make batch of arrays
     xr_datasets = [
@@ -139,7 +140,7 @@ def metadata_fake(batch_size):
 
 def nwp_fake(
     configuration: Configuration = None,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ) -> NWP:
     """Create fake data"""
 
@@ -153,8 +154,13 @@ def nwp_fake(
     seq_length_60 = configuration.input_data.nwp.seq_length_60_minutes
     number_nwp_channels = len(configuration.input_data.nwp.nwp_channels)
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -165,6 +171,8 @@ def nwp_fake(
             channels=NWP_VARIABLE_NAMES[0:number_nwp_channels],
             freq="60T",
             t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
         )
         for i in range(batch_size)
     ]
@@ -179,7 +187,7 @@ def nwp_fake(
 
 def pv_fake(
     configuration: Configuration = None,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ):
     """Create fake data"""
 
@@ -192,8 +200,13 @@ def pv_fake(
     history_seq_length = configuration.input_data.pv.history_seq_length_5_minutes
     n_pv_systems_per_batch = configuration.input_data.pv.n_pv_systems_per_example
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
 
     # make batch of arrays
     xr_datasets = [
@@ -204,6 +217,8 @@ def pv_fake(
             number_of_systems=n_pv_systems_per_batch,
             time_dependent_capacity=False,
             t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
         )
         for i in range(batch_size)
     ]
@@ -219,7 +234,7 @@ def pv_fake(
 
 def satellite_fake(
     configuration: Configuration = None,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ) -> Satellite:
     """Create fake data"""
 
@@ -233,8 +248,13 @@ def satellite_fake(
     seq_length_5 = configuration.input_data.satellite.seq_length_5_minutes
     number_satellite_channels = len(configuration.input_data.satellite.satellite_channels)
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -244,6 +264,8 @@ def satellite_fake(
             image_size_pixels=image_size_pixels,
             channels=SAT_VARIABLE_NAMES[1:number_satellite_channels],
             t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
         )
         for i in range(batch_size)
     ]
@@ -256,7 +278,7 @@ def satellite_fake(
 
 def hrv_satellite_fake(
     configuration: Configuration = None,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ) -> Satellite:
     """Create fake data"""
 
@@ -269,8 +291,13 @@ def hrv_satellite_fake(
     history_seq_length = configuration.input_data.hrvsatellite.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.hrvsatellite.seq_length_5_minutes
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -280,6 +307,8 @@ def hrv_satellite_fake(
             image_size_pixels=image_size_pixels * 3,  # HRV images are 3x other images
             channels=SAT_VARIABLE_NAMES[0:1],
             t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
         )
         for i in range(batch_size)
     ]
@@ -292,7 +321,7 @@ def hrv_satellite_fake(
 
 def optical_flow_fake(
     configuration: Configuration = None,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ) -> OpticalFlow:
     """Create fake data"""
 
@@ -306,8 +335,13 @@ def optical_flow_fake(
     seq_length_5 = configuration.input_data.opticalflow.seq_length_5_minutes
     number_satellite_channels = len(configuration.input_data.opticalflow.opticalflow_channels)
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -318,6 +352,8 @@ def optical_flow_fake(
             image_size_pixels=image_size_pixels,
             channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
             t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
         )
         for i in range(batch_size)
     ]
@@ -331,12 +367,14 @@ def optical_flow_fake(
 def sun_fake(
     batch_size,
     seq_length_5,
-    t0_datetimes_utc: Optional[list] = None,
+    metadata: Optional[Metadata] = None,
 ):
     """Create fake data"""
 
-    if t0_datetimes_utc is None:
+    if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+    else:
+        t0_datetimes_utc = metadata.t0_datetime_utc
 
     # create dataset with both azimuth and elevation, index with time
     # make batch of arrays
@@ -351,24 +389,37 @@ def sun_fake(
     return Sun(xr_dataset)
 
 
-def topographic_fake(batch_size, image_size_pixels):
+def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata] = None):
     """Create fake data"""
+
+    if metadata is None:
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
+    else:
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
+
     # make batch of arrays
-    xr_arrays = [
-        xr.DataArray(
+    xr_arrays = []
+    for i in range(batch_size):
+        x, y = make_random_image_coords_osgb(
+            size=image_size_pixels,
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
+        )
+
+        xr_array = xr.DataArray(
             data=np.random.randn(
                 image_size_pixels,
                 image_size_pixels,
             ),
             dims=["x", "y"],
             coords=dict(
-                x=np.sort(np.random.randn(image_size_pixels)),
-                y=np.sort(np.random.randn(image_size_pixels))[::-1].copy(),
+                x=x,
+                y=y,
             ),
             name="data",
         )
-        for _ in range(batch_size)
-    ]
+        xr_arrays.append(xr_array)
 
     # make dataset
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
@@ -384,13 +435,17 @@ def create_image_array(
     channels=SAT_VARIABLE_NAMES,
     freq="5T",
     t0_datetime_utc: Optional = None,
+    x_center_osgb: Optional = None,
+    y_center_osgb: Optional = None,
 ):
     """Create Satellite or NWP fake image data"""
 
     if t0_datetime_utc is None:
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
-    x, y = make_random_image_coords_osgb(size=image_size_pixels)
+    x, y = make_random_image_coords_osgb(
+        size=image_size_pixels, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
+    )
 
     time = pd.date_range(end=t0_datetime_utc, freq=freq, periods=history_seq_length + 1).union(
         pd.date_range(start=t0_datetime_utc, freq=freq, periods=seq_length - history_seq_length)
@@ -426,6 +481,8 @@ def create_gsp_pv_dataset(
     number_of_systems=128,
     time_dependent_capacity: bool = True,
     t0_datetime_utc: Optional = None,
+    x_center_osgb: Optional = None,
+    y_center_osgb: Optional = None,
 ) -> xr.Dataset:
     """
     Create gsp or pv fake dataset
@@ -440,10 +497,13 @@ def create_gsp_pv_dataset(
             but PV systems are the same (or should be).
         history_seq_length: TODO
         t0_datetime_utc: TODO
+        x_center_osgb: TODO
+        y_center_osgb: TODO
 
     Returns: xr.Dataset of fake data
 
     """
+
     if t0_datetime_utc is None:
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
@@ -486,7 +546,9 @@ def create_gsp_pv_dataset(
     data = data_array.to_dataset(name="power_mw")
 
     # make random coords
-    x, y = create_random_point_coordinates_osgb(size=number_of_systems)
+    x, y = create_random_point_coordinates_osgb(
+        size=number_of_systems, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
+    )
 
     x_coords = xr.DataArray(
         data=x,

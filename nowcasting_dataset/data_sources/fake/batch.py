@@ -72,6 +72,7 @@ def make_fake_batch(configuration: Configuration) -> dict:
         ),
         topographic=topographic_fake(
             batch_size=batch_size,
+            metadata=metadata,
             image_size_pixels=configuration.input_data.topographic.topographic_image_size_pixels,
         ),
     )
@@ -401,6 +402,7 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
     # make batch of arrays
     xr_arrays = []
     for i in range(batch_size):
+
         x, y = make_random_image_coords_osgb(
             size=image_size_pixels,
             x_center_osgb=x_centers_osgb[i],

@@ -25,8 +25,12 @@ def test_model(configuration):  # noqa: D103
 
     t0_datetimes_utc = batch.metadata.t0_datetime_utc
     x_center_osgb = batch.metadata.x_center_osgb
+    y_center_osgb = batch.metadata.y_center_osgb
 
     assert batch.gsp.time[0, t0_index_gsp] == t0_datetimes_utc[0]
     assert batch.satellite.time[0, t0_index_satellite] == t0_datetimes_utc[0]
 
-    assert x_center_osgb[0] in batch.satellite.x[0]
+    for i in range(configuration.process.batch_size):
+        for data_source_name in ["satellite", "hrvsatellite", "opticalflow", "topographic", "nwp"]:
+            assert x_center_osgb[i] in batch.__getattribute__(data_source_name).x[i]
+            assert y_center_osgb[i] in batch.__getattribute__(data_source_name).y[i]

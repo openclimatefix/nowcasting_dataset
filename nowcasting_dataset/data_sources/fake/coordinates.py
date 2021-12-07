@@ -60,9 +60,9 @@ def add_uk_centroid_osgb(x, y, x_center_osgb: Optional = None, y_center_osgb: Op
         x_center_osgb = x_centers_osgb[0]
         y_center_osgb = y_centers_osgb[0]
 
-    # make average 0
-    x = x - x.mean()
-    y = y - y.mean()
+    # make the middle value 0
+    x = x - x[int(len(x) / 2)]
+    y = y - y[int(len(y) / 2)]
 
     # put in the uk
     x = x + x_center_osgb

@@ -11,7 +11,7 @@ from nowcasting_dataset.utils import get_start_and_end_example_index
 
 
 class Metadata(BaseModel):
-    """Class to store metedata data"""
+    """Class to store metadata data"""
 
     batch_size: int = Field(
         ...,

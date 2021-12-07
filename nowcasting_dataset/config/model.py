@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import git
+import numpy as np
 import pandas as pd
 from pathy import Pathy
 from pydantic import BaseModel, Field, root_validator, validator
@@ -79,17 +80,32 @@ class DataSourceMixin(BaseModel):
     @property
     def seq_length_30_minutes(self):
         """How many steps are there in 30 minute datasets"""
-        return int((self.history_minutes + self.forecast_minutes) / 30 + 1)
+        return int(np.ceil((self.history_minutes + self.forecast_minutes) / 30 + 1))
 
     @property
     def seq_length_5_minutes(self):
         """How many steps are there in 5 minute datasets"""
-        return int((self.history_minutes + self.forecast_minutes) / 5 + 1)
+        return int(np.ceil((self.history_minutes + self.forecast_minutes) / 5 + 1))
 
     @property
     def seq_length_60_minutes(self):
         """How many steps are there in 60 minute datasets"""
-        return int((self.history_minutes + self.forecast_minutes) / 60 + 1)
+        return int(np.ceil((self.history_minutes + self.forecast_minutes) / 60 + 1))
+
+    @property
+    def history_seq_length_5_minutes(self):
+        """How many historical steps are there in 5 minute datasets"""
+        return int(np.ceil(self.history_minutes / 5))
+
+    @property
+    def history_seq_length_30_minutes(self):
+        """How many historical steps are there in 30 minute datasets"""
+        return int(np.ceil(self.history_minutes / 30))
+
+    @property
+    def history_seq_length_60_minutes(self):
+        """How many historical steps are there in 60 minute datasets"""
+        return int(np.ceil(self.history_minutes / 60))
 
 
 class StartEndDatetimeMixin(BaseModel):
@@ -385,7 +401,7 @@ class InputData(BaseModel):
             gsp=GSP(),
             topographic=Topographic(),
             sun=Sun(),
-            optical_flow=OpticalFlow(),
+            opticalflow=OpticalFlow(),
         )
 
 

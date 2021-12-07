@@ -1,6 +1,8 @@
 """ Utils Functions to for fake data """
 from typing import List
 
+import numpy as np
+import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.dataset.xr_utils import (
@@ -16,3 +18,21 @@ def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr
     ]
 
     return join_list_dataset_to_batch_dataset(datasets)
+
+
+def make_t0_datetimes_utc(batch_size):
+    """
+    Make list of t0 datetimes
+
+    Args:
+        batch_size: the batch size
+
+    Returns: pandas index of t0 datetimes
+    """
+
+    all_datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
+    t0_datetimes_utc = np.random.choice(all_datetimes, batch_size, replace=False)
+    # np.random.choice turns the pd.Timestamp objects into datetime.datetime objects.
+    t0_datetimes_utc = pd.to_datetime(t0_datetimes_utc)
+
+    return t0_datetimes_utc

@@ -9,33 +9,52 @@ from nowcasting_dataset.data_sources.fake.batch import (
 )
 
 
-def test_gsp():
+def test_gsp(configuration):
     """Test gsp fake"""
-    s = gsp_fake(batch_size=4, seq_length_30=13, n_gsp_per_batch=32)
+
+    configuration.process.batch_size = 4
+    configuration.input_data.gsp.history_minutes = 2 * 60
+    configuration.input_data.gsp.forecast_minutes = 4 * 60
+    configuration.input_data.gsp.n_gsp_per_example = 32
+
+    s = gsp_fake(configuration=configuration)
 
     assert s.power_mw.shape == (4, 13, 32)
 
 
-def test_nwp():
+def test_nwp(configuration):
     """Test nwp fake"""
-    _ = nwp_fake(
-        batch_size=4,
-        seq_length_60=2,
-        image_size_pixels=64,
-        number_nwp_channels=8,
-    )
+
+    configuration.process.batch_size = 4
+    configuration.input_data.nwp.history_minutes = 0
+    configuration.input_data.nwp.forecast_minutes = 60
+    configuration.input_data.nwp.nwp_image_size_pixels = 64
+    configuration.input_data.nwp.nwp_channels = ["test_channel"] * 8
+
+    _ = nwp_fake(configuration=configuration)
 
 
-def test_pv():
+def test_pv(configuration):
     """Test pv fake"""
-    _ = pv_fake(batch_size=4, seq_length_5=13, n_pv_systems_per_batch=128)
+
+    configuration.process.batch_size = 4
+    configuration.input_data.pv.history_minutes = 30
+    configuration.input_data.pv.forecast_minutes = 30
+    configuration.input_data.pv.n_pv_systems_per_example = 128
+
+    _ = pv_fake(configuration)
 
 
-def test_satellite():
+def test_satellite(configuration):
     """Test satellite fake"""
-    s = satellite_fake(
-        batch_size=4, seq_length_5=13, satellite_image_size_pixels=64, number_satellite_channels=7
-    )
+
+    configuration.process.batch_size = 4
+    configuration.input_data.satellite.history_minutes = 30
+    configuration.input_data.satellite.forecast_minutes = 30
+    configuration.input_data.satellite.satellite_image_size_pixels = 64
+    configuration.input_data.satellite.satellite_channels = ["test_channel"] * 8
+
+    s = satellite_fake(configuration=configuration)
 
     assert s.x is not None
 

@@ -277,7 +277,7 @@ def make_random_image_coords_osgb(size: int):
 
     # 4 kilometer spacing seemed about right for real satellite images
     x = 4 * ONE_KILOMETER * np.array((range(0, size)))
-    y = 4 * ONE_KILOMETER * np.array((range(0, size)))
+    y = 4 * ONE_KILOMETER * np.array((range(size, 0, -1)))
 
     return add_uk_centroid_osgb(x, y)
 

@@ -5,7 +5,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from nowcasting_dataset.data_sources.fake import satellite_fake
+from nowcasting_dataset.data_sources.fake.batch import satellite_fake
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 
 

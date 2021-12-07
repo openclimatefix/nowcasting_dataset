@@ -2,13 +2,19 @@
 
 Wanted to keep this out of the testing frame works, as other repos, might want to use this
 """
-from typing import List
+
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
+from nowcasting_dataset.data_sources.fake.coordinates import (
+    create_random_point_coordinates_osgb,
+    make_random_image_coords_osgb,
+)
+from nowcasting_dataset.data_sources.fake.utils import join_list_data_array_to_batch_dataset
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
@@ -23,6 +29,60 @@ from nowcasting_dataset.dataset.xr_utils import (
     join_list_dataset_to_batch_dataset,
 )
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
+
+
+def make_fake_batch(configuration) -> dict:
+    """Make fake batch"""
+    batch_size = configuration.process.batch_size
+    satellite_image_size_pixels = 64
+    nwp_image_size_pixels = 64
+
+    metadata = metadata_fake(batch_size=batch_size)
+
+    return dict(
+        metadata=metadata,
+        satellite=satellite_fake(
+            batch_size=batch_size,
+            seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
+            satellite_image_size_pixels=satellite_image_size_pixels,
+            number_satellite_channels=len(configuration.input_data.satellite.satellite_channels),
+        ),
+        hrvsatellite=hrv_satellite_fake(
+            batch_size=batch_size,
+            seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
+            satellite_image_size_pixels=satellite_image_size_pixels,
+            number_satellite_channels=1,
+        ),
+        opticalflow=optical_flow_fake(
+            batch_size=batch_size,
+            seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
+            satellite_image_size_pixels=satellite_image_size_pixels,
+            number_satellite_channels=len(configuration.input_data.satellite.satellite_channels),
+        ),
+        nwp=nwp_fake(
+            batch_size=batch_size,
+            seq_length_60=configuration.input_data.nwp.seq_length_60_minutes,
+            image_size_pixels=nwp_image_size_pixels,
+            number_nwp_channels=len(configuration.input_data.nwp.nwp_channels),
+        ),
+        pv=pv_fake(
+            batch_size=batch_size,
+            seq_length_5=configuration.input_data.pv.seq_length_5_minutes,
+            n_pv_systems_per_batch=configuration.input_data.pv.n_pv_systems_per_example,
+        ),
+        gsp=gsp_fake(
+            batch_size=batch_size,
+            seq_length_30=configuration.input_data.gsp.seq_length_30_minutes,
+            n_gsp_per_batch=configuration.input_data.gsp.n_gsp_per_example,
+        ),
+        sun=sun_fake(
+            batch_size=batch_size,
+            seq_length_5=configuration.input_data.sun.seq_length_5_minutes,
+        ),
+        topographic=topographic_fake(
+            batch_size=batch_size, image_size_pixels=satellite_image_size_pixels
+        ),
+    )
 
 
 def gsp_fake(
@@ -126,6 +186,7 @@ def satellite_fake(
     seq_length_5=19,
     satellite_image_size_pixels=64,
     number_satellite_channels=7,
+    t0_datetimes_utc: Optional[list] = None,
 ) -> Satellite:
     """Create fake data"""
     # make batch of arrays
@@ -231,55 +292,6 @@ def topographic_fake(batch_size, image_size_pixels):
     xr_dataset = join_list_data_array_to_batch_dataset(xr_arrays)
 
     return Topographic(xr_dataset)
-
-
-def add_uk_centroid_osgb(x, y):
-    """
-    Add an OSGB value to make in center of UK
-
-    Args:
-        x: random values, OSGB
-        y: random values, OSGB
-
-    Returns: X,Y random coordinates [OSGB]
-    """
-
-    # get random OSGB center in the UK
-    lat = np.random.uniform(51, 55)
-    lon = np.random.uniform(-2.5, 1)
-    x_center, y_center = lat_lon_to_osgb(lat=lat, lon=lon)
-
-    # make average 0
-    x = x - x.mean()
-    y = y - y.mean()
-
-    # put in the uk
-    x = x + x_center
-    y = y + y_center
-
-    return x, y
-
-
-def create_random_point_coordinates_osgb(size: int):
-    """Make random coords [OSGB] for pv site, or gsp"""
-    # this is about 100KM
-    HUNDRED_KILOMETERS = 10 ** 5
-    x = np.random.randint(0, HUNDRED_KILOMETERS, size)
-    y = np.random.randint(0, HUNDRED_KILOMETERS, size)
-
-    return add_uk_centroid_osgb(x, y)
-
-
-def make_random_image_coords_osgb(size: int):
-    """Make random coords for image. These are ranges for the pixels"""
-
-    ONE_KILOMETER = 10 ** 3
-
-    # 4 kilometer spacing seemed about right for real satellite images
-    x = 4 * ONE_KILOMETER * np.array((range(0, size)))
-    y = 4 * ONE_KILOMETER * np.array((range(size, 0, -1)))
-
-    return add_uk_centroid_osgb(x, y)
 
 
 def create_image_array(
@@ -479,12 +491,3 @@ def create_datetime_dataset(
     ds["hour_of_day_sin"] = data.rename({"data": "hour_of_day_sin"}).hour_of_day_sin
 
     return data
-
-
-def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr.Dataset:
-    """Join a list of xr.DataArrays into an xr.Dataset by concatenating on the example dim."""
-    datasets = [
-        convert_coordinates_to_indexes(data_arrays[i].to_dataset()) for i in range(len(data_arrays))
-    ]
-
-    return join_list_dataset_to_batch_dataset(datasets)

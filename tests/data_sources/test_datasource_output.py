@@ -1,5 +1,5 @@
 """ Tests for data_sources """
-from nowcasting_dataset.data_sources.fake import (
+from nowcasting_dataset.data_sources.fake.batch import (
     gsp_fake,
     nwp_fake,
     pv_fake,

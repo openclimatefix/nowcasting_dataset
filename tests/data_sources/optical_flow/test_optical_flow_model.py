@@ -5,7 +5,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from nowcasting_dataset.data_sources.fake import optical_flow_fake
+from nowcasting_dataset.data_sources.fake.batch import optical_flow_fake
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 
 

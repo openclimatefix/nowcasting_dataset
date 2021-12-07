@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.fake import pv_fake
+from nowcasting_dataset.data_sources.fake.batch import pv_fake
 from nowcasting_dataset.data_sources.pv.pv_data_source import (
     PVDataSource,
     drop_pv_systems_which_produce_overnight,

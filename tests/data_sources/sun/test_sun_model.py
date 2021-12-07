@@ -5,7 +5,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from nowcasting_dataset.data_sources.fake import sun_fake
+from nowcasting_dataset.data_sources.fake.batch import sun_fake
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 
 

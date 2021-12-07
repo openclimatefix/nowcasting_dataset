@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-from nowcasting_dataset.data_sources.fake import metadata_fake
+from nowcasting_dataset.data_sources.fake.batch import metadata_fake
 from nowcasting_dataset.data_sources.metadata.metadata_model import load_from_csv
 
 

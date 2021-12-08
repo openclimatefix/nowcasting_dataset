@@ -14,7 +14,7 @@ are used to validate the values of the data itself.
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import git
 import numpy as np
@@ -448,6 +448,15 @@ class Process(BaseModel):
             " n_<split_name>_batches must also be set to 0."
         ),
     )
+
+    train_test_validation_split: List[int] = Field(
+        [10, 1, 1],
+        description=(
+            "The ratio of how the entire dataset is split. "
+            "Note different split methods interact different with these numbers"
+        ),
+    )
+
     n_train_batches: int = Field(
         250,
         description=(

@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 
 import nowcasting_dataset
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
+from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.manager import Manager
 
 
@@ -105,6 +107,46 @@ def test_get_daylight_datetime_index():
 
     correct_t0_datetimes = pd.date_range("2020-04-01 12:30", "2020-04-01 17:00", freq="5 min")
     np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
+
+
+def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary():
+    """Test to initialize data sources and get batches"""
+
+    manager = Manager()
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+    manager.config.process.n_train_batches = 10
+    manager.config.process.n_validation_batches = 10
+    manager.config.process.n_test_batches = 10
+    manager.config.process.split_method = SplitMethod.SAME
+    manager.initialise_data_sources()
+
+    batch_size = manager.config.process.batch_size
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+
+        train_file = f"{dst_path}/train/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
+        validation_file = (
+            f"{dst_path}/validation/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
+        )
+        test_file = f"{dst_path}/test/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
+
+        assert os.path.exists(train_file)
+        assert os.path.exists(validation_file)
+        assert os.path.exists(test_file)
+
+        for file in train_file, validation_file:
+            locations_df = pd.read_csv(file)
+            assert len(locations_df) == 10 * batch_size
+
+        locations_df = pd.read_csv(test_file)
+        assert len(locations_df) == batch_size * manager.config.process.n_test_batches
 
 
 def test_batches():

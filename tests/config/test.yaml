@@ -50,3 +50,4 @@ process:
   n_train_batches: 2
   n_validation_batches: 0
   n_test_batches: 0
+  train_test_validation_split: [3, 0, 1]

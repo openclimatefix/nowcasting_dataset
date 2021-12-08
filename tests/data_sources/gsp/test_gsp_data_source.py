@@ -56,6 +56,48 @@ def test_gsp_pv_data_source_get_locations():
     assert -90 < lon[0] < 90  # this makes sure it is in lat/lon
 
 
+def test_gsp_pv_data_source_get_all_locations():
+    """Test GSP example"""
+    local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
+
+    gsp = GSPDataSource(
+        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
+        start_datetime=datetime(2020, 4, 1),
+        end_datetime=datetime(2020, 4, 2),
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels=64,
+        meters_per_pixel=2000,
+    )
+
+    N_gsps = len(gsp.metadata)
+
+    t0_datetimes_utc = gsp.gsp_power.index[0:10]
+    x_locations = gsp.metadata.location_x
+
+    (
+        t0_datetimes_utc_all_gsps,
+        x_centers_osgb_all_gsps,
+        y_centers_osgb_all_gsps,
+    ) = gsp.get_all_locations(t0_datetimes_utc=t0_datetimes_utc)
+
+    assert len(t0_datetimes_utc_all_gsps) == len(x_centers_osgb_all_gsps)
+    assert len(t0_datetimes_utc_all_gsps) == len(y_centers_osgb_all_gsps)
+    assert len(t0_datetimes_utc_all_gsps) == len(x_locations) * len(t0_datetimes_utc)
+
+    # check first few are the same datetime
+    assert (x_centers_osgb_all_gsps[0:N_gsps] == x_locations.values).all()
+    assert (t0_datetimes_utc_all_gsps[0:N_gsps] == t0_datetimes_utc[0]).all()
+
+    # check second set of datetimes
+    assert (x_centers_osgb_all_gsps[N_gsps : 2 * N_gsps] == x_locations.values).all()
+    assert (t0_datetimes_utc_all_gsps[N_gsps : 2 * N_gsps] == t0_datetimes_utc[1]).all()
+
+    # check all datetimes
+    t0_datetimes_utc_all_gsps_overlap = t0_datetimes_utc_all_gsps.union(t0_datetimes_utc)
+    assert len(t0_datetimes_utc_all_gsps_overlap) == len(t0_datetimes_utc_all_gsps)
+
+
 def test_gsp_pv_data_source_get_example():
     """Test GSP example"""
     local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."

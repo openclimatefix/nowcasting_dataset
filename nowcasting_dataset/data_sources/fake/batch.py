@@ -567,10 +567,6 @@ def create_gsp_pv_dataset(
         dims=["id"],
     )
 
-    # make first coords centroid
-    x_coords.data[0] = x_coords.data.mean()
-    y_coords.data[0] = y_coords.data.mean()
-
     data["capacity_mwp"] = capacity
     data["x_coords"] = x_coords
     data["y_coords"] = y_coords

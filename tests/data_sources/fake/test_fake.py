@@ -36,3 +36,7 @@ def test_model(configuration):  # noqa: D103
             assert x_center_osgb[i] >= batch.__getattribute__(data_source_name).x.min()
             assert y_center_osgb[i] <= batch.__getattribute__(data_source_name).y.max()
             assert y_center_osgb[i] >= batch.__getattribute__(data_source_name).y.min()
+        # check first system is the center coordinates
+        for data_source_name in ["gsp", "pv"]:
+            assert x_center_osgb[i] == batch.__getattribute__(data_source_name).x_coords[i, 0]
+            assert y_center_osgb[i] == batch.__getattribute__(data_source_name).y_coords[i, 0]

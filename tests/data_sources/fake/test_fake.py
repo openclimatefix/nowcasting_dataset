@@ -32,5 +32,7 @@ def test_model(configuration):  # noqa: D103
 
     for i in range(configuration.process.batch_size):
         for data_source_name in ["satellite", "hrvsatellite", "opticalflow", "topographic", "nwp"]:
-            assert x_center_osgb[i] in batch.__getattribute__(data_source_name).x[i]
-            assert y_center_osgb[i] in batch.__getattribute__(data_source_name).y[i]
+            assert x_center_osgb[i] <= batch.__getattribute__(data_source_name).x.max()
+            assert x_center_osgb[i] >= batch.__getattribute__(data_source_name).x.min()
+            assert y_center_osgb[i] <= batch.__getattribute__(data_source_name).y.max()
+            assert y_center_osgb[i] >= batch.__getattribute__(data_source_name).y.min()

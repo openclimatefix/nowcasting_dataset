@@ -95,8 +95,11 @@ def gsp_fake(
 
     if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+        x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
         t0_datetimes_utc = metadata.t0_datetime_utc
+        x_centers_osgb = metadata.x_center_osgb
+        y_centers_osgb = metadata.y_center_osgb
 
     # make batch of arrays
     xr_datasets = [
@@ -106,6 +109,8 @@ def gsp_fake(
             freq="30T",
             number_of_systems=n_gsp_per_batch,
             t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
         )
         for i in range(batch_size)
     ]

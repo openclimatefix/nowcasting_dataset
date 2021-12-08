@@ -30,7 +30,9 @@ def make_random_image_coords_osgb(
     x = 4 * ONE_KILOMETER * np.array((range(0, size)))
     y = 4 * ONE_KILOMETER * np.array((range(size, 0, -1)))
 
-    return add_uk_centroid_osgb(x, y, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb)
+    return add_uk_centroid_osgb(
+        x, y, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb, first_value_center=False
+    )
 
 
 def make_random_x_and_y_osgb_centers(batch_size: int) -> (List[int], List[int]):
@@ -42,7 +44,13 @@ def make_random_x_and_y_osgb_centers(batch_size: int) -> (List[int], List[int]):
     return x_centers_osgb, y_centers_osgb
 
 
-def add_uk_centroid_osgb(x, y, x_center_osgb: Optional = None, y_center_osgb: Optional = None):
+def add_uk_centroid_osgb(
+    x,
+    y,
+    x_center_osgb: Optional = None,
+    y_center_osgb: Optional = None,
+    first_value_center: bool = True,
+):
     """
     Add an OSGB value to make in center of UK
 
@@ -51,6 +59,7 @@ def add_uk_centroid_osgb(x, y, x_center_osgb: Optional = None, y_center_osgb: Op
         y: random values, OSGB
         y_center_osgb: TODO
         x_center_osgb: TODO
+        first_value_center: TODO
 
     Returns: X,Y random coordinates [OSGB]
     """
@@ -60,12 +69,17 @@ def add_uk_centroid_osgb(x, y, x_center_osgb: Optional = None, y_center_osgb: Op
         x_center_osgb = x_centers_osgb[0]
         y_center_osgb = y_centers_osgb[0]
 
-    # make the middle value 0
-    x = x - x[int(len(x) / 2)]
-    y = y - y[int(len(y) / 2)]
+    # normalize
+    x = x - x.mean()
+    y = y - y.mean()
 
     # put in the uk
     x = x + x_center_osgb
     y = y + y_center_osgb
+
+    # make first value
+    if first_value_center:
+        x[0] = x_center_osgb
+        y[0] = y_center_osgb
 
     return x, y

@@ -12,17 +12,7 @@ from pydantic import BaseModel
 
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS
-from nowcasting_dataset.data_sources.fake import (
-    gsp_fake,
-    hrv_satellite_fake,
-    metadata_fake,
-    nwp_fake,
-    optical_flow_fake,
-    pv_fake,
-    satellite_fake,
-    sun_fake,
-    topographic_fake,
-)
+from nowcasting_dataset.data_sources.fake.batch import make_fake_batch
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata, load_from_csv
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
@@ -77,58 +67,8 @@ class Batch(BaseModel):
     @staticmethod
     def fake(configuration: Configuration):
         """Make fake batch object"""
-        batch_size = configuration.process.batch_size
-        satellite_image_size_pixels = 64
-        nwp_image_size_pixels = 64
 
-        return Batch(
-            metadata=metadata_fake(batch_size=batch_size),
-            satellite=satellite_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
-                satellite_image_size_pixels=satellite_image_size_pixels,
-                number_satellite_channels=len(
-                    configuration.input_data.satellite.satellite_channels
-                ),
-            ),
-            hrvsatellite=hrv_satellite_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
-                satellite_image_size_pixels=satellite_image_size_pixels,
-                number_satellite_channels=1,
-            ),
-            opticalflow=optical_flow_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.satellite.seq_length_5_minutes,
-                satellite_image_size_pixels=satellite_image_size_pixels,
-                number_satellite_channels=len(
-                    configuration.input_data.satellite.satellite_channels
-                ),
-            ),
-            nwp=nwp_fake(
-                batch_size=batch_size,
-                seq_length_60=configuration.input_data.nwp.seq_length_60_minutes,
-                image_size_pixels=nwp_image_size_pixels,
-                number_nwp_channels=len(configuration.input_data.nwp.nwp_channels),
-            ),
-            pv=pv_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.pv.seq_length_5_minutes,
-                n_pv_systems_per_batch=configuration.input_data.pv.n_pv_systems_per_example,
-            ),
-            gsp=gsp_fake(
-                batch_size=batch_size,
-                seq_length_30=configuration.input_data.gsp.seq_length_30_minutes,
-                n_gsp_per_batch=configuration.input_data.gsp.n_gsp_per_example,
-            ),
-            sun=sun_fake(
-                batch_size=batch_size,
-                seq_length_5=configuration.input_data.sun.seq_length_5_minutes,
-            ),
-            topographic=topographic_fake(
-                batch_size=batch_size, image_size_pixels=satellite_image_size_pixels
-            ),
-        )
+        return Batch(**make_fake_batch(configuration=configuration))
 
     def save_netcdf(self, batch_i: int, path: Path):
         """

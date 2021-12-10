@@ -41,23 +41,6 @@ def is_monotonically_increasing(a: Array) -> bool:
     return np.all(np.diff(a) > 0)
 
 
-# TODO: Issue #170. Is this this function still used?
-def is_unique(a: Array) -> bool:
-    """Check array has unique values"""
-    # TODO: Can probably replace with pd.Index.is_unique()
-    return len(a) == len(np.unique(a))
-
-
-# TODO: Issue #170. Is this this function still used?
-def scale_to_0_to_1(a: Array) -> Array:
-    """Scale to the range [0, 1]."""
-    a = a - a.min()
-    a = a / a.max()
-    np.testing.assert_almost_equal(np.nanmin(a), 0.0)
-    np.testing.assert_almost_equal(np.nanmax(a), 1.0)
-    return a
-
-
 def get_netcdf_filename(batch_idx: int) -> str:
     """Generate full filename, excluding path."""
     assert 0 <= batch_idx < 1e6

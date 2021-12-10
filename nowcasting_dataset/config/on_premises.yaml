@@ -24,15 +24,15 @@ input_data:
       - hcc
     nwp_image_size_pixels: 64
     nwp_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_3.zarr
-    # nwp_forecast_minutes: 180
-    nwp_history_minutes: 60
+    # forecast_minutes: 180
+    history_minutes: 60
 
   #---------------------- PV -------------------
   pv:
     pv_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/passiv.netcdf
     pv_metadata_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/system_metadata_OCF_ONLY.csv
     pv_get_center: false
-    # pv_history_minutes: 90
+    # history_minutes: 90
     pv_image_size_pixels: 102
     pv_meters_per_pixel: 4000
 
@@ -52,7 +52,7 @@ input_data:
       - WV_073
     satellite_image_size_pixels: 102
     satellite_meters_per_pixel: 4000
-    satellite_forecast_minutes: 0 # TODO: Quick hack to make the file sizes smaller while using optical flow!
+    forecast_minutes: 0 # TODO: Quick hack to make the file sizes smaller while using optical flow!
     satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
 
   #---------------------- HRVSatellite -------------

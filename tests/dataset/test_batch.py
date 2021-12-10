@@ -47,3 +47,15 @@ def test_model_load_partial_from_netcdf(configuration):  # noqa: D103
         assert batch.satellite is None
         assert batch.pv is not None
         assert batch.hrvsatellite is not None
+
+
+def test_model_load_partial_from_netcdf_error(configuration):  # noqa: D103
+    with tempfile.TemporaryDirectory() as dirpath:
+        batch = Batch.fake(configuration=configuration)
+        batch.pv = batch.pv.rename({"time_index": "fake_time_index", "time": "fake_time"})
+        batch.save_netcdf(path=dirpath, batch_i=0)
+
+        with pytest.raises(Exception):
+            batch = Batch.load_netcdf(
+                batch_idx=0, local_netcdf_path=dirpath, data_sources_names=["pv", "hrvsatellite"]
+            )

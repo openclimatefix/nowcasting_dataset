@@ -142,7 +142,16 @@ class Batch(BaseModel):
         metadata = load_from_csv(path=local_netcdf_path, batch_size=batch_size, batch_idx=batch_idx)
         batch_dict["metadata"] = metadata.dict()
 
-        return Batch(**batch_dict)
+        try:
+            batch = Batch(**batch_dict)
+        except Exception as e:
+            _LOG.error(
+                f"Could not make batch for batch_idx {batch_idx}, "
+                f"file {local_netcdf_path}, raw dict is {batch_dict}"
+            )
+            raise e
+
+        return batch
 
 
 class Example(BaseModel):

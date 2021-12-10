@@ -52,6 +52,7 @@ input_data:
       - WV_073
     satellite_image_size_pixels: 102
     satellite_meters_per_pixel: 4000
+    satellite_forecast_minutes: 0 # TODO: Quick hack to make the file sizes smaller while using optical flow!
     satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
 
   #---------------------- HRVSatellite -------------

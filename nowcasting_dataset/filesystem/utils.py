@@ -53,7 +53,10 @@ def get_maximum_batch_id(path: Pathy) -> int:
         _LOG.warning(msg)
         raise FileNotFoundError(msg)
 
-    filenames = filesystem.glob(path)
+    if "*" in str(path):
+        filenames = filesystem.glob(path)
+    else:
+        filenames = get_all_filenames_in_path(path)
 
     # if there is no files, return 0
     if len(filenames) == 0:

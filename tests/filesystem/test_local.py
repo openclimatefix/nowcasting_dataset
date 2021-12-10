@@ -9,6 +9,7 @@ from nowcasting_dataset.filesystem.utils import (
     download_to_local,
     get_all_filenames_in_path,
     makedirs,
+    rename_file,
     upload_one_file,
 )
 
@@ -34,6 +35,27 @@ def test_check_file_exists():  # noqa: D103
 
         # run function
         check_path_exists(path=f"{tmpdirname}/test_dir")
+
+
+def test_rename_file():  # noqa: D103
+
+    file1 = "test_file1.txt"
+    file2 = "test_file2.txt"
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        local_path = Path(tmpdirname)
+
+        # add fake file to dir
+        path_and_filename_1 = os.path.join(local_path, file1)
+        path_and_filename_2 = os.path.join(local_path, file2)
+        with open(path_and_filename_1, "w"):
+            pass
+
+        # run function
+        rename_file(remote_file=path_and_filename_1, new_filename=path_and_filename_2)
+
+        assert not os.path.exists(path_and_filename_1)
+        assert os.path.exists(path_and_filename_2)
 
 
 def test_check_file_exists_wild_card():  # noqa: D103

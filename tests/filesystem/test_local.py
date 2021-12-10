@@ -3,6 +3,7 @@ import os
 import tempfile
 from pathlib import Path
 
+import pytest
 from pathy import Pathy
 
 from nowcasting_dataset.filesystem.utils import (
@@ -200,6 +201,7 @@ def test_download():  # noqa: D103
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
     file3 = "test_file3.txt"
+    file4 = "test_file4.txt"
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         local_path = Path(tmpdirname)
@@ -222,6 +224,13 @@ def test_download():  # noqa: D103
         # check the object are not there
         filenames = get_all_filenames_in_path(local_path)
         assert len(filenames) == 3
+
+        # run function
+        path_and_filename_4 = local_path / file4
+        with pytest.raises(Exception):
+            download_to_local(
+                remote_filename=path_and_filename_4, local_filename=path_and_filename_1
+            )
 
 
 def test_upload():  # noqa: D103

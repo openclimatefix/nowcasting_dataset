@@ -152,7 +152,11 @@ def download_to_local(remote_filename: str, local_filename: str):
     local_filename = str(local_filename)
 
     filesystem = get_filesystem(remote_filename)
-    filesystem.get(remote_filename, local_filename)
+    try:
+        filesystem.get(remote_filename, local_filename)
+    except FileNotFoundError:
+        _LOG.error(f"Could not find {remote_filename}")
+        raise FileNotFoundError
 
 
 def upload_one_file(remote_filename: str, local_filename: str, overwrite: bool = True):

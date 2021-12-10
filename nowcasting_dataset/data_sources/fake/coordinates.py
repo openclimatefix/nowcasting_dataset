@@ -38,7 +38,7 @@ def make_random_image_coords_osgb(
 def make_random_x_and_y_osgb_centers(batch_size: int) -> (List[int], List[int]):
     """Make X and Y OSGB centers"""
     lat = np.random.uniform(51, 55, batch_size)
-    lon = np.random.uniform(-2.5, 1, batch_size)
+    lon = np.random.uniform(-2.5, 0.5, batch_size)
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
 
     return x_centers_osgb, y_centers_osgb

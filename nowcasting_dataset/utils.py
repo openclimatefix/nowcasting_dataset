@@ -1,21 +1,16 @@
 """ utils functions """
 import logging
-import os
 import re
 import tempfile
 import threading
 from concurrent import futures
-from functools import wraps
 
 import fsspec.asyn
 import gcsfs
 import numpy as np
 import pandas as pd
-import xarray as xr
 
-import nowcasting_dataset
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
-from nowcasting_dataset.config import load, model
 from nowcasting_dataset.consts import LOG_LEVELS, Array
 
 logger = logging.getLogger(__name__)
@@ -69,25 +64,6 @@ def get_netcdf_filename(batch_idx: int) -> str:
     return f"{batch_idx:06d}.nc"
 
 
-# TODO: Issue #170. Is this this function still used?
-def to_numpy(value):
-    """Change generic data to numpy"""
-    if isinstance(value, xr.DataArray):
-        # TODO: Use to_numpy() or as_numpy(), introduced in xarray v0.19?
-        value = value.data
-
-    if isinstance(value, (pd.Series, pd.DataFrame)):
-        value = value.values
-    elif isinstance(value, pd.DatetimeIndex):
-        value = value.values.astype("datetime64[s]").astype(np.int32)
-    elif isinstance(value, pd.Timestamp):
-        value = np.int32(value.timestamp())
-    elif isinstance(value, np.ndarray) and np.issubdtype(value.dtype, np.datetime64):
-        value = value.astype("datetime64[s]").astype(np.int32)
-
-    return value
-
-
 class OpenData:
     """Open a file, but if from GCS, the file is downloaded to a temp file first."""
 
@@ -133,28 +109,6 @@ def remove_regex_pattern_from_keys(d: dict, pattern_to_remove: str, **regex_comp
         new_key = regex.sub(string=old_key, repl="")
         new_dict[new_key] = value
     return new_dict
-
-
-def get_config_with_test_paths(config_filename: str) -> model.Configuration:
-    """Sets the base paths to point to the testing data in this repository."""
-    local_path = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../")
-
-    # load configuration, this can be changed to a different filename as needed
-    filename = os.path.join(local_path, "tests", "config", config_filename)
-    config = load.load_yaml_configuration(filename)
-    config.set_base_path(local_path)
-    return config
-
-
-def arg_logger(func):
-    """A function decorator to log all the args and kwargs passed into a function."""
-    # Adapted from https://stackoverflow.com/a/23983263/732596
-    @wraps(func)
-    def inner_func(*args, **kwargs):
-        logger.debug(f"Arguments passed into function `{func.__name__}`: {args=}; {kwargs=}")
-        return func(*args, **kwargs)
-
-    return inner_func
 
 
 def configure_logger(log_level: str, logger_name: str, handlers=list[logging.Handler]) -> None:

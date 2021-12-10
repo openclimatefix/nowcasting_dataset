@@ -4,6 +4,7 @@ import re
 import tempfile
 import threading
 from concurrent import futures
+from functools import wraps
 
 import fsspec.asyn
 import gcsfs
@@ -168,3 +169,14 @@ class DummyExecutor(futures.Executor):
         """Shutdown dummy executor."""
         with self._shutdownLock:
             self._shutdown = True
+
+
+def arg_logger(func):
+    """A function decorator to log all the args and kwargs passed into a function."""
+    # Adapted from https://stackoverflow.com/a/23983263/732596
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        logger.debug(f"Arguments passed into function `{func.__name__}`: {args=}; {kwargs=}")
+        return func(*args, **kwargs)
+
+    return inner_func

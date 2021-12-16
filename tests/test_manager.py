@@ -10,7 +10,10 @@ import pandas as pd
 import nowcasting_dataset
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import (
+    HRVSatelliteDataSource,
+    SatelliteDataSource,
+)
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.manager import Manager
@@ -185,7 +188,7 @@ def test_batches():
         filename = (
             Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
         )
-        hrvsat = SatelliteDataSource(
+        hrvsat = HRVSatelliteDataSource(
             zarr_path=filename,
             history_minutes=30,
             forecast_minutes=60,
@@ -228,7 +231,7 @@ def test_batches():
         assert os.path.exists(f"{dst_path}/train/hrvsatellite/000000.nc")
 
         # check logs is appended to
-        for log_file in ["combined", "gsp", "satellite"]:
+        for log_file in ["combined", "gsp", "satellite", "hrvsatellite"]:
             filename = f"{dst_path}/{log_file}.log"
             assert os.path.exists(filename)
             with open(filename) as f:

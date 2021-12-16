@@ -111,6 +111,7 @@ def gsp_fake(
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
             y_center_osgb=y_centers_osgb[i],
+            id_limit=338,
         )
         for i in range(batch_size)
     ]
@@ -490,6 +491,7 @@ def create_gsp_pv_dataset(
     t0_datetime_utc: Optional = None,
     x_center_osgb: Optional = None,
     y_center_osgb: Optional = None,
+    id_limit: int = 1000,
 ) -> xr.Dataset:
     """
     Create gsp or pv fake dataset
@@ -502,10 +504,11 @@ def create_gsp_pv_dataset(
         time_dependent_capacity: if the capacity is time dependent.
             GSP capacities increase over time,
             but PV systems are the same (or should be).
-        history_seq_length: TODO
-        t0_datetime_utc: TODO
-        x_center_osgb: TODO
-        y_center_osgb: TODO
+        history_seq_length: The historic length
+        t0_datetime_utc: the time now, if this is not given, a random one will be made.
+        x_center_osgb: the x center of the example. If not given, a random one will be made.
+        y_center_osgb: the y center of the example. If not given, a random one will be made.
+        id_limit: The maximum id number allowed. For example for GSP it should be 338
 
     Returns: xr.Dataset of fake data
 
@@ -520,7 +523,7 @@ def create_gsp_pv_dataset(
 
     ALL_COORDS = {
         "time": time,
-        "id": np.random.choice(range(1000), number_of_systems, replace=False),
+        "id": np.random.choice(range(id_limit), number_of_systems, replace=False),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
 

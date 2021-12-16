@@ -5,6 +5,7 @@ from datetime import datetime
 
 import pytest
 from pathy import Pathy
+from pydantic import ValidationError
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
@@ -52,6 +53,18 @@ def test_yaml_save():
 
         # check the file can be loaded
         _ = load_yaml_configuration(filename)
+
+
+def test_extra_field():
+    """
+    Check a extra parameters in config causes error
+    """
+
+    configuration = Configuration()
+    configuration_dict = configuration.dict()
+    configuration_dict["extra_field"] = "extra_value"
+    with pytest.raises(ValidationError):
+        _ = Configuration(**configuration_dict)
 
 
 @pytest.mark.skip("Skiping test as CD does not have google credentials")

@@ -40,7 +40,16 @@ METERS_PER_PIXEL_FIELD = Field(2000, description="The number of meters per pixel
 logger = logging.getLogger(__name__)
 
 
-class General(BaseModel):
+class Base(BaseModel):
+    """Pydantic Base model where no extras can be added"""
+
+    class Config:
+        """config class"""
+
+        extra = "forbid"  # forbid use of extra kwargs
+
+
+class General(Base):
     """General pydantic model"""
 
     name: str = Field("example", description="The name of this configuration file.")
@@ -49,7 +58,7 @@ class General(BaseModel):
     )
 
 
-class Git(BaseModel):
+class Git(Base):
     """Git model"""
 
     hash: str = Field(
@@ -61,7 +70,7 @@ class Git(BaseModel):
     )
 
 
-class DataSourceMixin(BaseModel):
+class DataSourceMixin(Base):
     """Mixin class, to add forecast and history minutes"""
 
     forecast_minutes: int = Field(
@@ -108,7 +117,7 @@ class DataSourceMixin(BaseModel):
         return int(np.ceil(self.history_minutes / 60))
 
 
-class StartEndDatetimeMixin(BaseModel):
+class StartEndDatetimeMixin(Base):
     """Mixin class to add start and end date"""
 
     start_datetime: datetime = Field(
@@ -314,7 +323,7 @@ class Sun(DataSourceMixin):
     )
 
 
-class InputData(BaseModel):
+class InputData(Base):
     """
     Input data model.
     """
@@ -405,7 +414,7 @@ class InputData(BaseModel):
         )
 
 
-class OutputData(BaseModel):
+class OutputData(Base):
     """Output data model"""
 
     filepath: Union[str, Pathy] = Field(
@@ -422,7 +431,7 @@ class OutputData(BaseModel):
         return Pathy(v)
 
 
-class Process(BaseModel):
+class Process(Base):
     """Pydantic model of how the data is processed"""
 
     seed: int = Field(1234, description="Random seed, so experiments can be repeatable")
@@ -506,7 +515,7 @@ class Process(BaseModel):
         return Path(v).expanduser()
 
 
-class Configuration(BaseModel):
+class Configuration(Base):
     """Configuration model for the dataset"""
 
     general: General = General()

@@ -12,7 +12,6 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
-import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
@@ -217,10 +216,9 @@ class DataSource:
             )
 
             # Save batch to disk.
-            # TODO: Issue #524: Use DataSourceOutput.save_netcdf in place of to_netcdf
-            netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
-            encoding = {name: {"compression": "lzf"} for name in batch.data_vars}
-            batch.to_netcdf(netcdf_filename, engine="h5netcdf", encoding=encoding)
+            batch.save_netcdf(
+                batch_i=batch_idx, path=path_to_write_to, add_data_source_name_to_path=False
+            )
 
             # Upload if necessary.
             if (
@@ -228,11 +226,16 @@ class DataSource:
                 and n_batches_processed > 0
                 and n_batches_processed % upload_every_n_batches == 0
             ):
-                nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+                nd_fs_utils.upload_and_delete_local_files(
+                    dst_path=dst_path, local_path=path_to_write_to
+                )
 
         # Upload last few batches, if necessary:
+
         if save_batches_locally_and_upload:
-            nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+            nd_fs_utils.upload_and_delete_local_files(
+                dst_path=dst_path, local_path=path_to_write_to
+            )
 
     # TODO: Issue #319: Standardise parameter names.
     def get_batch(

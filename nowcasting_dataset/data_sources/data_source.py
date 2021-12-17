@@ -216,7 +216,9 @@ class DataSource:
             )
 
             # Save batch to disk.
-            batch.save_netcdf(batch_i=batch_idx, path=path_to_write_to)
+            batch.save_netcdf(
+                batch_i=batch_idx, path=path_to_write_to, add_data_source_name_to_path=False
+            )
 
             # Upload if necessary.
             if (
@@ -224,11 +226,16 @@ class DataSource:
                 and n_batches_processed > 0
                 and n_batches_processed % upload_every_n_batches == 0
             ):
-                nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+                nd_fs_utils.upload_and_delete_local_files(
+                    dst_path=dst_path, local_path=path_to_write_to
+                )
 
         # Upload last few batches, if necessary:
+
         if save_batches_locally_and_upload:
-            nd_fs_utils.upload_and_delete_local_files(dst_path, path_to_write_to)
+            nd_fs_utils.upload_and_delete_local_files(
+                dst_path=dst_path, local_path=path_to_write_to
+            )
 
     # TODO: Issue #319: Standardise parameter names.
     def get_batch(

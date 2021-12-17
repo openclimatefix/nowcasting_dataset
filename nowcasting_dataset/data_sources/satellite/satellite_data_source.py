@@ -1,6 +1,7 @@
 """ Satellite Data Source """
 import logging
 from dataclasses import InitVar, dataclass
+from functools import partial
 from numbers import Number
 from typing import Iterable, Optional
 
@@ -15,6 +16,7 @@ from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 
 _LOG = logging.getLogger(__name__)
+_LOG_HRV = logging.getLogger(__name__.replace("satellite", "hrvsatellite"))
 
 
 @dataclass
@@ -24,6 +26,7 @@ class SatelliteDataSource(ZarrDataSource):
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES[1:]
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
+    logger = _LOG
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
@@ -60,7 +63,9 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._data.sel(channels=list(self.channels))
 
     def _open_data(self) -> xr.DataArray:
-        return open_sat_data(zarr_path=self.zarr_path, consolidated=self.consolidated)
+        return open_sat_data(
+            zarr_path=self.zarr_path, consolidated=self.consolidated, logger=self.logger
+        )
 
     @staticmethod
     def get_data_model_for_batch():
@@ -245,14 +250,18 @@ class HRVSatelliteDataSource(SatelliteDataSource):
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES[:1]
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
+    logger = _LOG_HRV
 
 
-def remove_acq_time_from_dataset_and_fix_time_coords(dataset: xr.Dataset) -> xr.Dataset:
+def remove_acq_time_from_dataset_and_fix_time_coords(
+    dataset: xr.Dataset, logger: logging.Logger
+) -> xr.Dataset:
     """
     Preprocess datasets by dropping `acq_time`, which causes problems otherwise
 
     Args:
         dataset: xr.Dataset to preprocess
+        logger: logger object to write to
 
     Returns:
         dataset with acq_time dropped
@@ -264,7 +273,7 @@ def remove_acq_time_from_dataset_and_fix_time_coords(dataset: xr.Dataset) -> xr.
     times = pd.DatetimeIndex(data_array["time"])
     if not times.is_unique:
         n_duplicates = times.duplicated().sum()
-        _LOG.warning(f"Satellite Zarr has {n_duplicates:,d} duplicated times.  Fixing...")
+        logger.warning(f"Satellite Zarr has {n_duplicates:,d} duplicated times.  Fixing...")
         data_array = data_array.drop_duplicates(dim="time")
         times = pd.DatetimeIndex(data_array["time"])
         dataset = data_array.to_dataset(name="stacked_eumetsat_data")
@@ -272,7 +281,7 @@ def remove_acq_time_from_dataset_and_fix_time_coords(dataset: xr.Dataset) -> xr.
     # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
     if not times.is_monotonic_increasing:
         total_n_out_of_order_times = 0
-        _LOG.warning("Satellite Zarr times is not monotonic_increasing.  Fixing...")
+        logger.warning("Satellite Zarr times is not monotonic_increasing.  Fixing...")
         while not times.is_monotonic_increasing:
             diff = np.diff(times.view(int))
             out_of_order = np.where(diff < 0)[0]
@@ -280,13 +289,13 @@ def remove_acq_time_from_dataset_and_fix_time_coords(dataset: xr.Dataset) -> xr.
             out_of_order = times[out_of_order]
             data_array = data_array.drop_sel(time=out_of_order)
             times = pd.DatetimeIndex(data_array["init_time"])
-        _LOG.info(f"Fixed {total_n_out_of_order_times:,d} out of order init_times.")
+        logger.info(f"Fixed {total_n_out_of_order_times:,d} out of order init_times.")
         dataset = data_array.to_dataset(name="stacked_eumetsat_data")
 
     return dataset
 
 
-def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
+def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) -> xr.DataArray:
     """Lazily opens the Zarr store.
 
     Adds 1 minute to the 'time' coordinates, so the timestamps
@@ -295,8 +304,9 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     Args:
       zarr_path: Cloud URL or local path pattern.  If GCP URL, must start with 'gs://'
       consolidated: Whether or not the Zarr metadata is consolidated.
+      logger: logger object to write to
     """
-    _LOG.debug("Opening satellite data: %s", zarr_path)
+    logger.debug("Opening satellite data: %s", zarr_path)
 
     # If we are opening multiple Zarr stores (i.e. one for each month of the year) we load them
     # together and create a single dataset from them.  open_mfdataset also works if zarr_path
@@ -307,6 +317,11 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
     # from 8 seconds to 50 seconds!
     dask.config.set(**{"array.slicing.split_large_chunks": False})
 
+    # add logger to preprocess function
+    p_remove_acq_time_from_dataset_and_fix_time_coords = partial(
+        remove_acq_time_from_dataset_and_fix_time_coords, logger=logger
+    )
+
     # Open datasets.
     dataset = xr.open_mfdataset(
         zarr_path,
@@ -314,7 +329,7 @@ def open_sat_data(zarr_path: str, consolidated: bool) -> xr.DataArray:
         mode="r",
         engine="zarr",
         concat_dim="time",
-        preprocess=remove_acq_time_from_dataset_and_fix_time_coords,
+        preprocess=p_remove_acq_time_from_dataset_and_fix_time_coords,
         consolidated=consolidated,
         combine="nested",
     )

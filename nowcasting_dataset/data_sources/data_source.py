@@ -12,7 +12,6 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
-import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import square
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
@@ -217,10 +216,7 @@ class DataSource:
             )
 
             # Save batch to disk.
-            # TODO: Issue #524: Use DataSourceOutput.save_netcdf in place of to_netcdf
-            netcdf_filename = path_to_write_to / nd_utils.get_netcdf_filename(batch_idx)
-            encoding = {name: {"compression": "lzf"} for name in batch.data_vars}
-            batch.to_netcdf(netcdf_filename, engine="h5netcdf", encoding=encoding)
+            batch.save_netcdf(batch_i=batch_idx, path=path_to_write_to)
 
             # Upload if necessary.
             if (

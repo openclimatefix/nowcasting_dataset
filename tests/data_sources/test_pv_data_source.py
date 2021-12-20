@@ -96,7 +96,7 @@ def test_passive():
 
     i = 150
     example = pv.get_example(
-        t0_dt=times[i], x_meters_center=x_locations[i], y_meters_center=y_locations[i]
+        t0_datetime_utc=times[i], x_meter_osgb=x_locations[i], y_meter_osgb=y_locations[i]
     )
 
     assert example.data.max() > 0

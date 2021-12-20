@@ -171,7 +171,9 @@ class GSPDataSource(ImageDataSource):
 
             return t0_datetimes_utc_all_gsps, x_centers_osgb_all_gsps, y_centers_osgb_all_gsps
 
-    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+    def get_locations(
+        self, t0_datetimes_utc: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """
         Get x and y locations. Assume that all data is available for all GSP.
 
@@ -179,7 +181,7 @@ class GSPDataSource(ImageDataSource):
         datasources need to know which x,y locations to get.
 
         Args:
-            t0_datetimes: list of available t0 datetimes.
+            t0_datetimes_utc: list of available t0 datetimes.
 
         Returns: list of x and y locations
 
@@ -192,7 +194,7 @@ class GSPDataSource(ImageDataSource):
 
             # get random GSP metadata
             indexes = list(
-                self.rng.integers(low=0, high=len(self.metadata), size=len(t0_datetimes))
+                self.rng.integers(low=0, high=len(self.metadata), size=len(t0_datetimes_utc))
             )
             metadata = self.metadata.iloc[indexes]
 
@@ -212,7 +214,7 @@ class GSPDataSource(ImageDataSource):
             x_centers_osgb = []
             y_centers_osgb = []
 
-            for t0_dt in t0_datetimes:
+            for t0_dt in t0_datetimes_utc:
 
                 # Choose start and end times
                 start_dt = self._get_start_dt(t0_dt)
@@ -237,7 +239,7 @@ class GSPDataSource(ImageDataSource):
         return x_centers_osgb, y_centers_osgb
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, t0_datetime_utc: pd.Timestamp, x_meter_osgb: Number, y_meter_osgb: Number
     ) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords.
@@ -245,24 +247,24 @@ class GSPDataSource(ImageDataSource):
         Get data at the location of x,y and get surrounding GSP power data also.
 
         Args:
-            t0_dt: datetime of "now". History and forecast are also returned
-            x_meters_center: x location of center GSP.
-            y_meters_center: y location of center GSP.
+            t0_datetime_utc: datetime of "now". History and forecast are also returned
+            x_meter_osgb: x location of center GSP.
+            y_meter_osgb: y location of center GSP.
 
         Returns: Dictionary with GSP data in it.
         """
         logger.debug("Getting example data")
 
         # get the GSP power, including history and forecast
-        selected_gsp_power, selected_capacity = self._get_time_slice(t0_dt)
+        selected_gsp_power, selected_capacity = self._get_time_slice(t0_datetime_utc)
 
         # get the main gsp id, and the ids of the gsp in the bounding box
         all_gsp_ids = self._get_gsp_ids_in_roi(
-            x_meters_center, y_meters_center, selected_gsp_power.columns
+            x_meter_osgb, y_meter_osgb, selected_gsp_power.columns
         )
         if self.get_center:
             central_gsp_id = self._get_central_gsp_id(
-                x_meters_center, y_meters_center, selected_gsp_power.columns
+                x_meter_osgb, y_meter_osgb, selected_gsp_power.columns
             )
             assert central_gsp_id in all_gsp_ids
 
@@ -414,22 +416,22 @@ class GSPDataSource(ImageDataSource):
         assert len(gsp_ids) > 0
         return gsp_ids
 
-    def _get_time_slice(self, t0_dt: pd.Timestamp) -> [pd.DataFrame]:
+    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> [pd.DataFrame]:
         """
         Get time slice of GSP power data for give time.
 
         Note the time is extended backwards by history lenght and forward by prediction time
 
         Args:
-            t0_dt: timestamp of interest
+            t0_datetime_utc: timestamp of interest
 
         Returns: pandas data frame of GSP power data
         """
-        logger.debug(f"Getting power slice for {t0_dt}")
+        logger.debug(f"Getting power slice for {t0_datetime_utc}")
 
         # get start and end datetime, takening into account history and forecast length.
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
+        start_dt = self._get_start_dt(t0_datetime_utc)
+        end_dt = self._get_end_dt(t0_datetime_utc)
 
         # need to floor by 30 mins.
         # If t0 is 12.45 and history duration is 1 hours, then start_dt will be 11.45.
@@ -444,7 +446,7 @@ class GSPDataSource(ImageDataSource):
         power = power.dropna(axis="columns", how="any")
         capacity = capacity.dropna(axis="columns", how="any")
 
-        logger.debug(f"Found {len(power.columns)} GSP valid data for {t0_dt}")
+        logger.debug(f"Found {len(power.columns)} GSP valid data for {t0_datetime_utc}")
 
         return power, capacity
 

@@ -1,3 +1,4 @@
+""" Test for topographic data source """
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,6 +21,7 @@ from nowcasting_dataset.data_sources import TopographicDataSource
     ],
 )
 def test_get_example_2km(x, y, left, right, top, bottom):
+    """Get examples"""
     size = 2000  # meters
     topo_source = TopographicDataSource(
         filename="tests/data/europe_dem_2km_osgb.tif",
@@ -29,7 +31,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
         history_minutes=10,
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
-    topo_data = topo_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    topo_data = topo_source.get_example(t0_datetime_utc=t0_dt, x_meter_osgb=x, y_meter_osgb=y)
     assert topo_data.data.shape == (128, 128)
     assert len(topo_data.x) == 128
     assert len(topo_data.y) == 128
@@ -56,6 +58,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     ],
 )
 def test_get_batch_2km(x, y, left, right, top, bottom):
+    """Get batches"""
     size = 2000  # meters
     topo_source = TopographicDataSource(
         filename="tests/data/europe_dem_2km_osgb.tif",
@@ -67,7 +70,9 @@ def test_get_batch_2km(x, y, left, right, top, bottom):
     x = np.array([x] * 32)
     y = np.array([y] * 32)
     t0_datetimes = pd.date_range("2021-01-01", freq="5T", periods=32) + pd.Timedelta("30T")
-    topo_data = topo_source.get_batch(t0_datetimes=t0_datetimes, x_locations=x, y_locations=y)
+    topo_data = topo_source.get_batch(
+        t0_datetimes_utc=t0_datetimes, x_meters_osgb=x, y_meters_osgb=y
+    )
     assert "x_index_index" not in topo_data.dims
 
 
@@ -86,4 +91,4 @@ def test_get_example_gcs():
         history_minutes=10,
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
-    _ = topo_source.get_example(t0_dt=t0_dt, x_meters_center=0, y_meters_center=0)
+    _ = topo_source.get_example(t0_datetime_utc=t0_dt, x_meter_osgb=0, y_meter_osgb=0)

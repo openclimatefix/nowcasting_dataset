@@ -97,7 +97,7 @@ class NWPDataSource(ZarrDataSource):
         """Get the model that is used in the batch"""
         return NWP
 
-    def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
+    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> xr.DataArray:
         """
         Select the numerical weather predictions for a single time slice.
 
@@ -106,13 +106,13 @@ class NWPDataSource(ZarrDataSource):
         extent of the NWP data!
 
         Args:
-            t0_dt: the time slice is around t0_dt.
+            t0_datetime_utc: the time slice is around t0_dt.
 
         Returns: Slice of data
 
         """
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
+        start_dt = self._get_start_dt(t0_datetime_utc)
+        end_dt = self._get_end_dt(t0_datetime_utc)
 
         start_hourly = start_dt.floor("H")
         end_hourly = end_dt.ceil("H")

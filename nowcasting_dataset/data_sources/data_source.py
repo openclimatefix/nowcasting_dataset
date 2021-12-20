@@ -39,7 +39,8 @@ class DataSource:
       sample_period_minutes: The time delta between each data point.  Note that this is set
         using the sample_period_minutes property, so it can be overridden by child classes.
 
-    Attributes ending in `_length` are sequence lengths represented as integer numbers of timesteps.
+    Attributes ending in `_length` are sequence lengths represented
+        as integer numbers of timesteps.
     Attributes ending in `_duration` are sequence durations represented as pd.Timedeltas.
     """
 
@@ -79,15 +80,15 @@ class DataSource:
         )
 
     def _get_start_dt(
-        self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
+        self, t0_datetime_utc: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
 
-        return t0_dt - self.history_duration
+        return t0_datetime_utc - self.history_duration
 
     def _get_end_dt(
-        self, t0_dt: Union[pd.Timestamp, pd.DatetimeIndex]
+        self, t0_datetime_utc: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-        return t0_dt + self.forecast_duration
+        return t0_datetime_utc + self.forecast_duration
 
     def get_contiguous_t0_time_periods(self) -> pd.DataFrame:
         """Get all time periods which contain valid t0 datetimes.
@@ -210,9 +211,9 @@ class DataSource:
 
             # Generate batch.
             batch = self.get_batch(
-                t0_datetimes=locations_for_batch.t0_datetime_UTC,
-                x_locations=locations_for_batch.x_center_OSGB,
-                y_locations=locations_for_batch.y_center_OSGB,
+                t0_datetimes_utc=locations_for_batch.t0_datetime_UTC,
+                x_meters_osgb=locations_for_batch.x_center_OSGB,
+                y_meters_osgb=locations_for_batch.y_center_OSGB,
             )
 
             # Save batch to disk.
@@ -237,33 +238,35 @@ class DataSource:
                 dst_path=dst_path, local_path=path_to_write_to
             )
 
-    # TODO: Issue #319: Standardise parameter names.
     def get_batch(
         self,
-        t0_datetimes: pd.DatetimeIndex,
-        x_locations: Iterable[Number],
-        y_locations: Iterable[Number],
+        t0_datetimes_utc: pd.DatetimeIndex,
+        x_meters_osgb: Iterable[Number],
+        y_meters_osgb: Iterable[Number],
     ) -> DataSourceOutput:
         """
         Get Batch Data
 
         Args:
-            t0_datetimes: list of timestamps for the datetime of the batches. The batch will also
-                include data for historic and future depending on `history_minutes` and
-                `future_minutes`.  The batch size is given by the length of the t0_datetimes.
-            x_locations: x center batch locations
-            y_locations: y center batch locations
+            t0_datetimes_utc: list of timestamps for the datetime of the batches.
+                The batch will also include data for historic and future depending
+                on `history_minutes` and `future_minutes`.
+                The batch size is given by the length of the t0_datetimes.
+            x_meters_osgb: x center batch locations
+            y_meters_osgb: y center batch locations
 
         Returns: Batch data.
         """
-        assert len(t0_datetimes) == len(
-            x_locations
-        ), f"len(t0_datetimes) != len(x_locations): {len(t0_datetimes)} != {len(x_locations)}"
-        assert len(t0_datetimes) == len(
-            y_locations
-        ), f"len(t0_datetimes) != len(y_locations): {len(t0_datetimes)} != {len(y_locations)}"
-        zipped = list(zip(t0_datetimes, x_locations, y_locations))
-        batch_size = len(t0_datetimes)
+        assert len(t0_datetimes_utc) == len(x_meters_osgb), (
+            f"len(t0_datetimes) != len(x_locations): "
+            f"{len(t0_datetimes_utc)} != {len(x_meters_osgb)}"
+        )
+        assert len(t0_datetimes_utc) == len(y_meters_osgb), (
+            f"len(t0_datetimes) != len(y_locations): "
+            f"{len(t0_datetimes_utc)} != {len(y_meters_osgb)}"
+        )
+        zipped = list(zip(t0_datetimes_utc, x_meters_osgb, y_meters_osgb))
+        batch_size = len(t0_datetimes_utc)
 
         with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
             future_examples = []
@@ -332,8 +335,9 @@ class DataSource:
             max_gap_duration=self.sample_period_duration,
         )
 
-    # TODO: Issue #319: Standardise parameter names.
-    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+    def get_locations(
+        self, t0_datetimes_utc: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical locations for each t0_datetime.
 
         Should be overridden by DataSources which may be used to define the locations.
@@ -367,17 +371,15 @@ class DataSource:
         raise NotImplementedError()
 
     # ****************** METHODS THAT MUST BE OVERRIDDEN **********************
-    # TODO: Issue #319: Standardise parameter names.
-    def _get_time_slice(self, t0_dt: pd.Timestamp):
+    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp):
         """Get a single timestep of data.  Must be overridden if get_example is not overridden."""
         raise NotImplementedError()
 
-    # TODO: Issue #319: Standardise parameter names.
     def get_example(
         self,
-        t0_dt: pd.Timestamp,  #: Datetime of "now": The most recent obs.
-        x_meters_center: Number,  #: Centre, in OSGB coordinates.
-        y_meters_center: Number,  #: Centre, in OSGB coordinates.
+        t0_datetime_utc: pd.Timestamp,  #: Datetime of "now": The most recent obs.
+        x_meter_osgb: Number,  #: Centre, in OSGB coordinates.
+        y_meter_osgb: Number,  #: Centre, in OSGB coordinates.
     ) -> xr.Dataset:
         """Must be overridden by child classes."""
         raise NotImplementedError()
@@ -450,23 +452,24 @@ class ZarrDataSource(ImageDataSource):
         return self._data
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get Example data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
-                data for historic and future depending on `history_minutes` and `future_minutes`.
-            x_meters_center: x center batch locations
-            y_meters_center: y center batch locations
+            t0_datetime_utc: list of timestamps for the datetime of the batches.
+                The batch will also include data for historic and future depending
+                on `history_minutes` and `future_minutes`.
+            x_center_osgb: x center batch locations
+            y_center_osgb: y center batch locations
 
         Returns: Example Data
 
         """
-        selected_data = self._get_time_slice(t0_dt)
+        selected_data = self._get_time_slice(t0_datetime_utc)
         bounding_box = self._square.bounding_box_centered_on(
-            x_meters_center=x_meters_center, y_meters_center=y_meters_center
+            x_meters_center=x_center_osgb, y_meters_center=y_center_osgb
         )
         selected_data = selected_data.sel(
             x=slice(bounding_box.left, bounding_box.right),
@@ -479,14 +482,14 @@ class ZarrDataSource(ImageDataSource):
             x=slice(0, self._square.size_pixels), y=slice(0, self._square.size_pixels)
         )
 
-        selected_data = self._post_process_example(selected_data, t0_dt)
+        selected_data = self._post_process_example(selected_data, t0_datetime_utc)
 
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
                 "Example is wrong shape! "
-                f"x_meters_center={x_meters_center}\n"
-                f"y_meters_center={y_meters_center}\n"
-                f"t0_dt={t0_dt}\n"
+                f"x_center_osgb={x_center_osgb}\n"
+                f"y_center_osgb={y_center_osgb}\n"
+                f"t0_datetime_utc={t0_datetime_utc}\n"
                 f"times are {selected_data.time}\n"
                 f"expected shape={self._shape_of_example}\n"
                 f"actual shape {selected_data.shape}"

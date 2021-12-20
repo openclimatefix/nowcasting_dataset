@@ -41,7 +41,7 @@ def test_gsp_pv_data_source_get_locations():
         meters_per_pixel=2000,
     )
 
-    locations_x, locations_y = gsp.get_locations(t0_datetimes=gsp.gsp_power.index[0:10])
+    locations_x, locations_y = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
 
     assert len(locations_x) == len(locations_y)
     # This makes sure it is not in lat/lon.
@@ -115,9 +115,11 @@ def test_gsp_pv_data_source_get_example():
         meters_per_pixel=2000,
     )
 
-    x_locations, y_locations = gsp.get_locations(t0_datetimes=gsp.gsp_power.index[0:10])
+    x_locations, y_locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
     example = gsp.get_example(
-        t0_dt=gsp.gsp_power.index[0], x_meters_center=x_locations[0], y_meters_center=y_locations[0]
+        t0_datetime_utc=gsp.gsp_power.index[0],
+        x_meter_osgb=x_locations[0],
+        y_meter_osgb=y_locations[0],
     )
 
     assert len(example.id) == len(example.power_mw[0])
@@ -143,12 +145,12 @@ def test_gsp_pv_data_source_get_batch():
 
     batch_size = 10
 
-    x_locations, y_locations = gsp.get_locations(t0_datetimes=gsp.gsp_power.index[0:batch_size])
+    x_locations, y_locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:batch_size])
 
     batch = gsp.get_batch(
-        t0_datetimes=gsp.gsp_power.index[batch_size : 2 * batch_size],
-        x_locations=x_locations[0:batch_size],
-        y_locations=y_locations[0:batch_size],
+        t0_datetimes_utc=gsp.gsp_power.index[batch_size : 2 * batch_size],
+        x_meters_osgb=x_locations[0:batch_size],
+        y_meters_osgb=y_locations[0:batch_size],
     )
 
     assert len(batch.power_mw[0]) == 4

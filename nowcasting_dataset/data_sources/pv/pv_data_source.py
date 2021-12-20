@@ -127,11 +127,11 @@ class PVDataSource(ImageDataSource):
         # get the max generation / capacity for each system
         self.pv_capacity = pv_power.max()
 
-    def _get_time_slice(self, t0_dt: pd.Timestamp) -> [pd.DataFrame]:
+    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> [pd.DataFrame]:
         # TODO: Cache this?
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
-        del t0_dt  # t0 is not used in the rest of this method!
+        start_dt = self._get_start_dt(t0_datetime_utc)
+        end_dt = self._get_end_dt(t0_datetime_utc)
+        del t0_datetime_utc  # t0 is not used in the rest of this method!
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
         selected_pv_capacity = self.pv_capacity[selected_pv_power.columns]
 
@@ -216,29 +216,30 @@ class PVDataSource(ImageDataSource):
         return pv_system_ids
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, t0_datetime_utc: pd.Timestamp, x_meter_osgb: Number, y_meter_osgb: Number
     ) -> xr.Dataset:
         """
         Get Example data for PV data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
-                data for historic and future depending on 'history_minutes' and 'future_minutes'.
-            x_meters_center: x center batch locations
-            y_meters_center: y center batch locations
+            t0_datetime_utc: list of timestamps for the datetime of the batches.
+                The batch will also include data for historic and future depending
+                on 'history_minutes' and 'future_minutes'.
+            x_meter_osgb: x center batch locations
+            y_meter_osgb: y center batch locations
 
         Returns: Example data
 
         """
         logger.debug("Getting PV example data")
 
-        selected_pv_power, selected_pv_capacity = self._get_time_slice(t0_dt)
+        selected_pv_power, selected_pv_capacity = self._get_time_slice(t0_datetime_utc)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
-            x_meters_center, y_meters_center, selected_pv_power.columns
+            x_meter_osgb, y_meter_osgb, selected_pv_power.columns
         )
         if self.get_center:
             central_pv_system_id = self._get_central_pv_system_id(
-                x_meters_center, y_meters_center, selected_pv_power.columns
+                x_meter_osgb, y_meter_osgb, selected_pv_power.columns
             )
 
             # By convention, the 'target' PV system ID (the one in the center
@@ -303,7 +304,9 @@ class PVDataSource(ImageDataSource):
 
         return pv
 
-    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+    def get_locations(
+        self, t0_datetimes_utc: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """Find a valid geographical location for each t0_datetime.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
@@ -324,7 +327,7 @@ class PVDataSource(ImageDataSource):
         # their geographical location.
         x_locations = []
         y_locations = []
-        for t0_datetime in t0_datetimes:
+        for t0_datetime in t0_datetimes_utc:
             pv_system_ids = _get_pv_system_ids(t0_datetime)
             pv_system_id = self.rng.choice(pv_system_ids)
 

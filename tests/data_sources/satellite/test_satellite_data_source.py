@@ -63,7 +63,7 @@ def test_datetime_index(sat_data_source):  # noqa: D103
 def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: D103
     sat_data_source.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
-    sat_data = sat_data_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    sat_data = sat_data_source.get_example(t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y)
     assert np.isclose(left, sat_data.x.values[0])
     assert np.isclose(right, sat_data.x.values[-1])
     # sat_data.y is top-to-bottom.
@@ -90,7 +90,9 @@ def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: 
 def test_hrv_get_example(hrv_sat_data_source, x, y, left, right, top, bottom):  # noqa: D103
     hrv_sat_data_source.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
-    sat_data = hrv_sat_data_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
+    sat_data = hrv_sat_data_source.get_example(
+        t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y
+    )
     assert np.isclose(left, sat_data.x.values[0])
     assert np.isclose(right, sat_data.x.values[-1])
     # sat_data.y is top-to-bottom.

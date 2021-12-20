@@ -235,6 +235,7 @@ def join_two_batches(
     batches: List[Batch],
     data_sources_names: Optional[List[str]] = None,
     first_batch_examples: Optional[List[int]] = None,
+    second_batch_examples: Optional[List[int]] = None,
 ) -> Batch:
     """
     Join two batches
@@ -242,7 +243,8 @@ def join_two_batches(
     Args:
         batches: list of batches to be mixes
         data_sources_names: list of data source names
-        first_batch_examples: lsit of indexes that we should use for the first batch
+        first_batch_examples: list of indexes that we should use for the first batch
+        second_batch_examples: list of indexes that we should use for the second batch
 
     Returns: batch object, mixture of two given
 
@@ -259,14 +261,32 @@ def join_two_batches(
     batch = batches[0]
     batch_size = batch.metadata.batch_size
 
-    # create random indexes, if needed
-    if first_batch_examples is None:
-        first_batch_examples = np.random.randint(low=0, high=batch_size, size=int(batch_size / 2))
-    second_batch_examples = [i for i in range(0, batch_size) if i not in first_batch_examples]
+    first_batch_examples = _make_batch_examples(
+        batch_examples=first_batch_examples, batch_size=batch_size, size=int(batch_size / 2)
+    )
+    first_size = len(first_batch_examples)
+
+    second_batch_examples = _make_batch_examples(
+        batch_examples=second_batch_examples,
+        batch_size=batch_size - first_size,
+        size=int(batch_size / 2),
+    )
+    second_size = len(second_batch_examples)
+
+    # check the sizes are right
+    assert first_size + second_size == batch_size, (
+        f"number of first ({first_size}) "
+        f"and second ({second_size}) batch examples "
+        f"should add up to the batch size of {batch_size}"
+    )
 
     for data_source in data_sources_names:
         first = getattr(batches[0], data_source).sel(example=first_batch_examples)
         second = getattr(batches[1], data_source).sel(example=second_batch_examples)
+
+        # reset examples index
+        first.__setitem__("example", range(0, first_size))
+        second.__setitem__("example", range(first_size, batch_size))
 
         # join on example index
         data = xr.concat([first, second], dim="example")
@@ -282,10 +302,32 @@ def join_two_batches(
     # loop over metadata keys, but no 'batch_size'
     for metadata_key in Metadata.__fields__.keys():
         if metadata_key != "batch_size":
-            data = np.array(getattr(batch.metadata, metadata_key))
-            data[second_batch_examples] = np.array(getattr(batches[1].metadata, metadata_key))[
+            first_data = np.array(getattr(batch.metadata, metadata_key))[first_batch_examples]
+            second_data = np.array(getattr(batches[1].metadata, metadata_key))[
                 second_batch_examples
             ]
+            data = np.concatenate(([first_data, second_data]))
             setattr(metadata, metadata_key, data)
 
     return batch
+
+
+def _make_batch_examples(
+    size: int, batch_size: int, batch_examples: Optional[List[str]] = None
+) -> List[int]:
+    """
+    Make random batch examples
+
+    Args:
+        size: the size of examples
+        batch_size: the total batch size of the batch
+        batch_examples: optional batch examples
+
+    Returns: random batch examples
+
+    """
+    # create first random indexes, if needed
+    if batch_examples is None:
+        batch_examples = np.random.choice(range(0, batch_size), size=size, replace=False)
+
+    return batch_examples

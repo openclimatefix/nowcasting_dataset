@@ -24,8 +24,8 @@ class Satellite(DataSourceOutput):
         v.check_data_var_dim(
             v.data, ("example", "time_index", "x_osgb_index", "y_osgb_index", "channels_index")
         )
-        v.check_data_var_dim(v.x, ("example", "x_osgb_index"))
-        v.check_data_var_dim(v.y, ("example", "y_osgb_index"))
+        v.check_data_var_dim(v.x_osgb, ("example", "x_osgb_index"))
+        v.check_data_var_dim(v.y_osgb, ("example", "y_osgb_index"))
 
         return v
 

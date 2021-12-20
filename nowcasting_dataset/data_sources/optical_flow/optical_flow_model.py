@@ -17,7 +17,7 @@ class OpticalFlow(DataSourceOutput):
         v.check_nan_and_inf(data=v.data)
         # previously nans were filled with -1s, so lets make sure there are none
         v.check_dataset_not_equal(data=v.data, value=-1)
-        v.check_data_var_dim(v.x, ("example", "x_index"))
-        v.check_data_var_dim(v.y, ("example", "y_index"))
+        v.check_data_var_dim(v.x_osgb, ("example", "x_osgb_index"))
+        v.check_data_var_dim(v.y_osgb, ("example", "y_osgb_index"))
 
         return v

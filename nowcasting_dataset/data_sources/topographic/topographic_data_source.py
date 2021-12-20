@@ -39,10 +39,13 @@ class TopographicDataSource(ImageDataSource):
             )
 
         self._data = self._data.fillna(0)  # Set nodata values to 0 (mostly should be ocean)
+        self._data = self._data.rename({"x": "x_osgb", "y": "y_osgb"})
         # Add CRS for later, topo maps are assumed to be in OSGB
         self._data.attrs["crs"] = OSGB
         # Distance between pixels, giving their spatial extant, in meters
-        self._stored_pixel_size_meters = abs(self._data.coords["x"][1] - self._data.coords["x"][0])
+        self._stored_pixel_size_meters = abs(
+            self._data.coords["x_osgb"][1] - self._data.coords["x_osgb"][0]
+        )
         self._meters_per_pixel = meters_per_pixel
 
     @staticmethod
@@ -72,8 +75,8 @@ class TopographicDataSource(ImageDataSource):
             x_meters_center=x_meters_center, y_meters_center=y_meters_center
         )
         selected_data = self._data.sel(
-            x=slice(bounding_box.left, bounding_box.right),
-            y=slice(bounding_box.top, bounding_box.bottom),
+            x_osgb=slice(bounding_box.left, bounding_box.right),
+            y_osgb=slice(bounding_box.top, bounding_box.bottom),
         )
         if self._stored_pixel_size_meters != self._meters_per_pixel:
             # Rescale here to the exact size, assumes that the above is good slice
@@ -87,7 +90,7 @@ class TopographicDataSource(ImageDataSource):
         # selected_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
-            x=slice(0, self._square.size_pixels), y=slice(0, self._square.size_pixels)
+            x_osgb=slice(0, self._square.size_pixels), y_osgb=slice(0, self._square.size_pixels)
         )
 
         selected_data = self._post_process_example(selected_data, t0_dt)

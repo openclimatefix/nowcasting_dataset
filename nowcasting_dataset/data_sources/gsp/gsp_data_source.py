@@ -317,8 +317,8 @@ class GSPDataSource(ImageDataSource):
             data=gsp_y_coords.values,
             dims=["id"],
         )
-        gsp["x_coords"] = gsp_x_coords
-        gsp["y_coords"] = gsp_y_coords
+        gsp["x_osgb"] = gsp_x_coords
+        gsp["y_osgb"] = gsp_y_coords
 
         # pad out so that there are always 32 gsp, fill with 0
         pad_n = self.n_gsp_per_example - len(gsp.id)

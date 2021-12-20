@@ -420,10 +420,10 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
                 image_size_pixels,
                 image_size_pixels,
             ),
-            dims=["x", "y"],
+            dims=["x_osgb", "y_osgb"],
             coords=dict(
-                x=x,
-                y=y,
+                x_osgb=x,
+                y_osgb=y,
             ),
             name="data",
         )
@@ -436,7 +436,7 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
 
 
 def create_image_array(
-    dims=("time", "x", "y", "channels"),
+    dims=("time", "x_osgb", "y_osgb", "channels"),
     seq_length=19,
     history_seq_length=5,
     image_size_pixels=64,
@@ -461,8 +461,8 @@ def create_image_array(
 
     ALL_COORDS = {
         "time": time,
-        "x": x,
-        "y": y,
+        "x_osgb": x,
+        "y_osgb": y,
         "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
@@ -571,8 +571,8 @@ def create_gsp_pv_dataset(
     )
 
     data["capacity_mwp"] = capacity
-    data["x_coords"] = x_coords
-    data["y_coords"] = y_coords
+    data["x_osgb"] = x_coords
+    data["y_osgb"] = y_coords
 
     # Add 1000 to the id numbers for the row numbers.
     # This is a quick way to make sure row number is different from id,

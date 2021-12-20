@@ -83,8 +83,9 @@ class Manager:
         # Configure loggers for each DataSource.
         for data_source_name in names_of_selected_data_sources:
             log_filename = self.config.output_data.filepath / f"{data_source_name}.log"
+            data_source_log_level = getattr(self.config.input_data, data_source_name).log_level
             nd_utils.configure_logger(
-                log_level=log_level,
+                log_level=data_source_log_level,
                 logger_name=f"nowcasting_dataset.data_sources.{data_source_name}",
                 handlers=[logging.FileHandler(log_filename, mode="a")],
             )
@@ -106,6 +107,7 @@ class Manager:
                 logger.info(f"No configuration found for {data_source_name}.")
                 continue
             config_for_data_source = config_for_data_source.dict()
+            config_for_data_source.pop("log_level")
 
             # Strip `<data_source_name>_` from the config option field names.
             config_for_data_source = nd_utils.remove_regex_pattern_from_keys(

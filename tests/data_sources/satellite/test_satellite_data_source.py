@@ -64,13 +64,13 @@ def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: 
     sat_data_source.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     sat_data = sat_data_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
-    assert np.isclose(left, sat_data.x.values[0])
-    assert np.isclose(right, sat_data.x.values[-1])
+    assert np.isclose(left, sat_data.x_osgb.values[0])
+    assert np.isclose(right, sat_data.x_osgb.values[-1])
     # sat_data.y is top-to-bottom.
-    assert np.isclose(bottom, sat_data.y.values[0])
-    assert np.isclose(top, sat_data.y.values[-1])
-    assert len(sat_data.x) == pytest.IMAGE_SIZE_PIXELS
-    assert len(sat_data.y) == pytest.IMAGE_SIZE_PIXELS
+    assert np.isclose(bottom, sat_data.y_osgb.values[0])
+    assert np.isclose(top, sat_data.y_osgb.values[-1])
+    assert len(sat_data.x_osgb) == pytest.IMAGE_SIZE_PIXELS
+    assert len(sat_data.y_osgb) == pytest.IMAGE_SIZE_PIXELS
 
 
 @pytest.mark.parametrize(
@@ -91,13 +91,13 @@ def test_hrv_get_example(hrv_sat_data_source, x, y, left, right, top, bottom):  
     hrv_sat_data_source.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     sat_data = hrv_sat_data_source.get_example(t0_dt=t0_dt, x_meters_center=x, y_meters_center=y)
-    assert np.isclose(left, sat_data.x.values[0])
-    assert np.isclose(right, sat_data.x.values[-1])
+    assert np.isclose(left, sat_data.x_osgb.values[0])
+    assert np.isclose(right, sat_data.x_osgb.values[-1])
     # sat_data.y is top-to-bottom.
-    assert np.isclose(bottom, sat_data.y.values[0])
-    assert np.isclose(top, sat_data.y.values[-1])
-    assert len(sat_data.x) == pytest.IMAGE_SIZE_PIXELS
-    assert len(sat_data.y) == pytest.IMAGE_SIZE_PIXELS
+    assert np.isclose(bottom, sat_data.y_osgb.values[0])
+    assert np.isclose(top, sat_data.y_osgb.values[-1])
+    assert len(sat_data.x_osgb) == pytest.IMAGE_SIZE_PIXELS
+    assert len(sat_data.y_osgb) == pytest.IMAGE_SIZE_PIXELS
 
 
 def test_hrv_geospatial_border(hrv_sat_data_source):  # noqa: D103

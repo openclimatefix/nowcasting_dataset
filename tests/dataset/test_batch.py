@@ -90,3 +90,25 @@ def test_join_two_batches(configuration):
 
     # random join
     _ = join_two_batches(batches=[batch_1, batch_2])
+
+
+def test_join_random_two_batches(configuration):
+    """
+    Test to check batches join together randomly
+    """
+    batch_1 = Batch.fake(configuration=configuration)
+    batch_2 = Batch.fake(configuration=configuration)
+
+    # random join
+    _ = join_two_batches(batches=[batch_1, batch_2])
+
+
+def test_join_one_batches(configuration):
+    """
+    Test to check join together one batch
+    """
+    batch_1 = Batch.fake(configuration=configuration)
+
+    joined_batch = join_two_batches(batches=[batch_1])
+
+    assert (joined_batch.satellite.data == batch_1.satellite.data).all()

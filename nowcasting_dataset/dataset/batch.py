@@ -259,9 +259,9 @@ def join_two_batches(
     batch = batches[0]
     batch_size = batch.metadata.batch_size
 
+    # create random indexes, if needed
     if first_batch_examples is None:
         first_batch_examples = np.random.randint(low=0, high=batch_size, size=int(batch_size / 2))
-
     second_batch_examples = [i for i in range(0, batch_size) if i not in first_batch_examples]
 
     for data_source in data_sources_names:
@@ -279,6 +279,7 @@ def join_two_batches(
 
     # merge metadata
     metadata = batch.metadata
+    # loop over metadata keys, but no 'batch_size'
     for metadata_key in Metadata.__fields__.keys():
         if metadata_key != "batch_size":
             data = np.array(getattr(batch.metadata, metadata_key))

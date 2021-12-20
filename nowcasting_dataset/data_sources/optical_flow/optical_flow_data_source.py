@@ -155,8 +155,8 @@ class OpticalFlowDataSource(DataSource):
             data=predictions,
             coords=(
                 ("time", datetime_index_of_predictions),
-                ("x", satellite_data_cropped.coords["x"].values),
-                ("y", satellite_data_cropped.coords["y"].values),
+                ("x_osgb", satellite_data_cropped.coords["x_osgb"].values),
+                ("y_osgb", satellite_data_cropped.coords["y_osgb"].values),
                 ("channels", satellite_data.coords["channels"].values),
             ),
             name="data",

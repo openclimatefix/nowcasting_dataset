@@ -123,8 +123,8 @@ def test_gsp_pv_data_source_get_example():
     )
 
     assert len(example.id) == len(example.power_mw[0])
-    assert len(example.x_coords) == len(example.y_coords)
-    assert len(example.x_coords) > 0
+    assert len(example.x_osgb) == len(example.y_osgb)
+    assert len(example.x_osgb) > 0
     assert pd.Timestamp(example.time[0].values) <= end_dt
     assert pd.Timestamp(example.time[0].values) >= start_dt
 
@@ -154,9 +154,9 @@ def test_gsp_pv_data_source_get_batch():
     )
 
     assert len(batch.power_mw[0]) == 4
-    assert len(batch.id[0]) == len(batch.x_coords[0])
-    assert len(batch.x_coords[1]) == len(batch.y_coords[1])
-    assert len(batch.x_coords[2]) > 0
+    assert len(batch.id[0]) == len(batch.x_osgb[0])
+    assert len(batch.x_osgb[1]) == len(batch.y_osgb[1])
+    assert len(batch.x_osgb[2]) > 0
     # assert T0_DT in batch[3].keys()
 
 

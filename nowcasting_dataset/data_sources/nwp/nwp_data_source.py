@@ -87,6 +87,7 @@ class NWPDataSource(ZarrDataSource):
         """
         self._data = self._open_data()
         np.testing.assert_array_equal(self._data["variable"].values, self.channels)
+        self._data = self._data.rename({"x": "x_osgb", "y": "y_osgb"})
 
     def _open_data(self) -> xr.DataArray:
         data = open_nwp(self.zarr_path, consolidated=self.consolidated)

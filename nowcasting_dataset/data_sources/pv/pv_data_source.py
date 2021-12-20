@@ -294,8 +294,8 @@ class PVDataSource(ImageDataSource):
             data=pv_system_row_number,
             dims=["id"],
         )
-        pv["x_coords"] = x_coords
-        pv["y_coords"] = y_coords
+        pv["x_osgb"] = x_coords
+        pv["y_osgb"] = y_coords
         pv["pv_system_row_number"] = pv_system_row_number
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros

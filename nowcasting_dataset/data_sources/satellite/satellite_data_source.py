@@ -54,6 +54,7 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._open_data()
         if "variable" in self._data.dims:
             self._data = self._data.rename({"variable": "channels"})
+        self._data = self._data.rename({"x": "x_osgb", "y": "y_osgb"})
         if not set(self.channels).issubset(self._data.channels.values):
             raise RuntimeError(
                 f"One or more requested channels are not available in {self.zarr_path}!"
@@ -101,11 +102,13 @@ class SatelliteDataSource(ZarrDataSource):
             The selected data around the center
         """
         # Get the index into x and y nearest to x_center_osgb and y_center_osgb:
-        x_index_at_center = np.searchsorted(data_array.x.values, x_center_osgb) - 1
-        y_index_at_center = np.searchsorted(data_array.y.values, y_center_osgb) - 1
+        x_index_at_center = np.searchsorted(data_array.x_osgb.values, x_center_osgb) - 1
+        y_index_at_center = np.searchsorted(data_array.y_osgb.values, y_center_osgb) - 1
         # Put x_index_at_center and y_index_at_center into a pd.Series so we can operate
         # on them both in a single line of code.
-        x_and_y_index_at_center = pd.Series({"x": x_index_at_center, "y": y_index_at_center})
+        x_and_y_index_at_center = pd.Series(
+            {"x_osgb": x_index_at_center, "y_osgb": y_index_at_center}
+        )
         half_image_size_pixels = self._square.size_pixels // 2
         min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
         max_x_and_y_index = x_and_y_index_at_center + half_image_size_pixels
@@ -114,8 +117,8 @@ class SatelliteDataSource(ZarrDataSource):
         suggested_reduction_of_image_size_pixels = (
             max(
                 (-min_x_and_y_index.min() if (min_x_and_y_index < 0).any() else 0),
-                (max_x_and_y_index.x - len(data_array.x)),
-                (max_x_and_y_index.y - len(data_array.y)),
+                (max_x_and_y_index.x_osgb - len(data_array.x_osgb)),
+                (max_x_and_y_index.y_osgb - len(data_array.y_osgb)),
             )
             * 2
         )
@@ -129,9 +132,9 @@ class SatelliteDataSource(ZarrDataSource):
                 "Requested region of interest of satellite data steps outside of the available"
                 " geographical extent of the Zarr data.  The requested region of interest extends"
                 f" from pixel indicies"
-                f" x={min_x_and_y_index.x} to x={max_x_and_y_index.x},"
-                f" y={min_x_and_y_index.y} to y={max_x_and_y_index.y}.  In the Zarr data,"
-                f" len(x)={len(data_array.x)}, len(y)={len(data_array.y)}. Try reducing"
+                f" x={min_x_and_y_index.x_osgb} to x={max_x_and_y_index.x_osgb},"
+                f" y={min_x_and_y_index.y_osgb} to y={max_x_and_y_index.y_osgb}.  In the Zarr data,"
+                f" len(x)={len(data_array.x_osgb)}, len(y)={len(data_array.y_osgb)}. Try reducing"
                 f" image_size_pixels from {self._square.size_pixels} to"
                 f" {new_suggested_image_size_pixels} pixels."
             )
@@ -140,8 +143,8 @@ class SatelliteDataSource(ZarrDataSource):
         # Note that isel is *exclusive* of the end of the slice.
         # e.g. isel(x=slice(0, 3)) will return the first, second, and third values.
         data_array = data_array.isel(
-            x=slice(min_x_and_y_index.x, max_x_and_y_index.x),
-            y=slice(min_x_and_y_index.y, max_x_and_y_index.y),
+            x_osgb=slice(min_x_and_y_index.x_osgb, max_x_and_y_index.x_osgb),
+            y_osgb=slice(min_x_and_y_index.y_osgb, max_x_and_y_index.y_osgb),
         )
         return data_array
 

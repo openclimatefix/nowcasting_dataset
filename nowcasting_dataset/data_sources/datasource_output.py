@@ -28,26 +28,28 @@ class DataSourceOutput(PydanticXArrayDataSet):
         """Get the name of the class"""
         return self.__class__.__name__.lower()
 
-    def save_netcdf(self, batch_i: int, path: Path):
+    def save_netcdf(self, batch_i: int, path: Path, add_data_source_name_to_path: bool = True):
         """
         Save batch to netcdf file in path/<DataSourceOutputName>/.
 
         Args:
             batch_i: the batch id, used to make the filename
             path: the path where it will be saved. This can be local or in the cloud.
+            add_data_source_name_to_path: add data source path to 'path'
         """
         filename = get_netcdf_filename(batch_i)
 
-        name = self.get_name()
+        if add_data_source_name_to_path:
+            name = self.get_name()
+            path = os.path.join(path, name)
 
         # make folder
-        folder = os.path.join(path, name)
         if batch_i == 0:
             # only need to make the folder once, or check that the folder is there once
-            makedirs(path=folder)
+            makedirs(path=path)
 
         # make file
-        local_filename = os.path.join(folder, filename)
+        local_filename = os.path.join(path, filename)
 
         encoding = {name: {"compression": "lzf"} for name in self.data_vars}
         self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)

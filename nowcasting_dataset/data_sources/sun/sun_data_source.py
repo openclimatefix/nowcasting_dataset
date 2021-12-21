@@ -39,25 +39,25 @@ class SunDataSource(DataSource):
         nd_fs_utils.check_path_exists(self.zarr_path)
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get example data from t0_dt and x and y xoordinates
 
         Args:
-            t0_dt: the timestamp to get the sun data for
-            x_meters_center: the x coordinate (OSGB)
-            y_meters_center: the y coordinate (OSGB)
+            t0_datetime_utc: the timestamp to get the sun data for
+            x_center_osgb: the x coordinate (OSGB)
+            y_center_osgb: the y coordinate (OSGB)
 
         Returns: Dictionary of azimuth and elevation data
         """
         # all sun data is from 2019, analaysis showed over the timescale we are interested in the
         # elevation and azimuth angles change by < 1 degree, so to save data, we just use data
         # from 2019.
-        t0_dt = t0_dt.replace(year=2019)
+        t0_datetime_utc = t0_datetime_utc.replace(year=2019)
 
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
+        start_dt = self._get_start_dt(t0_datetime_utc)
+        end_dt = self._get_end_dt(t0_datetime_utc)
 
         # The names of the columns get truncated when saving, therefore we need to look for the
         # name of the columns near the location we are looking for
@@ -65,8 +65,7 @@ class SunDataSource(DataSource):
             [[float(z.split(",")[0]), float(z.split(",")[1])] for z in self.azimuth.columns]
         )
         location = locations[
-            np.isclose(locations[:, 0], x_meters_center)
-            & np.isclose(locations[:, 1], y_meters_center)
+            np.isclose(locations[:, 0], x_center_osgb) & np.isclose(locations[:, 1], y_center_osgb)
         ]
         # lets make sure there is atleast one
         assert len(location) > 0
@@ -77,7 +76,7 @@ class SunDataSource(DataSource):
         # something like '22222.555,3333.6666'
         name = x_y_to_name(x=location[0], y=location[1])
 
-        del x_meters_center, y_meters_center
+        del x_center_osgb, y_center_osgb
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 
@@ -95,7 +94,9 @@ class SunDataSource(DataSource):
 
         self.azimuth, self.elevation = load_from_zarr(zarr_path=self.zarr_path)
 
-    def get_locations(self, t0_datetimes: pd.DatetimeIndex) -> Tuple[List[Number], List[Number]]:
+    def get_locations(
+        self, t0_datetimes_utc: pd.DatetimeIndex
+    ) -> Tuple[List[Number], List[Number]]:
         """Sun data should not be used to get batch locations"""
         raise NotImplementedError("Sun data should not be used to get batch locations")
 

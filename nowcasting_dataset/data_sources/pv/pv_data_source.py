@@ -113,13 +113,22 @@ class PVDataSource(ImageDataSource):
         logger.debug(f"Loading PV Power data from {self.filenames}")
 
         # collect all metadata together
-        pv_power = []
+        pv_power_all = []
         for filename in self.filenames:
-            pv_power.append(
+            pv_power_all.append(
                 load_solar_pv_data(filename, start_dt=self.start_datetime, end_dt=self.end_datetime)
             )
 
-        pv_power = pd.concat(pv_power)
+        # join together pv power. Index is time, columns are pv ids. Make sure the ids are unique
+        pv_power = pv_power_all.pop(0)
+        while len(pv_power_all) > 0:
+
+            # Make sure the ids are unique
+            indexes = list(pv_power.columns)
+            new_indexes = list(pv_power_all[0].columns)
+            assert len(pd.unique(indexes + new_indexes)) == len(indexes) + len(new_indexes)
+
+            pv_power.join(pv_power_all.pop(0))
 
         # A bit of hand-crafted cleaning
         if 30248 in pv_power.columns:
@@ -135,6 +144,7 @@ class PVDataSource(ImageDataSource):
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
         # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
         # doesn't need all the data to be perfectly aligned).
+        print(pv_power)
         pv_power = pv_power.resample("5T").interpolate(method="time", limit=3)
         pv_power.dropna(axis="index", how="all", inplace=True)
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)

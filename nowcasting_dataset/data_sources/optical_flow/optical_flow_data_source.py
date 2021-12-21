@@ -97,7 +97,7 @@ class OpticalFlowDataSource(DataSource):
         self.source_data_source.open()
 
     def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_meter_osgb: Number, y_meter_osgb: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get Optical Flow Example data
@@ -106,14 +106,16 @@ class OpticalFlowDataSource(DataSource):
             t0_datetime_utc: list of timestamps for the datetime of the batches.
                 The batch will also include data for historic and future depending
                 on `history_minutes` and `future_minutes`.
-            x_meter_osgb: x center batch locations
-            y_meter_osgb: y center batch locations
+            x_center_osgb: x center batch locations
+            y_center_osgb: y center batch locations
 
         Returns: Example Data
 
         """
         satellite_data: xr.Dataset = self.source_data_source.get_example(
-            t0_datetime_utc=t0_datetime_utc, x_center_osgb=x_meter_osgb, y_center_osgb=y_meter_osgb
+            t0_datetime_utc=t0_datetime_utc,
+            x_center_osgb=x_center_osgb,
+            y_center_osgb=y_center_osgb,
         )
         satellite_data = satellite_data["data"]
         optical_flow_data_array = self._compute_and_return_optical_flow(satellite_data)

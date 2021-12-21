@@ -19,7 +19,9 @@ def test_get_example(test_data_folder):  # noqa 103
     y = 666180.3018829626
     start_dt = pd.Timestamp("2020-04-01 12:00:00.000")
 
-    example = sun_data_source.get_example(t0_datetime_utc=start_dt, x_meter_osgb=x, y_meter_osgb=y)
+    example = sun_data_source.get_example(
+        t0_datetime_utc=start_dt, x_center_osgb=x, y_center_osgb=y
+    )
 
     assert len(example.elevation) == 19
     assert len(example.azimuth) == 19
@@ -34,7 +36,9 @@ def test_get_example_different_year(test_data_folder):  # noqa 103
     y = 666180.3018829626
     start_dt = pd.Timestamp("2021-04-01 12:00:00.000")
 
-    example = sun_data_source.get_example(t0_datetime_utc=start_dt, x_meter_osgb=x, y_meter_osgb=y)
+    example = sun_data_source.get_example(
+        t0_datetime_utc=start_dt, x_center_osgb=x, y_center_osgb=y
+    )
 
     assert len(example.elevation) == 19
     assert len(example.azimuth) == 19

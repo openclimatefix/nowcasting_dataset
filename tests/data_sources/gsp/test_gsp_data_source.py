@@ -118,8 +118,8 @@ def test_gsp_pv_data_source_get_example():
     x_locations, y_locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
     example = gsp.get_example(
         t0_datetime_utc=gsp.gsp_power.index[0],
-        x_meter_osgb=x_locations[0],
-        y_meter_osgb=y_locations[0],
+        x_center_osgb=x_locations[0],
+        y_center_osgb=y_locations[0],
     )
 
     assert len(example.id) == len(example.power_mw[0])
@@ -149,8 +149,8 @@ def test_gsp_pv_data_source_get_batch():
 
     batch = gsp.get_batch(
         t0_datetimes_utc=gsp.gsp_power.index[batch_size : 2 * batch_size],
-        x_meters_osgb=x_locations[0:batch_size],
-        y_meters_osgb=y_locations[0:batch_size],
+        x_centers_osgb=x_locations[0:batch_size],
+        y_centers_osgb=y_locations[0:batch_size],
     )
 
     assert len(batch.power_mw[0]) == 4

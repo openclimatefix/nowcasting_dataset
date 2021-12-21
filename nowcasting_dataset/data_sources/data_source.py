@@ -212,8 +212,8 @@ class DataSource:
             # Generate batch.
             batch = self.get_batch(
                 t0_datetimes_utc=locations_for_batch.t0_datetime_UTC,
-                x_meters_osgb=locations_for_batch.x_center_OSGB,
-                y_meters_osgb=locations_for_batch.y_center_OSGB,
+                x_centers_osgb=locations_for_batch.x_center_OSGB,
+                y_centers_osgb=locations_for_batch.y_center_OSGB,
             )
 
             # Save batch to disk.
@@ -241,8 +241,8 @@ class DataSource:
     def get_batch(
         self,
         t0_datetimes_utc: pd.DatetimeIndex,
-        x_meters_osgb: Iterable[Number],
-        y_meters_osgb: Iterable[Number],
+        x_centers_osgb: Iterable[Number],
+        y_centers_osgb: Iterable[Number],
     ) -> DataSourceOutput:
         """
         Get Batch Data
@@ -252,20 +252,20 @@ class DataSource:
                 The batch will also include data for historic and future depending
                 on `history_minutes` and `future_minutes`.
                 The batch size is given by the length of the t0_datetimes.
-            x_meters_osgb: x center batch locations
-            y_meters_osgb: y center batch locations
+            x_centers_osgb: x center batch locations
+            y_centers_osgb: y center batch locations
 
         Returns: Batch data.
         """
-        assert len(t0_datetimes_utc) == len(x_meters_osgb), (
+        assert len(t0_datetimes_utc) == len(x_centers_osgb), (
             f"len(t0_datetimes) != len(x_locations): "
-            f"{len(t0_datetimes_utc)} != {len(x_meters_osgb)}"
+            f"{len(t0_datetimes_utc)} != {len(x_centers_osgb)}"
         )
-        assert len(t0_datetimes_utc) == len(y_meters_osgb), (
+        assert len(t0_datetimes_utc) == len(y_centers_osgb), (
             f"len(t0_datetimes) != len(y_locations): "
-            f"{len(t0_datetimes_utc)} != {len(y_meters_osgb)}"
+            f"{len(t0_datetimes_utc)} != {len(y_centers_osgb)}"
         )
-        zipped = list(zip(t0_datetimes_utc, x_meters_osgb, y_meters_osgb))
+        zipped = list(zip(t0_datetimes_utc, x_centers_osgb, y_centers_osgb))
         batch_size = len(t0_datetimes_utc)
 
         with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
@@ -378,8 +378,8 @@ class DataSource:
     def get_example(
         self,
         t0_datetime_utc: pd.Timestamp,  #: Datetime of "now": The most recent obs.
-        x_meter_osgb: Number,  #: Centre, in OSGB coordinates.
-        y_meter_osgb: Number,  #: Centre, in OSGB coordinates.
+        x_center_osgb: Number,  #: Centre, in OSGB coordinates.
+        y_center_osgb: Number,  #: Centre, in OSGB coordinates.
     ) -> xr.Dataset:
         """Must be overridden by child classes."""
         raise NotImplementedError()
@@ -469,7 +469,7 @@ class ZarrDataSource(ImageDataSource):
         """
         selected_data = self._get_time_slice(t0_datetime_utc)
         bounding_box = self._square.bounding_box_centered_on(
-            x_meters_center=x_center_osgb, y_meters_center=y_center_osgb
+            x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         selected_data = selected_data.sel(
             x_osgb=slice(bounding_box.left, bounding_box.right),

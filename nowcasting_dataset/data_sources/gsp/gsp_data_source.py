@@ -239,7 +239,7 @@ class GSPDataSource(ImageDataSource):
         return x_centers_osgb, y_centers_osgb
 
     def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_meter_osgb: Number, y_meter_osgb: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords.
@@ -248,8 +248,8 @@ class GSPDataSource(ImageDataSource):
 
         Args:
             t0_datetime_utc: datetime of "now". History and forecast are also returned
-            x_meter_osgb: x location of center GSP.
-            y_meter_osgb: y location of center GSP.
+            x_center_osgb: x location of center GSP.
+            y_center_osgb: y location of center GSP.
 
         Returns: Dictionary with GSP data in it.
         """
@@ -260,11 +260,11 @@ class GSPDataSource(ImageDataSource):
 
         # get the main gsp id, and the ids of the gsp in the bounding box
         all_gsp_ids = self._get_gsp_ids_in_roi(
-            x_meter_osgb, y_meter_osgb, selected_gsp_power.columns
+            x_center_osgb, y_center_osgb, selected_gsp_power.columns
         )
         if self.get_center:
             central_gsp_id = self._get_central_gsp_id(
-                x_meter_osgb, y_meter_osgb, selected_gsp_power.columns
+                x_center_osgb, y_center_osgb, selected_gsp_power.columns
             )
             assert central_gsp_id in all_gsp_ids
 
@@ -330,16 +330,16 @@ class GSPDataSource(ImageDataSource):
 
     def _get_central_gsp_id(
         self,
-        x_meters_center: Number,
-        y_meters_center: Number,
+        x_center_osgb: Number,
+        y_center_osgb: Number,
         gsp_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> int:
         """
         Get the GSP id of the central GSP from coordinates
 
         Args:
-            x_meters_center: the location of the gsp (x)
-            y_meters_center: the location of the gsp (y)
+            x_center_osgb: the location of the gsp (x)
+            y_center_osgb: the location of the gsp (y)
             gsp_ids_with_data_for_timeslice: List of gsp ids that are available for a certain
                 timeslice.
 
@@ -347,32 +347,32 @@ class GSPDataSource(ImageDataSource):
         """
         logger.debug("Getting Central GSP")
 
-        # If x_meters_center and y_meters_center have been chosen
+        # If x_center_osgb and y_center_osgb have been chosen
         # by {}.get_locations() then we just have
         # to find the gsp_ids at that exact location.  This is
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.
         meta_data_index = self.metadata.index[
-            np.isclose(self.metadata.location_x, x_meters_center, rtol=1e-05, atol=1e-05)
-            & np.isclose(self.metadata.location_y, y_meters_center, rtol=1e-05, atol=1e-05)
+            np.isclose(self.metadata.location_x, x_center_osgb, rtol=1e-05, atol=1e-05)
+            & np.isclose(self.metadata.location_y, y_center_osgb, rtol=1e-05, atol=1e-05)
         ]
         gsp_ids = self.metadata.loc[meta_data_index].gsp_id.values
 
         if len(gsp_ids) == 0:
-            # TODO: Implement finding GSP closest to x_meters_center,
-            # y_meters_center.  This will probably be quite slow, so always
+            # TODO: Implement finding GSP closest to x_center_osgb,
+            # y_center_osgb.  This will probably be quite slow, so always
             # try finding an exact match first (which is super-fast).
             raise NotImplementedError(
                 "Not yet implemented the ability to find GSP *nearest*"
-                " (but not at the identical location to) x_meters_center and"
-                " y_meters_center."
+                " (but not at the identical location to) x_center_osgb and"
+                " y_center_osgb."
             )
 
         gsp_ids = gsp_ids_with_data_for_timeslice.intersection(gsp_ids)
 
         if len(gsp_ids) == 0:
             raise NotImplementedError(
-                f"Could not find GSP id for {x_meters_center}, {y_meters_center} "
+                f"Could not find GSP id for {x_center_osgb}, {y_center_osgb} "
                 f"({gsp_ids}) and {gsp_ids_with_data_for_timeslice}"
             )
 
@@ -380,8 +380,8 @@ class GSPDataSource(ImageDataSource):
 
     def _get_gsp_ids_in_roi(
         self,
-        x_meters_center: Number,
-        y_meters_center: Number,
+        x_center_osgb: Number,
+        y_center_osgb: Number,
         gsp_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
         """
@@ -390,17 +390,17 @@ class GSPDataSource(ImageDataSource):
         The geospatial region of interest is defined by self.square.
 
         Args:
-            x_meters_center: center of area of interest (x coords)
-            y_meters_center: center of area of interest (y coords)
+            x_center_osgb: center of area of interest (x coords)
+            y_center_osgb: center of area of interest (y coords)
             gsp_ids_with_data_for_timeslice: ids that are avialble for a specific time slice
 
         Returns: list of GSP ids that are in area of interest
         """
-        logger.debug(f"Getting all gsp in ROI ({x_meters_center=},{y_meters_center=})")
+        logger.debug(f"Getting all gsp in ROI ({x_center_osgb=},{y_center_osgb=})")
 
         # creating bounding box
         bounding_box = self._square.bounding_box_centered_on(
-            x_meters_center=x_meters_center, y_meters_center=y_meters_center
+            x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
 
         # get all x and y locations of gsp

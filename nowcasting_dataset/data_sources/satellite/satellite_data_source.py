@@ -179,8 +179,8 @@ class SatelliteDataSource(ZarrDataSource):
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
                 "Example is wrong shape! "
-                f"x_meters_center={x_center_osgb}\n"
-                f"y_meters_center={y_center_osgb}\n"
+                f"x_center_osgb={x_center_osgb}\n"
+                f"y_center_osgb={y_center_osgb}\n"
                 f"t0_dt={t0_datetime_utc}\n"
                 f"times are {selected_data.time}\n"
                 f"expected shape={self._shape_of_example}\n"

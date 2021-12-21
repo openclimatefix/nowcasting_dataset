@@ -1,7 +1,7 @@
 This folder contains the code for the different data sources.
 
 # Data Sources
-- metadata: metadata for the batch like t0_dt, x_meters_center ....
+- metadata: metadata for the batch like t0_dt, x_centers_osgb ....
 - datetime: datetime information like 'hour_of_day'
 - gsp: Grid Supply Point data from Sheffield Solar (e.g. the estimated total solar PV power generation for each
 GSP region, and the geospatial shape of each GSP region).
@@ -62,13 +62,15 @@ inherits from `nowcasting_dataset.data_source.DataSource`. This class will need 
 (there is also an option to use a `get_batch` method instead)
 ```python
 def get_example(
-    self, t0_dateteim_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
+    self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
 ) -> NewDataSource:
     """
     Get a single example
 
     Args:
-        t0_dateteim_utc: Current datetime for the example, unused
+        t0_datetime_utc: At inference time, t0 can be thought of as "now":
+            it is the time of the most recent observation.
+            Anything after t0 is "future". Anything before t0 is "history".
         x_center_osgb: Center of the example in meters in the x direction in OSGB coordinates
         y_center_osgb: Center of the example in meters in the y direction in OSGB coordinates
 

@@ -148,27 +148,27 @@ class PVDataSource(ImageDataSource):
 
     def _get_central_pv_system_id(
         self,
-        x_meters_center: Number,
-        y_meters_center: Number,
+        x_center_osgb: Number,
+        y_center_osgb: Number,
         pv_system_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> int:
-        # If x_meters_center and y_meters_center have been chosen
+        # If x_center_osgb and y_center_osgb have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
         # to find the pv_system_ids at that exact location.  This is
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.
         pv_system_ids = self.pv_metadata.index[
-            np.isclose(self.pv_metadata.location_x, x_meters_center)
-            & np.isclose(self.pv_metadata.location_y, y_meters_center)
+            np.isclose(self.pv_metadata.location_x, x_center_osgb)
+            & np.isclose(self.pv_metadata.location_y, y_center_osgb)
         ]
         if len(pv_system_ids) == 0:
-            # TODO: Implement finding PV systems closest to x_meters_center,
-            # y_meters_center.  This will probably be quite slow, so always
+            # TODO: Implement finding PV systems closest to x_center_osgb,
+            # y_center_osgb.  This will probably be quite slow, so always
             # try finding an exact match first (which is super-fast).
             raise NotImplementedError(
                 "Not yet implemented the ability to find PV systems *nearest*"
-                " (but not at the identical location to) x_meters_center and"
-                " y_meters_center."
+                " (but not at the identical location to) x_center_osgb and"
+                " y_center_osgb."
             )
 
         pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(pv_system_ids)
@@ -186,8 +186,8 @@ class PVDataSource(ImageDataSource):
 
     def _get_all_pv_system_ids_in_roi(
         self,
-        x_meters_center: Number,
-        y_meters_center: Number,
+        x_center_osgb: Number,
+        y_center_osgb: Number,
         pv_system_ids_with_data_for_timeslice: pd.Int64Index,
     ) -> pd.Int64Index:
         """
@@ -196,10 +196,10 @@ class PVDataSource(ImageDataSource):
         This is for all the PV systems within the geospatial
         region of interest, defined by self.square.
         """
-        logger.debug(f"Getting PV example data for {x_meters_center} and {y_meters_center}")
+        logger.debug(f"Getting PV example data for {x_center_osgb} and {y_center_osgb}")
 
         bounding_box = self._square.bounding_box_centered_on(
-            x_meters_center=x_meters_center, y_meters_center=y_meters_center
+            x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         x = self.pv_metadata.location_x
         y = self.pv_metadata.location_y
@@ -216,7 +216,7 @@ class PVDataSource(ImageDataSource):
         return pv_system_ids
 
     def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_meter_osgb: Number, y_meter_osgb: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get Example data for PV data
@@ -225,8 +225,8 @@ class PVDataSource(ImageDataSource):
             t0_datetime_utc: list of timestamps for the datetime of the batches.
                 The batch will also include data for historic and future depending
                 on 'history_minutes' and 'future_minutes'.
-            x_meter_osgb: x center batch locations
-            y_meter_osgb: y center batch locations
+            x_center_osgb: x center batch locations
+            y_center_osgb: y center batch locations
 
         Returns: Example data
 
@@ -235,11 +235,11 @@ class PVDataSource(ImageDataSource):
 
         selected_pv_power, selected_pv_capacity = self._get_time_slice(t0_datetime_utc)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(
-            x_meter_osgb, y_meter_osgb, selected_pv_power.columns
+            x_center_osgb, y_center_osgb, selected_pv_power.columns
         )
         if self.get_center:
             central_pv_system_id = self._get_central_pv_system_id(
-                x_meter_osgb, y_meter_osgb, selected_pv_power.columns
+                x_center_osgb, y_center_osgb, selected_pv_power.columns
             )
 
             # By convention, the 'target' PV system ID (the one in the center

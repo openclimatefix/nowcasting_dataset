@@ -636,7 +636,7 @@ def create_metadata_dataset() -> xr.Dataset:
 
     data = (xr.DataArray.from_dict(d)).to_dataset(name="data")
 
-    for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
+    for v in ["x_centers_osgb", "y_centers_osgb", "object_at_center_label"]:
         d: dict = {"dims": ("t0_dt",), "data": [np.random.randint(0, 1000)]}
         d: xr.Dataset = (xr.DataArray.from_dict(d)).to_dataset(name=v)
         data[v] = getattr(d, v)

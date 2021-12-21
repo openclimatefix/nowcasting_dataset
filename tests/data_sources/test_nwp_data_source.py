@@ -45,7 +45,7 @@ def test_nwp_data_source_batch():  # noqa: D103
     x = nwp._data.x_osgb[0:4].values
     y = nwp._data.y_osgb[0:4].values
 
-    batch = nwp.get_batch(t0_datetimes_utc=t0_datetimes, x_meters_osgb=x, y_meters_osgb=y)
+    batch = nwp.get_batch(t0_datetimes_utc=t0_datetimes, x_centers_osgb=x, y_centers_osgb=y)
 
     # batch size 4
     # channel 1
@@ -68,7 +68,7 @@ def test_nwp_data_source_batch_not_on_hour():  # noqa: D103
     x = nwp._data.x_osgb[0:1].values
     y = nwp._data.y_osgb[0:1].values
 
-    batch = nwp.get_batch(t0_datetimes_utc=t0_datetimes, x_meters_osgb=x, y_meters_osgb=y)
+    batch = nwp.get_batch(t0_datetimes_utc=t0_datetimes, x_centers_osgb=x, y_centers_osgb=y)
 
     # batch size 1
     # channel 1

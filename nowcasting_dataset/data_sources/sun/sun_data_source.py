@@ -39,15 +39,15 @@ class SunDataSource(DataSource):
         nd_fs_utils.check_path_exists(self.zarr_path)
 
     def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_meter_osgb: Number, y_meter_osgb: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get example data from t0_dt and x and y xoordinates
 
         Args:
             t0_datetime_utc: the timestamp to get the sun data for
-            x_meter_osgb: the x coordinate (OSGB)
-            y_meter_osgb: the y coordinate (OSGB)
+            x_center_osgb: the x coordinate (OSGB)
+            y_center_osgb: the y coordinate (OSGB)
 
         Returns: Dictionary of azimuth and elevation data
         """
@@ -65,7 +65,7 @@ class SunDataSource(DataSource):
             [[float(z.split(",")[0]), float(z.split(",")[1])] for z in self.azimuth.columns]
         )
         location = locations[
-            np.isclose(locations[:, 0], x_meter_osgb) & np.isclose(locations[:, 1], y_meter_osgb)
+            np.isclose(locations[:, 0], x_center_osgb) & np.isclose(locations[:, 1], y_center_osgb)
         ]
         # lets make sure there is atleast one
         assert len(location) > 0
@@ -76,7 +76,7 @@ class SunDataSource(DataSource):
         # something like '22222.555,3333.6666'
         name = x_y_to_name(x=location[0], y=location[1])
 
-        del x_meter_osgb, y_meter_osgb
+        del x_center_osgb, y_center_osgb
         azimuth = self.azimuth.loc[start_dt:end_dt][name]
         elevation = self.elevation.loc[start_dt:end_dt][name]
 

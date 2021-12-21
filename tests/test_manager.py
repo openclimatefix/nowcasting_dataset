@@ -84,6 +84,32 @@ def test_load_yaml_configuration():  # noqa: D103
     assert isinstance(manager.config.process.local_temp_path, Path)
 
 
+def test_initialise_data_source_with_loggers():
+    """Check that initalise the data source and check it ends up in the logger"""
+
+    # set up
+    manager = Manager()
+
+    # make configuration
+    local_path = Path(nowcasting_dataset.__file__).parent.parent
+    filename = local_path / "tests" / "config" / "test.yaml"
+    manager.load_yaml_configuration(filename=filename)
+
+    with tempfile.TemporaryDirectory() as dst_path:
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.configure_loggers(log_level="DEBUG")
+        manager.initialise_data_sources()
+
+        # check logs is appended to
+        for log_file in ["gsp", "satellite", "hrvsatellite"]:
+            filename = f"{dst_path}/{log_file}.log"
+            assert os.path.exists(filename)
+            with open(filename) as f:
+                line_0 = next(f)
+                assert "The configuration for" in line_0
+
+
 def test_get_daylight_datetime_index():
     """Check that 'manager' gets the correct t0 datetime over nighttime"""
     filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"

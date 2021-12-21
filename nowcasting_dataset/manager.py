@@ -107,6 +107,14 @@ class Manager:
                 continue
             config_for_data_source = config_for_data_source.dict()
 
+            # save config to data source logger
+            data_source_logger = logging.getLogger(
+                f"nowcasting_dataset.data_sources.{data_source_name}"
+            )
+            data_source_logger.debug(
+                f"The configuration for {data_source_name} is {config_for_data_source}"
+            )
+
             # Strip `<data_source_name>_` from the config option field names.
             config_for_data_source = nd_utils.remove_regex_pattern_from_keys(
                 config_for_data_source, pattern_to_remove=f"^{data_source_name}_"

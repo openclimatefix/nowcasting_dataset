@@ -73,9 +73,9 @@ class SatelliteDataSource(ZarrDataSource):
         """Get the model that is used in the batch"""
         return Satellite
 
-    def _get_time_slice(self, t0_dt: pd.Timestamp) -> xr.DataArray:
-        start_dt = self._get_start_dt(t0_dt)
-        end_dt = self._get_end_dt(t0_dt)
+    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> xr.DataArray:
+        start_dt = self._get_start_dt(t0_datetime_utc)
+        end_dt = self._get_end_dt(t0_datetime_utc)
         data = self.data.sel(time=slice(start_dt, end_dt))
         assert type(data) == xr.DataArray
 
@@ -149,38 +149,39 @@ class SatelliteDataSource(ZarrDataSource):
         return data_array
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get Example data
 
         Args:
-            t0_dt: list of timestamps for the datetime of the batches. The batch will also include
-                data for historic and future depending on `history_minutes` and `future_minutes`.
-            x_meters_center: x center batch locations
-            y_meters_center: y center batch locations
+            t0_datetime_utc: list of timestamps for the datetime of the batches.
+                The batch will also include data for historic and future depending
+                on `history_minutes` and `future_minutes`.
+            x_center_osgb: x center batch locations
+            y_center_osgb: y center batch locations
 
         Returns: Example Data
 
         """
-        selected_data = self._get_time_slice(t0_dt)
+        selected_data = self._get_time_slice(t0_datetime_utc)
         selected_data = self.get_spatial_region_of_interest(
             data_array=selected_data,
-            x_center_osgb=x_meters_center,
-            y_center_osgb=y_meters_center,
+            x_center_osgb=x_center_osgb,
+            y_center_osgb=y_center_osgb,
         )
 
         if "variable" in list(selected_data.dims):
             selected_data = selected_data.rename({"variable": "channels"})
 
-        selected_data = self._post_process_example(selected_data, t0_dt)
+        selected_data = self._post_process_example(selected_data, t0_datetime_utc)
 
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
                 "Example is wrong shape! "
-                f"x_meters_center={x_meters_center}\n"
-                f"y_meters_center={y_meters_center}\n"
-                f"t0_dt={t0_dt}\n"
+                f"x_center_osgb={x_center_osgb}\n"
+                f"y_center_osgb={y_center_osgb}\n"
+                f"t0_dt={t0_datetime_utc}\n"
                 f"times are {selected_data.time}\n"
                 f"expected shape={self._shape_of_example}\n"
                 f"actual shape {selected_data.shape}"

@@ -58,21 +58,21 @@ class TopographicDataSource(ImageDataSource):
         nd_fs_utils.check_path_exists(self.filename)
 
     def get_example(
-        self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
     ) -> xr.Dataset:
         """
         Get a single example
 
         Args:
-            t0_dt: Current datetime for the example, unused
-            x_meters_center: Center of the example in meters in the x direction in OSGB coordinates
-            y_meters_center: Center of the example in meters in the y direction in OSGB coordinates
+            t0_datetime_utc: Current datetime for the example, unused
+            x_center_osgb: Center of the example in meters in the x direction in OSGB coordinates
+            y_center_osgb: Center of the example in meters in the y direction in OSGB coordinates
 
         Returns:
             Example containing topographic data for the selected area
         """
         bounding_box = self._square.bounding_box_centered_on(
-            x_meters_center=x_meters_center, y_meters_center=y_meters_center
+            x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         selected_data = self._data.sel(
             x_osgb=slice(bounding_box.left, bounding_box.right),
@@ -93,13 +93,13 @@ class TopographicDataSource(ImageDataSource):
             x_osgb=slice(0, self._square.size_pixels), y_osgb=slice(0, self._square.size_pixels)
         )
 
-        selected_data = self._post_process_example(selected_data, t0_dt)
+        selected_data = self._post_process_example(selected_data, t0_datetime_utc)
         if selected_data.shape != self._shape_of_example:
             raise RuntimeError(
                 "Example is wrong shape! "
-                f"x_meters_center={x_meters_center}\n"
-                f"y_meters_center={y_meters_center}\n"
-                f"t0_dt={t0_dt}\n"
+                f"x_center_osgb={x_center_osgb}\n"
+                f"y_center_osgb={y_center_osgb}\n"
+                f"t0_dt={t0_datetime_utc}\n"
                 f"expected shape={self._shape_of_example}\n"
                 f"actual shape {selected_data.shape}"
             )

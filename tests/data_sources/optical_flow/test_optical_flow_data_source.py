@@ -43,6 +43,6 @@ def test_optical_flow_get_example(
     optical_flow_datasource.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     example = optical_flow_datasource.get_example(
-        t0_dt=t0_dt, x_meters_center=10_000, y_meters_center=10_000
+        t0_datetime_utc=t0_dt, x_center_osgb=10_000, y_center_osgb=10_000
     )
     assert example["data"].shape == (24, 32, 32, 1)  # timesteps, height, width, channels

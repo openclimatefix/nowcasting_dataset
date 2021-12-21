@@ -99,7 +99,7 @@ class DataSourceOutput(PydanticXArrayDataSet):
     ):
         """Check data is less than a certain value"""
         if (data > max_value).any():
-            message = f"Some {self.__class__.__name__} data values are less than {max_value}"
+            message = f"Some {self.__class__.__name__} data values are more than {max_value}"
             if variable_name is not None:
                 message += f" ({variable_name})"
             logger.error(message)

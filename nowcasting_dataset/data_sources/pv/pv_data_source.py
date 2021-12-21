@@ -32,8 +32,8 @@ class PVDataSource(ImageDataSource):
     defined by image_size_pixels and meters_per_pixel.
     """
 
-    filename: Union[str, Path]
-    metadata_filename: Union[str, Path]
+    filenames: Union[str, Path, List]
+    metadata_filenames: Union[str, Path, List]
     # TODO: Issue #425: Use config to set start_dt and end_dt.
     start_datetime: Optional[datetime.datetime] = None
     end_datetime: Optional[datetime.datetime] = None
@@ -49,12 +49,18 @@ class PVDataSource(ImageDataSource):
         """Post Init"""
         super().__post_init__(image_size_pixels, meters_per_pixel)
 
+        if not isinstance(self.filenames, list):
+            self.filenames = [self.filenames]
+
+        if not isinstance(self.metadata_filenames, list):
+            self.metadata_filenames = [self.metadata_filenames]
+
         self.rng = np.random.default_rng()
         self.load()
 
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
-        for filename in [self.filename, self.metadata_filename]:
+        for filename in self.filenames + self.metadata_filenames:
             nd_fs_utils.check_path_exists(filename)
 
     def load(self):
@@ -72,9 +78,15 @@ class PVDataSource(ImageDataSource):
 
     def _load_metadata(self):
 
-        logger.debug(f"Loading PV metadata from {self.metadata_filename}")
+        logger.debug(f"Loading PV metadata from {self.metadata_filenames}")
 
-        pv_metadata = pd.read_csv(self.metadata_filename, index_col="system_id")
+        # collect all metadata together
+        pv_metadata = []
+        for metadata_filename in self.metadata_filenames:
+            pv_metadata.append(pd.read_csv(metadata_filename, index_col="system_id"))
+        pv_metadata = pd.concat(pv_metadata)
+
+        # drop any systems with no lon or lat
         pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
 
         pv_metadata["location_x"], pv_metadata["location_y"] = geospatial.lat_lon_to_osgb(
@@ -98,11 +110,16 @@ class PVDataSource(ImageDataSource):
 
     def _load_pv_power(self):
 
-        logger.debug(f"Loading PV Power data from {self.filename}")
+        logger.debug(f"Loading PV Power data from {self.filenames}")
 
-        pv_power = load_solar_pv_data(
-            self.filename, start_dt=self.start_datetime, end_dt=self.end_datetime
-        )
+        # collect all metadata together
+        pv_power = []
+        for filename in self.filenames:
+            pv_power.append(
+                load_solar_pv_data(filename, start_dt=self.start_datetime, end_dt=self.end_datetime)
+            )
+
+        pv_power = pd.concat(pv_power)
 
         # A bit of hand-crafted cleaning
         if 30248 in pv_power.columns:

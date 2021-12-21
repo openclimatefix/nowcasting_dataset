@@ -33,8 +33,10 @@ input_data:
   pv:
     forecast_minutes: 60
     history_minutes: 30
-    pv_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf
-    pv_metadata_filename: gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv
+    pv_filenames:
+      - gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf
+    pv_metadata_filenames:
+      - gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv
     get_center: false
 
   #---------------------- Satellite -------------

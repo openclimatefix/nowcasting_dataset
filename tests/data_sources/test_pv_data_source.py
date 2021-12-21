@@ -46,8 +46,8 @@ def test_get_example_and_batch():  # noqa: D103
         forecast_minutes=60,
         image_size_pixels=64,
         meters_per_pixel=2000,
-        filename=PV_DATA_FILENAME,
-        metadata_filename=PV_METADATA_FILENAME,
+        filenames=PV_DATA_FILENAME,
+        metadata_filenames=PV_METADATA_FILENAME,
         start_datetime=datetime.fromisoformat("2020-04-01 00:00:00.000"),
         end_datetime=datetime.fromisoformat("2020-04-02 00:00:00.000"),
         load_azimuth_and_elevation=False,
@@ -79,8 +79,8 @@ def test_passive():
     filename_metadata = output_dir + "/system_metadata.csv"
 
     pv = PVDataSource(
-        filename=filename,
-        metadata_filename=filename_metadata,
+        filenames=filename,
+        metadata_filenames=filename_metadata,
         start_datetime=datetime(2020, 3, 28),
         end_datetime=datetime(2020, 4, 1),
         history_minutes=60,

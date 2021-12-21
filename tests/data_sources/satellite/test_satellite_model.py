@@ -10,7 +10,9 @@ from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 
 
 def test_satellite_init():  # noqa: D103
-    _ = satellite_fake()
+    satellite = satellite_fake()
+
+    assert satellite.x_osgb.dims == ("example", "x_osgb_index")
 
 
 def test_satellite_validation():  # noqa: D103

@@ -47,13 +47,13 @@ class PVDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
-        super().__post_init__(image_size_pixels, meters_per_pixel)
-
         if not isinstance(self.filenames, list):
             self.filenames = [self.filenames]
 
         if not isinstance(self.metadata_filenames, list):
             self.metadata_filenames = [self.metadata_filenames]
+
+        super().__post_init__(image_size_pixels, meters_per_pixel)
 
         self.rng = np.random.default_rng()
         self.load()

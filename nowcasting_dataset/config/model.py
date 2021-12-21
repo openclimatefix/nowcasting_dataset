@@ -86,6 +86,12 @@ class DataSourceMixin(Base):
         "If set to None, the value is defaulted to InputData.default_history_minutes",
     )
 
+    log_level: str = Field(
+        "DEBUG",
+        description="The logging level for this data source. T"
+        "his is the default value and can be set in each data source",
+    )
+
     @property
     def seq_length_30_minutes(self):
         """How many steps are there in 30 minute datasets"""

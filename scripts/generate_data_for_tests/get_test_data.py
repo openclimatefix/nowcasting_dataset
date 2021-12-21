@@ -12,70 +12,89 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES, open_nwp
+from nowcasting_dataset.config.load import load_yaml_configuration
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import open_nwp
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
-PV_PATH = BUCKET / "PV/PVOutput.org"
-PV_METADATA_FILENAME = PV_PATH / "UK_PV_metadata.csv"
+filename = os.path.join(os.path.dirname(nowcasting_dataset.__file__), "config", "gcp.yaml")
+configuration = load_yaml_configuration(filename)
 
-# set up variables
-filename = PV_PATH / "UK_PV_timeseries_batch.nc"
-metadata_filename = f"gs://{PV_METADATA_FILENAME}"
 start_dt = datetime.fromisoformat("2020-04-01 00:00:00.000+00:00")
 end_dt = datetime.fromisoformat("2020-04-02 00:00:00.000+00:00")
+
 
 # link to gcs
 gcs = gcsfs.GCSFileSystem(access="read_only")
 
-# get metadata, reduce, and save to test data
-pv_metadata = pd.read_csv(
-    "gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv",
-    index_col="system_id",
-)
-pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
-pv_metadata = pv_metadata.iloc[500:600]  # just take a few sites
-pv_metadata.to_csv(f"{local_path}/tests/data/pv_metadata/UK_PV_metadata.csv")
+
+pv_metadata_provider = {}
+for metadata_filename in configuration.input_data.pv.pv_metadata_filenames:
+    print(metadata_filename)
+
+    pv_provider = "passiv" if "passiv" in metadata_filename.lower() else "pvoutput"
+    print(pv_provider)
+
+    # get metadata, reduce, and save to test data
+    pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
+    pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
+    pv_metadata = pv_metadata.iloc[500:600]  # just take a few sites
+    pv_metadata.to_csv(f"{local_path}/tests/data/pv/{pv_provider}/UK_PV_metadata.csv")
+    pv_metadata_provider[pv_provider] = pv_metadata
+
 
 # get pv_data
-t = time.time()
-with gcs.open(
-    "gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf", mode="rb"
-) as file:
-    file_bytes = file.read()
+for filename in configuration.input_data.pv.pv_filenames:
+    print(filename)
+    pv_provider = "passiv" if "passiv" in filename.lower() else "pvoutput"
+    print(pv_provider)
 
+    t = time.time()
+    with gcs.open(filename, mode="rb") as file:
+        file_bytes = file.read()
 
-with io.BytesIO(file_bytes) as file:
-    pv_power = xr.open_dataset(file, engine="h5netcdf")
-    pv_power = pv_power.sel(datetime=slice(start_dt, end_dt))
-    pv_power_df = pv_power.to_dataframe()
+    with io.BytesIO(file_bytes) as file:
+        pv_power = xr.open_dataset(file, engine="h5netcdf")
 
-# process data
-system_ids_xarray = [int(i) for i in pv_power.data_vars]
-system_ids = [
-    str(system_id) for system_id in pv_metadata.index.to_list() if system_id in system_ids_xarray
-]
+        # current pvoutput data only goes to 2019-08-20,
+        # so we are adding a year so that the test data is not empty
+        if pv_provider == "pvoutput":
+            pv_power.__setitem__("datetime", pv_power.datetime + pd.Timedelta("365 days"))
+        pv_power = pv_power.sel(datetime=slice(start_dt, end_dt))
+        pv_power_df = pv_power.to_dataframe()
 
-# only take the system ids we need
-pv_power_df = pv_power_df[system_ids]
-pv_power_df = pv_power_df.dropna(axis="columns", how="all")
-pv_power_df = pv_power_df.clip(lower=0, upper=5e7)
-pv_power_new = pv_power_df.to_xarray()
-# Drop one with null
-pv_power_new = pv_power_new.drop("3000")
-# print(pv_power_new.dims)
-# print(pv_power_new.coords["datetime"].values)
-# save to test data
-pv_power_new.to_zarr(f"{local_path}/tests/data/pv_data/test.zarr", compute=True, mode="w")
-pv_power = xr.load_dataset(f"{local_path}/tests/data/pv_data/test.zarr", engine="zarr")
-pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True, engine="h5netcdf")
+    # process data
+    system_ids_xarray = [int(i) for i in pv_power.data_vars]
+    system_ids = [
+        str(system_id)
+        for system_id in pv_metadata_provider[pv_provider].index.to_list()
+        if system_id in system_ids_xarray
+    ]
+
+    # only take the system ids we need
+    pv_power_df = pv_power_df[system_ids]
+    pv_power_df = pv_power_df.dropna(axis="columns", how="all")
+    pv_power_df = pv_power_df.clip(lower=0, upper=5e7)
+    pv_power_new = pv_power_df.to_xarray()
+    # Drop one with null
+    # pv_power_new = pv_power_new.drop("3000")
+    # print(pv_power_new.dims)
+    # print(pv_power_new.coords["datetime"].values)
+    # save to test data
+    zarr_filename = f"{local_path}/tests/data/pv/{pv_provider}/test.zarr"
+    pv_power_new.to_zarr(zarr_filename, compute=True, mode="w")
+    pv_power = xr.load_dataset(zarr_filename, engine="zarr")
+    pv_power.to_netcdf(zarr_filename.replace(".zarr", ".nc"), compute=True, engine="h5netcdf")
 ############################
 # NWP, this makes a file that is 9.5MW big
 ###########################
 
 # Numerical weather predictions
-NWP_BASE_PATH = "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
+NWP_BASE_PATH = (
+    "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/"
+    "nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
+)
 
 nwp_data_raw = open_nwp(zarr_path=NWP_BASE_PATH, consolidated=True)
 nwp_data = nwp_data_raw.sel(variable=["t"])

@@ -35,8 +35,10 @@ input_data:
     history_minutes: 30
     pv_filenames:
       - gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/passiv.netcdf
+      - gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc
     pv_metadata_filenames:
       - gs://solar-pv-nowcasting-data/PV/Passive/ocf_formatted/v0/system_metadata.csv
+      - gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv
     get_center: false
 
   #---------------------- Satellite -------------

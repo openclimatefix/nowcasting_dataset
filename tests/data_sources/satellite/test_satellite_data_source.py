@@ -73,6 +73,7 @@ def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: 
     assert np.isclose(top, sat_data.y_osgb.values[-1])
     assert len(sat_data.x_osgb) == pytest.IMAGE_SIZE_PIXELS
     assert len(sat_data.y_osgb) == pytest.IMAGE_SIZE_PIXELS
+    assert len(sat_data.x_osgb.shape) == 1
 
 
 @pytest.mark.parametrize(

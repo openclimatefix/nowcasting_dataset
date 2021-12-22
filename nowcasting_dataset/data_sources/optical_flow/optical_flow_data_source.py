@@ -92,6 +92,11 @@ class OpticalFlowDataSource(DataSource):
             meters_per_pixel=self.meters_per_pixel,
         )
 
+    @property
+    def sample_period_minutes(self) -> int:
+        """Override the default sample minutes"""
+        return 15
+
     def open(self):
         """Open the underlying self.source_data_source."""
         self.source_data_source.open()

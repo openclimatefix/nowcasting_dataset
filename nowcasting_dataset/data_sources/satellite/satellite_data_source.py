@@ -71,7 +71,10 @@ class SatelliteDataSource(ZarrDataSource):
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(
-            zarr_path=self.zarr_path, consolidated=self.consolidated, logger=self.logger
+            zarr_path=self.zarr_path,
+            consolidated=self.consolidated,
+            logger=self.logger,
+            sample_period_minutes=self.sample_period_minutes,
         )
 
     @staticmethod
@@ -314,7 +317,9 @@ def remove_acq_time_from_dataset_and_fix_time_coords(
     return dataset
 
 
-def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) -> xr.DataArray:
+def open_sat_data(
+    zarr_path: str, consolidated: bool, logger: logging.Logger, sample_period_minutes: int = 15
+) -> xr.DataArray:
     """Lazily opens the Zarr store.
 
     Adds 1 minute to the 'time' coordinates, so the timestamps
@@ -324,6 +329,7 @@ def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) ->
       zarr_path: Cloud URL or local path pattern.  If GCP URL, must start with 'gs://'
       consolidated: Whether or not the Zarr metadata is consolidated.
       logger: logger object to write to
+      sample_period_minutes: The sample period minutes that the data should be reduced to.
     """
     logger.debug("Opening satellite data: %s", zarr_path)
 
@@ -362,7 +368,9 @@ def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) ->
     data_array = data_array.reindex(x=data_array.x[::-1])
 
     # reindex satellite to 15 mins data
-    time = [t for t in data_array.time.values if pd.Timestamp(t).minute % 15 == 0]
+    time = [
+        t for t in data_array.time.values if pd.Timestamp(t).minute % sample_period_minutes == 0
+    ]
     data_array = data_array.sel(time=time)
 
     # Sanity check!

@@ -5,12 +5,14 @@ import logging
 import os
 from concurrent import futures
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 
+import numpy as np
 import xarray as xr
 from pydantic import BaseModel
 
 from nowcasting_dataset.config.model import Configuration
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.data_sources.fake.batch import make_fake_batch
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
@@ -21,6 +23,7 @@ from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.data_sources.satellite.satellite_model import HRVSatellite, Satellite
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
+from nowcasting_dataset.filesystem.utils import download_to_local
 from nowcasting_dataset.utils import get_netcdf_filename
 
 _LOG = logging.getLogger(__name__)
@@ -97,7 +100,7 @@ class Batch(BaseModel):
         local_netcdf_path: Union[Path, str],
         batch_idx: int,
         data_sources_names: Optional[list[str]] = None,
-    ):
+    ) -> Batch:
         """Load batch from netcdf file"""
         if data_sources_names is None:
             data_sources_names = Example.__fields__.keys()
@@ -153,6 +156,49 @@ class Batch(BaseModel):
 
         return batch
 
+    @staticmethod
+    def download_batch_and_load_batch(
+        batch_idx, tmp_path: str, src_path: str, data_sources_names: Optional[List[str]] = None
+    ) -> Batch:
+        """
+        Download batch from src to temp
+
+        Args:
+            batch_idx: which batch index to download and load
+            data_sources_names: list of data source names
+            tmp_path: the temporary path, where files are downloaded to
+            src_path: the path where files are downloaded from
+
+        Returns: batch object
+
+        """
+        if data_sources_names is None:
+            data_sources_names = list(Example.__fields__.keys())
+
+        if batch_idx == 0:
+            for data_source in data_sources_names:
+                os.mkdir(f"{tmp_path}/{data_source}")
+
+        # download all data files
+        for data_source in data_sources_names:
+            data_source_and_filename = f"{data_source}/{get_netcdf_filename(batch_idx)}"
+            download_to_local(
+                remote_filename=f"{src_path}/{data_source_and_filename}",
+                local_filename=f"{tmp_path}/{data_source_and_filename}",
+            )
+
+        # download locations file
+        download_to_local(
+            remote_filename=f"{src_path}/"
+            f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}",
+            local_filename=f"{tmp_path}/"
+            f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}",
+        )
+
+        return Batch.load_netcdf(
+            local_netcdf_path=tmp_path, batch_idx=batch_idx, data_sources_names=data_sources_names
+        )
+
 
 class Example(BaseModel):
     """
@@ -183,3 +229,105 @@ class Example(BaseModel):
             self.gsp,
             self.nwp,
         ]
+
+
+def join_two_batches(
+    batches: List[Batch],
+    data_sources_names: Optional[List[str]] = None,
+    first_batch_examples: Optional[List[int]] = None,
+    second_batch_examples: Optional[List[int]] = None,
+) -> Batch:
+    """
+    Join two batches
+
+    Args:
+        batches: list of batches to be mixes
+        data_sources_names: list of data source names
+        first_batch_examples: list of indexes that we should use for the first batch
+        second_batch_examples: list of indexes that we should use for the second batch
+
+    Returns: batch object, mixture of two given
+
+    """
+
+    if len(batches) == 1:
+        return batches[0]
+
+    assert len(batches) == 2, f"Can only join list of two batches, was given {len(batches)} batches"
+
+    if data_sources_names is None:
+        data_sources_names = list(Example.__fields__.keys())
+
+    batch = batches[0]
+    batch_size = batch.metadata.batch_size
+
+    first_batch_examples = _make_batch_examples(
+        batch_examples=first_batch_examples, batch_size=batch_size, size=int(batch_size / 2)
+    )
+    first_size = len(first_batch_examples)
+
+    second_batch_examples = _make_batch_examples(
+        batch_examples=second_batch_examples,
+        batch_size=batch_size - first_size,
+        size=int(batch_size / 2),
+    )
+    second_size = len(second_batch_examples)
+
+    # check the sizes are right
+    assert first_size + second_size == batch_size, (
+        f"number of first ({first_size}) "
+        f"and second ({second_size}) batch examples "
+        f"should add up to the batch size of {batch_size}"
+    )
+
+    for data_source in data_sources_names:
+        first = getattr(batches[0], data_source).sel(example=first_batch_examples)
+        second = getattr(batches[1], data_source).sel(example=second_batch_examples)
+
+        # reset examples index
+        first.__setitem__("example", range(0, first_size))
+        second.__setitem__("example", range(first_size, batch_size))
+
+        # join on example index
+        data = xr.concat([first, second], dim="example")
+
+        # order
+        data = data.sortby("example")
+
+        # set
+        setattr(batch, data_source, data)
+
+    # merge metadata
+    metadata = batch.metadata
+    # loop over metadata keys, but no 'batch_size'
+    for metadata_key in Metadata.__fields__.keys():
+        if metadata_key != "batch_size":
+            first_data = np.array(getattr(batch.metadata, metadata_key))[first_batch_examples]
+            second_data = np.array(getattr(batches[1].metadata, metadata_key))[
+                second_batch_examples
+            ]
+            data = np.concatenate(([first_data, second_data]))
+            setattr(metadata, metadata_key, data)
+
+    return batch
+
+
+def _make_batch_examples(
+    size: int, batch_size: int, batch_examples: Optional[List[str]] = None
+) -> List[int]:
+    """
+    Make random batch examples
+
+    Args:
+        size: the size of examples
+        batch_size: the total batch size of the batch
+        batch_examples: optional batch examples
+
+    Returns: random batch examples
+
+    """
+    # create first random indexes, if needed
+    if batch_examples is None:
+        batch_examples = np.random.choice(range(0, batch_size), size=size, replace=False)
+
+    return batch_examples

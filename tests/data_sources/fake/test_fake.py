@@ -32,11 +32,11 @@ def test_model(configuration):  # noqa: D103
 
     for i in range(configuration.process.batch_size):
         for data_source_name in ["satellite", "hrvsatellite", "opticalflow", "topographic", "nwp"]:
-            assert x_center_osgb[i] <= batch.__getattribute__(data_source_name).x.max()
-            assert x_center_osgb[i] >= batch.__getattribute__(data_source_name).x.min()
-            assert y_center_osgb[i] <= batch.__getattribute__(data_source_name).y.max()
-            assert y_center_osgb[i] >= batch.__getattribute__(data_source_name).y.min()
+            assert x_center_osgb[i] <= batch.__getattribute__(data_source_name).x_osgb.max()
+            assert x_center_osgb[i] >= batch.__getattribute__(data_source_name).x_osgb.min()
+            assert y_center_osgb[i] <= batch.__getattribute__(data_source_name).y_osgb.max()
+            assert y_center_osgb[i] >= batch.__getattribute__(data_source_name).y_osgb.min()
         # check first system is the center coordinates
         for data_source_name in ["gsp", "pv"]:
-            assert x_center_osgb[i] == batch.__getattribute__(data_source_name).x_coords[i, 0]
-            assert y_center_osgb[i] == batch.__getattribute__(data_source_name).y_coords[i, 0]
+            assert x_center_osgb[i] == batch.__getattribute__(data_source_name).x_osgb[i, 0]
+            assert y_center_osgb[i] == batch.__getattribute__(data_source_name).y_osgb[i, 0]

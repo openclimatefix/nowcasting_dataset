@@ -60,15 +60,17 @@ inherits from `nowcasting_dataset.data_source.DataSource`. This class will need 
 (there is also an option to use a `get_batch` method instead)
 ```python
 def get_example(
-    self, t0_dt: pd.Timestamp, x_meters_center: Number, y_meters_center: Number
+    self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
 ) -> NewDataSource:
     """
     Get a single example
 
     Args:
-        t0_dt: Current datetime for the example, unused
-        x_meters_center: Center of the example in meters in the x direction in OSGB coordinates
-        y_meters_center: Center of the example in meters in the y direction in OSGB coordinates
+        t0_datetime_utc: At inference time, t0 can be thought of as "now":
+            it is the time of the most recent observation.
+            Anything after t0 is "future". Anything before t0 is "history".
+        x_center_osgb: Center of the example in meters in the x direction in OSGB coordinates
+        y_center_osgb: Center of the example in meters in the y direction in OSGB coordinates
 
     Returns:
         Example containing xxx data for the selected area

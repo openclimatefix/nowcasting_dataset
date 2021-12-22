@@ -14,8 +14,8 @@ class GSP(DataSourceOutput):
     _expected_data_vars = (
         "power_mw",
         "capacity_mwp",
-        "x_coords",
-        "y_coords",
+        "x_osgb",
+        "y_osgb",
     )
 
     @classmethod
@@ -28,8 +28,8 @@ class GSP(DataSourceOutput):
         v.check_data_var_dim(v.power_mw, ("example", "time_index", "id_index"))
         v.check_data_var_dim(v.capacity_mwp, ("example", "time_index", "id_index"))
         v.check_data_var_dim(v.time, ("example", "time_index"))
-        v.check_data_var_dim(v.x_coords, ("example", "id_index"))
-        v.check_data_var_dim(v.y_coords, ("example", "id_index"))
+        v.check_data_var_dim(v.x_osgb, ("example", "id_index"))
+        v.check_data_var_dim(v.y_osgb, ("example", "id_index"))
 
         return v
 

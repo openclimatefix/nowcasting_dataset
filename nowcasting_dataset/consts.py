@@ -24,7 +24,7 @@ SUN_ELEVATION_ANGLE = "sun_elevation_angle"
 
 PV_YIELD = "pv_yield"
 PV_DATETIME_INDEX = "pv_datetime_index"
-DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE = 128
+DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE = 2048
 GSP_ID: str = "gsp_id"
 GSP_YIELD = "gsp_yield"
 GSP_X_COORDS = "gsp_x_coords"
@@ -46,8 +46,8 @@ NWP_TARGET_TIME = "nwp_target_time"
 NWP_DATA = "nwp"
 NWP_X_COORDS = "nwp_x_coords"
 NWP_Y_COORDS = "nwp_y_coords"
-X_METERS_CENTER = "x_meters_center"
-Y_METERS_CENTER = "y_meters_center"
+X_CENTERS_OSGB = "x_centers_osgb"
+Y_CENTERS_OSGB = "y_centers_osgb"
 TOPOGRAPHIC_DATA = "topo_data"
 TOPOGRAPHIC_X_COORDS = "topo_x_coords"
 TOPOGRAPHIC_Y_COORDS = "topo_y_coords"
@@ -114,8 +114,8 @@ DEFAULT_REQUIRED_KEYS = [
     PV_SYSTEM_ROW_NUMBER,
     PV_SYSTEM_X_COORDS,
     PV_SYSTEM_Y_COORDS,
-    X_METERS_CENTER,
-    Y_METERS_CENTER,
+    X_CENTERS_OSGB,
+    Y_CENTERS_OSGB,
     GSP_ID,
     GSP_YIELD,
     GSP_X_COORDS,

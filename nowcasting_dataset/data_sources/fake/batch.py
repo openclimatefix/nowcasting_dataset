@@ -420,10 +420,10 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
                 image_size_pixels,
                 image_size_pixels,
             ),
-            dims=["x", "y"],
+            dims=["x_osgb", "y_osgb"],
             coords=dict(
-                x=x,
-                y=y,
+                x_osgb=x,
+                y_osgb=y,
             ),
             name="data",
         )
@@ -436,7 +436,7 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
 
 
 def create_image_array(
-    dims=("time", "x", "y", "channels"),
+    dims=("time", "x_osgb", "y_osgb", "channels"),
     seq_length=19,
     history_seq_length=5,
     image_size_pixels=64,
@@ -461,8 +461,8 @@ def create_image_array(
 
     ALL_COORDS = {
         "time": time,
-        "x": x,
-        "y": y,
+        "x_osgb": x,
+        "y_osgb": y,
         "channels": np.array(channels),
     }
     coords = [(dim, ALL_COORDS[dim]) for dim in dims]
@@ -491,7 +491,7 @@ def create_gsp_pv_dataset(
     t0_datetime_utc: Optional = None,
     x_center_osgb: Optional = None,
     y_center_osgb: Optional = None,
-    id_limit: int = 1000,
+    id_limit: int = 2048,
 ) -> xr.Dataset:
     """
     Create gsp or pv fake dataset
@@ -571,8 +571,8 @@ def create_gsp_pv_dataset(
     )
 
     data["capacity_mwp"] = capacity
-    data["x_coords"] = x_coords
-    data["y_coords"] = y_coords
+    data["x_osgb"] = x_coords
+    data["y_osgb"] = y_coords
 
     # Add 1000 to the id numbers for the row numbers.
     # This is a quick way to make sure row number is different from id,
@@ -636,7 +636,7 @@ def create_metadata_dataset() -> xr.Dataset:
 
     data = (xr.DataArray.from_dict(d)).to_dataset(name="data")
 
-    for v in ["x_meters_center", "y_meters_center", "object_at_center_label"]:
+    for v in ["x_centers_osgb", "y_centers_osgb", "object_at_center_label"]:
         d: dict = {"dims": ("t0_dt",), "data": [np.random.randint(0, 1000)]}
         d: xr.Dataset = (xr.DataArray.from_dict(d)).to_dataset(name=v)
         data[v] = getattr(d, v)

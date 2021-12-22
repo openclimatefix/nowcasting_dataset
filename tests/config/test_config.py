@@ -67,6 +67,18 @@ def test_extra_field():
         _ = Configuration(**configuration_dict)
 
 
+def test_incorrect_time_resolution():
+    """
+    Check a a time resolution not divisible by 5 causes an error
+    """
+
+    configuration = Configuration()
+    configuration.input_data = configuration.input_data.set_all_to_defaults()
+    configuration.input_data.satellite.time_resolution_minutes = 27
+    with pytest.raises(Exception):
+        _ = Configuration(**configuration.dict())
+
+
 @pytest.mark.skip("Skiping test as CD does not have google credentials")
 def test_save_to_gcs():
     """

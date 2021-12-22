@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
+
 
 def test_satellite_data_source_init(sat_data_source):  # noqa: D103
     pass
@@ -128,3 +130,17 @@ def test_geospatial_border(sat_data_source):  # noqa: D103
         [1147550.338664, 862710.688863],
     ]
     np.testing.assert_array_almost_equal(border, correct_border)
+
+
+def test_wrong_sample_period(sat_filename):
+    """Test that a error is raise when the time_resolution_minutes is not divisible by 5"""
+    with pytest.raises(Exception):
+        _ = SatelliteDataSource(
+            image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
+            zarr_path=sat_filename,
+            history_minutes=0,
+            forecast_minutes=15,
+            channels=("IR_016",),
+            meters_per_pixel=6000,
+            time_resolution_minutes=27,
+        )

@@ -123,6 +123,22 @@ class DataSourceMixin(Base):
         return int(np.ceil(self.history_minutes / 60))
 
 
+class TimeResolutionMixin(Base):
+    """Time resolution mix in"""
+
+    time_resolution_minutes: int = Field(
+        15,
+        description="The temporal resolution (in minutes) of the satellite images."
+        "Note that this needs to be divisible by 5.",
+    )
+
+    @validator("time_resolution_minutes")
+    def forecast_minutes_divide_by_5(cls, v):
+        """Validate 'forecast_minutes'"""
+        assert v % 5 == 0, f"The time resolution ({v}) is not divisible by 5"
+        return v
+
+
 class StartEndDatetimeMixin(Base):
     """Mixin class to add start and end date"""
 
@@ -185,7 +201,7 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
     )
 
 
-class Satellite(DataSourceMixin):
+class Satellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model"""
 
     satellite_zarr_path: str = Field(
@@ -206,7 +222,7 @@ class Satellite(DataSourceMixin):
     )
 
 
-class HRVSatellite(DataSourceMixin):
+class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model for HRV data"""
 
     hrvsatellite_zarr_path: str = Field(

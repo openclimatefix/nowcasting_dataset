@@ -532,7 +532,7 @@ class Manager:
                     )
 
                     # Logger messages for callbacks:
-                    def _callback(result):
+                    def _callback(result, data_source_name):
                         """Create callback for 'pool.apply_async'"""
                         logger.info(
                             f"{data_source_name} has finished created batches for {split_name}!"
@@ -558,7 +558,7 @@ class Manager:
                     async_result = pool.apply_async(
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,
-                        callback=_callback,
+                        callback=partial(_callback, data_source_name=data_source_name),
                         error_callback=partial(_error_callback, data_source_name=data_source_name),
                     )
                     async_results_from_create_batches.append(async_result)

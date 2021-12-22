@@ -82,8 +82,17 @@ class PVDataSource(ImageDataSource):
 
         # collect all metadata together
         pv_metadata = []
-        for metadata_filename in self.metadata_filenames:
-            pv_metadata.append(pd.read_csv(metadata_filename, index_col="system_id"))
+        for i, metadata_filename in enumerate(self.metadata_filenames):
+
+            # read metadata file
+            metadata = pd.read_csv(metadata_filename, index_col="system_id")
+
+            # add i to index, to make sure the indexes are unique
+            new_index = metadata.index.astype(str)
+            new_index = new_index + f"_{i}"
+            metadata.index = new_index
+
+            pv_metadata.append(metadata)
         pv_metadata = pd.concat(pv_metadata)
 
         # drop any systems with no lon or lat
@@ -114,10 +123,19 @@ class PVDataSource(ImageDataSource):
 
         # collect all metadata together
         pv_power_all = []
-        for filename in self.filenames:
-            pv_power_all.append(
-                load_solar_pv_data(filename, start_dt=self.start_datetime, end_dt=self.end_datetime)
+        for i, filename in enumerate(self.filenames):
+
+            # get pv power data
+            pv_power = load_solar_pv_data(
+                filename, start_dt=self.start_datetime, end_dt=self.end_datetime
             )
+
+            # add i to columns, to make sure the columns are unique
+            new_columns = pv_power.columns.astype(str)
+            new_columns = new_columns + f"_{i}"
+            pv_power.columns = new_columns
+
+            pv_power_all.append(pv_power)
 
         # join together pv power. Index is time, columns are pv ids. Make sure the ids are unique
         pv_power = pv_power_all.pop(0)

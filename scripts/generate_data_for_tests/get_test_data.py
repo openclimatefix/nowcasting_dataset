@@ -28,7 +28,8 @@ end_dt = datetime.fromisoformat("2020-04-02 00:00:00.000+00:00")
 # link to gcs
 gcs = gcsfs.GCSFileSystem(access="read_only")
 
-
+# this makes sure there is atleast one overlapping id
+test_start_id = {"passiv": 7500, "pvoutput": 500}
 pv_metadata_provider = {}
 for metadata_filename in configuration.input_data.pv.pv_metadata_filenames:
     print(metadata_filename)
@@ -39,7 +40,9 @@ for metadata_filename in configuration.input_data.pv.pv_metadata_filenames:
     # get metadata, reduce, and save to test data
     pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
     pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
-    pv_metadata = pv_metadata.iloc[500:600]  # just take a few sites
+    pv_metadata = pv_metadata.iloc[
+        test_start_id[pv_provider] : test_start_id[pv_provider] + 100
+    ]  # just take a few sites
     pv_metadata.to_csv(f"{local_path}/tests/data/pv/{pv_provider}/UK_PV_metadata.csv")
     pv_metadata_provider[pv_provider] = pv_metadata
 

@@ -27,6 +27,7 @@ class SatelliteDataSource(ZarrDataSource):
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
     logger = _LOG
+    time_resolution_minutes: int = 15
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
@@ -41,6 +42,11 @@ class SatelliteDataSource(ZarrDataSource):
             image_size_pixels,
             n_channels,
         )
+
+    @property
+    def sample_period_minutes(self) -> int:
+        """Override the default sample minutes"""
+        return self.time_resolution_minutes
 
     def open(self) -> None:
         """
@@ -65,7 +71,10 @@ class SatelliteDataSource(ZarrDataSource):
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(
-            zarr_path=self.zarr_path, consolidated=self.consolidated, logger=self.logger
+            zarr_path=self.zarr_path,
+            consolidated=self.consolidated,
+            logger=self.logger,
+            sample_period_minutes=self.sample_period_minutes,
         )
 
     @staticmethod
@@ -76,7 +85,12 @@ class SatelliteDataSource(ZarrDataSource):
     def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> xr.DataArray:
         start_dt = self._get_start_dt(t0_datetime_utc)
         end_dt = self._get_end_dt(t0_datetime_utc)
-        data = self.data.sel(time=slice(start_dt, end_dt))
+
+        # floor to 15 mins
+        start_floor = start_dt.floor(f"{self.sample_period_minutes}T")
+        end_floor = end_dt.floor(f"{self.sample_period_minutes}T")
+
+        data = self.data.sel(time=slice(start_floor, end_floor))
         assert type(data) == xr.DataArray
 
         return data
@@ -137,6 +151,8 @@ class SatelliteDataSource(ZarrDataSource):
                 f" len(x)={len(data_array.x_osgb)}, len(y)={len(data_array.y_osgb)}. Try reducing"
                 f" image_size_pixels from {self._square.size_pixels} to"
                 f" {new_suggested_image_size_pixels} pixels."
+                f" {self.history_length=}"
+                f" {self.forecast_length=}"
             )
 
         # Select the geographical region of interest.
@@ -185,6 +201,8 @@ class SatelliteDataSource(ZarrDataSource):
                 f"times are {selected_data.time}\n"
                 f"expected shape={self._shape_of_example}\n"
                 f"actual shape {selected_data.shape}"
+                f" {self.forecast_length=}"
+                f" {self.history_length=}"
             )
 
         return selected_data.load().to_dataset(name="data")
@@ -299,7 +317,9 @@ def remove_acq_time_from_dataset_and_fix_time_coords(
     return dataset
 
 
-def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) -> xr.DataArray:
+def open_sat_data(
+    zarr_path: str, consolidated: bool, logger: logging.Logger, sample_period_minutes: int = 15
+) -> xr.DataArray:
     """Lazily opens the Zarr store.
 
     Adds 1 minute to the 'time' coordinates, so the timestamps
@@ -309,6 +329,7 @@ def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) ->
       zarr_path: Cloud URL or local path pattern.  If GCP URL, must start with 'gs://'
       consolidated: Whether or not the Zarr metadata is consolidated.
       logger: logger object to write to
+      sample_period_minutes: The sample period minutes that the data should be reduced to.
     """
     logger.debug("Opening satellite data: %s", zarr_path)
 
@@ -345,6 +366,12 @@ def open_sat_data(zarr_path: str, consolidated: bool, logger: logging.Logger) ->
 
     # Flip coordinates to top-left first
     data_array = data_array.reindex(x=data_array.x[::-1])
+
+    # reindex satellite to 15 mins data
+    time = [
+        t for t in data_array.time.values if pd.Timestamp(t).minute % sample_period_minutes == 0
+    ]
+    data_array = data_array.sel(time=time)
 
     # Sanity check!
     times = pd.DatetimeIndex(data_array["time"])

@@ -33,7 +33,7 @@ input_data:
   topographic:
     topographic_filename: tests/data/europe_dem_2km_osgb.tif
   opticalflow:
-    history_minutes: 5
+    history_minutes: 15
     forecast_minutes: 30
     opticalflow_zarr_path: tests/data/sat_data.zarr
     opticalflow_input_image_size_pixels: 32

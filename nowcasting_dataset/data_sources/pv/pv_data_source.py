@@ -261,6 +261,7 @@ class PVDataSource(ImageDataSource):
         selected_pv_power = selected_pv_power[all_pv_system_ids]
         selected_pv_capacity = selected_pv_capacity[all_pv_system_ids]
 
+        # this provides an index of what pv systesm are in the examples
         pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]

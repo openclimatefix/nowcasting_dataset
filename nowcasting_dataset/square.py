@@ -2,6 +2,8 @@
 from numbers import Number
 from typing import NamedTuple, Union
 
+import pandas as pd
+
 from nowcasting_dataset.consts import Array
 
 
@@ -67,3 +69,26 @@ def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array) -> Arra
         & (y <= bounding_box.top)
     )
     return mask
+
+
+def get_closest_coordinate_order(
+    x_center: Number, y_center: Number, x: pd.Series, y: pd.Series
+) -> pd.Series:
+    """
+    Get an order for the coordinates that are closes to the center
+
+    Args:
+        x_center: the center x coordinate
+        y_center: the center y coordinate
+        x: list of x coordinates
+        y: list of y coordinates
+
+    Returns: list of index, 0 being the closes, 1 being the next closes to the center.
+
+    """
+
+    assert len(x) == len(y)
+
+    d = ((x - x_center) ** 2 + (y - y_center) ** 2) ** 0.5
+
+    return d.argsort()

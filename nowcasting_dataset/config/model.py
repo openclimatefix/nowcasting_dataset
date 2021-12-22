@@ -239,7 +239,7 @@ class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
-class OpticalFlow(DataSourceMixin):
+class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
     """Optical Flow configuration model"""
 
     opticalflow_zarr_path: str = Field(

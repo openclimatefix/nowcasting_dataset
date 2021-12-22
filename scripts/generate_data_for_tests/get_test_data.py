@@ -48,6 +48,7 @@ for metadata_filename in configuration.input_data.pv.pv_metadata_filenames:
 
 
 # get pv_data
+system_ids_all = {}
 for filename in configuration.input_data.pv.pv_filenames:
     print(filename)
     pv_provider = "passiv" if "passiv" in filename.lower() else "pvoutput"
@@ -74,6 +75,7 @@ for filename in configuration.input_data.pv.pv_filenames:
         for system_id in pv_metadata_provider[pv_provider].index.to_list()
         if system_id in system_ids_xarray
     ]
+    system_ids_all[pv_provider] = system_ids
 
     # only take the system ids we need
     pv_power_df = pv_power_df[system_ids]
@@ -89,6 +91,18 @@ for filename in configuration.input_data.pv.pv_filenames:
     pv_power_new.to_zarr(zarr_filename, compute=True, mode="w")
     pv_power = xr.load_dataset(zarr_filename, engine="zarr")
     pv_power.to_netcdf(zarr_filename.replace(".zarr", ".nc"), compute=True, engine="h5netcdf")
+
+passiv = system_ids_all["passiv"]
+pvoutput = system_ids_all["pvoutput"]
+
+passiv = [int(id) for id in passiv]
+pvoutput = [int(id) for id in pvoutput]
+
+overlap = [id for id in passiv if id in pvoutput]
+
+len(pd.unique(passiv + pvoutput))
+len(passiv) + len(pvoutput)
+
 ############################
 # NWP, this makes a file that is 9.5MW big
 ###########################

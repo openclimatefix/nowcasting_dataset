@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 import nowcasting_dataset
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.fake.batch import pv_fake
 from nowcasting_dataset.data_sources.pv.pv_data_source import (
     PVDataSource,
@@ -61,7 +62,7 @@ def test_get_example_and_batch():  # noqa: D103
     batch = pv_data_source.get_batch(
         pv_data_source.pv_power.index[6:16], x_locations[0:10], y_locations[0:10]
     )
-    assert batch.power_mw.shape == (10, 19, 128)
+    assert batch.power_mw.shape == (10, 19, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)
 
 
 def test_drop_pv_systems_which_produce_overnight():  # noqa: D103

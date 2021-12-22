@@ -92,3 +92,8 @@ def configuration():  # noqa: D103
 @pytest.fixture
 def test_data_folder():  # noqa: D103
     return os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests/data")
+
+
+@pytest.fixture
+def test_configuration_filename():  # noqa: D103
+    return os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests/config/test.yaml")

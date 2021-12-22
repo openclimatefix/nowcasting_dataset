@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import nowcasting_dataset
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
@@ -19,16 +20,14 @@ from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.manager import Manager
 
 
-def test_configure_loggers():
+def test_configure_loggers(test_configuration_filename):
     """Test to check loggers can be configured"""
 
     # set up
     manager = Manager()
 
     # make configuration
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as dst_path:
 
@@ -71,12 +70,9 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
     assert (t0_datetimes[-1] >= locations["t0_datetime_UTC"]).all()
 
 
-def test_load_yaml_configuration():  # noqa: D103
+def test_load_yaml_configuration(test_configuration_filename):  # noqa: D103
     manager = Manager()
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
 
     manager.initialise_data_sources()
     assert len(manager.data_sources) == 8
@@ -84,16 +80,14 @@ def test_load_yaml_configuration():  # noqa: D103
     assert isinstance(manager.config.process.local_temp_path, Path)
 
 
-def test_initialise_data_source_with_loggers():
+def test_initialise_data_source_with_loggers(test_configuration_filename):
     """Check that initalise the data source and check it ends up in the logger"""
 
     # set up
     manager = Manager()
 
     # make configuration
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as dst_path:
 
@@ -110,12 +104,11 @@ def test_initialise_data_source_with_loggers():
                 assert "The configuration for" in line_0
 
 
-def test_get_daylight_datetime_index():
+def test_get_daylight_datetime_index(sat_filename):
     """Check that 'manager' gets the correct t0 datetime over nighttime"""
-    filename = Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
 
     sat = SatelliteDataSource(
-        zarr_path=filename,
+        zarr_path=sat_filename,
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
@@ -138,13 +131,13 @@ def test_get_daylight_datetime_index():
     np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
 
 
-def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary():
-    """Test to initialize data sources and get batches"""
+def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(
+    test_configuration_filename,
+):
+    """Test to create locations"""
 
     manager = Manager()
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
     manager.config.process.n_train_batches = 10
     manager.config.process.n_validation_batches = 10
     manager.config.process.n_test_batches = 10
@@ -178,15 +171,54 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
         assert len(locations_df) == batch_size * manager.config.process.n_test_batches
 
 
-def test_batches():
+def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_twice(
+    test_configuration_filename,
+):
+    """Test to create files for locations, twice, and check no error"""
+
+    manager = Manager()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.config.process.n_train_batches = 10
+    manager.config.process.n_validation_batches = 10
+    manager.config.process.n_test_batches = 10
+    manager.config.process.split_method = SplitMethod.SAME
+    manager.initialise_data_sources()
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+
+
+def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_example(
+    test_configuration_filename,
+):
+    """Test to initialize data sources and get batches"""
+
+    manager = Manager()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.config.process.n_train_batches = 0
+    manager.config.process.n_validation_batches = 0
+    manager.config.process.n_test_batches = 0
+    manager.config.process.split_method = SplitMethod.SAME
+    manager.initialise_data_sources()
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+        with pytest.raises(RuntimeError):
+            manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+
+
+def test_batches(test_configuration_filename):
     """Test that batches can be made"""
 
     manager = Manager()
-
-    # load config
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -266,15 +298,13 @@ def test_batches():
                 assert num_lines > 0, f"Log {filename} is empty"
 
 
-def test_save_config():
+def test_save_config(test_configuration_filename):
     """Test that configuration file is saved"""
 
     manager = Manager()
 
     # load config
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -288,13 +318,35 @@ def test_save_config():
         assert os.path.exists(f"{dst_path}/configuration.yaml")
 
 
-def test_run():
+def test_run_error(test_configuration_filename):
     """Test to initialize data sources and get batches"""
 
     manager = Manager()
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-    filename = local_path / "tests" / "config" / "test.yaml"
-    manager.load_yaml_configuration(filename=filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+
+    manager.config.input_data.satellite.forecast_minutes = 17
+
+    with pytest.raises(Exception):
+        manager.initialise_data_sources()
+
+
+def test_run_error_data_source_which_defines_geospatial_locations(test_configuration_filename):
+    """Test to initialize data sources and get batches"""
+
+    manager = Manager()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+
+    manager.config.input_data.data_source_which_defines_geospatial_locations = "test"
+
+    with pytest.raises(Exception):
+        manager.initialise_data_sources()
+
+
+def test_run(test_configuration_filename):
+    """Test to initialize data sources and get batches"""
+
+    manager = Manager()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
     manager.initialise_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
@@ -304,3 +356,20 @@ def test_run():
 
         manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
         manager.create_batches(overwrite_batches=True)
+
+
+def test_run_overwrite_batches_false(test_configuration_filename):
+    """Test to initialize data sources and get batches, but dont overwrite"""
+
+    manager = Manager()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.initialise_data_sources()
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
+        manager.create_batches(overwrite_batches=False)
+        manager.create_batches(overwrite_batches=False)

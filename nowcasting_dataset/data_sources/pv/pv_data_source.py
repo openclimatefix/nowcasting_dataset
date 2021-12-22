@@ -19,7 +19,7 @@ from nowcasting_dataset import geospatial
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
-from nowcasting_dataset.square import get_bounding_box_mask
+from nowcasting_dataset.square import get_bounding_box_mask, get_closest_coordinate_order
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +207,15 @@ class PVDataSource(ImageDataSource):
         # make mask of pv system ids
         mask = get_bounding_box_mask(bounding_box, x, y)
         pv_system_ids = self.pv_metadata.index[mask]
+        x = self.pv_metadata.location_x[mask]
+        y = self.pv_metadata.location_y[mask]
+
+        # order the pv systems
+        mask_order = get_closest_coordinate_order(
+            x_center=x_center_osgb, y_center=y_center_osgb, x=x, y=y
+        )
+        mask_order = mask_order.sort_values()
+        pv_system_ids = mask_order.index
 
         pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(pv_system_ids)
 
@@ -252,6 +261,7 @@ class PVDataSource(ImageDataSource):
         selected_pv_power = selected_pv_power[all_pv_system_ids]
         selected_pv_capacity = selected_pv_capacity[all_pv_system_ids]
 
+        # this provides an index of what pv systesm are in the examples
         pv_system_row_number = np.flatnonzero(self.pv_metadata.index.isin(all_pv_system_ids))
         pv_system_x_coords = self.pv_metadata.location_x[all_pv_system_ids]
         pv_system_y_coords = self.pv_metadata.location_y[all_pv_system_ids]

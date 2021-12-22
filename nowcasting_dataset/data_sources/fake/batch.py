@@ -491,7 +491,7 @@ def create_gsp_pv_dataset(
     t0_datetime_utc: Optional = None,
     x_center_osgb: Optional = None,
     y_center_osgb: Optional = None,
-    id_limit: int = 1000,
+    id_limit: int = 2048,
 ) -> xr.Dataset:
     """
     Create gsp or pv fake dataset

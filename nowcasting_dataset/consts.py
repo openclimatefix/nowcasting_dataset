@@ -24,7 +24,7 @@ SUN_ELEVATION_ANGLE = "sun_elevation_angle"
 
 PV_YIELD = "pv_yield"
 PV_DATETIME_INDEX = "pv_datetime_index"
-DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE = 128
+DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE = 2048
 GSP_ID: str = "gsp_id"
 GSP_YIELD = "gsp_yield"
 GSP_X_COORDS = "gsp_x_coords"

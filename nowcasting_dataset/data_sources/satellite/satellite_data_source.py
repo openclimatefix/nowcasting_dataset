@@ -14,6 +14,7 @@ import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing
 
 _LOG = logging.getLogger(__name__)
 _LOG_HRV = logging.getLogger(__name__.replace("satellite", "hrvsatellite"))
@@ -290,29 +291,19 @@ def remove_acq_time_from_dataset_and_fix_time_coords(
     """
     dataset = dataset.drop_vars("acq_time", errors="ignore")
 
-    # If there are any duplicated init_times then drop the duplicated init_times:
-    data_array = dataset["stacked_eumetsat_data"]
-    times = pd.DatetimeIndex(data_array["time"])
-    if not times.is_unique:
-        n_duplicates = times.duplicated().sum()
-        logger.warning(f"Satellite Zarr has {n_duplicates:,d} duplicated times.  Fixing...")
-        data_array = data_array.drop_duplicates(dim="time")
-        times = pd.DatetimeIndex(data_array["time"])
-        dataset = data_array.to_dataset(name="stacked_eumetsat_data")
+    # If there are any duplicated init_times then drop the duplicated time:
+    stacked_eumetsat_data = drop_duplicate_times(
+        data_array=dataset["stacked_eumetsat_data"], class_name="Satellite", time_dim="time"
+    )
 
     # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
-    if not times.is_monotonic_increasing:
-        total_n_out_of_order_times = 0
-        logger.warning("Satellite Zarr times is not monotonic_increasing.  Fixing...")
-        while not times.is_monotonic_increasing:
-            diff = np.diff(times.view(int))
-            out_of_order = np.where(diff < 0)[0]
-            total_n_out_of_order_times += len(out_of_order)
-            out_of_order = times[out_of_order]
-            data_array = data_array.drop_sel(time=out_of_order)
-            times = pd.DatetimeIndex(data_array["init_time"])
-        logger.info(f"Fixed {total_n_out_of_order_times:,d} out of order init_times.")
-        dataset = data_array.to_dataset(name="stacked_eumetsat_data")
+    stacked_eumetsat_data = drop_non_monotonic_increasing(
+        data_array=stacked_eumetsat_data, class_name="Satellite", time_dim="time"
+    )
+    dataset = stacked_eumetsat_data.to_dataset(name="stacked_eumetsat_data")
+
+    assert pd.DatetimeIndex(stacked_eumetsat_data["time"]).is_unique
+    assert pd.DatetimeIndex(stacked_eumetsat_data["time"]).is_monotonic_increasing
 
     return dataset
 

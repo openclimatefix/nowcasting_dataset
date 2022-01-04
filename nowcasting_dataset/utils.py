@@ -225,11 +225,20 @@ def drop_non_monotonic_increasing(
         total_n_out_of_order_times = 0
         logger.warning(f"{class_name} Zarr {time_dim} is not monotonic_increasing.  Fixing...")
         while not time.is_monotonic_increasing:
+            # get the first set of out of order time value
             diff = np.diff(time.view(int))
             out_of_order = np.where(diff < 0)[0]
-            total_n_out_of_order_times += len(out_of_order)
             out_of_order = time[out_of_order]
+
+            # remove value
             data_array = data_array.drop_sel(**{time_dim: out_of_order})
+
+            # get time vector for next while loop
+            time = pd.DatetimeIndex(data_array[time_dim])
+
+            # save how many have been removed, just for logging
+            total_n_out_of_order_times += len(out_of_order)
+
         logger.info(f"Fixed {total_n_out_of_order_times:,d} out of order {time_dim}.")
 
     return data_array

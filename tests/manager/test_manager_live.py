@@ -40,7 +40,7 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example(
     manager.config.process.n_validation_batches = 10
     manager.config.process.n_test_batches = 10
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
     t0_datetime = datetime(2021, 4, 1)
 
     batch_size = manager.config.process.batch_size
@@ -103,7 +103,7 @@ def test_run_error(test_configuration_filename):
     manager.config.input_data.satellite.forecast_minutes = 17
 
     with pytest.raises(Exception):
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
 
 def test_run_error_data_source_which_defines_geospatial_locations(test_configuration_filename):
@@ -115,7 +115,7 @@ def test_run_error_data_source_which_defines_geospatial_locations(test_configura
     manager.config.input_data.data_source_which_defines_geospatial_locations = "test"
 
     with pytest.raises(Exception):
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
 
 def test_run(test_configuration_filename):
@@ -123,7 +123,7 @@ def test_run(test_configuration_filename):
 
     manager = ManagerLive()
     manager.load_yaml_configuration(filename=test_configuration_filename)
-    manager.initialise_data_sources(names_of_selected_data_sources=["gsp", "nwp"])
+    manager.initialize_data_sources(names_of_selected_data_sources=["gsp", "nwp"])
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 

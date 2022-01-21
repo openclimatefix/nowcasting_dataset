@@ -45,8 +45,8 @@ def test_sample_spatial_and_temporal_locations_for_examples(gsp, sun):  # noqa: 
     assert (t0_datetimes[-1] >= locations["t0_datetime_UTC"]).all()
 
 
-def test_initialise_data_source_with_loggers(test_configuration_filename):
-    """Check that initalise the data source and check it ends up in the logger"""
+def test_initialize_data_source_with_loggers(test_configuration_filename):
+    """Check that initialize the data source and check it ends up in the logger"""
 
     # set up
     manager = Manager()
@@ -58,7 +58,7 @@ def test_initialise_data_source_with_loggers(test_configuration_filename):
 
         manager.config.output_data.filepath = Path(dst_path)
         manager.configure_loggers(log_level="DEBUG")
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
         # check logs is appended to
         for log_file in ["gsp", "satellite", "hrvsatellite"]:
@@ -99,7 +99,7 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
     manager.config.process.n_validation_batches = 10
     manager.config.process.n_test_batches = 10
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     batch_size = manager.config.process.batch_size
 
@@ -139,7 +139,7 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
     manager.config.process.n_validation_batches = 10
     manager.config.process.n_test_batches = 10
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -161,7 +161,7 @@ def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_ex
     manager.config.process.n_validation_batches = 0
     manager.config.process.n_test_batches = 0
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -244,7 +244,7 @@ def test_run_error(test_configuration_filename):
     manager.config.input_data.satellite.forecast_minutes = 17
 
     with pytest.raises(Exception):
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
 
 def test_run_error_data_source_which_defines_geospatial_locations(test_configuration_filename):
@@ -256,7 +256,7 @@ def test_run_error_data_source_which_defines_geospatial_locations(test_configura
     manager.config.input_data.data_source_which_defines_geospatial_locations = "test"
 
     with pytest.raises(Exception):
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
 
 def test_run(test_configuration_filename):
@@ -264,7 +264,7 @@ def test_run(test_configuration_filename):
 
     manager = Manager()
     manager.load_yaml_configuration(filename=test_configuration_filename)
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -280,7 +280,7 @@ def test_run_overwrite_batches_false(test_configuration_filename):
 
     manager = Manager()
     manager.load_yaml_configuration(filename=test_configuration_filename)
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 

@@ -3,17 +3,20 @@ import logging
 from dataclasses import InitVar, dataclass
 from functools import partial
 from numbers import Number
-from typing import Iterable, Optional
+from typing import Callable, Iterable, Optional
 
 import dask
 import numpy as np
 import pandas as pd
+import pyproj
+import pyresample
 import xarray as xr
 
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing
 
 _LOG = logging.getLogger(__name__)
@@ -28,7 +31,7 @@ class SatelliteDataSource(ZarrDataSource):
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
     logger = _LOG
-    time_resolution_minutes: int = 15
+    time_resolution_minutes: int = 5
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
@@ -43,6 +46,7 @@ class SatelliteDataSource(ZarrDataSource):
             image_size_pixels,
             n_channels,
         )
+        self._osgb_to_geostationary: Callable = None
 
     @property
     def sample_period_minutes(self) -> int:
@@ -61,7 +65,6 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._open_data()
         if "variable" in self._data.dims:
             self._data = self._data.rename({"variable": "channels"})
-        self._data = self._data.rename({"x": "x_osgb", "y": "y_osgb"})
         if not set(self.channels).issubset(self._data.channels.values):
             raise RuntimeError(
                 f"One or more requested channels are not available in {self.zarr_path}!"
@@ -69,6 +72,17 @@ class SatelliteDataSource(ZarrDataSource):
                 f"  Available channels={self._data.channels.values}"
             )
         self._data = self._data.sel(channels=list(self.channels))
+        self._load_geostationary_area_definition_and_transform()
+
+    def _load_geostationary_area_definition_and_transform(self) -> None:
+        area_definition_yaml = self._data.attrs["area"]
+        geostationary_area_definition = pyresample.area_config.load_area_from_string(
+            area_definition_yaml
+        )
+        geostationary_crs = geostationary_area_definition.crs
+        self._osgb_to_geostationary = pyproj.Transformer.from_crs(
+            crs_from=OSGB, crs_to=geostationary_crs
+        )
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(
@@ -116,13 +130,16 @@ class SatelliteDataSource(ZarrDataSource):
         Returns:
             The selected data around the center
         """
-        # Get the index into x and y nearest to x_center_osgb and y_center_osgb:
-        x_index_at_center = np.searchsorted(data_array.x_osgb.values, x_center_osgb) - 1
-        y_index_at_center = np.searchsorted(data_array.y_osgb.values, y_center_osgb) - 1
+        x_center_geostationary, y_center_geostationary = self._osgb_to_geostationary(
+            x_center_osgb, y_center_osgb
+        )
+        # Get the index into x and y nearest to x_center_geostationary and y_center_geostationary:
+        x_index_at_center = np.searchsorted(data_array.x.values, x_center_geostationary) - 1
+        y_index_at_center = np.searchsorted(data_array.y.values, y_center_geostationary) - 1
         # Put x_index_at_center and y_index_at_center into a pd.Series so we can operate
         # on them both in a single line of code.
         x_and_y_index_at_center = pd.Series(
-            {"x_osgb": x_index_at_center, "y_osgb": y_index_at_center}
+            {"x_index_at_center": x_index_at_center, "y_index_at_center": y_index_at_center}
         )
         half_image_size_pixels = self._square.size_pixels // 2
         min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
@@ -132,8 +149,8 @@ class SatelliteDataSource(ZarrDataSource):
         suggested_reduction_of_image_size_pixels = (
             max(
                 (-min_x_and_y_index.min() if (min_x_and_y_index < 0).any() else 0),
-                (max_x_and_y_index.x_osgb - len(data_array.x_osgb)),
-                (max_x_and_y_index.y_osgb - len(data_array.y_osgb)),
+                (max_x_and_y_index.x_index_at_center - len(data_array.x)),
+                (max_x_and_y_index.y_index_at_center - len(data_array.y)),
             )
             * 2
         )
@@ -147,10 +164,12 @@ class SatelliteDataSource(ZarrDataSource):
                 "Requested region of interest of satellite data steps outside of the available"
                 " geographical extent of the Zarr data.  The requested region of interest extends"
                 f" from pixel indicies"
-                f" x={min_x_and_y_index.x_osgb} to x={max_x_and_y_index.x_osgb},"
-                f" y={min_x_and_y_index.y_osgb} to y={max_x_and_y_index.y_osgb}.  In the Zarr data,"
-                f" len(x)={len(data_array.x_osgb)}, len(y)={len(data_array.y_osgb)}. Try reducing"
-                f" image_size_pixels from {self._square.size_pixels} to"
+                f" x={min_x_and_y_index.x_index_at_center} to"
+                f" x={max_x_and_y_index.x_index_at_center},"
+                f" y={min_x_and_y_index.y_index_at_center} to"
+                f" y={max_x_and_y_index.y_index_at_center}."
+                f" In the Zarr data, len(x)={len(data_array.x)}, len(y)={len(data_array.y)}."
+                f" Try reducing image_size_pixels from {self._square.size_pixels} to"
                 f" {new_suggested_image_size_pixels} pixels."
                 f" {self.history_length=}"
                 f" {self.forecast_length=}"
@@ -160,8 +179,8 @@ class SatelliteDataSource(ZarrDataSource):
         # Note that isel is *exclusive* of the end of the slice.
         # e.g. isel(x=slice(0, 3)) will return the first, second, and third values.
         data_array = data_array.isel(
-            x_osgb=slice(min_x_and_y_index.x_osgb, max_x_and_y_index.x_osgb),
-            y_osgb=slice(min_x_and_y_index.y_osgb, max_x_and_y_index.y_osgb),
+            x=slice(min_x_and_y_index.x_index_at_center, max_x_and_y_index.x_index_at_center),
+            y=slice(min_x_and_y_index.y_index_at_center, max_x_and_y_index.y_index_at_center),
         )
         return data_array
 
@@ -276,21 +295,17 @@ class HRVSatelliteDataSource(SatelliteDataSource):
     logger = _LOG_HRV
 
 
-def remove_acq_time_from_dataset_and_fix_time_coords(
-    dataset: xr.Dataset, logger: logging.Logger
-) -> xr.Dataset:
+def dedupe_time_coords(dataset: xr.Dataset, logger: logging.Logger) -> xr.Dataset:
     """
-    Preprocess datasets by dropping `acq_time`, which causes problems otherwise
+    Preprocess datasets by de-duplicating the time coordinates.
 
     Args:
         dataset: xr.Dataset to preprocess
         logger: logger object to write to
 
     Returns:
-        dataset with acq_time dropped
+        dataset with time coords de-duped.
     """
-    dataset = dataset.drop_vars("acq_time", errors="ignore")
-
     # If there are any duplicated init_times then drop the duplicated time:
     stacked_eumetsat_data = drop_duplicate_times(
         data_array=dataset["stacked_eumetsat_data"], class_name="Satellite", time_dim="time"
@@ -334,9 +349,7 @@ def open_sat_data(
     dask.config.set(**{"array.slicing.split_large_chunks": False})
 
     # add logger to preprocess function
-    p_remove_acq_time_from_dataset_and_fix_time_coords = partial(
-        remove_acq_time_from_dataset_and_fix_time_coords, logger=logger
-    )
+    p_dedupe_time_coords = partial(dedupe_time_coords, logger=logger)
 
     # Open datasets.
     dataset = xr.open_mfdataset(
@@ -345,7 +358,7 @@ def open_sat_data(
         mode="r",
         engine="zarr",
         concat_dim="time",
-        preprocess=p_remove_acq_time_from_dataset_and_fix_time_coords,
+        preprocess=p_dedupe_time_coords,
         consolidated=consolidated,
         combine="nested",
     )
@@ -359,14 +372,13 @@ def open_sat_data(
     data_array = data_array.reindex(x=data_array.x[::-1])
 
     # reindex satellite to 15 mins data
-    time = [
-        t for t in data_array.time.values if pd.Timestamp(t).minute % sample_period_minutes == 0
-    ]
-    data_array = data_array.sel(time=time)
+    datetime_index = pd.DatetimeIndex(data_array["time"])
+    if sample_period_minutes != 5:
+        time_mask = datetime_index.minute % sample_period_minutes == 0
+        data_array = data_array.sel(time=time_mask)
 
     # Sanity check!
-    times = pd.DatetimeIndex(data_array["time"])
-    assert times.is_unique
-    assert times.is_monotonic_increasing
+    assert datetime_index.is_unique
+    assert datetime_index.is_monotonic_increasing
 
     return data_array

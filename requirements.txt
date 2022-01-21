@@ -24,3 +24,4 @@ fsspec
 pathy
 opencv-contrib-python-headless
 gitpython
+pyresample

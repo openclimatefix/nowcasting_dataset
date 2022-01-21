@@ -4,7 +4,6 @@ import logging
 import multiprocessing
 from datetime import datetime
 from functools import partial
-from pathlib import Path
 
 import pandas as pd
 
@@ -60,7 +59,8 @@ class ManagerLive(ManagerBase):
         datetimes_for_split = [t0_datetime]
 
         path_for_csv = self.config.output_data.filepath / split_name
-        n_batches_requested = self._get_n_batches_requested_for_split_name(split_name)
+        # TODO make dynamic
+        n_batches_requested = 11  # 338 / 32 - rounded up
         if (n_batches_requested == 0 and len(datetimes_for_split) != 0) or (
             len(datetimes_for_split) == 0 and n_batches_requested != 0
         ):
@@ -87,22 +87,11 @@ class ManagerLive(ManagerBase):
             df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
                 t0_datetime=datetimes_for_split[0],
             )
-            output_filename = self._filename_of_locations_csv_file()
+            output_filename = self._filename_of_locations_csv_file(split_name="live")
             logger.info(f"Making {path_for_csv} if it does not exist.")
             nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
             logger.debug(f"Writing {output_filename}")
             df_of_locations.to_csv(output_filename)
-
-    def _get_n_batches_requested_for_split_name(self, split_name: str) -> int:
-        # TODO make dynamic
-        return 338
-
-    def _filename_of_locations_csv_file(self) -> Path:
-        return (
-            self.config.output_data.filepath
-            / "live"
-            / SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-        )
 
     def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetime: datetime
@@ -158,24 +147,20 @@ class ManagerLive(ManagerBase):
             }
         )
 
-    def create_batches(self, overwrite_batches: bool) -> None:
+    def create_batches(self) -> None:
         """Create batches (if necessary).
 
         Make dirs: `<output_data.filepath> / <split_name> / <data_source_name>`.
 
         Also make `local_temp_path` if necessary.
 
-        Args:
-          overwrite_batches: If True then start from batch 0, regardless of which batches have
-            previously been written to disk. If False then check which batches have previously been
-            written to disk, and only create any batches which have not yet been written to disk.
         """
         logger.debug("Entering Manager.create_batches...")
 
         # Load locations for each example off disk.
         # locations_for_each_example_of_each_split: dict[split.SplitName, pd.DataFrame] = {}
         # for split_name in splits_which_need_more_batches:
-        filename = self._filename_of_locations_csv_file()
+        filename = self._filename_of_locations_csv_file(split_name="live")
         logger.info(f"Loading {filename}.")
 
         # TODO add pydantic model for this

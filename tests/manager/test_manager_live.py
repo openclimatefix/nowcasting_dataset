@@ -86,7 +86,7 @@ def test_batches(test_configuration_filename, sat, gsp):
         )  # noqa 101
 
         # make batches
-        manager.create_batches(overwrite_batches=True)
+        manager.create_batches()
 
         assert os.path.exists(f"{dst_path}/live")
         assert os.path.exists(f"{dst_path}/live/gsp")
@@ -133,4 +133,4 @@ def test_run(test_configuration_filename):
         manager.create_files_specifying_spatial_and_temporal_locations_of_each_example(
             t0_datetime=datetime(2020, 4, 1, 15)
         )  # noqa 101
-        manager.create_batches(overwrite_batches=True)
+        manager.create_batches()

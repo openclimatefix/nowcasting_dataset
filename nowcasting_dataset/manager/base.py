@@ -1,10 +1,12 @@
 """Manager class."""
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
 
 logger = logging.getLogger(__name__)
@@ -105,3 +107,10 @@ class ManagerBase:
 
     def _locations_csv_file_exists(self):
         return False
+
+    def _filename_of_locations_csv_file(self, split_name: str) -> Path:
+        return (
+            self.config.output_data.filepath
+            / split_name
+            / SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
+        )

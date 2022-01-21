@@ -3,7 +3,6 @@
 import logging
 import multiprocessing
 from functools import partial
-from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
@@ -158,13 +157,6 @@ class Manager(ManagerBase):
 
     def _get_n_batches_requested_for_split_name(self, split_name: str) -> int:
         return getattr(self.config.process, f"n_{split_name}_batches")
-
-    def _filename_of_locations_csv_file(self, split_name: str) -> Path:
-        return (
-            self.config.output_data.filepath
-            / split_name
-            / SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-        )
 
     def _locations_csv_file_exists(self) -> bool:
         """Check if filepath/train/spatial_and_temporal_locations_of_each_example.csv exists."""

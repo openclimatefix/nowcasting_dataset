@@ -1,21 +1,13 @@
 """Test Manager."""
 import os
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
-import nowcasting_dataset
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.satellite.satellite_data_source import (
-    HRVSatelliteDataSource,
-    SatelliteDataSource,
-)
-from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.manager.manager import Manager
 
@@ -37,24 +29,7 @@ def test_configure_loggers(test_configuration_filename):
         manager.configure_loggers(log_level="DEBUG")
 
 
-def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-
-    gsp = GSPDataSource(
-        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_datetime=datetime(2020, 4, 1),
-        end_datetime=datetime(2020, 4, 2),
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-    )
-
-    sun = SunDataSource(
-        zarr_path=f"{local_path}/tests/data/sun/test.zarr",
-        history_minutes=30,
-        forecast_minutes=60,
-    )
+def test_sample_spatial_and_temporal_locations_for_examples(gsp, sun):  # noqa: D103
 
     manager = Manager()
     manager.data_sources = {"gsp": gsp, "sun": sun}
@@ -94,16 +69,8 @@ def test_initialise_data_source_with_loggers(test_configuration_filename):
                 assert "The configuration for" in line_0
 
 
-def test_get_daylight_datetime_index(sat_filename):
+def test_get_daylight_datetime_index(sat_filename, sat):
     """Check that 'manager' gets the correct t0 datetime over nighttime"""
-
-    sat = SatelliteDataSource(
-        zarr_path=sat_filename,
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-    )
 
     manager = Manager()
     manager.data_sources = {"sat": sat}
@@ -204,7 +171,7 @@ def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_ex
             manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
 
 
-def test_batches(test_configuration_filename):
+def test_batches(test_configuration_filename, sat, hrvsat, gsp):
     """Test that batches can be made"""
 
     manager = Manager()
@@ -218,46 +185,6 @@ def test_batches(test_configuration_filename):
 
         # set up loggers
         manager.configure_loggers(log_level="DEBUG")
-
-        # just set satellite as data source
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
-        )
-
-        sat = SatelliteDataSource(
-            zarr_path=filename,
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=24,
-            meters_per_pixel=6000,
-            channels=("IR_016",),
-        )
-
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
-        )
-        hrvsat = HRVSatelliteDataSource(
-            zarr_path=filename,
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=64,
-            meters_per_pixel=2000,
-            channels=("HRV",),
-        )
-
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
-        )
-
-        gsp = GSPDataSource(
-            zarr_path=filename,
-            start_datetime=datetime(2020, 4, 1),
-            end_datetime=datetime(2020, 4, 2),
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=64,
-            meters_per_pixel=2000,
-        )
 
         # Set data sources
         manager.data_sources = {"gsp": gsp, "satellite": sat, "hrvsatellite": hrvsat}

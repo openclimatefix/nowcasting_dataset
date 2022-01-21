@@ -7,35 +7,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-import nowcasting_dataset
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
-from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.manager.manager_live import ManagerLive
 
 
 def test_sample_spatial_and_temporal_locations_for_examples(
-    test_configuration_filename,
+    test_configuration_filename, gsp, sun
 ):  # noqa: D103
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-
-    gsp = GSPDataSource(
-        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_datetime=datetime(2020, 4, 1),
-        end_datetime=datetime(2020, 4, 2),
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-    )
-
-    sun = SunDataSource(
-        zarr_path=f"{local_path}/tests/data/sun/test.zarr",
-        history_minutes=30,
-        forecast_minutes=60,
-    )
 
     manager = ManagerLive()
     manager.load_yaml_configuration(filename=test_configuration_filename)
@@ -85,7 +64,7 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example(
         assert len(locations_df) == batch_size
 
 
-def test_batches(test_configuration_filename):
+def test_batches(test_configuration_filename, sat, gsp):
     """Test that batches can be made"""
 
     manager = ManagerLive()
@@ -96,34 +75,6 @@ def test_batches(test_configuration_filename):
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
-
-        # just set satellite as data source
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
-        )
-
-        sat = SatelliteDataSource(
-            zarr_path=filename,
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=24,
-            meters_per_pixel=6000,
-            channels=("IR_016",),
-        )
-
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
-        )
-
-        gsp = GSPDataSource(
-            zarr_path=filename,
-            start_datetime=datetime(2020, 4, 1),
-            end_datetime=datetime(2020, 4, 2),
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=64,
-            meters_per_pixel=2000,
-        )
 
         # Set data sources
         manager.data_sources = {"gsp": gsp, "satellite": sat}

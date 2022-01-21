@@ -9,7 +9,7 @@ def callback(result, data_source_name, split_name):
     logger.info(f"{data_source_name} has finished created batches for {split_name}!")
 
 
-def error_callback(an_error_has_occured, exception, data_source_name, split_name):
+def error_callback(exception, an_error_has_occured, data_source_name, split_name):
     """Create error callback for 'pool.apply_async'
 
     Need to pass in data_source_name rather than rely on data_source_name
@@ -18,6 +18,6 @@ def error_callback(an_error_has_occured, exception, data_source_name, split_name
     """
     logger.exception(
         f"Exception raised by {data_source_name} whilst creating batches for"
-        f" {split_name.value}\n{exception.__class__.__name__}: {exception}"
+        f" {split_name}\n{exception.__class__.__name__}: {exception}"
     )
     an_error_has_occured.set()

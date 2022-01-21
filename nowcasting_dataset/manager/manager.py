@@ -543,7 +543,10 @@ class Manager:
                             callback, data_source_name=data_source_name, split_name=split_name
                         ),
                         error_callback=partial(
-                            error_callback, data_source_name=data_source_name, split_name=split_name
+                            error_callback,
+                            data_source_name=data_source_name,
+                            split_name=split_name,
+                            an_error_has_occured=an_error_has_occured,
                         ),
                     )
                     async_results_from_create_batches.append(async_result)

@@ -5,10 +5,12 @@ import multiprocessing
 from datetime import datetime
 from functools import partial
 
+import numpy as np
 import pandas as pd
 
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset.consts import (
+    N_GSPS,
     SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES,
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
 )
@@ -60,38 +62,22 @@ class ManagerLive(ManagerBase):
 
         path_for_csv = self.config.output_data.filepath / split_name
         # TODO make dynamic
-        n_batches_requested = 11  # 338 / 32 - rounded up
-        if (n_batches_requested == 0 and len(datetimes_for_split) != 0) or (
-            len(datetimes_for_split) == 0 and n_batches_requested != 0
-        ):
-            # TODO: Issue #450: Test this scenario!
-            msg = (
-                f"For split {split_name}: n_{split_name}_batches={n_batches_requested} and"
-                f" {len(datetimes_for_split)=}!  This is an error!"
-                f"  If n_{split_name}_batches==0 then len(datetimes_for_split) must also"
-                f" equal 0, and visa-versa!  Please check `n_{split_name}_batches` and"
-                " `split_method` in the config YAML!"
-            )
-            logger.error(msg)
-            raise RuntimeError(msg)
+        n_batches_requested = int(np.ceil(N_GSPS / self.config.process.batch_size))
 
-        if n_batches_requested == 0:
-            logger.info(f"0 batches requested for {split_name} so won't create {path_for_csv}")
-        else:
-            n_examples = n_batches_requested * self.config.process.batch_size
-            logger.debug(
-                f"Creating {n_batches_requested:,d} batches x {self.config.process.batch_size:,d}"
-                f" examples per batch = {n_examples:,d} examples for {split_name}."
-            )
+        n_examples = n_batches_requested * self.config.process.batch_size
+        logger.debug(
+            f"Creating {n_batches_requested:,d} batches x {self.config.process.batch_size:,d}"
+            f" examples per batch = {n_examples:,d} examples for {split_name}."
+        )
 
-            df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
-                t0_datetime=datetimes_for_split[0],
-            )
-            output_filename = self._filename_of_locations_csv_file(split_name="live")
-            logger.info(f"Making {path_for_csv} if it does not exist.")
-            nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
-            logger.debug(f"Writing {output_filename}")
-            df_of_locations.to_csv(output_filename)
+        df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
+            t0_datetime=datetimes_for_split[0],
+        )
+        output_filename = self._filename_of_locations_csv_file(split_name="live")
+        logger.info(f"Making {path_for_csv} if it does not exist.")
+        nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
+        logger.debug(f"Writing {output_filename}")
+        df_of_locations.to_csv(output_filename)
 
     def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetime: datetime

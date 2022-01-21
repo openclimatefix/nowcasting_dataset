@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ManagerBase:
-    """The Manager initialises and manage a dict of DataSource objects.
+    """The Manager initializes and manage a dict of DataSource objects.
 
     Attrs:
       config: Configuration object.
@@ -37,7 +37,7 @@ class ManagerBase:
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
         logger.debug(f"config={self.config}")
 
-    def initialise_data_sources(
+    def initialize_data_sources(
         self, names_of_selected_data_sources: Optional[list[str]] = ALL_DATA_SOURCE_NAMES
     ) -> None:
         """Initialize DataSources specified in the InputData configuration.

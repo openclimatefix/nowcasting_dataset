@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class ManagerLive(ManagerBase):
-    """The Manager initialises and manage a dict of DataSource objects.
+    """The Manager initializes and manage a dict of DataSource objects.
 
     1. Load configuration file
     2. Initialize the data sources

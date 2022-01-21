@@ -10,7 +10,7 @@ Base class used for `Manager` and `ManagerLive`
 
 This contains
 1. `load_yaml_configuration` - loads a configuration file
-2. `initialise_data_sources` - Initialise all the data sources. Note that this can be the full set of data sources, or a subset can be passed in
+2. `initialize_data_sources` - Initialize all the data sources. Note that this can be the full set of data sources, or a subset can be passed in
 3. `filename_of_locations_csv_file` - get the file name of the locations csv.
 
 ### manager.py
@@ -22,7 +22,7 @@ Class used to make batches from the different data sources
 
 In general there are a few steps how to use this function
 1. `load_yaml_configuration` - loads a configuration file. This is from `base.py`.
-2. `initialise_data_sources` - Initialise all the data sources. Note that this can be the full set of data sources, or a subset can be passed in. This is from `base.py`.
+2. `initialize_data_sources` - Initialize all the data sources. Note that this can be the full set of data sources, or a subset can be passed in. This is from `base.py`.
 3. `create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary` - Method to make the time and locations of the batches that will be made.
    - Get all t0s from the different data sources and find common intersection
    - Split the times into train, validation and test sets
@@ -43,7 +43,7 @@ Class used to make batches from the different data sources for live predictions
 
 In general there are a few steps how to use this function
 1. `load_yaml_configuration` - loads a configuration file. This is from `base.py`.
-2. `initialise_data_sources` - Initialise all the data sources. Note that this can be the full set of data sources, or a subset can be passed in. This is from `base.py`.
+2. `initialize_data_sources` - Initialize all the data sources. Note that this can be the full set of data sources, or a subset can be passed in. This is from `base.py`.
 3. `create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary` - Method to make the locations of the batches that will be made. A datetime is given as an input.
    - Make the locations of the batches. This is done by looking at one dataset, defined by `config.input_data.data_source_which_defines_geospatial_locations`
    - Save these times and locations to a csv.

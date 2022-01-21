@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class Manager(ManagerBase):
-    """The Manager initialises and manage a dict of DataSource objects.
+    """The Manager initializes and manage a dict of DataSource objects.
 
     Attrs:
       config: Configuration object.
@@ -300,7 +300,7 @@ class Manager(ManagerBase):
         For example, the returned_dict[SplitName.TRAIN]['gsp'] tells us the first batch_idx to
         create for the training set for the GSPDataSource.
         """
-        # Initialise to zero:
+        # Initialize to zero:
         first_batches_to_create: dict[split.SplitName, dict[str, int]] = {}
         for split_name in split.SplitName:
             first_batches_to_create[split_name] = {

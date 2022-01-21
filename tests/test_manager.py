@@ -17,7 +17,7 @@ from nowcasting_dataset.data_sources.satellite.satellite_data_source import (
 )
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset.split.split import SplitMethod
-from nowcasting_dataset.manager import Manager
+from nowcasting_dataset.manager.manager import Manager
 
 
 def test_configure_loggers(test_configuration_filename):

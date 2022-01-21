@@ -20,6 +20,7 @@ from nowcasting_dataset.consts import (
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
+from nowcasting_dataset.manager.utils import callback, error_callback
 
 logger = logging.getLogger(__name__)
 
@@ -531,26 +532,6 @@ class Manager:
                         upload_every_n_batches=self.config.process.upload_every_n_batches,
                     )
 
-                    # Logger messages for callbacks:
-                    def _callback(result, data_source_name):
-                        """Create callback for 'pool.apply_async'"""
-                        logger.info(
-                            f"{data_source_name} has finished created batches for {split_name}!"
-                        )
-
-                    def _error_callback(exception, data_source_name):
-                        """Create error callback for 'pool.apply_async'
-
-                        Need to pass in data_source_name rather than rely on data_source_name
-                        in the outer scope, because otherwise the error message will contain
-                        the wrong data_source_name (due to stuff happening concurrently!)
-                        """
-                        logger.exception(
-                            f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name.value}\n{exception.__class__.__name__}: {exception}"
-                        )
-                        an_error_has_occured.set()
-
                     # Submit data_source.create_batches task to the worker process.
                     logger.debug(
                         f"About to submit create_batches task for {data_source_name}, {split_name}"
@@ -558,8 +539,12 @@ class Manager:
                     async_result = pool.apply_async(
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,
-                        callback=partial(_callback, data_source_name=data_source_name),
-                        error_callback=partial(_error_callback, data_source_name=data_source_name),
+                        callback=partial(
+                            callback, data_source_name=data_source_name, split_name=split_name
+                        ),
+                        error_callback=partial(
+                            error_callback, data_source_name=data_source_name, split_name=split_name
+                        ),
                     )
                     async_results_from_create_batches.append(async_result)
 

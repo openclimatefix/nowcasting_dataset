@@ -13,7 +13,7 @@ import nowcasting_dataset
 from nowcasting_dataset import utils
 from nowcasting_dataset.consts import LOG_LEVELS
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
-from nowcasting_dataset.manager import Manager
+from nowcasting_dataset.manager.manager import Manager
 
 logger = logging.getLogger(__name__)
 

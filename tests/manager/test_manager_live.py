@@ -50,16 +50,6 @@ def test_sample_spatial_and_temporal_locations_for_examples(
     assert len(locations) == 32
 
 
-def test_load_yaml_configuration(test_configuration_filename):  # noqa: D103
-    manager = ManagerLive()
-    manager.load_yaml_configuration(filename=test_configuration_filename)
-
-    manager.initialise_data_sources()
-    assert len(manager.data_sources) == 8
-    assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
-    assert isinstance(manager.config.process.local_temp_path, Path)
-
-
 def test_create_files_specifying_spatial_and_temporal_locations_of_each_example(
     test_configuration_filename,
 ):

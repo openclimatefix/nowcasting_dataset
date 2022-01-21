@@ -70,16 +70,6 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
     assert (t0_datetimes[-1] >= locations["t0_datetime_UTC"]).all()
 
 
-def test_load_yaml_configuration(test_configuration_filename):  # noqa: D103
-    manager = Manager()
-    manager.load_yaml_configuration(filename=test_configuration_filename)
-
-    manager.initialise_data_sources()
-    assert len(manager.data_sources) == 8
-    assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
-    assert isinstance(manager.config.process.local_temp_path, Path)
-
-
 def test_initialise_data_source_with_loggers(test_configuration_filename):
     """Check that initalise the data source and check it ends up in the logger"""
 

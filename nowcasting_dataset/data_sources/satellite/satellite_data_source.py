@@ -82,7 +82,7 @@ class SatelliteDataSource(ZarrDataSource):
         geostationary_crs = geostationary_area_definition.crs
         self._osgb_to_geostationary = pyproj.Transformer.from_crs(
             crs_from=OSGB, crs_to=geostationary_crs
-        )
+        ).transform
 
     def _open_data(self) -> xr.DataArray:
         return open_sat_data(
@@ -307,18 +307,14 @@ def dedupe_time_coords(dataset: xr.Dataset, logger: logging.Logger) -> xr.Datase
         dataset with time coords de-duped.
     """
     # If there are any duplicated init_times then drop the duplicated time:
-    stacked_eumetsat_data = drop_duplicate_times(
-        data_array=dataset["stacked_eumetsat_data"], class_name="Satellite", time_dim="time"
-    )
+    data = drop_duplicate_times(data_array=dataset["data"], class_name="Satellite", time_dim="time")
 
     # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
-    stacked_eumetsat_data = drop_non_monotonic_increasing(
-        data_array=stacked_eumetsat_data, class_name="Satellite", time_dim="time"
-    )
-    dataset = stacked_eumetsat_data.to_dataset(name="stacked_eumetsat_data")
+    data = drop_non_monotonic_increasing(data_array=data, class_name="Satellite", time_dim="time")
+    dataset = data.to_dataset(name="data")
 
-    assert pd.DatetimeIndex(stacked_eumetsat_data["time"]).is_unique
-    assert pd.DatetimeIndex(stacked_eumetsat_data["time"]).is_monotonic_increasing
+    assert pd.DatetimeIndex(data["time"]).is_unique
+    assert pd.DatetimeIndex(data["time"]).is_monotonic_increasing
 
     return dataset
 
@@ -363,7 +359,7 @@ def open_sat_data(
         combine="nested",
     )
 
-    data_array = dataset["stacked_eumetsat_data"]
+    data_array = dataset["data"]
     if "stacked_eumetsat_data" == data_array.name:
         data_array.name = "data"
     del dataset

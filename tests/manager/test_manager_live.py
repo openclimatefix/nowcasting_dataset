@@ -1,4 +1,4 @@
-"""Test Manager."""
+"""Test Manager Live."""
 import os
 import tempfile
 from datetime import datetime

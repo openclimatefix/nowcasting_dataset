@@ -1,4 +1,4 @@
-"""Manager class."""
+"""Base Manager class."""
 
 import logging
 from pathlib import Path

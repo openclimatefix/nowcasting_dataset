@@ -1,4 +1,4 @@
-"""Test Manager."""
+"""Test Base Manager."""
 
 from pathlib import Path
 

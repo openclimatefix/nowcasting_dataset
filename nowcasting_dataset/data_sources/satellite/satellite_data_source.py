@@ -65,9 +65,6 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._open_data()
         if "variable" in self._data.dims:
             self._data = self._data.rename({"variable": "channels"})
-        # The channels strings are represented as numpy 'U6' type, which cannot be saved in HDF5:
-        # https://docs.h5py.org/en/latest/strings.html#what-about-numpy-s-u-type
-        # self._data['channels'] = self._data['channels'].astype(object)
         if not set(self.channels).issubset(self._data.channels.values):
             raise RuntimeError(
                 f"One or more requested channels are not available in {self.zarr_path}!"

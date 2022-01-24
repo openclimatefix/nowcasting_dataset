@@ -545,9 +545,9 @@ class Manager:
                         in the outer scope, because otherwise the error message will contain
                         the wrong data_source_name (due to stuff happening concurrently!)
                         """
-                        logger.exception(
+                        logger.error(
                             f"Exception raised by {data_source_name} whilst creating batches for"
-                            f" {split_name.value}\n{exception.__class__.__name__}: {exception}"
+                            f" {split_name.value}\n{exception.__class__.__name__}: {exception}\n"
                         )
                         an_error_has_occured.set()
 

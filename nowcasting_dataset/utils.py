@@ -183,6 +183,24 @@ def arg_logger(func):
     return inner_func
 
 
+def exception_logger(func):
+    """A function decorator to log exceptions thrown by the inner function."""
+    # Adapted from
+    # www.blog.pythonlibrary.org/2016/06/09/python-how-to-create-an-exception-logging-decorator
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except:  # noqa E722
+            logger.exception(
+                f"EXCEPTION when calling `{func.__name__}`!"
+                f" Arguments passed into function: {args=}; {kwargs=}"
+            )
+            raise
+
+    return inner_func
+
+
 def drop_duplicate_times(data_array: xr.DataArray, class_name: str, time_dim: str) -> xr.DataArray:
     """
     Drop duplicate times in data array

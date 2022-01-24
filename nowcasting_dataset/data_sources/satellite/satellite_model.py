@@ -12,7 +12,7 @@ class Satellite(DataSourceOutput):
     """Class to store satellite data as a xr.Dataset with some validation"""
 
     __slots__ = ()
-    _expected_dimensions = ("time", "x_osgb", "y_osgb", "channels")
+    _expected_dimensions = ("time", "x_geostationary", "y_geostationary", "channels")
     _expected_data_vars = ("data",)
 
     @classmethod
@@ -22,10 +22,17 @@ class Satellite(DataSourceOutput):
         # previously nans were filled with -1s, so lets make sure there are none
         v.check_dataset_not_equal(data=v.data, value=-1)
         v.check_data_var_dim(
-            v.data, ("example", "time_index", "x_osgb_index", "y_osgb_index", "channels_index")
+            v.data,
+            (
+                "example",
+                "time_index",
+                "x_geostationary_index",
+                "y_geostationary_index",
+                "channels_index",
+            ),
         )
-        v.check_data_var_dim(v.x_osgb, ("example", "x_osgb_index"))
-        v.check_data_var_dim(v.y_osgb, ("example", "y_osgb_index"))
+        v.check_data_var_dim(v.x_geostationary, ("example", "x_geostationary_index"))
+        v.check_data_var_dim(v.y_geostationary, ("example", "y_geostationary_index"))
 
         return v
 
@@ -34,5 +41,3 @@ class HRVSatellite(Satellite):
     """Class to store HRV satellite data as a xr.Dataset with some validation"""
 
     __slots__ = ()
-    _expected_dimensions = ("time", "x_osgb", "y_osgb", "channels")
-    _expected_data_vars = ("data",)

@@ -65,6 +65,9 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._open_data()
         if "variable" in self._data.dims:
             self._data = self._data.rename({"variable": "channels"})
+        # The channels strings are represented as numpy 'U6' type, which cannot be saved in HDF5:
+        # https://docs.h5py.org/en/latest/strings.html#what-about-numpy-s-u-type
+        # self._data['channels'] = self._data['channels'].astype(object)
         if not set(self.channels).issubset(self._data.channels.values):
             raise RuntimeError(
                 f"One or more requested channels are not available in {self.zarr_path}!"
@@ -134,8 +137,12 @@ class SatelliteDataSource(ZarrDataSource):
             x_center_osgb, y_center_osgb
         )
         # Get the index into x and y nearest to x_center_geostationary and y_center_geostationary:
-        x_index_at_center = np.searchsorted(data_array.x.values, x_center_geostationary) - 1
-        y_index_at_center = np.searchsorted(data_array.y.values, y_center_geostationary) - 1
+        x_index_at_center = (
+            np.searchsorted(data_array.x_geostationary.values, x_center_geostationary) - 1
+        )
+        y_index_at_center = (
+            np.searchsorted(data_array.y_geostationary.values, y_center_geostationary) - 1
+        )
         # Put x_index_at_center and y_index_at_center into a pd.Series so we can operate
         # on them both in a single line of code.
         x_and_y_index_at_center = pd.Series(
@@ -149,8 +156,8 @@ class SatelliteDataSource(ZarrDataSource):
         suggested_reduction_of_image_size_pixels = (
             max(
                 (-min_x_and_y_index.min() if (min_x_and_y_index < 0).any() else 0),
-                (max_x_and_y_index.x_index_at_center - len(data_array.x)),
-                (max_x_and_y_index.y_index_at_center - len(data_array.y)),
+                (max_x_and_y_index.x_index_at_center - len(data_array.x_geostationary)),
+                (max_x_and_y_index.y_index_at_center - len(data_array.y_geostationary)),
             )
             * 2
         )
@@ -168,19 +175,29 @@ class SatelliteDataSource(ZarrDataSource):
                 f" x={max_x_and_y_index.x_index_at_center},"
                 f" y={min_x_and_y_index.y_index_at_center} to"
                 f" y={max_x_and_y_index.y_index_at_center}."
-                f" In the Zarr data, len(x)={len(data_array.x)}, len(y)={len(data_array.y)}."
+                f" In the Zarr data, len(x)={len(data_array.x_geostationary)},"
+                f" len(y)={len(data_array.y_geostationary)}."
                 f" Try reducing image_size_pixels from {self._square.size_pixels} to"
                 f" {new_suggested_image_size_pixels} pixels."
-                f" {self.history_length=}"
-                f" {self.forecast_length=}"
+                f" {self.history_length=}; {self.forecast_length=}; {x_center_osgb=};"
+                f" {y_center_osgb=}; {x_center_geostationary=}; {y_center_geostationary=};"
+                f" {min(data_array.x_geostationary.values)=};"
+                f" {max(data_array.x_geostationary.values)=};"
+                f" {min(data_array.y_geostationary.values)=};"
+                f" {max(data_array.y_geostationary.values)=};\n"
+                f" {data_array=}"
             )
 
         # Select the geographical region of interest.
         # Note that isel is *exclusive* of the end of the slice.
         # e.g. isel(x=slice(0, 3)) will return the first, second, and third values.
         data_array = data_array.isel(
-            x=slice(min_x_and_y_index.x_index_at_center, max_x_and_y_index.x_index_at_center),
-            y=slice(min_x_and_y_index.y_index_at_center, max_x_and_y_index.y_index_at_center),
+            x_geostationary=slice(
+                min_x_and_y_index.x_index_at_center, max_x_and_y_index.x_index_at_center
+            ),
+            y_geostationary=slice(
+                min_x_and_y_index.y_index_at_center, max_x_and_y_index.y_index_at_center
+            ),
         )
         return data_array
 
@@ -207,9 +224,6 @@ class SatelliteDataSource(ZarrDataSource):
             y_center_osgb=y_center_osgb,
         )
 
-        if "variable" in list(selected_data.dims):
-            selected_data = selected_data.rename({"variable": "channels"})
-
         selected_data = self._post_process_example(selected_data, t0_datetime_utc)
 
         if selected_data.shape != self._shape_of_example:
@@ -224,6 +238,13 @@ class SatelliteDataSource(ZarrDataSource):
                 f" {self.forecast_length=}"
                 f" {self.history_length=}"
             )
+
+        # Delete the attributes because they fail to save to HDF5.
+        # HDF complains with the exception `TypeError: No conversion path for dtype: dtype('<U32')`
+        # (If the downstream code wants to use attributes then we can almost certainly find a way
+        # to encode the attributes in an HDF5-friendly fashion. The error was
+        # See https://docs.h5py.org/en/latest/strings.html#what-about-numpy-s-u-type
+        selected_data.attrs = {}
 
         return selected_data.load().to_dataset(name="data")
 
@@ -359,13 +380,15 @@ def open_sat_data(
         combine="nested",
     )
 
+    dataset = dataset.rename({"x": "x_geostationary", "y": "y_geostationary"})
+
     data_array = dataset["data"]
     if "stacked_eumetsat_data" == data_array.name:
         data_array.name = "data"
     del dataset
 
     # Flip coordinates to top-left first
-    data_array = data_array.reindex(x=data_array.x[::-1])
+    data_array = data_array.reindex(x_geostationary=data_array.x_geostationary[::-1])
 
     # reindex satellite to 15 mins data
     datetime_index = pd.DatetimeIndex(data_array["time"])

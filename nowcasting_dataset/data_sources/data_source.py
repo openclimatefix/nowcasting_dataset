@@ -12,7 +12,7 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
-from nowcasting_dataset import square
+from nowcasting_dataset import square, utils
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 from nowcasting_dataset.dataset.xr_utils import (
@@ -134,6 +134,7 @@ class DataSource:
 
     # TODO: Issue #319: Standardise parameter names.
     # TODO: Issue #367: Reduce duplication.
+    @utils.exception_logger
     def create_batches(
         self,
         spatial_and_temporal_locations_of_each_example: pd.DataFrame,

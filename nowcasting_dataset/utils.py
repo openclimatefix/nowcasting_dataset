@@ -191,7 +191,7 @@ def exception_logger(func):
     def inner_func(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except:  # noqa E722
+        except:  # noqa: E722
             logger.exception(
                 f"EXCEPTION when calling `{func.__name__}`!"
                 f" Arguments passed into function: {args=}; {kwargs=}"

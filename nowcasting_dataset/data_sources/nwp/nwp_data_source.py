@@ -1,8 +1,10 @@
 """ NWP Data Source """
+import io
 import logging
 from dataclasses import InitVar, dataclass
 from typing import Iterable, Optional
 
+import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -184,14 +186,24 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """
     _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
-    nwp = xr.open_dataset(
-        zarr_path,
-        engine="zarr",
-        consolidated=consolidated,
-        mode="r",
-        chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto' (see issue #456)
-        # but 'auto' massively slows down reading NWPs.
-    )
+
+    if zarr_path.split(".")[-1] == "netcdf":
+        # loading netcdf file, download bytes and then load as xarray
+        with fsspec.open(zarr_path, mode="rb") as file:
+            file_bytes = file.read()
+
+        with io.BytesIO(file_bytes) as file:
+            nwp = xr.load_dataset(file, engine="h5netcdf")
+
+    else:
+        nwp = xr.open_dataset(
+            zarr_path,
+            engine="zarr",
+            consolidated=consolidated,
+            mode="r",
+            chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto'
+            # (see issue #456) but 'auto' massively slows down reading NWPs.
+        )
 
     # Select the "UKV" DataArray from the "nwp" Dataset.
     # "UKV" is the one and only DataArray in the Zarr Dataset.

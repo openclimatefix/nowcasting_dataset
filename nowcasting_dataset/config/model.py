@@ -291,6 +291,8 @@ class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
 class NWP(DataSourceMixin):
     """NWP configuration model"""
 
+    # TODO change to nwp_path, as it could be a netcdf now.
+    # https://github.com/openclimatefix/nowcasting_dataset/issues/582
     nwp_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",  # noqa: E501
         description="The path which holds the NWP zarr.",
@@ -311,6 +313,7 @@ class GSP(DataSourceMixin, StartEndDatetimeMixin):
     )
     gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    metadata_only: bool = Field(False, description="Option to only load metadata.")
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):

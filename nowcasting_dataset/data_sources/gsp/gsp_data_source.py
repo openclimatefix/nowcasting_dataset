@@ -60,6 +60,8 @@ class GSPDataSource(ImageDataSource):
     # This results in 2 GSPs being dropped.
     # See https://github.com/openclimatefix/Satip/issues/30
     northern_boundary_osgb: Optional[float] = 1_036_975
+    # Only load metadata
+    metadata_only: bool = False
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """
@@ -96,23 +98,26 @@ class GSPDataSource(ImageDataSource):
             lat=self.metadata["centroid_lat"], lon=self.metadata["centroid_lon"]
         )
 
-        # load gsp data from file / gcp
-        self.gsp_power, self.gsp_capacity = load_solar_gsp_data(
-            self.zarr_path, start_dt=self.start_datetime, end_dt=self.end_datetime
-        )
-
-        # drop any gsp below a threshold mw. This is to get rid of any small GSP where
-        # predicting the solar output will be harder.
-        self.gsp_power, self.metadata = drop_gsp_by_threshold(
-            self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
-        )
-
-        if self.northern_boundary_osgb is not None:
-            self.gsp_power, self.metadata = drop_gsp_north_of_boundary(
-                self.gsp_power, self.metadata, northern_boundary_osgb=self.northern_boundary_osgb
+        if not self.metadata_only:
+            # load gsp data from file / gcp
+            self.gsp_power, self.gsp_capacity = load_solar_gsp_data(
+                self.zarr_path, start_dt=self.start_datetime, end_dt=self.end_datetime
             )
 
-        logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
+            # drop any gsp below a threshold mw. This is to get rid of any small GSP where
+            # predicting the solar output will be harder.
+            self.gsp_power, self.metadata = drop_gsp_by_threshold(
+                self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
+            )
+
+            if self.northern_boundary_osgb is not None:
+                self.gsp_power, self.metadata = drop_gsp_north_of_boundary(
+                    self.gsp_power,
+                    self.metadata,
+                    northern_boundary_osgb=self.northern_boundary_osgb,
+                )
+
+            logger.debug(f"There are {len(self.gsp_power.columns)} GSP")
 
     def datetime_index(self):
         """
@@ -145,8 +150,10 @@ class GSPDataSource(ImageDataSource):
         """
 
         logger.info("Getting all locations for each datetime")
+        total_gsp_nan_count = 0
+        if not self.metadata_only:
+            total_gsp_nan_count = self.gsp_power.isna().sum().sum()
 
-        total_gsp_nan_count = self.gsp_power.isna().sum().sum()
         if total_gsp_nan_count > 0:
             assert Exception("There are nans in the GSP data. Can't get locations for all GSPs")
         else:
@@ -332,7 +339,7 @@ class GSPDataSource(ImageDataSource):
         self,
         x_center_osgb: Number,
         y_center_osgb: Number,
-        gsp_ids_with_data_for_timeslice: pd.Int64Index,
+        gsp_ids_with_data_for_timeslice: pd.Index,
     ) -> int:
         """
         Get the GSP id of the central GSP from coordinates
@@ -382,8 +389,8 @@ class GSPDataSource(ImageDataSource):
         self,
         x_center_osgb: Number,
         y_center_osgb: Number,
-        gsp_ids_with_data_for_timeslice: pd.Int64Index,
-    ) -> pd.Int64Index:
+        gsp_ids_with_data_for_timeslice: pd.Index,
+    ) -> pd.Index:
         """
         Find the GSP IDs for all the GSP within the geospatial region of interest.
 

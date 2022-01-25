@@ -207,6 +207,10 @@ class ManagerLive(ManagerBase):
                 logger.debug(
                     f"About to submit create_batches task for {data_source_name}, {split_name}"
                 )
+
+                # Sometimes when debuggin it is easy to use non async
+                # data_source.create_batches(**kwargs_for_create_batches)
+
                 async_result = pool.apply_async(
                     data_source.create_batches,
                     kwds=kwargs_for_create_batches,

@@ -176,9 +176,6 @@ class GSPDataSource(ImageDataSource):
             x_centers_osgb_all_gsps = list(x_centers_osgb_all_gsps["location_x"])
             y_centers_osgb_all_gsps = list(y_centers_osgb_all_gsps["location_y"])
 
-            logger.debug(x_centers_osgb_all_gsps)
-            logger.debug(y_centers_osgb_all_gsps)
-
             return t0_datetimes_utc_all_gsps, x_centers_osgb_all_gsps, y_centers_osgb_all_gsps
 
     def get_locations(
@@ -245,8 +242,6 @@ class GSPDataSource(ImageDataSource):
                 # Get metadata for GSP
                 x_centers_osgb.append(metadata_for_gsp.location_x)
                 y_centers_osgb.append(metadata_for_gsp.location_y)
-                logger.debug(metadata_for_gsp.location_x)
-                logger.debug(metadata_for_gsp.location_y)
 
         return x_centers_osgb, y_centers_osgb
 

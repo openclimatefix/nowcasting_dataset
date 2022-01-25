@@ -1,23 +1,15 @@
 """Test Manager."""
 import os
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
-import nowcasting_dataset
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
-from nowcasting_dataset.data_sources.satellite.satellite_data_source import (
-    HRVSatelliteDataSource,
-    SatelliteDataSource,
-)
-from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 from nowcasting_dataset.dataset.split.split import SplitMethod
-from nowcasting_dataset.manager import Manager
+from nowcasting_dataset.manager.manager import Manager
 
 
 def test_configure_loggers(test_configuration_filename):
@@ -37,24 +29,7 @@ def test_configure_loggers(test_configuration_filename):
         manager.configure_loggers(log_level="DEBUG")
 
 
-def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
-    local_path = Path(nowcasting_dataset.__file__).parent.parent
-
-    gsp = GSPDataSource(
-        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
-        start_datetime=datetime(2020, 4, 1),
-        end_datetime=datetime(2020, 4, 2),
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-    )
-
-    sun = SunDataSource(
-        zarr_path=f"{local_path}/tests/data/sun/test.zarr",
-        history_minutes=30,
-        forecast_minutes=60,
-    )
+def test_sample_spatial_and_temporal_locations_for_examples(gsp, sun):  # noqa: D103
 
     manager = Manager()
     manager.data_sources = {"gsp": gsp, "sun": sun}
@@ -70,18 +45,8 @@ def test_sample_spatial_and_temporal_locations_for_examples():  # noqa: D103
     assert (t0_datetimes[-1] >= locations["t0_datetime_UTC"]).all()
 
 
-def test_load_yaml_configuration(test_configuration_filename):  # noqa: D103
-    manager = Manager()
-    manager.load_yaml_configuration(filename=test_configuration_filename)
-
-    manager.initialise_data_sources()
-    assert len(manager.data_sources) == 8
-    assert isinstance(manager.data_source_which_defines_geospatial_locations, GSPDataSource)
-    assert isinstance(manager.config.process.local_temp_path, Path)
-
-
-def test_initialise_data_source_with_loggers(test_configuration_filename):
-    """Check that initalise the data source and check it ends up in the logger"""
+def test_initialize_data_source_with_loggers(test_configuration_filename):
+    """Check that initialize the data source and check it ends up in the logger"""
 
     # set up
     manager = Manager()
@@ -93,7 +58,7 @@ def test_initialise_data_source_with_loggers(test_configuration_filename):
 
         manager.config.output_data.filepath = Path(dst_path)
         manager.configure_loggers(log_level="DEBUG")
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
         # check logs is appended to
         for log_file in ["gsp", "satellite", "hrvsatellite"]:
@@ -104,16 +69,8 @@ def test_initialise_data_source_with_loggers(test_configuration_filename):
                 assert "The configuration for" in line_0
 
 
-def test_get_daylight_datetime_index(sat_filename):
+def test_get_daylight_datetime_index(sat_filename, sat):
     """Check that 'manager' gets the correct t0 datetime over nighttime"""
-
-    sat = SatelliteDataSource(
-        zarr_path=sat_filename,
-        history_minutes=30,
-        forecast_minutes=60,
-        image_size_pixels=64,
-        meters_per_pixel=2000,
-    )
 
     manager = Manager()
     manager.data_sources = {"sat": sat}
@@ -142,7 +99,7 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
     manager.config.process.n_validation_batches = 10
     manager.config.process.n_test_batches = 10
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     batch_size = manager.config.process.batch_size
 
@@ -182,7 +139,7 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
     manager.config.process.n_validation_batches = 10
     manager.config.process.n_test_batches = 10
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -204,7 +161,7 @@ def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_ex
     manager.config.process.n_validation_batches = 0
     manager.config.process.n_test_batches = 0
     manager.config.process.split_method = SplitMethod.SAME
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -214,7 +171,7 @@ def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_ex
             manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
 
 
-def test_batches(test_configuration_filename):
+def test_batches(test_configuration_filename, sat, hrvsat, gsp):
     """Test that batches can be made"""
 
     manager = Manager()
@@ -228,46 +185,6 @@ def test_batches(test_configuration_filename):
 
         # set up loggers
         manager.configure_loggers(log_level="DEBUG")
-
-        # just set satellite as data source
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "sat_data.zarr"
-        )
-
-        sat = SatelliteDataSource(
-            zarr_path=filename,
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=24,
-            meters_per_pixel=6000,
-            channels=("IR_016",),
-        )
-
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "hrv_sat_data.zarr"
-        )
-        hrvsat = HRVSatelliteDataSource(
-            zarr_path=filename,
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=64,
-            meters_per_pixel=2000,
-            channels=("HRV",),
-        )
-
-        filename = (
-            Path(nowcasting_dataset.__file__).parent.parent / "tests" / "data" / "gsp" / "test.zarr"
-        )
-
-        gsp = GSPDataSource(
-            zarr_path=filename,
-            start_datetime=datetime(2020, 4, 1),
-            end_datetime=datetime(2020, 4, 2),
-            history_minutes=30,
-            forecast_minutes=60,
-            image_size_pixels=64,
-            meters_per_pixel=2000,
-        )
 
         # Set data sources
         manager.data_sources = {"gsp": gsp, "satellite": sat, "hrvsatellite": hrvsat}
@@ -327,7 +244,7 @@ def test_run_error(test_configuration_filename):
     manager.config.input_data.satellite.forecast_minutes = 17
 
     with pytest.raises(Exception):
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
 
 def test_run_error_data_source_which_defines_geospatial_locations(test_configuration_filename):
@@ -339,7 +256,7 @@ def test_run_error_data_source_which_defines_geospatial_locations(test_configura
     manager.config.input_data.data_source_which_defines_geospatial_locations = "test"
 
     with pytest.raises(Exception):
-        manager.initialise_data_sources()
+        manager.initialize_data_sources()
 
 
 def test_run(test_configuration_filename):
@@ -347,7 +264,7 @@ def test_run(test_configuration_filename):
 
     manager = Manager()
     manager.load_yaml_configuration(filename=test_configuration_filename)
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -363,7 +280,7 @@ def test_run_overwrite_batches_false(test_configuration_filename):
 
     manager = Manager()
     manager.load_yaml_configuration(filename=test_configuration_filename)
-    manager.initialise_data_sources()
+    manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 

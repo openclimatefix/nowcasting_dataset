@@ -311,6 +311,7 @@ class GSP(DataSourceMixin, StartEndDatetimeMixin):
     )
     gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    metadata_only: bool = Field(False, description="Option to only load metadata.")
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):

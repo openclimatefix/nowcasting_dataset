@@ -344,7 +344,7 @@ class GSPDataSource(ImageDataSource):
         self,
         x_center_osgb: Number,
         y_center_osgb: Number,
-        gsp_ids_with_data_for_timeslice: pd.Int64Index,
+        gsp_ids_with_data_for_timeslice: pd.Index,
     ) -> int:
         """
         Get the GSP id of the central GSP from coordinates
@@ -394,8 +394,8 @@ class GSPDataSource(ImageDataSource):
         self,
         x_center_osgb: Number,
         y_center_osgb: Number,
-        gsp_ids_with_data_for_timeslice: pd.Int64Index,
-    ) -> pd.Int64Index:
+        gsp_ids_with_data_for_timeslice: pd.Index,
+    ) -> pd.Index:
         """
         Find the GSP IDs for all the GSP within the geospatial region of interest.
 

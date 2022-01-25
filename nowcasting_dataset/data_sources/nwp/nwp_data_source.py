@@ -187,7 +187,7 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
 
-    if "netcdf" in zarr_path:
+    if zarr_path.split(".")[-1] == "netcdf":
         # loading netcdf file, download bytes and then load as xarray
         with fsspec.open(zarr_path, mode="rb") as file:
             file_bytes = file.read()

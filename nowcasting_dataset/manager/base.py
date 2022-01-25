@@ -29,11 +29,12 @@ class ManagerBase:
         self.data_sources = {}
         self.data_source_which_defines_geospatial_locations = None
 
-    def load_yaml_configuration(self, filename: str) -> None:
+    def load_yaml_configuration(self, filename: str, set_git: bool = True) -> None:
         """Load YAML config from `filename`."""
         logger.debug(f"Loading YAML configuration file {filename}")
         self.config = config.load_yaml_configuration(filename)
-        self.config = config.set_git_commit(self.config)
+        if set_git:
+            self.config = config.set_git_commit(self.config)
         self.save_batches_locally_and_upload = self.config.process.upload_every_n_batches > 0
         logger.debug(f"config={self.config}")
 

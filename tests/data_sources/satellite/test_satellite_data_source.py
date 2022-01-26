@@ -27,109 +27,125 @@ def test_datetime_index(sat_data_source):  # noqa: D103
     assert np.all(np.diff(datetimes.view(int)) > 0)
 
 
-@pytest.mark.parametrize(
-    "x, y, left, right, top, bottom",
-    [
-        (0, 0, -221121.39078455, 208335.1546766134, 384697.57834117045, -355285.4325789859),
-        (10, 0, -221121.39078455, 208335.1546766134, 384697.57834117045, -355285.4325789859),
-        (30, 0, -221121.39078455, 208335.1546766134, 384697.57834117045, -355285.4325789859),
-        (1000, 0, -221121.39078455, 208335.1546766134, 384697.57834117045, -355285.4325789859),
-        (0, 1000, -221121.39078455, 208335.1546766134, 384697.57834117045, -355285.4325789859),
-        (1000, 1000, -221121.39078455, 208335.1546766134, 384697.57834117045, -355285.4325789859),
-        (
-            2000,
-            2000,
-            -217660.91342640377,
-            211646.9832259717,
-            384697.57834117045,
-            -355285.4325789859,
-        ),
-        (
-            2000,
-            1000,
-            -217660.91342640377,
-            211646.9832259717,
-            384697.57834117045,
-            -355285.4325789859,
-        ),
-        (
-            10001,
-            10001,
-            -210744.23604969133,
-            218267.83605829155,
-            391200.6059295471,
-            -349991.70123797783,
-        ),
-    ],
-)
-def test_get_example(sat_data_source, x, y, left, right, top, bottom):  # noqa: D103
-    sat_data_source.open()
-    t0_dt = pd.Timestamp("2020-04-01T13:00")
-
-    sat_data = sat_data_source.get_example(t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y)
-    assert np.isclose(left, sat_data.x_osgb.values[0])
-    assert np.isclose(right, sat_data.x_osgb.values[-1])
-
-    # sat_data.y is top-to-bottom.
-    assert np.isclose(bottom, sat_data.y_osgb.values[0])
-    assert np.isclose(top, sat_data.y_osgb.values[-1])
-    assert len(sat_data.x_osgb) == pytest.IMAGE_SIZE_PIXELS
-    assert len(sat_data.y_osgb) == pytest.IMAGE_SIZE_PIXELS
-    assert len(sat_data.x_osgb.shape) == 1
-
-
-@pytest.mark.parametrize(
-    "x, y, left, right, top, bottom",
-    [
-        (0, 0, -72420.55623992952, 70584.73313047731, 122797.71873342531, -122767.5525824396),
-        (10, 0, -72420.55623992952, 70584.73313047731, 122797.71873342531, -122767.5525824396),
-        (30, 0, -72420.55623992952, 70584.73313047731, 122797.71873342531, -122767.5525824396),
-        (1000, 0, -72420.55623992952, 70584.73313047731, 122797.71873342531, -122767.5525824396),
-        (0, 1000, -72420.55623992952, 70584.73313047731, 124799.65960250192, -120896.5028911124),
-        (1000, 1000, -72420.55623992952, 70584.73313047731, 124799.65960250192, -120896.5028911124),
-        (2000, 2000, -71286.2044391025, 71702.68621321098, 124799.65960250192, -120896.5028911124),
-        (2000, 1000, -71286.2044391025, 71702.68621321098, 124799.65960250192, -120896.5028911124),
-        (2001, 2001, -71286.2044391025, 71702.68621321098, 124799.65960250192, -120896.5028911124),
-    ],
-)
-def test_hrv_get_example(hrv_sat_data_source, x, y, left, right, top, bottom):  # noqa: D103
-    hrv_sat_data_source.open()
-    t0_dt = pd.Timestamp("2020-04-01T13:00")
-
-    sat_data = hrv_sat_data_source.get_example(
-        t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y
+def _test_get_example(
+    data_source,
+    t0_dt,
+    x_center_osgb,
+    y_center_osgb,
+    left_geostationary,
+    right_geostationary,
+    top_geostationary,
+    bottom_geostationary,
+):  # noqa: D103
+    data_source.open()
+    sat_data = data_source.get_example(
+        t0_datetime_utc=t0_dt, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
     )
 
-    assert np.isclose(left, sat_data.x_osgb.values[0])
-    assert np.isclose(right, sat_data.x_osgb.values[-1])
-
     # sat_data.y is top-to-bottom.
-    assert np.isclose(bottom, sat_data.y_osgb.values[0])
-    assert np.isclose(top, sat_data.y_osgb.values[-1])
-    assert len(sat_data.x_osgb) == pytest.IMAGE_SIZE_PIXELS
-    assert len(sat_data.y_osgb) == pytest.IMAGE_SIZE_PIXELS
+    assert np.isclose(left_geostationary, sat_data.x_geostationary.values[0])
+    assert np.isclose(right_geostationary, sat_data.x_geostationary.values[-1])
+    assert np.isclose(top_geostationary, sat_data.y_geostationary.values[-1])
+    assert np.isclose(bottom_geostationary, sat_data.y_geostationary.values[0])
+    assert len(sat_data.x_geostationary) == pytest.IMAGE_SIZE_PIXELS
+    assert len(sat_data.y_geostationary) == pytest.IMAGE_SIZE_PIXELS
+    assert len(sat_data.x_geostationary.shape) == 1
+
+
+@pytest.mark.parametrize(
+    "x_center_osgb, y_center_osgb, left_geostationary, right_geostationary,"
+    " top_geostationary, bottom_geostationary",
+    [
+        (0, 0, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (10, 0, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (30, 0, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (1000, 0, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (0, 1000, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (1000, 1000, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (2000, 2000, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (2000, 1000, -1326178.250, -945127.000, 4698631.500, 4317580.000),
+        (10001, 10001, -1317177.000, -936125.812, 4704632.000, 4323581.000),
+    ],
+)
+def test_get_example(
+    sat_data_source,
+    x_center_osgb,
+    y_center_osgb,
+    left_geostationary,
+    right_geostationary,
+    top_geostationary,
+    bottom_geostationary,
+):  # noqa: D103
+    t0_dt = pd.Timestamp("2020-04-01T13:00")
+    _test_get_example(
+        data_source=sat_data_source,
+        t0_dt=t0_dt,
+        x_center_osgb=x_center_osgb,
+        y_center_osgb=y_center_osgb,
+        left_geostationary=left_geostationary,
+        right_geostationary=right_geostationary,
+        top_geostationary=top_geostationary,
+        bottom_geostationary=bottom_geostationary,
+    )
+
+
+@pytest.mark.parametrize(
+    "x_center_osgb, y_center_osgb, left_geostationary, right_geostationary,"
+    " top_geostationary, bottom_geostationary",
+    [
+        (0, 0, -1198161.000, -1071143.875, 4573614.500, 4446597.500),
+        (10, 0, -1198161.000, -1071143.875, 4573614.500, 4446597.500),
+        (30, 0, -1198161.000, -1071143.875, 4573614.500, 4446597.500),
+        (1000, 0, -1197160.875, -1070143.750, 4573614.500, 4446597.500),
+        (0, 1000, -1198161.000, -1071143.875, 4574614.500, 4447597.500),
+        (1000, 1000, -1197160.875, -1070143.750, 4574614.500, 4447597.500),
+        (2000, 2000, -1196160.625, -1069143.625, 4574614.500, 4447597.500),
+        (2000, 1000, -1196160.625, -1069143.625, 4574614.500, 4447597.500),
+        (2001, 2001, -1196160.625, -1069143.625, 4574614.500, 4447597.500),
+    ],
+)
+def test_hrv_get_example(
+    hrv_sat_data_source,
+    x_center_osgb,
+    y_center_osgb,
+    left_geostationary,
+    right_geostationary,
+    top_geostationary,
+    bottom_geostationary,
+):  # noqa: D103
+    t0_dt = pd.Timestamp("2020-01-01T01:00")
+    _test_get_example(
+        data_source=hrv_sat_data_source,
+        t0_dt=t0_dt,
+        x_center_osgb=x_center_osgb,
+        y_center_osgb=y_center_osgb,
+        left_geostationary=left_geostationary,
+        right_geostationary=right_geostationary,
+        top_geostationary=top_geostationary,
+        bottom_geostationary=bottom_geostationary,
+    )
 
 
 def test_hrv_geospatial_border(hrv_sat_data_source):  # noqa: D103
     border = hrv_sat_data_source.geospatial_border()
     correct_border = [
-        [-612835.047242, -447550.008416],
-        [-612835.047242, 1204307.57632],
-        [1281085.856779, -447550.008416],
-        [1281085.856779, 1204307.57632],
+        [-636130.9, -339340.97],
+        [-1123853.4, 1853731.9],
+        [1265433.1, -457073.28],
+        [998077.7, 1192428.8],
     ]
-    np.testing.assert_array_almost_equal(border, correct_border)
+    np.testing.assert_array_almost_equal(border, correct_border, decimal=1)
 
 
 def test_geospatial_border(sat_data_source):  # noqa: D103
     border = sat_data_source.geospatial_border()
     correct_border = [
-        [-460044.797056, -220812.66369],
-        [-460044.797056, 862710.688863],
-        [1147550.338664, -220812.66369],
-        [1147550.338664, 862710.688863],
+        [-530300.1, -127087.12],
+        [-807881.6, 1179602.2],
+        [1097792.5, -247369.67],
+        [920786.25, 833248.0],
     ]
-    np.testing.assert_array_almost_equal(border, correct_border)
+    np.testing.assert_array_almost_equal(border, correct_border, decimal=1)
 
 
 def test_wrong_sample_period(sat_filename):

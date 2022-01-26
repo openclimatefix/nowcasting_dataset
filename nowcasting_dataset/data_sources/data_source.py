@@ -505,7 +505,7 @@ class ZarrDataSource(ImageDataSource):
 
         return selected_data.load().to_dataset(name="data")
 
-    def geospatial_border(self) -> List[Tuple[Number, Number]]:
+    def geospatial_border(self) -> list[tuple[Number, Number]]:
         """
         Get 'corner' coordinates for a rectangle within the boundary of the data.
 

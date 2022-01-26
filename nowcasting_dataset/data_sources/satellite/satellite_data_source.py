@@ -1,4 +1,5 @@
 """ Satellite Data Source """
+import itertools
 import logging
 from dataclasses import InitVar, dataclass
 from functools import partial
@@ -63,8 +64,6 @@ class SatelliteDataSource(ZarrDataSource):
         call open() _after_ creating separate processes.
         """
         self._data = self._open_data()
-        if "variable" in self._data.dims:
-            self._data = self._data.rename({"variable": "channels"})
         if not set(self.channels).issubset(self._data.channels.values):
             raise RuntimeError(
                 f"One or more requested channels are not available in {self.zarr_path}!"
@@ -303,6 +302,23 @@ class SatelliteDataSource(ZarrDataSource):
 
         return datetime_index
 
+    def geospatial_border(self) -> list[tuple[Number, Number]]:
+        """
+        Get 'corner' coordinates for a rectangle within the boundary of the data.
+
+        Returns List of 2-tuples of the x and y coordinates of each corner,
+        in OSGB projection.
+        """
+        GEO_BORDER: int = 64  #: In same geo projection and units as sat_data.
+        data = self._open_data()
+        return [
+            (
+                data.x_osgb.isel(x_geostationary=x, y_geostationary=y).values,
+                data.y_osgb.isel(x_geostationary=x, y_geostationary=y).values,
+            )
+            for x, y in itertools.product([GEO_BORDER, -GEO_BORDER], [GEO_BORDER, -GEO_BORDER])
+        ]
+
 
 class HRVSatelliteDataSource(SatelliteDataSource):
     """Satellite Data Source for HRV data."""
@@ -377,7 +393,16 @@ def open_sat_data(
         combine="nested",
     )
 
-    dataset = dataset.rename({"x": "x_geostationary", "y": "y_geostationary"})
+    # Rename
+    # These renamings will no longer be necessary when the Zarr uses the 'correct' names,
+    # see https://github.com/openclimatefix/Satip/issues/66
+    if "x" in dataset:
+        dataset = dataset.rename({"x": "x_geostationary", "y": "y_geostationary"})
+    if "variable" in dataset:
+        dataset = dataset.rename({"variable": "channels"})
+    elif "channels" not in dataset:
+        # This is HRV version 3, which doesn't have a channels dim.  So add one.
+        dataset = dataset.expand_dims(dim={"channels": ["HRV"]}, axis=-1)
 
     data_array = dataset["data"]
     if "stacked_eumetsat_data" == data_array.name:

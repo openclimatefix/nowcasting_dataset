@@ -25,7 +25,6 @@ class NWP(DataSourceOutput):
 
         dims = ("example", "time_index", "x_osgb_index", "y_osgb_index", "channels_index")
         v.check_data_var_dim(v.data, dims)
-
-        v.__setitem__("data", v.data.transpose(*dims))
+        v = v.order_dims(v, variable="data", expected_dims=dims)
 
         return v

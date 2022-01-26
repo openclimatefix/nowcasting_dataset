@@ -6,7 +6,7 @@ on:
     - cron: "0 12 * * 1"
 jobs:
   call-run-python-tests:
-    uses: openclimatefix/.github/.github/workflows/python-test.yml@coverage-bug
+    uses: openclimatefix/.github/.github/workflows/python-test.yml@main
     with:
       # 0 means don't use pytest-xdist
       pytest_numcpus: "4"

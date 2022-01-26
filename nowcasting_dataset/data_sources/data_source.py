@@ -468,6 +468,11 @@ class ZarrDataSource(ImageDataSource):
         Returns: Example Data
 
         """
+
+        logger.debug(
+            f"Getting example for {t0_datetime_utc=},  " f"{x_center_osgb=} and  {y_center_osgb=}"
+        )
+
         selected_data = self._get_time_slice(t0_datetime_utc)
         bounding_box = self._square.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
@@ -486,7 +491,7 @@ class ZarrDataSource(ImageDataSource):
         selected_data = self._post_process_example(selected_data, t0_datetime_utc)
 
         if selected_data.shape != self._shape_of_example:
-            raise RuntimeError(
+            m = (
                 "Example is wrong shape! "
                 f"x_center_osgb={x_center_osgb}\n"
                 f"y_center_osgb={y_center_osgb}\n"
@@ -495,6 +500,8 @@ class ZarrDataSource(ImageDataSource):
                 f"expected shape={self._shape_of_example}\n"
                 f"actual shape {selected_data.shape}"
             )
+            logger.error(m)
+            raise RuntimeError(m)
 
         return selected_data.load().to_dataset(name="data")
 

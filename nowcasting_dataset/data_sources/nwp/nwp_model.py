@@ -23,8 +23,9 @@ class NWP(DataSourceOutput):
 
         v.check_nan_and_inf(data=v.data)
 
-        v.check_data_var_dim(
-            v.data, ("example", "time_index", "x_osgb_index", "y_osgb_index", "channels_index")
-        )
+        dims = ("example", "time_index", "x_osgb_index", "y_osgb_index", "channels_index")
+        v.check_data_var_dim(v.data, dims)
+
+        v.__setitem__("data", v.data.transpose(*dims))
 
         return v

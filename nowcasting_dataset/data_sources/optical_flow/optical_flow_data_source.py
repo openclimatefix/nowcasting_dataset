@@ -65,7 +65,7 @@ class OpticalFlowDataSource(DataSource):
     meters_per_pixel: int = 2000
     output_image_size_pixels: int = 32
     source_data_source_class_name: str = "SatelliteDataSource"
-    time_resolution_minutes: int = 15
+    time_resolution_minutes: int = 5
 
     def __post_init__(self):  # noqa
         assert self.output_image_size_pixels <= self.input_image_size_pixels, (

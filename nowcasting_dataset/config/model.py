@@ -126,6 +126,7 @@ class DataSourceMixin(Base):
 class TimeResolutionMixin(Base):
     """Time resolution mix in"""
 
+    # TODO: Issue #584: Rename to `sample_period_minutes`
     time_resolution_minutes: int = Field(
         5,
         description="The temporal resolution (in minutes) of the satellite images."

@@ -58,7 +58,7 @@ input_data:
     hrvsatellite_channels:
       - HRV
     hrvsatellite_image_size_pixels: 64
-    hrvsatellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/hrv_eumetsat_seviri_uk.zarr
+    hrvsatellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_hrv_uk.zarr
 
   # ------------------------- Sun ------------------------
   sun:

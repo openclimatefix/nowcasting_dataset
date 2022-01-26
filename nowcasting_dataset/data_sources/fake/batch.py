@@ -356,6 +356,7 @@ def optical_flow_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             freq="5T",

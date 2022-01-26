@@ -29,7 +29,6 @@ def test_datetime_index(sat_data_source):  # noqa: D103
 
 def _test_get_example(
     data_source,
-    t0_dt,
     x_center_osgb,
     y_center_osgb,
     left_geostationary,
@@ -38,6 +37,7 @@ def _test_get_example(
     bottom_geostationary,
 ):  # noqa: D103
     data_source.open()
+    t0_dt = pd.Timestamp("2020-04-01T13:00")
     sat_data = data_source.get_example(
         t0_datetime_utc=t0_dt, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
     )
@@ -76,10 +76,8 @@ def test_get_example(
     top_geostationary,
     bottom_geostationary,
 ):  # noqa: D103
-    t0_dt = pd.Timestamp("2020-04-01T13:00")
     _test_get_example(
         data_source=sat_data_source,
-        t0_dt=t0_dt,
         x_center_osgb=x_center_osgb,
         y_center_osgb=y_center_osgb,
         left_geostationary=left_geostationary,
@@ -113,10 +111,8 @@ def test_hrv_get_example(
     top_geostationary,
     bottom_geostationary,
 ):  # noqa: D103
-    t0_dt = pd.Timestamp("2020-01-01T01:00")
     _test_get_example(
         data_source=hrv_sat_data_source,
-        t0_dt=t0_dt,
         x_center_osgb=x_center_osgb,
         y_center_osgb=y_center_osgb,
         left_geostationary=left_geostationary,

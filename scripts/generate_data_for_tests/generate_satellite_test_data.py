@@ -42,7 +42,7 @@ def generate_satellite_test_data():
     # hrv_sat_data = hrv_sat_data.sel(variable=["HRV"], time=slice(START, END))
 
     # just take a bit of the time, to keep size of file now
-    hrv_sat_data = hrv_sat_data.sel(time=slice(hrv_sat_data.time[0], hrv_sat_data.time[25]))
+    hrv_sat_data = hrv_sat_data.sel(time=slice(START, END))
 
     # Adds compression and chunking
     encoding = {

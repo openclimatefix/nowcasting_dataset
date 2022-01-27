@@ -8,7 +8,7 @@ class OpticalFlow(DataSourceOutput):
     """Class to store optical flow data as a xr.Dataset with some validation"""
 
     __slots__ = ()
-    _expected_dimensions = ("time", "x_osgb", "y_osgb", "channels")
+    _expected_dimensions = ("time", "y_geostationary", "x_geostationary", "channels")
     _expected_data_vars = ("data",)
 
     @classmethod
@@ -17,7 +17,7 @@ class OpticalFlow(DataSourceOutput):
         v.check_nan_and_inf(data=v.data)
         # previously nans were filled with -1s, so lets make sure there are none
         v.check_dataset_not_equal(data=v.data, value=-1)
-        v.check_data_var_dim(v.x_osgb, ("example", "x_osgb_index"))
-        v.check_data_var_dim(v.y_osgb, ("example", "y_osgb_index"))
+        v.check_data_var_dim(v.x_geostationary, ("example", "x_geostationary_index"))
+        v.check_data_var_dim(v.y_geostationary, ("example", "y_geostationary_index"))
 
         return v

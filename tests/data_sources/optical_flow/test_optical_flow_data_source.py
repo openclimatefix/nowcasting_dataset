@@ -40,10 +40,10 @@ def test_optical_flow_get_example(
     optical_flow_datasource = _get_optical_flow_data_source(
         sat_filename=sat_filename, history_minutes=history_minutes
     )
-    # default forecast_minutes is 120, so the sequence length should be 8.
-    # There are 8 15 mins chunks in the forecast minutes
-    n_seq = optical_flow_datasource.forecast_minutes / 15
-    assert n_seq == 8
+    # default forecast_minutes is 120, so the sequence length should be 24.
+    # There are 24 x 5 mins = 120 minutes.
+    n_seq = optical_flow_datasource.forecast_minutes / 5
+    assert n_seq == 24
     optical_flow_datasource.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     example = optical_flow_datasource.get_example(

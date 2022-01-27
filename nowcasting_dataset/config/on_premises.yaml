@@ -51,14 +51,14 @@ input_data:
       - WV_062
       - WV_073
     satellite_image_size_pixels: 24
-    satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
+    satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_uk.zarr
 
   #---------------------- HRVSatellite -------------
   hrvsatellite:
     hrvsatellite_channels:
       - HRV
     hrvsatellite_image_size_pixels: 64
-    hrvsatellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/hrv_eumetsat_zarr_*
+    hrvsatellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_hrv_uk.zarr
 
   # ------------------------- Sun ------------------------
   sun:
@@ -70,10 +70,10 @@ input_data:
 
   # ------------------------- Optical Flow ---------------
   opticalflow:
-    opticalflow_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v2/eumetsat_zarr_*
+    opticalflow_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_uk.zarr
     history_minutes: 5
     forecast_minutes: 120
-    opticalflow_input_image_size_pixels: 102
+    opticalflow_input_image_size_pixels: 94
     opticalflow_output_image_size_pixels: 24
     opticalflow_source_data_source_class_name: SatelliteDataSource
     opticalflow_channels:
@@ -90,11 +90,11 @@ input_data:
       - WV_073
 
 output_data:
-  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v16
+  filepath: /mnt/storage_ssd_4tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/prepared_ML_training_data/v15
 process:
   batch_size: 32
   seed: 1234
   upload_every_n_batches: 0 # Write directly to output_data.filepath, not to a temp directory.
-  n_train_batches: 4000
-  n_validation_batches: 400
-  n_test_batches: 10131
+  n_train_batches: 8000
+  n_validation_batches: 0
+  n_test_batches: 400

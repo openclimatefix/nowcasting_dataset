@@ -127,7 +127,7 @@ class TimeResolutionMixin(Base):
     """Time resolution mix in"""
 
     sample_period_minutes: int = Field(
-        15,
+        5,
         description="The temporal resolution (in minutes) of the satellite images."
         "Note that this needs to be divisible by 5.",
     )

@@ -56,7 +56,7 @@ def test_satellite(configuration):
 
     s = satellite_fake(configuration=configuration)
 
-    assert s.x_osgb is not None
+    assert s.x_geostationary is not None
 
 
 def test_sun():

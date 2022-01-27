@@ -1,9 +1,0 @@
-{
-    "_ARRAY_DIMENSIONS": [
-        "time",
-        "y"
-    ],
-    "calendar": "proleptic_gregorian",
-    "long_name": "Mean scanline acquisition time",
-    "units": "milliseconds since 2020-01-01T23:52:58.229000"
-}

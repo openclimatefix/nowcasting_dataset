@@ -28,7 +28,7 @@ class SatelliteDataSource(ZarrDataSource):
     image_size_pixels: InitVar[int] = 128
     meters_per_pixel: InitVar[int] = 2_000
     logger = _LOG
-    time_resolution_minutes: int = 15
+    sample_period_minutes: int = 15
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
@@ -47,7 +47,7 @@ class SatelliteDataSource(ZarrDataSource):
     @property
     def sample_period_minutes(self) -> int:
         """Override the default sample minutes"""
-        return self.time_resolution_minutes
+        return self.sample_period_minutes
 
     def open(self) -> None:
         """

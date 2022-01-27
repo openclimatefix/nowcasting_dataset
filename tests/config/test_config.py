@@ -74,7 +74,7 @@ def test_incorrect_time_resolution():
 
     configuration = Configuration()
     configuration.input_data = configuration.input_data.set_all_to_defaults()
-    configuration.input_data.satellite.time_resolution_minutes = 27
+    configuration.input_data.satellite.sample_period_minutes = 27
     with pytest.raises(Exception):
         _ = Configuration(**configuration.dict())
 

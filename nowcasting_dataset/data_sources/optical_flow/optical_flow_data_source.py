@@ -67,7 +67,6 @@ class OpticalFlowDataSource(DataSource):
     source_data_source_class_name: str = "SatelliteDataSource"
     sample_period_minutes: int = 5
 
-
     def __post_init__(self):  # noqa
         assert self.output_image_size_pixels <= self.input_image_size_pixels, (
             "output_image_size_pixels must be equal to or smaller than input_image_size_pixels"

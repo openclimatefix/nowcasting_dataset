@@ -34,7 +34,6 @@ class SatelliteDataSource(ZarrDataSource):
     logger = _LOG
     sample_period_minutes: int = 5
 
-
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
         assert len(self.channels) > 0, "channels cannot be empty!"

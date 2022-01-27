@@ -172,6 +172,7 @@ def nwp_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="nwp",
             seq_length=seq_length_60,
             history_seq_length=history_seq_length,
             image_size_pixels=image_size_pixels,
@@ -266,6 +267,7 @@ def satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             image_size_pixels=image_size_pixels,
@@ -309,6 +311,7 @@ def hrv_satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             image_size_pixels=image_size_pixels * 3,  # HRV images are 3x other images
@@ -353,6 +356,7 @@ def optical_flow_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             freq="5T",
@@ -436,7 +440,7 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
 
 
 def create_image_array(
-    dims=("time", "x_osgb", "y_osgb", "channels"),
+    nwp_or_satellite="nwp",
     seq_length=19,
     history_seq_length=5,
     image_size_pixels=64,
@@ -459,13 +463,20 @@ def create_image_array(
         pd.date_range(start=t0_datetime_utc, freq=freq, periods=seq_length - history_seq_length)
     )
 
-    ALL_COORDS = {
-        "time": time,
-        "x_osgb": x,
-        "y_osgb": y,
-        "channels": np.array(channels),
-    }
-    coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+    if nwp_or_satellite == "nwp":
+        coords = (("time", time), ("x_osgb", x), ("y_osgb", y), ("channels", np.array(channels)))
+    elif nwp_or_satellite == "satellite":
+        coords = (
+            ("time", time),
+            ("y_geostationary", y),
+            ("x_geostationary", x),
+            ("channels", np.array(channels)),
+        )
+    else:
+        raise ValueError(
+            f"nwp_or_satellite must be either 'nwp' or 'satellite', not '{nwp_or_satellite}'"
+        )
+
     image_data_array = xr.DataArray(
         abs(  # to make sure average is about 100
             np.random.uniform(

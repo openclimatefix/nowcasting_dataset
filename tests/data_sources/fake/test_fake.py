@@ -31,12 +31,12 @@ def test_model(configuration):  # noqa: D103
     assert batch.satellite.time[0, t0_index_satellite] == t0_datetimes_utc[0]
 
     for i in range(configuration.process.batch_size):
-        for data_source_name in ["satellite", "hrvsatellite", "opticalflow", "topographic", "nwp"]:
-            assert x_center_osgb[i] <= batch.__getattribute__(data_source_name).x_osgb.max()
-            assert x_center_osgb[i] >= batch.__getattribute__(data_source_name).x_osgb.min()
-            assert y_center_osgb[i] <= batch.__getattribute__(data_source_name).y_osgb.max()
-            assert y_center_osgb[i] >= batch.__getattribute__(data_source_name).y_osgb.min()
+        for data_source_name in ["topographic", "nwp"]:
+            assert x_center_osgb[i] <= getattr(batch, data_source_name).x_osgb.max()
+            assert x_center_osgb[i] >= getattr(batch, data_source_name).x_osgb.min()
+            assert y_center_osgb[i] <= getattr(batch, data_source_name).y_osgb.max()
+            assert y_center_osgb[i] >= getattr(batch, data_source_name).y_osgb.min()
         # check first system is the center coordinates
         for data_source_name in ["gsp", "pv"]:
-            assert x_center_osgb[i] == batch.__getattribute__(data_source_name).x_osgb[i, 0]
-            assert y_center_osgb[i] == batch.__getattribute__(data_source_name).y_osgb[i, 0]
+            assert x_center_osgb[i] == getattr(batch, data_source_name).x_osgb[i, 0]
+            assert y_center_osgb[i] == getattr(batch, data_source_name).y_osgb[i, 0]

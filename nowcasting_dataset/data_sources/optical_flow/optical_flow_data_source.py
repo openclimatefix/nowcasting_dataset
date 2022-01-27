@@ -65,7 +65,7 @@ class OpticalFlowDataSource(DataSource):
     meters_per_pixel: int = 2000
     output_image_size_pixels: int = 32
     source_data_source_class_name: str = "SatelliteDataSource"
-    time_resolution_minutes: int = 15
+    time_resolution_minutes: int = 5
 
     def __post_init__(self):  # noqa
         assert self.output_image_size_pixels <= self.input_image_size_pixels, (
@@ -162,16 +162,27 @@ class OpticalFlowDataSource(DataSource):
         satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels)
 
         # Put into DataArray:
-        return xr.DataArray(
+        predictions_data_array = xr.DataArray(
             data=predictions,
             coords=(
                 ("time", datetime_index_of_predictions),
-                ("x_osgb", satellite_data_cropped.coords["x_osgb"].values),
-                ("y_osgb", satellite_data_cropped.coords["y_osgb"].values),
+                ("y_geostationary", satellite_data_cropped.coords["y_geostationary"].values),
+                ("x_geostationary", satellite_data_cropped.coords["x_geostationary"].values),
                 ("channels", satellite_data.coords["channels"].values),
             ),
             name="data",
         )
+        predictions_data_array = predictions_data_array.assign_coords(
+            y_osgb=(
+                ("y_geostationary", "x_geostationary"),
+                satellite_data_cropped["y_osgb"].values,
+            ),
+            x_osgb=(
+                ("y_geostationary", "x_geostationary"),
+                satellite_data_cropped["x_osgb"].values,
+            ),
+        )
+        return predictions_data_array
 
     def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray) -> xr.DataArray:
         """

@@ -12,7 +12,7 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWP_VARIABLE_NAMES, open_nwp
+from nowcasting_dataset.data_sources.nwp.nwp_data_source import open_nwp
 
 # set up
 BUCKET = Path("solar-pv-nowcasting-data")
@@ -75,7 +75,10 @@ pv_power.to_netcdf(f"{local_path}/tests/data/pv_data/test.nc", compute=True, eng
 ###########################
 
 # Numerical weather predictions
-NWP_BASE_PATH = "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
+NWP_BASE_PATH = (
+    "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/"
+    "NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
+)
 
 nwp_data_raw = open_nwp(zarr_path=NWP_BASE_PATH, consolidated=True)
 nwp_data = nwp_data_raw.sel(variable=["t"])

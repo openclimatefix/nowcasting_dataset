@@ -84,7 +84,7 @@ def test_get_daylight_datetime_index(sat_filename, sat):
     # So the expected t0_datetimes start at 12:30 (12:00 + 30 minutes)
     # and end at 17:00 (18:00 - 60 minutes)
 
-    correct_t0_datetimes = pd.date_range("2020-04-01 12:30", "2020-04-01 17:00", freq="5 min")
+    correct_t0_datetimes = pd.date_range("2020-04-01 12:30", "2020-04-01 13:00", freq="5 min")
     np.testing.assert_array_equal(t0_datetimes, correct_t0_datetimes)
 
 

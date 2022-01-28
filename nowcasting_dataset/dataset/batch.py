@@ -68,20 +68,20 @@ class Batch(BaseModel):
         ]
 
     @staticmethod
-    def fake(configuration: Configuration, temporally_align_batches: bool = False):
+    def fake(configuration: Configuration, temporally_align_examples: bool = False):
         """
         Make fake batch object
 
         Args:
             configuration: configuration of dataset
-            temporally_align_batches: option to align batches in time
+            temporally_align_examples: ption to align examples (within the batch) in time
 
         Returns: batch object
         """
 
         return Batch(
             **make_fake_batch(
-                configuration=configuration, temporally_align_batches=temporally_align_batches
+                configuration=configuration, temporally_align_examples=temporally_align_examples
             )
         )
 

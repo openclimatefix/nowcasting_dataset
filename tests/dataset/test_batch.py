@@ -21,7 +21,7 @@ def test_model(configuration):  # noqa: D103
 
 
 def test_model_align_in_time(configuration):  # noqa: D103
-    batch = Batch.fake(configuration=configuration, temporally_align_batches=True)
+    batch = Batch.fake(configuration=configuration, temporally_align_examples=True)
 
     assert batch.metadata.t0_datetime_utc[0] == batch.metadata.t0_datetime_utc[1]
 

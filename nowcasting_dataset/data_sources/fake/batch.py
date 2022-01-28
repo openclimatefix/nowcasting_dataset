@@ -36,20 +36,20 @@ from nowcasting_dataset.dataset.xr_utils import (
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
-def make_fake_batch(configuration: Configuration, temporally_align_batches: bool = False) -> dict:
+def make_fake_batch(configuration: Configuration, temporally_align_examples: bool = False) -> dict:
     """
     Make fake batch object
 
     Args:
         configuration: configuration of dataset
-        temporally_align_batches: option to align batches in time
+        temporally_align_examples: option to align examples (within the batch) in time
 
     Returns: dictionary of batch data
     """
     batch_size = configuration.process.batch_size
 
     metadata = metadata_fake(
-        batch_size=batch_size, temporally_align_batches=temporally_align_batches
+        batch_size=batch_size, temporally_align_examples=temporally_align_examples
     )
 
     return dict(
@@ -135,13 +135,13 @@ def gsp_fake(
     return GSP(xr_dataset)
 
 
-def metadata_fake(batch_size, temporally_align_batches: int = False) -> Metadata:
+def metadata_fake(batch_size, temporally_align_examples: int = False) -> Metadata:
     """
     Make fake metadata object
 
     Args:
         batch_size: The size of the batch
-        temporally_align_batches: option to align batches in time
+        temporally_align_examples: option to align examples (within the batch) in time
 
     Returns: fake metadata
     """
@@ -153,7 +153,7 @@ def metadata_fake(batch_size, temporally_align_batches: int = False) -> Metadata
 
     # get random times
     t0_datetimes_utc = make_t0_datetimes_utc(
-        batch_size=batch_size, temporally_align_batches=temporally_align_batches
+        batch_size=batch_size, temporally_align_examples=temporally_align_examples
     )
 
     metadata_dict = {}

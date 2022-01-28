@@ -14,7 +14,7 @@ class NWP(DataSourceOutput):
     # Use to store xr.Dataset data
 
     __slots__ = ()
-    _expected_dimensions = ("time", "x_osgb", "y_osgb", "channels")
+    _expected_dimensions = ("time", "y_osgb", "x_osgb", "channels")
     _expected_data_vars = ("data",)
 
     @classmethod
@@ -23,7 +23,7 @@ class NWP(DataSourceOutput):
 
         v.check_nan_and_inf(data=v.data)
 
-        dims = ("example", "time_index", "x_osgb_index", "y_osgb_index", "channels_index")
+        dims = ("example", "time_index", "y_osgb_index", "x_osgb_index", "channels_index")
         v.check_data_var_dim(v.data, dims)
         v = v.order_dims(v, variable="data", expected_dims=dims)
 

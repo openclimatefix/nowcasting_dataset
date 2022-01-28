@@ -135,7 +135,7 @@ def gsp_fake(
     return GSP(xr_dataset)
 
 
-def metadata_fake(batch_size, temporally_align_examples: int = False) -> Metadata:
+def metadata_fake(batch_size, temporally_align_examples: bool = False) -> Metadata:
     """
     Make fake metadata object
 

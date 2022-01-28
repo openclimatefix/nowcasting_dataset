@@ -20,7 +20,7 @@ def join_list_data_array_to_batch_dataset(data_arrays: List[xr.DataArray]) -> xr
     return join_list_dataset_to_batch_dataset(datasets)
 
 
-def make_t0_datetimes_utc(batch_size, temporally_align_examples: int = False):
+def make_t0_datetimes_utc(batch_size, temporally_align_examples: bool = False):
     """
     Make list of t0 datetimes
 
@@ -47,5 +47,8 @@ def make_t0_datetimes_utc(batch_size, temporally_align_examples: int = False):
     # np.random.choice turns the pd.Timestamp objects into datetime.datetime objects.
 
     t0_datetimes_utc = pd.to_datetime(t0_datetimes_utc)
+
+    # TODO make test repeatable using numpy generator
+    # https://github.com/openclimatefix/nowcasting_dataset/issues/594
 
     return t0_datetimes_utc

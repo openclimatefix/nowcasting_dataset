@@ -47,7 +47,7 @@ class PVDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
-        if not isinstance(self.filenames, list):
+        if not isinstance(self.filenames, (tuple, list)):
             self.filenames = [self.filenames]
 
         if not isinstance(self.metadata_filenames, list):
@@ -121,7 +121,7 @@ class PVDataSource(ImageDataSource):
 
         logger.debug(f"Loading PV Power data from {self.filenames}")
 
-        # collect all metadata together
+        # collect all PV power timeseries together
         pv_power_all = []
         for i, filename in enumerate(self.filenames):
 

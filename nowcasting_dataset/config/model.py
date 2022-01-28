@@ -161,13 +161,13 @@ class StartEndDatetimeMixin(Base):
 class PV(DataSourceMixin, StartEndDatetimeMixin):
     """PV configuration model"""
 
-    pv_filenames: List = Field(
+    pv_filenames: list = Field(
         ["gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc"],
-        description=("List of the NetCDF file holding the solar PV power timeseries."),
+        description=("List of the NetCDF files holding the solar PV power timeseries."),
     )
     pv_metadata_filenames: List = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
-        description="List of the CSV file describing each PV system.",
+        description="List of the CSV files describing each PV system.",
     )
     n_pv_systems_per_example: int = Field(
         DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,

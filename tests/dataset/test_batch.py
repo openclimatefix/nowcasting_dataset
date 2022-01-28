@@ -28,7 +28,6 @@ def test_model_nwp_channels(configuration):  # noqa: D103
 
     batch = Batch.fake(configuration=configuration)
 
-    print(batch.nwp.channels)
     assert batch.nwp.channels[0] == ["dlwrf"]
 
 

@@ -6,9 +6,9 @@
         },
         "data/.zarray": {
             "chunks": [
-                1,
-                891,
-                1843
+                7,
+                223,
+                461
             ],
             "compressor": {
                 "id": "bz2",
@@ -19,7 +19,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                73,
+                25,
                 891,
                 1843
             ],
@@ -56,7 +56,7 @@
         },
         "time/.zarray": {
             "chunks": [
-                73
+                25
             ],
             "compressor": {
                 "blocksize": 0,
@@ -70,7 +70,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                73
+                25
             ],
             "zarr_format": 2
         },

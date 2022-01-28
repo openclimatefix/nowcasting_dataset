@@ -211,7 +211,6 @@ def test_batches(test_configuration_filename_no_hrv, sat, gsp):
             assert os.path.exists(filename)
             with open(filename) as f:
                 num_lines = sum(1 for line in f)
-                print(num_lines, log_file)
                 assert num_lines > 0, f"Log {filename} is empty"
 
 

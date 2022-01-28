@@ -1,0 +1,46 @@
+general:
+  description: example configuration
+  name: example
+git: null
+input_data:
+  gsp:
+    gsp_zarr_path: tests/data/gsp/test.zarr
+  nwp:
+    nwp_channels:
+      - t
+    nwp_image_size_pixels: 2
+    nwp_zarr_path: tests/data/nwp_data/test.zarr
+    history_minutes: 60
+    forecast_minutes: 60
+  pv:
+    pv_filename: tests/data/pv_data/test.nc
+    pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
+    get_center: false
+  satellite:
+    satellite_channels:
+      - IR_016
+    satellite_image_size_pixels: 24
+    satellite_zarr_path: tests/data/sat_data.zarr
+  sun:
+    sun_zarr_path: tests/data/sun/test.zarr
+  topographic:
+    topographic_filename: tests/data/europe_dem_2km_osgb.tif
+  opticalflow:
+    history_minutes: 15
+    forecast_minutes: 30
+    opticalflow_zarr_path: tests/data/sat_data.zarr
+    opticalflow_input_image_size_pixels: 32
+    opticalflow_output_image_size_pixels: 8
+    opticalflow_channels:
+      - IR_016
+output_data:
+  filepath: not used by unittests!
+process:
+  batch_size: 32
+  local_temp_path: ~/temp/
+  seed: 1234
+  upload_every_n_batches: 16
+  n_train_batches: 2
+  n_validation_batches: 0
+  n_test_batches: 0
+  train_test_validation_split: [3, 0, 1]

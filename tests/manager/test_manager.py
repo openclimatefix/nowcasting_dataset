@@ -171,11 +171,11 @@ def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_ex
             manager.create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary()  # noqa 101
 
 
-def test_batches(test_configuration_filename, sat, hrvsat, gsp):
+def test_batches(test_configuration_filename_no_hrv, sat, gsp):
     """Test that batches can be made"""
 
     manager = Manager()
-    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename_no_hrv)
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
 
@@ -184,10 +184,12 @@ def test_batches(test_configuration_filename, sat, hrvsat, gsp):
         manager.local_temp_path = Path(local_temp_path)
 
         # set up loggers
-        manager.configure_loggers(log_level="DEBUG")
+        manager.configure_loggers(
+            log_level="DEBUG", names_of_selected_data_sources=["gsp", "satellite"]
+        )
 
         # Set data sources
-        manager.data_sources = {"gsp": gsp, "satellite": sat, "hrvsatellite": hrvsat}
+        manager.data_sources = {"gsp": gsp, "satellite": sat}
         manager.data_source_which_defines_geospatial_locations = gsp
 
         # make file for locations
@@ -202,11 +204,9 @@ def test_batches(test_configuration_filename, sat, hrvsat, gsp):
         assert os.path.exists(f"{dst_path}/train/gsp/000001.nc")
         assert os.path.exists(f"{dst_path}/train/satellite/000000.nc")
         assert os.path.exists(f"{dst_path}/train/satellite/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000001.nc")
-        assert os.path.exists(f"{dst_path}/train/hrvsatellite/000000.nc")
 
         # check logs is appended to
-        for log_file in ["combined", "gsp", "satellite", "hrvsatellite"]:
+        for log_file in ["combined", "gsp", "satellite"]:
             filename = f"{dst_path}/{log_file}.log"
             assert os.path.exists(filename)
             with open(filename) as f:
@@ -259,11 +259,11 @@ def test_run_error_data_source_which_defines_geospatial_locations(test_configura
         manager.initialize_data_sources()
 
 
-def test_run(test_configuration_filename):
+def test_run(test_configuration_filename_no_hrv):
     """Test to initialize data sources and get batches"""
 
     manager = Manager()
-    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename_no_hrv)
     manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
@@ -275,11 +275,11 @@ def test_run(test_configuration_filename):
         manager.create_batches(overwrite_batches=True)
 
 
-def test_run_overwrite_batches_false(test_configuration_filename):
+def test_run_overwrite_batches_false(test_configuration_filename_no_hrv):
     """Test to initialize data sources and get batches, but dont overwrite"""
 
     manager = Manager()
-    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.load_yaml_configuration(filename=test_configuration_filename_no_hrv)
     manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101

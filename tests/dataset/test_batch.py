@@ -20,6 +20,18 @@ def test_model(configuration):  # noqa: D103
     _ = Batch.fake(configuration=configuration)
 
 
+def test_model_nwp_channels(configuration):  # noqa: D103
+
+    configuration.input_data = configuration.input_data.set_all_to_defaults()
+    configuration.process.batch_size = 4
+    configuration.input_data.nwp.nwp_channels = ["dlwrf"]
+
+    batch = Batch.fake(configuration=configuration)
+
+    print(batch.nwp.channels)
+    assert batch.nwp.channels[0] == ["dlwrf"]
+
+
 def test_model_save_to_netcdf(configuration):  # noqa: D103
     with tempfile.TemporaryDirectory() as dirpath:
         Batch.fake(configuration=configuration).save_netcdf(path=dirpath, batch_i=0)

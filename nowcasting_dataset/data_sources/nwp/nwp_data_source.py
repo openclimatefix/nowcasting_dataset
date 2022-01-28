@@ -1,8 +1,10 @@
 """ NWP Data Source """
+import io
 import logging
 from dataclasses import InitVar, dataclass
 from typing import Iterable, Optional
 
+import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -184,14 +186,24 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
     """
     _LOG.debug("Opening NWP data: %s", zarr_path)
     utils.set_fsspec_for_multiprocess()
-    nwp = xr.open_dataset(
-        zarr_path,
-        engine="zarr",
-        consolidated=consolidated,
-        mode="r",
-        chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto' (see issue #456)
-        # but 'auto' massively slows down reading NWPs.
-    )
+
+    if zarr_path.split(".")[-1] == "netcdf":
+        # loading netcdf file, download bytes and then load as xarray
+        with fsspec.open(zarr_path, mode="rb") as file:
+            file_bytes = file.read()
+
+        with io.BytesIO(file_bytes) as file:
+            nwp = xr.load_dataset(file, engine="h5netcdf")
+
+    else:
+        nwp = xr.open_dataset(
+            zarr_path,
+            engine="zarr",
+            consolidated=consolidated,
+            mode="r",
+            chunks=None,  # Reading Satellite Zarr benefits from setting chunks='auto'
+            # (see issue #456) but 'auto' massively slows down reading NWPs.
+        )
 
     # Select the "UKV" DataArray from the "nwp" Dataset.
     # "UKV" is the one and only DataArray in the Zarr Dataset.
@@ -211,28 +223,14 @@ def open_nwp(zarr_path: str, consolidated: bool) -> xr.DataArray:
         ukv = ukv.reindex(y=y_reversed)
 
     # Sanity checks.
-    # If there are any duplicated init_times then drop the duplicated init_times:
-    init_time = pd.DatetimeIndex(ukv["init_time"])
-    if not init_time.is_unique:
-        n_duplicates = init_time.duplicated().sum()
-        _LOG.warning(f"NWP Zarr has {n_duplicates:,d} duplicated init_times.  Fixing...")
-        ukv = ukv.drop_duplicates(dim="init_time")
-        init_time = pd.DatetimeIndex(ukv["init_time"])
+    ukv = utils.drop_duplicate_times(data_array=ukv, class_name="NWP", time_dim="init_time")
 
     # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
-    if not init_time.is_monotonic_increasing:
-        total_n_out_of_order_times = 0
-        _LOG.warning("NWP Zarr init_time is not monotonic_increasing.  Fixing...")
-        while not init_time.is_monotonic_increasing:
-            diff = np.diff(init_time.view(int))
-            out_of_order = np.where(diff < 0)[0]
-            total_n_out_of_order_times += len(out_of_order)
-            out_of_order = init_time[out_of_order]
-            ukv = ukv.drop_sel(init_time=out_of_order)
-            init_time = pd.DatetimeIndex(ukv["init_time"])
-        _LOG.info(f"Fixed {total_n_out_of_order_times:,d} out of order init_times.")
+    ukv = utils.drop_non_monotonic_increasing(
+        data_array=ukv, class_name="NWP", time_dim="init_time"
+    )
 
-    assert init_time.is_unique
-    assert init_time.is_monotonic_increasing
+    assert pd.DatetimeIndex(ukv["init_time"]).is_unique
+    assert pd.DatetimeIndex(ukv["init_time"]).is_monotonic_increasing
 
     return ukv

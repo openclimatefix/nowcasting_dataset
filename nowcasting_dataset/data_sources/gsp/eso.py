@@ -85,6 +85,9 @@ def get_gsp_metadata_from_eso(
         # drop duplicates
         metadata = metadata.drop_duplicates(subset=["gsp_id"])
 
+        # drop any nans in the gsp is column
+        metadata = metadata[metadata["gsp_id"].notnull()]
+
     if save_local_file:
         # save file
         metadata.to_csv(local_file)

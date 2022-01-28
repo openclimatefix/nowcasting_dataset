@@ -195,7 +195,7 @@ class PVDataSource(ImageDataSource):
         self,
         x_center_osgb: Number,
         y_center_osgb: Number,
-        pv_system_ids_with_data_for_timeslice: pd.Int64Index,
+        pv_system_ids_with_data_for_timeslice: pd.Index,
     ) -> int:
         # If x_center_osgb and y_center_osgb have been chosen
         # by PVDataSource.pick_locations_for_batch() then we just have
@@ -233,8 +233,8 @@ class PVDataSource(ImageDataSource):
         self,
         x_center_osgb: Number,
         y_center_osgb: Number,
-        pv_system_ids_with_data_for_timeslice: pd.Int64Index,
-    ) -> pd.Int64Index:
+        pv_system_ids_with_data_for_timeslice: pd.Index,
+    ) -> pd.Index:
         """
         Find the PV system IDs. for all the PV systems within the geospatial
 

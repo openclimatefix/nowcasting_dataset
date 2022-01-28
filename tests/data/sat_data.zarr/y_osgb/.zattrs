@@ -1,0 +1,9 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "y",
+        "x"
+    ],
+    "coordinate_reference_system": "OSGB",
+    "name": "Northing",
+    "units": "meter"
+}

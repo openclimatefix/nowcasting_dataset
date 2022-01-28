@@ -10,6 +10,7 @@ import fsspec.asyn
 import gcsfs
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.consts import LOG_LEVELS, Array
@@ -180,3 +181,82 @@ def arg_logger(func):
         return func(*args, **kwargs)
 
     return inner_func
+
+
+def exception_logger(func):
+    """A function decorator to log exceptions thrown by the inner function."""
+    # Adapted from
+    # www.blog.pythonlibrary.org/2016/06/09/python-how-to-create-an-exception-logging-decorator
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except:  # noqa: E722
+            logger.exception(
+                f"EXCEPTION when calling `{func.__name__}`!"
+                f" Arguments passed into function: {args=}; {kwargs=}"
+            )
+            raise
+
+    return inner_func
+
+
+def drop_duplicate_times(data_array: xr.DataArray, class_name: str, time_dim: str) -> xr.DataArray:
+    """
+    Drop duplicate times in data array
+
+    Args:
+        data_array: main data
+        class_name: the data source name
+        time_dim: the time dimension we want to look at
+
+    Returns: data array with no duplicated times
+
+    """
+    # If there are any duplicated init_times then drop the duplicated init_times:
+    time = pd.DatetimeIndex(data_array[time_dim])
+    if not time.is_unique:
+        n_duplicates = time.duplicated().sum()
+        logger.warning(f"{class_name} Zarr has {n_duplicates:,d} duplicated init_times.  Fixing...")
+        data_array = data_array.drop_duplicates(dim=time_dim)
+
+    return data_array
+
+
+def drop_non_monotonic_increasing(
+    data_array: xr.DataArray, class_name: str, time_dim: str
+) -> xr.DataArray:
+    """
+    Drop non monotonically increasing time steps
+
+    Args:
+        data_array: main data
+        class_name: the data source name
+        time_dim: the name of the time dimension we want to check
+
+    Returns: data array with monotonically increase time
+
+    """
+    # If any init_times are not monotonic_increasing then drop the out-of-order init_times:
+    time = pd.DatetimeIndex(data_array[time_dim])
+    if not time.is_monotonic_increasing:
+        total_n_out_of_order_times = 0
+        logger.warning(f"{class_name} Zarr {time_dim} is not monotonic_increasing.  Fixing...")
+        while not time.is_monotonic_increasing:
+            # get the first set of out of order time value
+            diff = np.diff(time.view(int))
+            out_of_order = np.where(diff < 0)[0]
+            out_of_order = time[out_of_order]
+
+            # remove value
+            data_array = data_array.drop_sel(**{time_dim: out_of_order})
+
+            # get time vector for next while loop
+            time = pd.DatetimeIndex(data_array[time_dim])
+
+            # save how many have been removed, just for logging
+            total_n_out_of_order_times += len(out_of_order)
+
+        logger.info(f"Fixed {total_n_out_of_order_times:,d} out of order {time_dim}.")
+
+    return data_array

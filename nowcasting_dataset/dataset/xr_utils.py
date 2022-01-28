@@ -101,7 +101,7 @@ class PydanticXArrayDataSet(xr.Dataset):
             f"{cls.__name__}.dims is wrong! "
             f"{cls.__name__}.dims is {v.dims}. "
             f"But we expected {cls._expected_dimensions}."
-            " Note that '_index' is removed, and 'example' is ignored"
+            " Note that '_index' is removed, and 'example' is ignored, and the order is ignored"
         )
         return v
 

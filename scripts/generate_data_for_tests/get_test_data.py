@@ -109,8 +109,8 @@ len(passiv) + len(pvoutput)
 
 # Numerical weather predictions
 NWP_BASE_PATH = (
-    "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/"
-    "nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
+    "/mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/"
+    "NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_2.zarr"
 )
 
 nwp_data_raw = open_nwp(zarr_path=NWP_BASE_PATH, consolidated=True)

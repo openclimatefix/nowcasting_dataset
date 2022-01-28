@@ -13,7 +13,7 @@ import nowcasting_dataset
 from nowcasting_dataset import utils
 from nowcasting_dataset.consts import LOG_LEVELS
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
-from nowcasting_dataset.manager import Manager
+from nowcasting_dataset.manager.manager import Manager
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def main(config_filename: str, data_source: list[str], overwrite_batches: bool, 
     manager = Manager()
     manager.load_yaml_configuration(config_filename)
     manager.configure_loggers(log_level=log_level, names_of_selected_data_sources=data_source)
-    manager.initialise_data_sources(names_of_selected_data_sources=data_source)
+    manager.initialize_data_sources(names_of_selected_data_sources=data_source)
     # TODO: Issue 323: maybe don't allow
     # create_files_specifying_spatial_and_temporal_locations_of_each_example to be run if a subset
     # of data_sources is passed in at the command line.

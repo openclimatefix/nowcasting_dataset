@@ -1,6 +1,9 @@
 name: Python package
 
-on: [push]
+on:
+  push:
+  schedule:
+    - cron: "0 12 * * 1"
 jobs:
   call-run-python-tests:
     uses: openclimatefix/.github/.github/workflows/python-test.yml@main

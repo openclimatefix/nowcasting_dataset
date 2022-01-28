@@ -33,16 +33,20 @@ def _get_optical_flow_data_source(
     )
 
 
-@pytest.mark.parametrize("history_minutes", [5, 15])
+@pytest.mark.parametrize("history_minutes", [15, 30])
 def test_optical_flow_get_example(
     optical_flow_configuration, sat_filename: Path, history_minutes: int
 ):  # noqa: D103
     optical_flow_datasource = _get_optical_flow_data_source(
         sat_filename=sat_filename, history_minutes=history_minutes
     )
+    # default forecast_minutes is 120, so the sequence length should be 24.
+    # There are 24 x 5 mins = 120 minutes.
+    n_seq = optical_flow_datasource.forecast_minutes / 5
+    assert n_seq == 24
     optical_flow_datasource.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     example = optical_flow_datasource.get_example(
         t0_datetime_utc=t0_dt, x_center_osgb=10_000, y_center_osgb=10_000
     )
-    assert example["data"].shape == (24, 32, 32, 1)  # timesteps, height, width, channels
+    assert example["data"].shape == (n_seq, 32, 32, 1)  # timesteps, height, width, channels

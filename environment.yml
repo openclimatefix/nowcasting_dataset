@@ -29,6 +29,7 @@ dependencies:
   - pyproj
   - rioxarray
   - geopandas
+  - pyresample
 
   # Development tools
   - pytest

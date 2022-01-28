@@ -123,6 +123,23 @@ class DataSourceMixin(Base):
         return int(np.ceil(self.history_minutes / 60))
 
 
+class TimeResolutionMixin(Base):
+    """Time resolution mix in"""
+
+    # TODO: Issue #584: Rename to `sample_period_minutes`
+    time_resolution_minutes: int = Field(
+        5,
+        description="The temporal resolution (in minutes) of the satellite images."
+        "Note that this needs to be divisible by 5.",
+    )
+
+    @validator("time_resolution_minutes")
+    def forecast_minutes_divide_by_5(cls, v):
+        """Validate 'forecast_minutes'"""
+        assert v % 5 == 0, f"The time resolution ({v}) is not divisible by 5"
+        return v
+
+
 class StartEndDatetimeMixin(Base):
     """Mixin class to add start and end date"""
 
@@ -185,7 +202,7 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
     )
 
 
-class Satellite(DataSourceMixin):
+class Satellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model"""
 
     satellite_zarr_path: str = Field(
@@ -206,7 +223,7 @@ class Satellite(DataSourceMixin):
     )
 
 
-class HRVSatellite(DataSourceMixin):
+class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model for HRV data"""
 
     hrvsatellite_zarr_path: str = Field(
@@ -223,7 +240,7 @@ class HRVSatellite(DataSourceMixin):
     hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
-class OpticalFlow(DataSourceMixin):
+class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
     """Optical Flow configuration model"""
 
     opticalflow_zarr_path: str = Field(
@@ -275,6 +292,8 @@ class OpticalFlow(DataSourceMixin):
 class NWP(DataSourceMixin):
     """NWP configuration model"""
 
+    # TODO change to nwp_path, as it could be a netcdf now.
+    # https://github.com/openclimatefix/nowcasting_dataset/issues/582
     nwp_zarr_path: str = Field(
         "gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr",  # noqa: E501
         description="The path which holds the NWP zarr.",
@@ -295,6 +314,7 @@ class GSP(DataSourceMixin, StartEndDatetimeMixin):
     )
     gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
+    metadata_only: bool = Field(False, description="Option to only load metadata.")
 
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):

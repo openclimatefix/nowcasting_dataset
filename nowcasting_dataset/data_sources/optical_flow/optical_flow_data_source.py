@@ -55,6 +55,8 @@ class OpticalFlowDataSource(DataSource):
         the input image after it has been "flowed".
     source_data_source_class_name: Either HRVSatelliteDataSource or SatelliteDataSource.
     channels: The satellite channels to compute optical flow for.
+    time_resolution_minutes: time resolution of optical flow images.
+        Needs to be the same as the satellite images used to make the flow fields.
     """
 
     zarr_path: Union[Path, str]
@@ -63,6 +65,7 @@ class OpticalFlowDataSource(DataSource):
     meters_per_pixel: int = 2000
     output_image_size_pixels: int = 32
     source_data_source_class_name: str = "SatelliteDataSource"
+    time_resolution_minutes: int = 5
 
     def __post_init__(self):  # noqa
         assert self.output_image_size_pixels <= self.input_image_size_pixels, (
@@ -92,6 +95,11 @@ class OpticalFlowDataSource(DataSource):
             meters_per_pixel=self.meters_per_pixel,
         )
 
+    @property
+    def sample_period_minutes(self) -> int:
+        """Override the default sample minutes"""
+        return self.time_resolution_minutes
+
     def open(self):
         """Open the underlying self.source_data_source."""
         self.source_data_source.open()
@@ -112,6 +120,7 @@ class OpticalFlowDataSource(DataSource):
         Returns: Example Data
 
         """
+        assert self.source_data_source.sample_period_minutes == self.sample_period_minutes
         satellite_data: xr.Dataset = self.source_data_source.get_example(
             t0_datetime_utc=t0_datetime_utc,
             x_center_osgb=x_center_osgb,
@@ -153,16 +162,27 @@ class OpticalFlowDataSource(DataSource):
         satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels)
 
         # Put into DataArray:
-        return xr.DataArray(
+        predictions_data_array = xr.DataArray(
             data=predictions,
             coords=(
                 ("time", datetime_index_of_predictions),
-                ("x_osgb", satellite_data_cropped.coords["x_osgb"].values),
-                ("y_osgb", satellite_data_cropped.coords["y_osgb"].values),
+                ("y_geostationary", satellite_data_cropped.coords["y_geostationary"].values),
+                ("x_geostationary", satellite_data_cropped.coords["x_geostationary"].values),
                 ("channels", satellite_data.coords["channels"].values),
             ),
             name="data",
         )
+        predictions_data_array = predictions_data_array.assign_coords(
+            y_osgb=(
+                ("y_geostationary", "x_geostationary"),
+                satellite_data_cropped["y_osgb"].values,
+            ),
+            x_osgb=(
+                ("y_geostationary", "x_geostationary"),
+                satellite_data_cropped["x_osgb"].values,
+            ),
+        )
+        return predictions_data_array
 
     def _compute_and_return_optical_flow(self, satellite_data: xr.DataArray) -> xr.DataArray:
         """

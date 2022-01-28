@@ -133,6 +133,20 @@ class DataSourceOutput(PydanticXArrayDataSet):
             logger.error(message)
             raise Exception(message)
 
+    @staticmethod
+    def order_dims(data: xr.Dataset, expected_dims: Tuple[str], variable: str = "data"):
+        """Order the dimensions the same way"""
+        actual_dims = data.dims
+
+        if actual_dims != expected_dims:
+            logger.debug(
+                "Re-ordering dimensions so that there are always the same. "
+                f"From {actual_dims} to {expected_dims}"
+            )
+            data.__setitem__(variable, data.__getitem__(variable).transpose(*expected_dims))
+
+        return data
+
 
 def pad_nans(array, pad_width) -> np.ndarray:
     """Pad nans with nans"""

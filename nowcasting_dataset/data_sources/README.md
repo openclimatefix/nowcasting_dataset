@@ -1,8 +1,6 @@
 This folder contains the code for the different data sources.
 
 # Data Sources
-- metadata: metadata for the batch like t0_dt, x_centers_osgb ....
-- datetime: datetime information like 'hour_of_day'
 - gsp: Grid Supply Point data from Sheffield Solar (e.g. the estimated total solar PV power generation for each
 GSP region, and the geospatial shape of each GSP region).
 - nwp: Numerical Weather predictions from UK Met Office
@@ -46,7 +44,7 @@ This inherits from 'datasource_output.DataSourceOutput'.
 
 # fake
 
-`fake.py` has several function to create fake `Batch` data. This is useful for testing,
+`fake.batch.py` has several function to create fake `Batch` data. This is useful for testing,
 and hopefully useful outside this module too.
 
 

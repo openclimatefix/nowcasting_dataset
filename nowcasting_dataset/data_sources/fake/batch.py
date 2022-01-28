@@ -10,7 +10,7 @@ import pandas as pd
 import xarray as xr
 
 from nowcasting_dataset.config.model import Configuration
-from nowcasting_dataset.consts import NWP_VARIABLE_NAMES, SAT_VARIABLE_NAMES
+from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.fake.coordinates import (
     create_random_point_coordinates_osgb,
     make_random_image_coords_osgb,
@@ -159,7 +159,7 @@ def nwp_fake(
     image_size_pixels = configuration.input_data.nwp.nwp_image_size_pixels
     history_seq_length = configuration.input_data.nwp.history_seq_length_60_minutes
     seq_length_60 = configuration.input_data.nwp.seq_length_60_minutes
-    number_nwp_channels = len(configuration.input_data.nwp.nwp_channels)
+    nwp_channels = configuration.input_data.nwp.nwp_channels
 
     if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
@@ -172,10 +172,11 @@ def nwp_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="nwp",
             seq_length=seq_length_60,
             history_seq_length=history_seq_length,
             image_size_pixels=image_size_pixels,
-            channels=NWP_VARIABLE_NAMES[0:number_nwp_channels],
+            channels=nwp_channels,
             freq="60T",
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
@@ -253,7 +254,7 @@ def satellite_fake(
     image_size_pixels = configuration.input_data.satellite.satellite_image_size_pixels
     history_seq_length = configuration.input_data.satellite.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.satellite.seq_length_5_minutes
-    number_satellite_channels = len(configuration.input_data.satellite.satellite_channels)
+    satellite_channels = configuration.input_data.satellite.satellite_channels
 
     if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
@@ -266,10 +267,11 @@ def satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             image_size_pixels=image_size_pixels,
-            channels=SAT_VARIABLE_NAMES[1:number_satellite_channels],
+            channels=satellite_channels,
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
             y_center_osgb=y_centers_osgb[i],
@@ -309,6 +311,7 @@ def hrv_satellite_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             image_size_pixels=image_size_pixels * 3,  # HRV images are 3x other images
@@ -340,7 +343,7 @@ def optical_flow_fake(
     image_size_pixels = configuration.input_data.opticalflow.opticalflow_input_image_size_pixels
     history_seq_length = configuration.input_data.opticalflow.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.opticalflow.seq_length_5_minutes
-    number_satellite_channels = len(configuration.input_data.opticalflow.opticalflow_channels)
+    satellite_channels = configuration.input_data.opticalflow.opticalflow_channels
 
     if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
@@ -353,11 +356,12 @@ def optical_flow_fake(
     # make batch of arrays
     xr_arrays = [
         create_image_array(
+            nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             freq="5T",
             image_size_pixels=image_size_pixels,
-            channels=SAT_VARIABLE_NAMES[0:number_satellite_channels],
+            channels=satellite_channels,
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
             y_center_osgb=y_centers_osgb[i],
@@ -436,7 +440,7 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
 
 
 def create_image_array(
-    dims=("time", "x_osgb", "y_osgb", "channels"),
+    nwp_or_satellite="nwp",
     seq_length=19,
     history_seq_length=5,
     image_size_pixels=64,
@@ -459,13 +463,20 @@ def create_image_array(
         pd.date_range(start=t0_datetime_utc, freq=freq, periods=seq_length - history_seq_length)
     )
 
-    ALL_COORDS = {
-        "time": time,
-        "x_osgb": x,
-        "y_osgb": y,
-        "channels": np.array(channels),
-    }
-    coords = [(dim, ALL_COORDS[dim]) for dim in dims]
+    if nwp_or_satellite == "nwp":
+        coords = (("time", time), ("x_osgb", x), ("y_osgb", y), ("channels", np.array(channels)))
+    elif nwp_or_satellite == "satellite":
+        coords = (
+            ("time", time),
+            ("y_geostationary", y),
+            ("x_geostationary", x),
+            ("channels", np.array(channels)),
+        )
+    else:
+        raise ValueError(
+            f"nwp_or_satellite must be either 'nwp' or 'satellite', not '{nwp_or_satellite}'"
+        )
+
     image_data_array = xr.DataArray(
         abs(  # to make sure average is about 100
             np.random.uniform(

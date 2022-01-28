@@ -43,7 +43,7 @@ def sat_data_source(sat_filename: Path):  # noqa: D103
         image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
         zarr_path=sat_filename,
         history_minutes=0,
-        forecast_minutes=5,
+        forecast_minutes=15,
         channels=("IR_016",),
         meters_per_pixel=6000,
     )
@@ -65,7 +65,7 @@ def hrv_sat_data_source(hrv_sat_filename: Path):  # noqa: D103
         image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
         zarr_path=hrv_sat_filename,
         history_minutes=0,
-        forecast_minutes=5,
+        forecast_minutes=15,
         channels=("HRV",),
     )
 
@@ -92,3 +92,8 @@ def configuration():  # noqa: D103
 @pytest.fixture
 def test_data_folder():  # noqa: D103
     return os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests/data")
+
+
+@pytest.fixture
+def test_configuration_filename():  # noqa: D103
+    return os.path.join(os.path.dirname(nowcasting_dataset.__file__), "../tests/config/test.yaml")

@@ -20,6 +20,12 @@ def test_model(configuration):  # noqa: D103
     _ = Batch.fake(configuration=configuration)
 
 
+def test_model_align_in_time(configuration):  # noqa: D103
+    batch = Batch.fake(configuration=configuration, temporally_align_batches=True)
+
+    assert batch.metadata.t0_datetime_utc[0] == batch.metadata.t0_datetime_utc[1]
+
+
 def test_model_nwp_channels(configuration):  # noqa: D103
 
     configuration.input_data = configuration.input_data.set_all_to_defaults()

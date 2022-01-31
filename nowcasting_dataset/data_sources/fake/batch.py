@@ -36,11 +36,21 @@ from nowcasting_dataset.dataset.xr_utils import (
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
-def make_fake_batch(configuration: Configuration) -> dict:
-    """Make fake batch"""
+def make_fake_batch(configuration: Configuration, temporally_align_examples: bool = False) -> dict:
+    """
+    Make fake batch object
+
+    Args:
+        configuration: configuration of dataset
+        temporally_align_examples: option to align examples (within the batch) in time
+
+    Returns: dictionary of batch data
+    """
     batch_size = configuration.process.batch_size
 
-    metadata = metadata_fake(batch_size=batch_size)
+    metadata = metadata_fake(
+        batch_size=batch_size, temporally_align_examples=temporally_align_examples
+    )
 
     return dict(
         metadata=metadata,
@@ -125,8 +135,16 @@ def gsp_fake(
     return GSP(xr_dataset)
 
 
-def metadata_fake(batch_size):
-    """Make a xr dataset"""
+def metadata_fake(batch_size, temporally_align_examples: bool = False) -> Metadata:
+    """
+    Make fake metadata object
+
+    Args:
+        batch_size: The size of the batch
+        temporally_align_examples: option to align examples (within the batch) in time
+
+    Returns: fake metadata
+    """
 
     # get random OSGB center in the UK
     lat = np.random.uniform(51, 55, batch_size)
@@ -134,7 +152,9 @@ def metadata_fake(batch_size):
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
 
     # get random times
-    t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
+    t0_datetimes_utc = make_t0_datetimes_utc(
+        batch_size=batch_size, temporally_align_examples=temporally_align_examples
+    )
 
     metadata_dict = {}
     metadata_dict["batch_size"] = batch_size

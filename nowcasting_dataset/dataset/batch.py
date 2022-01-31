@@ -68,10 +68,22 @@ class Batch(BaseModel):
         ]
 
     @staticmethod
-    def fake(configuration: Configuration):
-        """Make fake batch object"""
+    def fake(configuration: Configuration, temporally_align_examples: bool = False):
+        """
+        Make fake batch object
 
-        return Batch(**make_fake_batch(configuration=configuration))
+        Args:
+            configuration: configuration of dataset
+            temporally_align_examples: ption to align examples (within the batch) in time
+
+        Returns: batch object
+        """
+
+        return Batch(
+            **make_fake_batch(
+                configuration=configuration, temporally_align_examples=temporally_align_examples
+            )
+        )
 
     def save_netcdf(self, batch_i: int, path: Path):
         """

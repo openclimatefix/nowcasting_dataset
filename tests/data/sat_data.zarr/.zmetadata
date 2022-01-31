@@ -6,9 +6,9 @@
         },
         "data/.zarray": {
             "chunks": [
-                1,
-                298,
-                615,
+                7,
+                149,
+                308,
                 1
             ],
             "compressor": {
@@ -20,7 +20,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                73,
+                25,
                 298,
                 615,
                 1
@@ -59,7 +59,7 @@
         },
         "time/.zarray": {
             "chunks": [
-                73
+                25
             ],
             "compressor": {
                 "blocksize": 0,
@@ -73,7 +73,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                73
+                25
             ],
             "zarr_format": 2
         },

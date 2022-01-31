@@ -12,7 +12,7 @@ def create_random_point_coordinates_osgb(
 ):
     """Make random coords [OSGB] for pv site, or gsp"""
     # this is about 100KM
-    HUNDRED_KILOMETERS = 10 ** 5
+    HUNDRED_KILOMETERS = 10**5
     x = np.random.randint(0, HUNDRED_KILOMETERS, size)
     y = np.random.randint(0, HUNDRED_KILOMETERS, size)
 
@@ -24,7 +24,7 @@ def make_random_image_coords_osgb(
 ):
     """Make random coords for image. These are ranges for the pixels"""
 
-    ONE_KILOMETER = 10 ** 3
+    ONE_KILOMETER = 10**3
 
     # 4 kilometer spacing seemed about right for real satellite images
     x = 4 * ONE_KILOMETER * np.array((range(0, size)))

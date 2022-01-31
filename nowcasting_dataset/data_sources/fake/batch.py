@@ -166,7 +166,6 @@ def metadata_fake(
         lon = np.random.uniform(-2.5, 1, batch_size)
 
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
-    print(x_centers_osgb)
 
     # get random times
     t0_datetimes_utc = make_t0_datetimes_utc(

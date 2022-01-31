@@ -3,7 +3,10 @@
 import pytest
 
 from nowcasting_dataset.config.model import Configuration, InputData
+from nowcasting_dataset.data_sources.fake.batch import metadata_fake
+from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.dataset.batch import Batch
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
 @pytest.fixture
@@ -12,6 +15,26 @@ def configuration():  # noqa: D103
     con.input_data = InputData.set_all_to_defaults()
     con.process.batch_size = 4
     return con
+
+
+def test_metadata_fake():
+    """Test get fake metadata not on gsp centers"""
+    m = metadata_fake(batch_size=8, use_gsp_centers=False)
+
+    assert len(m.t0_datetime_utc) == 8
+
+
+def test_metadata_fake_gsp():
+    """Test get fake metadata on gsp centers"""
+    m = metadata_fake(batch_size=8, use_gsp_centers=True)
+
+    metadata = get_gsp_metadata_from_eso()
+    metadata.set_index("gsp_id", drop=False, inplace=True)
+    metadata["location_x"], metadata["location_y"] = lat_lon_to_osgb(
+        lat=metadata["centroid_lat"], lon=metadata["centroid_lon"]
+    )
+    assert m.x_center_osgb[0] in metadata["location_x"].astype(int).values
+    assert m.y_center_osgb[0] in metadata["location_y"].astype(int).values
 
 
 def test_model(configuration):  # noqa: D103

@@ -20,6 +20,7 @@ from nowcasting_dataset.data_sources.fake.utils import (
     join_list_data_array_to_batch_dataset,
     make_t0_datetimes_utc,
 )
+from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
@@ -135,21 +136,37 @@ def gsp_fake(
     return GSP(xr_dataset)
 
 
-def metadata_fake(batch_size, temporally_align_examples: bool = False) -> Metadata:
+def metadata_fake(
+    batch_size, temporally_align_examples: bool = False, use_gsp_centers: bool = True
+) -> Metadata:
     """
     Make fake metadata object
 
     Args:
         batch_size: The size of the batch
         temporally_align_examples: option to align examples (within the batch) in time
+        use_gsp_centers: use x and y centers from eso, for the example centers
 
     Returns: fake metadata
     """
 
-    # get random OSGB center in the UK
-    lat = np.random.uniform(51, 55, batch_size)
-    lon = np.random.uniform(-2.5, 1, batch_size)
+    if use_gsp_centers:
+        metadata = get_gsp_metadata_from_eso()
+        metadata.set_index("gsp_id", drop=False, inplace=True)
+
+        # choose random index
+        index = np.random.choice(len(metadata), size=batch_size)
+
+        lat = metadata.iloc[index].centroid_lat
+        lon = metadata.iloc[index].centroid_lon
+
+    else:
+        # get random OSGB center in the UK
+        lat = np.random.uniform(51, 55, batch_size)
+        lon = np.random.uniform(-2.5, 1, batch_size)
+
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
+    print(x_centers_osgb)
 
     # get random times
     t0_datetimes_utc = make_t0_datetimes_utc(

@@ -145,7 +145,7 @@ def metadata_fake(
     Args:
         batch_size: The size of the batch
         temporally_align_examples: option to align examples (within the batch) in time
-        use_gsp_centers: get x and y centers from eso
+        use_gsp_centers: use x and y centers from eso, for the example centers
 
     Returns: fake metadata
     """

@@ -212,7 +212,7 @@ class GSPDataSource(ImageDataSource):
         Args:
             t0_datetimes_utc: list of available t0 datetimes.
 
-        Returns: list of x and y locations, and ids
+        Returns: list of location objects
 
         """
 
@@ -293,7 +293,10 @@ class GSPDataSource(ImageDataSource):
         Get data at the location of x,y and get surrounding GSP power data also.
 
         Args:
-            location: # TODO
+            location: A location object of the example which contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Dictionary with GSP data in it.
         """

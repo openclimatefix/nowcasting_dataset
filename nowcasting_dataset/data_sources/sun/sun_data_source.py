@@ -44,7 +44,10 @@ class SunDataSource(DataSource):
         Get example data from t0_dt and x and y xoordinates
 
         Args:
-            location: # TODO
+            location: A location object of the example which contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Dictionary of azimuth and elevation data
         """

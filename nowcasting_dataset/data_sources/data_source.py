@@ -230,7 +230,11 @@ class DataSource:
         Get Batch Data
 
         Args:
-            locations: # TODO
+            locations: List of locations object
+                A location object contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Batch data.
         """
@@ -420,12 +424,10 @@ class ZarrDataSource(ImageDataSource):
         Get Example data
 
         Args:
-            location: #TODO
-            # t0_datetime_utc: list of timestamps for the datetime of the batches.
-            #     The batch will also include data for historic and future depending
-            #     on `history_minutes` and `future_minutes`.
-            # x_center_osgb: x center batch locations
-            # y_center_osgb: y center batch locations
+            location: A location object of the example which contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Example Data
 

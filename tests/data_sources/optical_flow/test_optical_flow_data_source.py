@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset.config.model import Configuration, InputData
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_data_source import (
     OpticalFlowDataSource,
 )
@@ -47,6 +48,6 @@ def test_optical_flow_get_example(
     optical_flow_datasource.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     example = optical_flow_datasource.get_example(
-        t0_datetime_utc=t0_dt, x_center_osgb=10_000, y_center_osgb=10_000
+        location=Location(t0_datetime_utc=t0_dt, x_center_osgb=10_000, y_center_osgb=10_000)
     )
     assert example["data"].shape == (n_seq, 32, 32, 1)  # timesteps, height, width, channels

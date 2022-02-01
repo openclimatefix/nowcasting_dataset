@@ -1,13 +1,43 @@
 """ Model for output of general/metadata data, useful for a batch """
 
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
 
 import pandas as pd
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, validator
 
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.filesystem.utils import check_path_exists
 from nowcasting_dataset.utils import get_start_and_end_example_index
+
+
+class Location(BaseModel):
+    """Location of the example"""
+
+    t0_datetime_utc: pd.Timestamp = Field(
+        ...,
+        description="The t0 of one example ",
+    )
+
+    x_center_osgb: float = Field(
+        ...,
+        description="The x center of one example in OSGB coordinates",
+    )
+
+    y_center_osgb: float = Field(
+        ...,
+        description="The y center of one example in OSGB coordinates",
+    )
+
+    id: Optional[int] = Field(
+        None,
+        description="The id of the GSP or the PV system. " "This is optional so can be None",
+    )
+
+    @validator("t0_datetime_utc")
+    def v_t0_datetime_utc(cls, t0_datetime_utc):
+        """Make sure t0_datetime_utc is pandas Timestamp"""
+        return pd.Timestamp(t0_datetime_utc)
 
 
 class Metadata(BaseModel):
@@ -20,50 +50,40 @@ class Metadata(BaseModel):
         "then this item stores one data item",
     )
 
-    t0_datetime_utc: List[pd.Timestamp] = Field(
-        ...,
-        description="The t0s of each example ",
-    )
+    locations: List[Location]
 
-    x_center_osgb: List[float] = Field(
-        ...,
-        description="The x centers of each example in OSGB coordinates",
-    )
+    @property
+    def t0_datetimes_utc(self) -> list:
+        """Return all the t0"""
+        return [location.t0_datetime_utc for location in self.locations]
 
-    y_center_osgb: List[float] = Field(
-        ...,
-        description="The y centers of each example in OSGB coordinates",
-    )
+    @property
+    def x_centers_osgb(self) -> List[float]:
+        """List of all the x centers from all the locations"""
+        return [location.x_center_osgb for location in self.locations]
 
-    id: Optional[List[Optional[int]]] = Field(
-        None,
-        description="The id of the GSP or the PV system. "
-        "This is optional so can be None, or a list of None's",
-    )
+    @property
+    def y_centers_osgb(self) -> List[float]:
+        """List of all the x centers from all the locations"""
+        return [location.y_center_osgb for location in self.locations]
 
-    @root_validator
-    def model_id(cls, values):
-        """Make sure id is a list of length batch_size"""
-
-        print(values)
-
-        if (values["id"] is None) and (values["batch_size"] is not None):
-            values["id"] = [None] * values["batch_size"]
-
-        return values
+    @property
+    def ids(self) -> List[float]:
+        """List of all the ids from all the locations"""
+        return [location.id for location in self.locations]
 
     def save_to_csv(self, path):
         """
         Save metadata to a csv file
 
         Args:
-            path: the path where the file shold be save
+            path: the path where the file should be save
 
         """
 
         filename = f"{path}/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
-        metadata_dict = self.dict()
-        metadata_dict.pop("batch_size")
+        metadata_dict = [location.dict() for location in self.locations]
+        # metadata_dict.pop("batch_size")
 
         # if file exists, add to it
         try:
@@ -81,7 +101,9 @@ class Metadata(BaseModel):
         metadata_df.to_csv(filename, index=False)
 
 
-def load_from_csv(path, batch_idx, batch_size) -> Metadata:
+def load_from_csv(
+    path: Union[str, Path], batch_size: int, batch_idx: Optional[int] = None
+) -> Metadata:
     """
     Load metadata from csv
 
@@ -95,17 +117,26 @@ def load_from_csv(path, batch_idx, batch_size) -> Metadata:
     filename = f"{path}/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
 
     # get start and end example index
-    start_example_idx, end_example_idx = get_start_and_end_example_index(
-        batch_idx=batch_idx, batch_size=batch_size
-    )
+    if batch_idx is not None:
+        start_example_idx, end_example_idx = get_start_and_end_example_index(
+            batch_idx=batch_idx, batch_size=batch_size
+        )
+        skiprows = start_example_idx + 1  # p+1 is to ignore header
+        nrows = batch_size
+    else:
+        skiprows = 1  # ignore header
+        nrows = None
 
     names = ["t0_datetime_utc", "x_center_osgb", "y_center_osgb", "id"]
 
     # read the file
+    # kswargs = {}
+    # if (start_example_idx is not None) and (end_example_idx is not None):
+    #     kswargs['nrows'] = batch_size
     metadata_df = pd.read_csv(
         filename,
-        skiprows=start_example_idx + 1,  # p+1 is to ignore header
-        nrows=batch_size,
+        skiprows=skiprows,
+        nrows=nrows,
         names=names,
     )
 
@@ -114,7 +145,7 @@ def load_from_csv(path, batch_idx, batch_size) -> Metadata:
     ), f"Could not load metadata for {batch_size=} {batch_idx=} {filename=}"
 
     # add batch_size
-    metadata_dict = metadata_df.to_dict("list")
-    metadata_dict["batch_size"] = batch_size
+    locations_dict = metadata_df.to_dict("records")
+    metadata_dict = {"locations": locations_dict, "batch_size": batch_size}
 
     return Metadata(**metadata_dict)

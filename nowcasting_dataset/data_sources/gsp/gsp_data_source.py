@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from numbers import Number
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
 
@@ -130,9 +131,7 @@ class GSPDataSource(ImageDataSource):
 
         return len(self.metadata.location_x)
 
-    def get_all_locations(
-        self, t0_datetimes_utc: pd.DatetimeIndex
-    ) -> Tuple[pd.DatetimeIndex, List[Number], List[Number], List[Number]]:
+    def get_all_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[Location]:
         """
         Make locations for all GSP
 
@@ -189,16 +188,21 @@ class GSPDataSource(ImageDataSource):
             ), f"{len(x_centers_osgb_all_gsps)=} {len(gsp_ids)=}"
             assert len(y_centers_osgb_all_gsps) == len(gsp_ids)
 
-            return (
-                t0_datetimes_utc_all_gsps,
-                x_centers_osgb_all_gsps,
-                y_centers_osgb_all_gsps,
-                gsp_ids,
-            )
+            locations = []
+            # TODO make dataframe -> List[dict] -> List[Locations]
+            for i in range(len(t0_datetimes_utc_all_gsps)):
+                locations.append(
+                    Location(
+                        t0_datetime_utc=t0_datetimes_utc_all_gsps[i],
+                        x_center_osgb=x_centers_osgb_all_gsps[i],
+                        y_center_osgb=y_centers_osgb_all_gsps[i],
+                        id=gsp_ids[i],
+                    )
+                )
 
-    def get_locations(
-        self, t0_datetimes_utc: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number], List[Number]]:
+            return locations
+
+    def get_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[Location]:
         """
         Get x and y locations. Assume that all data is available for all GSP.
 
@@ -268,24 +272,36 @@ class GSPDataSource(ImageDataSource):
         assert len(x_centers_osgb) == len(ids)
         assert len(y_centers_osgb) == len(ids)
 
-        return x_centers_osgb, y_centers_osgb, ids
+        locations = []
+        for i in range(len(x_centers_osgb)):
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+            locations.append(
+                Location(
+                    t0_datetime_utc=t0_datetimes_utc[i],
+                    x_center_osgb=x_centers_osgb[i],
+                    y_center_osgb=y_centers_osgb[i],
+                    id=ids[i],
+                )
+            )
+
+        return locations
+
+    def get_example(self, location: Location) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords.
 
         Get data at the location of x,y and get surrounding GSP power data also.
 
         Args:
-            t0_datetime_utc: datetime of "now". History and forecast are also returned
-            x_center_osgb: x location of center GSP.
-            y_center_osgb: y location of center GSP.
+            location: # TODO
 
         Returns: Dictionary with GSP data in it.
         """
         logger.debug("Getting example data")
+
+        t0_datetime_utc = location.t0_datetime_utc
+        x_center_osgb = location.x_center_osgb
+        y_center_osgb = location.y_center_osgb
 
         # get the GSP power, including history and forecast
         selected_gsp_power, selected_capacity = self._get_time_slice(t0_datetime_utc)

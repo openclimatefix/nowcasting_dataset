@@ -18,6 +18,7 @@ import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.square import get_bounding_box_mask, get_closest_coordinate_order
 
@@ -224,23 +225,21 @@ class PVDataSource(ImageDataSource):
 
         return pv_system_ids
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+    def get_example(self, location: Location) -> xr.Dataset:
         """
         Get Example data for PV data
 
         Args:
-            t0_datetime_utc: list of timestamps for the datetime of the batches.
-                The batch will also include data for historic and future depending
-                on 'history_minutes' and 'future_minutes'.
-            x_center_osgb: x center batch locations
-            y_center_osgb: y center batch locations
+            location: # TODO
 
         Returns: Example data
 
         """
         logger.debug("Getting PV example data")
+
+        t0_datetime_utc = location.t0_datetime_utc
+        x_center_osgb = location.x_center_osgb
+        y_center_osgb = location.y_center_osgb
 
         selected_pv_power, selected_pv_capacity = self._get_time_slice(t0_datetime_utc)
         all_pv_system_ids = self._get_all_pv_system_ids_in_roi(

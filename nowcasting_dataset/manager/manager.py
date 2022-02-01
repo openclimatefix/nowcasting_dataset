@@ -3,7 +3,7 @@
 import logging
 import multiprocessing
 from functools import partial
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -11,11 +11,13 @@ import pandas as pd
 import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
-from nowcasting_dataset.consts import (
-    SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES,
-    SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
-)
+from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.data_sources.metadata.metadata_model import (
+    Location,
+    Metadata,
+    load_from_csv,
+)
 from nowcasting_dataset.dataset.split import split
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 from nowcasting_dataset.manager.base import ManagerBase
@@ -144,16 +146,18 @@ class Manager(ManagerBase):
             else:
                 get_all_locations = False
 
-            df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
+            locations = self.sample_spatial_and_temporal_locations_for_examples(
                 t0_datetimes=datetimes_for_split,
                 n_examples=n_examples,
                 get_all_locations=get_all_locations,
             )
-            output_filename = self._filename_of_locations_csv_file(split_name)
+            metadata = Metadata(batch_size=self.config.process.batch_size, locations=locations)
+            # output_filename = self._filename_of_locations_csv_file(split_name)
             logger.info(f"Making {path_for_csv} if it does not exist.")
             nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
-            logger.debug(f"Writing {output_filename}")
-            df_of_locations.to_csv(output_filename)
+            # logger.debug(f"Writing {output_filename}")
+            logger.debug(f"Saving {len(metadata.locations)} locations to csv")
+            metadata.save_to_csv(path_for_csv)
 
     def _get_n_batches_requested_for_split_name(self, split_name: str) -> int:
         return getattr(self.config.process, f"n_{split_name}_batches")
@@ -223,7 +227,7 @@ class Manager(ManagerBase):
 
     def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetimes: pd.DatetimeIndex, n_examples: int, get_all_locations: bool = False
-    ) -> pd.DataFrame:
+    ) -> List[Location]:
         """
         Computes the geospatial and temporal locations for each training example.
 
@@ -267,33 +271,17 @@ class Manager(ManagerBase):
 
             # note that the returned 'shuffled_t0_datetimes'
             # has duplicate datetimes for each location
-            (
-                shuffled_t0_datetimes,
-                x_locations,
-                y_locations,
-                ids,
-            ) = self.data_source_which_defines_geospatial_locations.get_all_locations(
+            locations = self.data_source_which_defines_geospatial_locations.get_all_locations(
                 t0_datetimes_utc=shuffled_t0_datetimes
             )
 
         else:
 
-            (
-                x_locations,
-                y_locations,
-                ids,
-            ) = self.data_source_which_defines_geospatial_locations.get_locations(
+            locations = self.data_source_which_defines_geospatial_locations.get_locations(
                 shuffled_t0_datetimes
             )
 
-        return pd.DataFrame(
-            {
-                "t0_datetime_UTC": shuffled_t0_datetimes,
-                "x_center_OSGB": x_locations,
-                "y_center_OSGB": y_locations,
-                "id": ids,
-            }
-        )
+        return locations
 
     def _get_first_batches_to_create(
         self, overwrite_batches: bool
@@ -384,19 +372,16 @@ class Manager(ManagerBase):
                 return
 
         # Load locations for each example off disk.
-        locations_for_each_example_of_each_split: dict[split.SplitName, pd.DataFrame] = {}
+        locations_for_each_example_of_each_split: dict[split.SplitName, List[Location]] = {}
         for split_name in splits_which_need_more_batches:
             filename = self._filename_of_locations_csv_file(split_name.value)
             logger.info(f"Loading {filename}.")
-            locations_for_each_example = pd.read_csv(filename, index_col=0)
-            assert locations_for_each_example.columns.to_list() == list(
-                SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-            )
-            # Converting to datetimes is much faster using `pd.to_datetime()` than
-            # passing `parse_datetimes` into `pd.read_csv()`.
-            locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
-                locations_for_each_example["t0_datetime_UTC"]
-            )
+
+            metadata = load_from_csv(path=filename, batch_size=self.config.process.batch_size)
+            locations_for_each_example = metadata.locations
+
+            logger.debug(f"Got {len(locations_for_each_example)} locations")
+
             if len(locations_for_each_example) > 0:
                 locations_for_each_example_of_each_split[split_name] = locations_for_each_example
 
@@ -416,7 +401,7 @@ class Manager(ManagerBase):
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
                     idx_of_first_example = idx_of_first_batch * self.config.process.batch_size
-                    locations = locations_for_split.loc[idx_of_first_example:]
+                    locations = locations_for_split[idx_of_first_example:]
 
                     # Get paths.
                     dst_path = (

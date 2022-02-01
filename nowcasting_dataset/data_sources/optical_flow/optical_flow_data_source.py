@@ -1,7 +1,6 @@
 """ Optical Flow Data Source """
 import logging
 from dataclasses import dataclass
-from numbers import Number
 from pathlib import Path
 from typing import Iterable, Union
 
@@ -12,6 +11,7 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources import DataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.data_sources.optical_flow.format_images import crop_center, remap_image
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.dataset.xr_utils import convert_arrays_to_uint8
@@ -104,27 +104,20 @@ class OpticalFlowDataSource(DataSource):
         """Open the underlying self.source_data_source."""
         self.source_data_source.open()
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+    def get_example(self, location: Location) -> xr.Dataset:
         """
         Get Optical Flow Example data
 
         Args:
-            t0_datetime_utc: list of timestamps for the datetime of the batches.
-                The batch will also include data for historic and future depending
-                on `history_minutes` and `future_minutes`.
-            x_center_osgb: x center batch locations
-            y_center_osgb: y center batch locations
+            location: # TODO
 
         Returns: Example Data
 
         """
+
         assert self.source_data_source.sample_period_minutes == self.sample_period_minutes
         satellite_data: xr.Dataset = self.source_data_source.get_example(
-            t0_datetime_utc=t0_datetime_utc,
-            x_center_osgb=x_center_osgb,
-            y_center_osgb=y_center_osgb,
+            location=location,
         )
         satellite_data = satellite_data["data"]
         optical_flow_data_array = self._compute_and_return_optical_flow(satellite_data)

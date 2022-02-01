@@ -1,7 +1,6 @@
 """ Topological DataSource """
 import logging
 from dataclasses import dataclass
-from numbers import Number
 
 import pandas as pd
 import rioxarray
@@ -10,6 +9,7 @@ from rasterio.warp import Resampling
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.data_sources.topographic.topographic_model import Topographic
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import OpenData
@@ -57,20 +57,21 @@ class TopographicDataSource(ImageDataSource):
         """Check input paths exist.  If not, raise a FileNotFoundError."""
         nd_fs_utils.check_path_exists(self.filename)
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+    def get_example(self, location: Location) -> xr.Dataset:
         """
         Get a single example
 
         Args:
-            t0_datetime_utc: Current datetime for the example, unused
-            x_center_osgb: Center of the example in meters in the x direction in OSGB coordinates
-            y_center_osgb: Center of the example in meters in the y direction in OSGB coordinates
+            location: # TODO
 
         Returns:
             Example containing topographic data for the selected area
         """
+
+        t0_datetime_utc = location.t0_datetime_utc
+        x_center_osgb = location.x_center_osgb
+        y_center_osgb = location.y_center_osgb
+
         bounding_box = self._square.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )

@@ -21,7 +21,7 @@ def test_metadata_fake():
     """Test get fake metadata not on gsp centers"""
     m = metadata_fake(batch_size=8, use_gsp_centers=False)
 
-    assert len(m.t0_datetime_utc) == 8
+    assert len(m.t0_datetimes_utc) == 8
 
 
 def test_metadata_fake_gsp():
@@ -33,8 +33,8 @@ def test_metadata_fake_gsp():
     metadata["location_x"], metadata["location_y"] = lat_lon_to_osgb(
         lat=metadata["centroid_lat"], lon=metadata["centroid_lon"]
     )
-    assert m.x_center_osgb[0] in metadata["location_x"].values
-    assert m.y_center_osgb[0] in metadata["location_y"].values
+    assert m.x_centers_osgb[0] in metadata["location_x"].values
+    assert m.y_centers_osgb[0] in metadata["location_y"].values
 
 
 def test_model(configuration):  # noqa: D103
@@ -46,9 +46,9 @@ def test_model(configuration):  # noqa: D103
     t0_index_gsp = configuration.input_data.gsp.history_seq_length_30_minutes
     t0_index_satellite = configuration.input_data.satellite.history_seq_length_5_minutes
 
-    t0_datetimes_utc = batch.metadata.t0_datetime_utc
-    x_center_osgb = batch.metadata.x_center_osgb
-    y_center_osgb = batch.metadata.y_center_osgb
+    t0_datetimes_utc = batch.metadata.t0_datetimes_utc
+    x_center_osgb = batch.metadata.x_centers_osgb
+    y_center_osgb = batch.metadata.y_centers_osgb
 
     assert batch.gsp.time[0, t0_index_gsp] == t0_datetimes_utc[0]
     assert batch.satellite.time[0, t0_index_satellite] == t0_datetimes_utc[0]

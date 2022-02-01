@@ -9,6 +9,7 @@ import pytest
 import nowcasting_dataset
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.fake.batch import pv_fake
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.data_sources.pv.pv_data_source import (
     PVDataSource,
     drop_pv_systems_which_produce_overnight,
@@ -57,11 +58,20 @@ def test_get_example_and_batch():  # noqa: D103
 
     x_locations, y_locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
 
-    _ = pv_data_source.get_example(pv_data_source.pv_power.index[0], x_locations[0], y_locations[0])
+    locations = []
+    for i in range(10):
+        # have added 6 so there are no nans in the test data
+        locations.append(
+            Location(
+                t0_datetime_utc=pv_data_source.pv_power.index[i + 6],
+                x_center_osgb=x_locations[i],
+                y_center_osgb=y_locations[i],
+            )
+        )
 
-    batch = pv_data_source.get_batch(
-        pv_data_source.pv_power.index[6:16], x_locations[0:10], y_locations[0:10]
-    )
+    _ = pv_data_source.get_example(location=locations[0])
+
+    batch = pv_data_source.get_batch(locations=locations)
     assert batch.power_mw.shape == (10, 19, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)
 
 

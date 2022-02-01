@@ -22,7 +22,7 @@ from nowcasting_dataset.data_sources.fake.utils import (
 )
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location, Metadata
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.data_sources.pv.pv_model import PV
@@ -108,9 +108,9 @@ def gsp_fake(
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        t0_datetimes_utc = metadata.t0_datetimes_utc
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_datasets = [
@@ -157,15 +157,15 @@ def metadata_fake(
         # choose random index
         index = np.random.choice(len(metadata), size=batch_size)
 
-        lat = metadata.iloc[index].centroid_lat
-        lon = metadata.iloc[index].centroid_lon
-        gsp_id = metadata.iloc[index].index
+        lat = list(metadata.iloc[index].centroid_lat)
+        lon = list(metadata.iloc[index].centroid_lon)
+        ids = list(metadata.iloc[index].index)
 
     else:
         # get random OSGB center in the UK
         lat = np.random.uniform(51, 55, batch_size)
         lon = np.random.uniform(-2.5, 1, batch_size)
-        gsp_id = [None] * batch_size
+        ids = [None] * batch_size
 
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
 
@@ -174,14 +174,18 @@ def metadata_fake(
         batch_size=batch_size, temporally_align_examples=temporally_align_examples
     )
 
-    metadata_dict = {}
-    metadata_dict["batch_size"] = batch_size
-    metadata_dict["x_center_osgb"] = list(x_centers_osgb)
-    metadata_dict["y_center_osgb"] = list(y_centers_osgb)
-    metadata_dict["t0_datetime_utc"] = list(t0_datetimes_utc)
-    metadata_dict["id"] = list(gsp_id)
+    # would be good to parrelize this
+    locations = [
+        Location(
+            t0_datetime_utc=t0_datetimes_utc[i],
+            x_center_osgb=x_centers_osgb[i],
+            y_center_osgb=y_centers_osgb[i],
+            id=ids[i],
+        )
+        for i in range(0, batch_size)
+    ]
 
-    return Metadata(**metadata_dict)
+    return Metadata(batch_size=batch_size, locations=locations)
 
 
 def nwp_fake(
@@ -204,9 +208,9 @@ def nwp_fake(
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        t0_datetimes_utc = metadata.t0_datetimes_utc
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -251,9 +255,9 @@ def pv_fake(
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        t0_datetimes_utc = metadata.t0_datetimes_utc
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_datasets = [
@@ -299,9 +303,9 @@ def satellite_fake(
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        t0_datetimes_utc = metadata.t0_datetimes_utc
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -343,9 +347,9 @@ def hrv_satellite_fake(
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        t0_datetimes_utc = metadata.t0_datetimes_utc
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -388,9 +392,9 @@ def optical_flow_fake(
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        t0_datetimes_utc = metadata.t0_datetimes_utc
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_arrays = [
@@ -424,7 +428,7 @@ def sun_fake(
     if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
     else:
-        t0_datetimes_utc = metadata.t0_datetime_utc
+        t0_datetimes_utc = metadata.t0_datetimes_utc
 
     # create dataset with both azimuth and elevation, index with time
     # make batch of arrays
@@ -445,8 +449,8 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
     if metadata is None:
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)
     else:
-        x_centers_osgb = metadata.x_center_osgb
-        y_centers_osgb = metadata.y_center_osgb
+        x_centers_osgb = metadata.x_centers_osgb
+        y_centers_osgb = metadata.y_centers_osgb
 
     # make batch of arrays
     xr_arrays = []

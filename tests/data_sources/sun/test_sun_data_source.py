@@ -1,6 +1,7 @@
 """ Test for Sun data source """
 import pandas as pd
 
+from nowcasting_dataset.data_sources.metadata.metadata_model import Location
 from nowcasting_dataset.data_sources.sun.sun_data_source import SunDataSource
 
 
@@ -20,7 +21,7 @@ def test_get_example(test_data_folder):  # noqa 103
     start_dt = pd.Timestamp("2020-04-01 12:00:00.000")
 
     example = sun_data_source.get_example(
-        t0_datetime_utc=start_dt, x_center_osgb=x, y_center_osgb=y
+        Location(t0_datetime_utc=start_dt, x_center_osgb=x, y_center_osgb=y)
     )
 
     assert len(example.elevation) == 19
@@ -37,7 +38,7 @@ def test_get_example_different_year(test_data_folder):  # noqa 103
     start_dt = pd.Timestamp("2021-04-01 12:00:00.000")
 
     example = sun_data_source.get_example(
-        t0_datetime_utc=start_dt, x_center_osgb=x, y_center_osgb=y
+        location=Location(t0_datetime_utc=start_dt, x_center_osgb=x, y_center_osgb=y)
     )
 
     assert len(example.elevation) == 19

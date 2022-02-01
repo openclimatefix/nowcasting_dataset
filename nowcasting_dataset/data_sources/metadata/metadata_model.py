@@ -1,9 +1,9 @@
 """ Model for output of general/metadata data, useful for a batch """
 
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.filesystem.utils import check_path_exists
@@ -25,15 +25,32 @@ class Metadata(BaseModel):
         description="The t0s of each example ",
     )
 
-    x_center_osgb: List[int] = Field(
+    x_center_osgb: List[float] = Field(
         ...,
         description="The x centers of each example in OSGB coordinates",
     )
 
-    y_center_osgb: List[int] = Field(
+    y_center_osgb: List[float] = Field(
         ...,
         description="The y centers of each example in OSGB coordinates",
     )
+
+    id: Optional[List[Optional[int]]] = Field(
+        None,
+        description="The id of the GSP or the PV system. "
+        "This is optional so can be None, or a list of None's",
+    )
+
+    @root_validator
+    def model_id(cls, values):
+        """Make sure id is a list of length batch_size"""
+
+        print(values)
+
+        if (values["id"] is None) and (values["batch_size"] is not None):
+            values["id"] = [None] * values["batch_size"]
+
+        return values
 
     def save_to_csv(self, path):
         """
@@ -82,7 +99,7 @@ def load_from_csv(path, batch_idx, batch_size) -> Metadata:
         batch_idx=batch_idx, batch_size=batch_size
     )
 
-    names = ["t0_datetime_utc", "x_center_osgb", "y_center_osgb"]
+    names = ["t0_datetime_utc", "x_center_osgb", "y_center_osgb", "id"]
 
     # read the file
     metadata_df = pd.read_csv(

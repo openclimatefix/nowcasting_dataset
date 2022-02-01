@@ -33,8 +33,8 @@ def test_metadata_fake_gsp():
     metadata["location_x"], metadata["location_y"] = lat_lon_to_osgb(
         lat=metadata["centroid_lat"], lon=metadata["centroid_lon"]
     )
-    assert m.x_center_osgb[0] in metadata["location_x"].astype(int).values
-    assert m.y_center_osgb[0] in metadata["location_y"].astype(int).values
+    assert m.x_center_osgb[0] in metadata["location_x"].values
+    assert m.y_center_osgb[0] in metadata["location_y"].values
 
 
 def test_model(configuration):  # noqa: D103

@@ -159,11 +159,13 @@ def metadata_fake(
 
         lat = metadata.iloc[index].centroid_lat
         lon = metadata.iloc[index].centroid_lon
+        gsp_id = metadata.iloc[index].index
 
     else:
         # get random OSGB center in the UK
         lat = np.random.uniform(51, 55, batch_size)
         lon = np.random.uniform(-2.5, 1, batch_size)
+        gsp_id = [None] * batch_size
 
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
 
@@ -177,6 +179,7 @@ def metadata_fake(
     metadata_dict["x_center_osgb"] = list(x_centers_osgb)
     metadata_dict["y_center_osgb"] = list(y_centers_osgb)
     metadata_dict["t0_datetime_utc"] = list(t0_datetimes_utc)
+    metadata_dict["id"] = list(gsp_id)
 
     return Metadata(**metadata_dict)
 

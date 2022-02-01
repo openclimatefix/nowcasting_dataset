@@ -132,7 +132,7 @@ class GSPDataSource(ImageDataSource):
 
     def get_all_locations(
         self, t0_datetimes_utc: pd.DatetimeIndex
-    ) -> Tuple[pd.DatetimeIndex, List[Number], List[Number]]:
+    ) -> Tuple[pd.DatetimeIndex, List[Number], List[Number], List[Number]]:
         """
         Make locations for all GSP
 
@@ -146,6 +146,7 @@ class GSPDataSource(ImageDataSource):
             1. list of datetimes
             2. list of x locations
             3. list of y locations
+            4. list of gsp ids
 
         """
 
@@ -163,6 +164,7 @@ class GSPDataSource(ImageDataSource):
             # get all locations
             x_centers_osgb = self.metadata.location_x
             y_centers_osgb = self.metadata.location_y
+            gsp_ids = self.metadata.index
 
             # make x centers
             x_centers_osgb_all_gsps = pd.DataFrame(columns=t0_datetimes_utc, index=x_centers_osgb)
@@ -172,15 +174,31 @@ class GSPDataSource(ImageDataSource):
             y_centers_osgb_all_gsps = pd.DataFrame(columns=t0_datetimes_utc, index=y_centers_osgb)
             y_centers_osgb_all_gsps = y_centers_osgb_all_gsps.unstack().reset_index()
 
+            # make gsp ids
+            gsp_ids = pd.DataFrame(columns=t0_datetimes_utc, index=gsp_ids)
+            gsp_ids = gsp_ids.unstack().reset_index()
+
             t0_datetimes_utc_all_gsps = pd.DatetimeIndex(x_centers_osgb_all_gsps["t0_datetime_utc"])
             x_centers_osgb_all_gsps = list(x_centers_osgb_all_gsps["location_x"])
             y_centers_osgb_all_gsps = list(y_centers_osgb_all_gsps["location_y"])
+            gsp_ids = list(gsp_ids["gsp_id"])
 
-            return t0_datetimes_utc_all_gsps, x_centers_osgb_all_gsps, y_centers_osgb_all_gsps
+            assert len(x_centers_osgb_all_gsps) == len(y_centers_osgb_all_gsps)
+            assert len(x_centers_osgb_all_gsps) == len(
+                gsp_ids
+            ), f"{len(x_centers_osgb_all_gsps)=} {len(gsp_ids)=}"
+            assert len(y_centers_osgb_all_gsps) == len(gsp_ids)
+
+            return (
+                t0_datetimes_utc_all_gsps,
+                x_centers_osgb_all_gsps,
+                y_centers_osgb_all_gsps,
+                gsp_ids,
+            )
 
     def get_locations(
         self, t0_datetimes_utc: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    ) -> Tuple[List[Number], List[Number], List[Number]]:
         """
         Get x and y locations. Assume that all data is available for all GSP.
 
@@ -190,7 +208,7 @@ class GSPDataSource(ImageDataSource):
         Args:
             t0_datetimes_utc: list of available t0 datetimes.
 
-        Returns: list of x and y locations
+        Returns: list of x and y locations, and ids
 
         """
 
@@ -208,6 +226,7 @@ class GSPDataSource(ImageDataSource):
             # get x, y locations
             x_centers_osgb = list(metadata.location_x)
             y_centers_osgb = list(metadata.location_y)
+            ids = list(metadata.index)
 
         else:
 
@@ -220,6 +239,7 @@ class GSPDataSource(ImageDataSource):
             # their geographical location.
             x_centers_osgb = []
             y_centers_osgb = []
+            ids = []
 
             for t0_dt in t0_datetimes_utc:
 
@@ -242,8 +262,13 @@ class GSPDataSource(ImageDataSource):
                 # Get metadata for GSP
                 x_centers_osgb.append(metadata_for_gsp.location_x)
                 y_centers_osgb.append(metadata_for_gsp.location_y)
+                ids.append(meta_data.index[0])
 
-        return x_centers_osgb, y_centers_osgb
+        assert len(x_centers_osgb) == len(y_centers_osgb)
+        assert len(x_centers_osgb) == len(ids)
+        assert len(y_centers_osgb) == len(ids)
+
+        return x_centers_osgb, y_centers_osgb, ids
 
     def get_example(
         self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number

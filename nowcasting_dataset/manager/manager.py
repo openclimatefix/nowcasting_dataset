@@ -271,6 +271,7 @@ class Manager(ManagerBase):
                 shuffled_t0_datetimes,
                 x_locations,
                 y_locations,
+                ids,
             ) = self.data_source_which_defines_geospatial_locations.get_all_locations(
                 t0_datetimes_utc=shuffled_t0_datetimes
             )
@@ -280,6 +281,7 @@ class Manager(ManagerBase):
             (
                 x_locations,
                 y_locations,
+                ids,
             ) = self.data_source_which_defines_geospatial_locations.get_locations(
                 shuffled_t0_datetimes
             )
@@ -289,6 +291,7 @@ class Manager(ManagerBase):
                 "t0_datetime_UTC": shuffled_t0_datetimes,
                 "x_center_OSGB": x_locations,
                 "y_center_OSGB": y_locations,
+                "id": ids,
             }
         )
 

@@ -105,6 +105,7 @@ class ManagerLive(ManagerBase):
             shuffled_t0_datetimes,
             x_locations,
             y_locations,
+            ids,
         ) = self.data_source_which_defines_geospatial_locations.get_all_locations(
             t0_datetimes_utc=pd.DatetimeIndex([t0_datetime])
         )
@@ -124,12 +125,14 @@ class ManagerLive(ManagerBase):
                 shuffled_t0_datetimes.append(shuffled_t0_datetimes[0])
                 x_locations.append(x_locations[0])
                 y_locations.append(y_locations[0])
+                ids.append(ids[0])
 
         return pd.DataFrame(
             {
                 "t0_datetime_UTC": shuffled_t0_datetimes,
                 "x_center_OSGB": x_locations,
                 "y_center_OSGB": y_locations,
+                "id": ids,
             }
         )
 

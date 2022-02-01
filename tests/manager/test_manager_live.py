@@ -25,7 +25,12 @@ def test_sample_spatial_and_temporal_locations_for_examples(
         t0_datetime=datetime(2020, 4, 1, 12)
     )
 
-    assert locations.columns.to_list() == ["t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB"]
+    assert locations.columns.to_list() == [
+        "t0_datetime_UTC",
+        "x_center_OSGB",
+        "y_center_OSGB",
+        "id",
+    ]
     assert len(locations) == 20
 
 

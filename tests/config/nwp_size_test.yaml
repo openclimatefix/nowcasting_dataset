@@ -11,10 +11,10 @@ input_data:
     nwp_image_size_pixels: 64
     nwp_zarr_path: tests/data/nwp_data/test.zarr
   pv:
-    pv_filenames:
-      - tests/data/pv_data/test.nc
-    pv_metadata_filenames:
-      - tests/data/pv_metadata/UK_PV_metadata.csv
+    pv_files_groups:
+      - label: passiv
+        pv_filename: tests/data/pv_data/test.nc
+        pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
   satellite:
     satellite_channels:
       - HRV

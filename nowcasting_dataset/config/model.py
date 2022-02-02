@@ -175,17 +175,32 @@ class StartEndDatetimeMixin(Base):
         return values
 
 
+class PVFiles(BaseModel):
+    """Model to hold pv file and metadata file"""
+
+    pv_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
+        description="The NetCDF files holding the solar PV power timeseries.",
+    )
+    pv_metadata_filename: str = Field(
+        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
+        description="Tthe CSV files describing each PV system.",
+    )
+
+    label: str = Field("pvoutput", description="Label of where the pv data came from")
+
+    @validator("label")
+    def v_label0(cls, v):
+        """Validate 'label'"""
+        assert v in ["pvoutput", "passiv"]
+        return v
+
+
 class PV(DataSourceMixin, StartEndDatetimeMixin):
     """PV configuration model"""
 
-    pv_filenames: list = Field(
-        ["gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc"],
-        description=("List of the NetCDF files holding the solar PV power timeseries."),
-    )
-    pv_metadata_filenames: List = Field(
-        "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
-        description="List of the CSV files describing each PV system.",
-    )
+    pv_files_groups: List[PVFiles] = [PVFiles()]
+
     n_pv_systems_per_example: int = Field(
         DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
         description="The number of PV systems samples per example. "

@@ -30,10 +30,10 @@ input_data:
 
   #---------------------- PV -------------------
   pv:
-    pv_filenames:
-      - /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/passiv.netcdf
-    pv_metadata_filenames:
-      - /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/system_metadata_OCF_ONLY.csv
+    pv_files_groups:
+      - label: passiv
+        pv_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/passiv.netcdf
+        pv_metadata_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/system_metadata_OCF_ONLY.csv
     get_center: false
     history_minutes: 90
     log_level: "INFO"

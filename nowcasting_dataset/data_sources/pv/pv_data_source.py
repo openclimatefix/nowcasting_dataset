@@ -16,6 +16,7 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
+from nowcasting_dataset.config.model import PVFiles
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
@@ -33,8 +34,9 @@ class PVDataSource(ImageDataSource):
     defined by image_size_pixels and meters_per_pixel.
     """
 
-    filenames: Union[str, Path, List]
-    metadata_filenames: Union[str, Path, List]
+    # filenames: Union[str, Path, List]
+    # metadata_filenames: Union[str, Path, List]
+    files_groups: List[Union[PVFiles, dict]]
     # TODO: Issue #425: Use config to set start_dt and end_dt.
     start_datetime: Optional[datetime.datetime] = None
     end_datetime: Optional[datetime.datetime] = None
@@ -48,11 +50,9 @@ class PVDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
-        if not isinstance(self.filenames, (tuple, list)):
-            self.filenames = [self.filenames]
 
-        if not isinstance(self.metadata_filenames, list):
-            self.metadata_filenames = [self.metadata_filenames]
+        if type(self.files_groups[0]) == dict:
+            self.files_groups = [PVFiles(**files) for files in self.files_groups]
 
         super().__post_init__(image_size_pixels, meters_per_pixel)
 
@@ -61,8 +61,9 @@ class PVDataSource(ImageDataSource):
 
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
-        for filename in self.filenames + self.metadata_filenames:
-            nd_fs_utils.check_path_exists(filename)
+        for pv_files in self.files_groups:
+            for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
+                nd_fs_utils.check_path_exists(filename)
 
     def load(self):
         """
@@ -79,11 +80,12 @@ class PVDataSource(ImageDataSource):
 
     def _load_metadata(self):
 
-        logger.debug(f"Loading PV metadata from {self.metadata_filenames}")
+        logger.debug(f"Loading PV metadata from {self.files_groups}")
 
         # collect all metadata together
         pv_metadata = []
-        for i, metadata_filename in enumerate(self.metadata_filenames):
+        for i, pv_files in enumerate(self.files_groups):
+            metadata_filename = pv_files.pv_metadata_filename
 
             # read metadata file
             metadata = pd.read_csv(metadata_filename, index_col="system_id")
@@ -120,11 +122,12 @@ class PVDataSource(ImageDataSource):
 
     def _load_pv_power(self):
 
-        logger.debug(f"Loading PV Power data from {self.filenames}")
+        logger.debug(f"Loading PV Power data from {self.files_groups}")
 
         # collect all PV power timeseries together
         pv_power_all = []
-        for i, filename in enumerate(self.filenames):
+        for i, pv_files in enumerate(self.files_groups):
+            filename = pv_files.pv_filename
 
             # get pv power data
             pv_power = load_solar_pv_data(

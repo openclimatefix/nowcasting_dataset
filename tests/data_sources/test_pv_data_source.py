@@ -55,13 +55,12 @@ def test_get_example_and_batch():  # noqa: D103
         load_from_gcs=False,
     )
 
-    x_locations, y_locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
+    locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
 
-    _ = pv_data_source.get_example(pv_data_source.pv_power.index[0], x_locations[0], y_locations[0])
+    _ = pv_data_source.get_example(location=locations[6])
 
-    batch = pv_data_source.get_batch(
-        pv_data_source.pv_power.index[6:16], x_locations[0:10], y_locations[0:10]
-    )
+    # start at 6, to avoid some nans
+    batch = pv_data_source.get_batch(locations=locations[6:16])
     assert batch.power_mw.shape == (10, 19, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)
 
 

@@ -35,8 +35,6 @@ def test_calculate_azimuth_and_elevation_angle():
     assert "azimuth" in s.columns
     assert "elevation" in s.columns
 
-    print(s)
-
     # midday sun at 12 oclock on mid summer, middle of the sky, and in london at around 62 degrees
     # https://diamondgeezer.blogspot.com/2017/12/solar-elevation.html
     assert 170 < s["azimuth"][0] < 190

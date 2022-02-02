@@ -9,6 +9,7 @@ from nowcasting_dataset.data_sources.gsp.gsp_data_source import (
     GSPDataSource,
     drop_gsp_north_of_boundary,
 )
+from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 
@@ -41,19 +42,18 @@ def test_gsp_pv_data_source_get_locations():
         meters_per_pixel=2000,
     )
 
-    locations_x, locations_y = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
+    locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
 
-    assert len(locations_x) == len(locations_y)
     # This makes sure it is not in lat/lon.
     # Note that OSGB could be <= than 90, but that would mean a location in the middle of the sea,
     # which is impossible for GSP data
-    assert locations_x[0] > 90
-    assert locations_y[0] > 90
+    assert locations[0].x_center_osgb > 90
+    assert locations[0].y_center_osgb > 90
 
-    lat, lon = osgb_to_lat_lon(locations_x, locations_y)
+    lat, lon = osgb_to_lat_lon(locations[0].x_center_osgb, locations[0].y_center_osgb)
 
-    assert 0 < lat[0] < 90  # this makes sure it is in lat/lon
-    assert -90 < lon[0] < 90  # this makes sure it is in lat/lon
+    assert 0 < lat < 90  # this makes sure it is in lat/lon
+    assert -90 < lon < 90  # this makes sure it is in lat/lon
 
 
 def test_gsp_pv_data_source_get_all_locations():
@@ -75,27 +75,24 @@ def test_gsp_pv_data_source_get_all_locations():
     t0_datetimes_utc = gsp.gsp_power.index[0:10]
     x_locations = gsp.metadata.location_x
 
-    (
-        t0_datetimes_utc_all_gsps,
-        x_centers_osgb_all_gsps,
-        y_centers_osgb_all_gsps,
-    ) = gsp.get_all_locations(t0_datetimes_utc=t0_datetimes_utc)
-
-    assert len(t0_datetimes_utc_all_gsps) == len(x_centers_osgb_all_gsps)
-    assert len(t0_datetimes_utc_all_gsps) == len(y_centers_osgb_all_gsps)
-    assert len(t0_datetimes_utc_all_gsps) == len(x_locations) * len(t0_datetimes_utc)
+    locations = gsp.get_all_locations(t0_datetimes_utc=t0_datetimes_utc)
+    metadata = Metadata(space_time_locations=locations, batch_size=32)
 
     # check first few are the same datetime
-    assert (x_centers_osgb_all_gsps[0:N_gsps] == x_locations.values).all()
-    assert (t0_datetimes_utc_all_gsps[0:N_gsps] == t0_datetimes_utc[0]).all()
+    assert (metadata.x_centers_osgb[0:N_gsps] == x_locations.values).all()
+    assert (pd.DatetimeIndex(metadata.t0_datetimes_utc[0:N_gsps]) == t0_datetimes_utc[0]).all()
 
     # check second set of datetimes
-    assert (x_centers_osgb_all_gsps[N_gsps : 2 * N_gsps] == x_locations.values).all()
-    assert (t0_datetimes_utc_all_gsps[N_gsps : 2 * N_gsps] == t0_datetimes_utc[1]).all()
+    assert (metadata.x_centers_osgb[N_gsps : 2 * N_gsps] == x_locations.values).all()
+    assert (
+        pd.DatetimeIndex(metadata.t0_datetimes_utc[N_gsps : 2 * N_gsps]) == t0_datetimes_utc[1]
+    ).all()
 
     # check all datetimes
-    t0_datetimes_utc_all_gsps_overlap = t0_datetimes_utc_all_gsps.union(t0_datetimes_utc)
-    assert len(t0_datetimes_utc_all_gsps_overlap) == len(t0_datetimes_utc_all_gsps)
+    t0_datetimes_utc_all_gsps_overlap = pd.DatetimeIndex(metadata.t0_datetimes_utc).union(
+        t0_datetimes_utc
+    )
+    assert len(t0_datetimes_utc_all_gsps_overlap) == len(metadata.t0_datetimes_utc)
 
 
 def test_gsp_pv_data_source_get_example():
@@ -115,12 +112,8 @@ def test_gsp_pv_data_source_get_example():
         meters_per_pixel=2000,
     )
 
-    x_locations, y_locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
-    example = gsp.get_example(
-        t0_datetime_utc=gsp.gsp_power.index[0],
-        x_center_osgb=x_locations[0],
-        y_center_osgb=y_locations[0],
-    )
+    locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
+    example = gsp.get_example(location=locations[0])
 
     assert len(example.id) == len(example.power_mw[0])
     assert len(example.x_osgb) == len(example.y_osgb)
@@ -145,13 +138,9 @@ def test_gsp_pv_data_source_get_batch():
 
     batch_size = 10
 
-    x_locations, y_locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:batch_size])
+    locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[batch_size : 2 * batch_size])
 
-    batch = gsp.get_batch(
-        t0_datetimes_utc=gsp.gsp_power.index[batch_size : 2 * batch_size],
-        x_centers_osgb=x_locations[0:batch_size],
-        y_centers_osgb=y_locations[0:batch_size],
-    )
+    batch = gsp.get_batch(locations=locations[:batch_size])
 
     assert len(batch.power_mw[0]) == 4
     assert len(batch.id[0]) == len(batch.x_osgb[0])

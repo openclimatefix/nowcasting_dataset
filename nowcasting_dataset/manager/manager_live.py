@@ -4,6 +4,7 @@ import logging
 import multiprocessing
 from datetime import datetime
 from functools import partial
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -11,8 +12,12 @@ import pandas as pd
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset.consts import (
     N_GSPS,
-    SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES,
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
+)
+from nowcasting_dataset.data_sources.metadata.metadata_model import (
+    Metadata,
+    SpaceTimeLocation,
+    load_from_csv,
 )
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 from nowcasting_dataset.manager.base import ManagerBase
@@ -70,18 +75,21 @@ class ManagerLive(ManagerBase):
             f" examples per batch = {n_examples:,d} examples for {split_name}."
         )
 
-        df_of_locations = self.sample_spatial_and_temporal_locations_for_examples(
+        locations = self.sample_spatial_and_temporal_locations_for_examples(
             t0_datetime=datetimes_for_split[0],
         )
-        output_filename = self._filename_of_locations_csv_file(split_name="live")
+        metadata = Metadata(
+            batch_size=self.config.process.batch_size, space_time_locations=locations
+        )
+        # output_filename = self._filename_of_locations_csv_file(split_name="live")
         logger.info(f"Making {path_for_csv} if it does not exist.")
         nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
-        logger.debug(f"Writing {output_filename}")
-        df_of_locations.to_csv(output_filename)
+        logger.debug(f"Writing {path_for_csv}")
+        metadata.save_to_csv(path_for_csv)
 
     def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetime: datetime
-    ) -> pd.DataFrame:
+    ) -> List[SpaceTimeLocation]:
         """
         Computes the geospatial and temporal locations for each training example.
 
@@ -101,18 +109,15 @@ class ManagerLive(ManagerBase):
 
         # note that the returned 'shuffled_t0_datetimes'
         # has duplicate datetimes for each location
-        (
-            shuffled_t0_datetimes,
-            x_locations,
-            y_locations,
-        ) = self.data_source_which_defines_geospatial_locations.get_all_locations(
+        locations: List[
+            SpaceTimeLocation
+        ] = self.data_source_which_defines_geospatial_locations.get_all_locations(
             t0_datetimes_utc=pd.DatetimeIndex([t0_datetime])
         )
-        shuffled_t0_datetimes = list(shuffled_t0_datetimes)
 
         # find out the number of examples in the last batch,
         # we maybe need to duplicate the last example into order to get a full batch
-        n_examples_last_batch = len(shuffled_t0_datetimes) % self.config.process.batch_size
+        n_examples_last_batch = len(locations) % self.config.process.batch_size
         # Note 0 means the examples fit into the batches
 
         if n_examples_last_batch != 0:
@@ -121,17 +126,16 @@ class ManagerLive(ManagerBase):
             # but this keeps it pretty simple for the moment
             extra_examples_needed = self.config.process.batch_size - n_examples_last_batch
             for _ in range(0, extra_examples_needed):
-                shuffled_t0_datetimes.append(shuffled_t0_datetimes[0])
-                x_locations.append(x_locations[0])
-                y_locations.append(y_locations[0])
+                locations.append(
+                    SpaceTimeLocation(
+                        t0_datetime_utc=locations[0].t0_datetime_utc,
+                        x_center_osgb=locations[0].x_center_osgb,
+                        y_center_osgb=locations[0].y_center_osgb,
+                        id=locations[0].id,
+                    )
+                )
 
-        return pd.DataFrame(
-            {
-                "t0_datetime_UTC": shuffled_t0_datetimes,
-                "x_center_OSGB": x_locations,
-                "y_center_OSGB": y_locations,
-            }
-        )
+        return locations
 
     def create_batches(self) -> None:
         """Create batches (if necessary).
@@ -150,15 +154,8 @@ class ManagerLive(ManagerBase):
         logger.info(f"Loading {filename}.")
 
         # TODO add pydantic model for this
-        locations_for_each_example = pd.read_csv(filename, index_col=0)
-        assert locations_for_each_example.columns.to_list() == list(
-            SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-        )
-        # Converting to datetimes is much faster using `pd.to_datetime()` than
-        # passing `parse_datetimes` into `pd.read_csv()`.
-        locations_for_each_example["t0_datetime_UTC"] = pd.to_datetime(
-            locations_for_each_example["t0_datetime_UTC"]
-        )
+        metadata = load_from_csv(path=filename, batch_size=self.config.process.batch_size)
+        locations_for_each_example = metadata.space_time_locations
 
         # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().

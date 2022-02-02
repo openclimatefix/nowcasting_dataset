@@ -16,6 +16,7 @@ import xarray as xr
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing
@@ -197,22 +198,23 @@ class SatelliteDataSource(ZarrDataSource):
         )
         return data_array
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get Example data
 
         Args:
-            t0_datetime_utc: list of timestamps for the datetime of the batches.
-                The batch will also include data for historic and future depending
-                on `history_minutes` and `future_minutes`.
-            x_center_osgb: x center batch locations
-            y_center_osgb: y center batch locations
+            location: A location object of the example which contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Example Data
 
         """
+        t0_datetime_utc = location.t0_datetime_utc
+        x_center_osgb = location.x_center_osgb
+        y_center_osgb = location.y_center_osgb
+
         selected_data = self._get_time_slice(t0_datetime_utc)
         selected_data = self.get_spatial_region_of_interest(
             data_array=selected_data,

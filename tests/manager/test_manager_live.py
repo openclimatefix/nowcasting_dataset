@@ -25,8 +25,7 @@ def test_sample_spatial_and_temporal_locations_for_examples(
         t0_datetime=datetime(2020, 4, 1, 12)
     )
 
-    assert locations.columns.to_list() == ["t0_datetime_UTC", "x_center_OSGB", "y_center_OSGB"]
-    assert len(locations) == 32
+    assert len(locations) == 20
 
 
 def test_create_files_specifying_spatial_and_temporal_locations_of_each_example(
@@ -82,7 +81,7 @@ def test_batches(test_configuration_filename, sat, gsp):
 
         # make file for locations
         manager.create_files_specifying_spatial_and_temporal_locations_of_each_example(
-            t0_datetime=datetime(2020, 4, 1, 15)
+            t0_datetime=datetime(2020, 4, 1, 13)
         )  # noqa 101
 
         # make batches

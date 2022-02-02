@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset.data_sources import TopographicDataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 
 
 @pytest.mark.parametrize(
@@ -31,7 +32,9 @@ def test_get_example_2km(x, y, left, right, top, bottom):
         history_minutes=10,
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
-    topo_data = topo_source.get_example(t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y)
+    topo_data = topo_source.get_example(
+        SpaceTimeLocation(t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y)
+    )
     assert topo_data.data.shape == (128, 128)
     assert len(topo_data.x_osgb) == 128
     assert len(topo_data.y_osgb) == 128
@@ -59,6 +62,9 @@ def test_get_example_2km(x, y, left, right, top, bottom):
 )
 def test_get_batch_2km(x, y, left, right, top, bottom):
     """Test get batches"""
+
+    batch_size = 4
+
     size = 2000  # meters
     topo_source = TopographicDataSource(
         filename="tests/data/europe_dem_2km_osgb.tif",
@@ -67,12 +73,19 @@ def test_get_batch_2km(x, y, left, right, top, bottom):
         forecast_minutes=300,
         history_minutes=10,
     )
-    x = np.array([x] * 32)
-    y = np.array([y] * 32)
-    t0_datetimes = pd.date_range("2021-01-01", freq="5T", periods=32) + pd.Timedelta("30T")
-    topo_data = topo_source.get_batch(
-        t0_datetimes_utc=t0_datetimes, x_centers_osgb=x, y_centers_osgb=y
-    )
+    x = np.array([x] * batch_size)
+    y = np.array([y] * batch_size)
+    t0_datetimes = pd.date_range("2021-01-01", freq="5T", periods=batch_size) + pd.Timedelta("30T")
+
+    locations = []
+    for i in range(batch_size):
+        locations.append(
+            SpaceTimeLocation(
+                t0_datetime_utc=t0_datetimes[i], x_center_osgb=x[i], y_center_osgb=y[i]
+            )
+        )
+
+    topo_data = topo_source.get_batch(locations=locations)
     assert "x_index_index" not in topo_data.dims
 
 

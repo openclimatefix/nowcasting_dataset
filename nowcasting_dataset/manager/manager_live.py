@@ -78,7 +78,9 @@ class ManagerLive(ManagerBase):
         locations = self.sample_spatial_and_temporal_locations_for_examples(
             t0_datetime=datetimes_for_split[0],
         )
-        metadata = Metadata(batch_size=self.config.process.batch_size, locations=locations)
+        metadata = Metadata(
+            batch_size=self.config.process.batch_size, space_time_locations=locations
+        )
         # output_filename = self._filename_of_locations_csv_file(split_name="live")
         logger.info(f"Making {path_for_csv} if it does not exist.")
         nd_fs_utils.makedirs(path_for_csv, exist_ok=True)

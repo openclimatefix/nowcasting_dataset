@@ -47,7 +47,15 @@ class SpaceTimeLocation(BaseModel):
     @validator("id_type")
     def v_id_type(cls, id_type):
         """Make sure id_type is either None, 'gsp' or 'pv_system'"""
-        assert id_type in [None, "gsp", "pv_system"]
+
+        if id_type == "None":
+            id_type = None
+
+        assert id_type in [
+            None,
+            "gsp",
+            "pv_system",
+        ], f"{id_type=} should be None, 'gsp' or 'pv_system'"
         return id_type
 
 
@@ -154,6 +162,8 @@ def load_from_csv(
     assert (
         len(metadata_df) > 0
     ), f"Could not load metadata for {batch_size=} {batch_idx=} {filename=}"
+
+    metadata_df["id_type"].fillna("None", inplace=True)
 
     # add batch_size
     locations_dict = metadata_df.to_dict("records")

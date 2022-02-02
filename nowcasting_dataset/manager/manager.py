@@ -151,7 +151,9 @@ class Manager(ManagerBase):
                 n_examples=n_examples,
                 get_all_locations=get_all_locations,
             )
-            metadata = Metadata(batch_size=self.config.process.batch_size, locations=locations)
+            metadata = Metadata(
+                batch_size=self.config.process.batch_size, space_time_locations=locations
+            )
             # output_filename = self._filename_of_locations_csv_file(split_name)
             logger.info(f"Making {path_for_csv} if it does not exist.")
             nd_fs_utils.makedirs(path_for_csv, exist_ok=True)

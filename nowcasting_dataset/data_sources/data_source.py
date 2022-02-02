@@ -347,7 +347,7 @@ class DataSource:
 
     def get_example(
         self,
-        location: SpaceTimeLocation,  #: Datetime of "now": The most recent obs.
+        location: SpaceTimeLocation,  #: Location object of the most recent observation
     ) -> xr.Dataset:
         """Must be overridden by child classes."""
         raise NotImplementedError()

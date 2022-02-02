@@ -11,6 +11,7 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources.data_source import DataSource
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import load_from_zarr, x_y_to_name
 from nowcasting_dataset.data_sources.sun.sun_model import Sun
 from nowcasting_dataset.geospatial import calculate_azimuth_and_elevation_angle
@@ -38,22 +39,26 @@ class SunDataSource(DataSource):
         """Check input paths exist.  If not, raise a FileNotFoundError."""
         nd_fs_utils.check_path_exists(self.zarr_path)
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get example data from t0_dt and x and y xoordinates
 
         Args:
-            t0_datetime_utc: the timestamp to get the sun data for
-            x_center_osgb: the x coordinate (OSGB)
-            y_center_osgb: the y coordinate (OSGB)
+            location: A location object of the example which contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Dictionary of azimuth and elevation data
         """
         # all sun data is from 2019, analaysis showed over the timescale we are interested in the
         # elevation and azimuth angles change by < 1 degree, so to save data, we just use data
         # from 2019.
+
+        t0_datetime_utc = location.t0_datetime_utc
+        x_center_osgb = location.x_center_osgb
+        y_center_osgb = location.y_center_osgb
+
         t0_datetime_utc = t0_datetime_utc.replace(year=2019)
 
         start_dt = self._get_start_dt(t0_datetime_utc)

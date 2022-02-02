@@ -13,8 +13,8 @@ import xarray as xr
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset import square, utils
-from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
@@ -137,7 +137,7 @@ class DataSource:
     @utils.exception_logger
     def create_batches(
         self,
-        spatial_and_temporal_locations_of_each_example: pd.DataFrame,
+        spatial_and_temporal_locations_of_each_example: List[SpaceTimeLocation],
         idx_of_first_batch: int,
         batch_size: int,
         dst_path: Path,
@@ -174,16 +174,6 @@ class DataSource:
         )
         assert upload_every_n_batches >= 0, "`upload_every_n_batches` must be >= 0"
 
-        spatial_and_temporal_locations_of_each_example_columns = (
-            spatial_and_temporal_locations_of_each_example.columns.to_list()
-        )
-        assert spatial_and_temporal_locations_of_each_example_columns == list(
-            SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES
-        ), (
-            f"The provided data columns {spatial_and_temporal_locations_of_each_example_columns}"
-            f" do not match {SPATIAL_AND_TEMPORAL_LOCATIONS_COLUMN_NAMES=}"
-        )
-
         self.open()
 
         # Figure out where to write batches to:
@@ -200,7 +190,7 @@ class DataSource:
                 batch_idx=batch_idx, batch_size=batch_size
             )
 
-            locations_for_batch = spatial_and_temporal_locations_of_each_example.iloc[
+            locations_for_batch = spatial_and_temporal_locations_of_each_example[
                 start_example_idx:end_example_idx
             ]
             locations_for_batches.append(locations_for_batch)
@@ -211,11 +201,7 @@ class DataSource:
             logger.debug(f"{self.__class__.__name__} creating batch {batch_idx}!")
 
             # Generate batch.
-            batch = self.get_batch(
-                t0_datetimes_utc=locations_for_batch.t0_datetime_UTC,
-                x_centers_osgb=locations_for_batch.x_center_OSGB,
-                y_centers_osgb=locations_for_batch.y_center_OSGB,
-            )
+            batch = self.get_batch(locations=locations_for_batch)
 
             # Save batch to disk.
             batch.save_netcdf(
@@ -239,43 +225,26 @@ class DataSource:
                 dst_path=dst_path, local_path=path_to_write_to
             )
 
-    def get_batch(
-        self,
-        t0_datetimes_utc: pd.DatetimeIndex,
-        x_centers_osgb: Iterable[Number],
-        y_centers_osgb: Iterable[Number],
-    ) -> DataSourceOutput:
+    def get_batch(self, locations: List[SpaceTimeLocation]) -> DataSourceOutput:
         """
         Get Batch Data
 
         Args:
-            t0_datetimes_utc: list of timestamps for the datetime of the batches.
-                The batch will also include data for historic and future depending
-                on `history_minutes` and `future_minutes`.
-                The batch size is given by the length of the t0_datetimes.
-            x_centers_osgb: x center batch locations
-            y_centers_osgb: y center batch locations
+            locations: List of locations object
+                A location object contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Batch data.
         """
-        assert len(t0_datetimes_utc) == len(x_centers_osgb), (
-            f"len(t0_datetimes) != len(x_locations): "
-            f"{len(t0_datetimes_utc)} != {len(x_centers_osgb)}"
-        )
-        assert len(t0_datetimes_utc) == len(y_centers_osgb), (
-            f"len(t0_datetimes) != len(y_locations): "
-            f"{len(t0_datetimes_utc)} != {len(y_centers_osgb)}"
-        )
-        zipped = list(zip(t0_datetimes_utc, x_centers_osgb, y_centers_osgb))
-        batch_size = len(t0_datetimes_utc)
+
+        batch_size = len(locations)
 
         with futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
             future_examples = []
-            for coords in zipped:
-                t0_datetime, x_location, y_location = coords
-                future_example = executor.submit(
-                    self.get_example, t0_datetime, x_location, y_location
-                )
+            for location in locations:
+                future_example = executor.submit(self.get_example, location)
                 future_examples.append(future_example)
 
             # Get the examples back.  Loop round each future so we can log a helpful error.
@@ -378,9 +347,7 @@ class DataSource:
 
     def get_example(
         self,
-        t0_datetime_utc: pd.Timestamp,  #: Datetime of "now": The most recent obs.
-        x_center_osgb: Number,  #: Centre, in OSGB coordinates.
-        y_center_osgb: Number,  #: Centre, in OSGB coordinates.
+        location: SpaceTimeLocation,  #: Location object of the most recent observation
     ) -> xr.Dataset:
         """Must be overridden by child classes."""
         raise NotImplementedError()
@@ -452,22 +419,23 @@ class ZarrDataSource(ImageDataSource):
             raise RuntimeError("Please run `open()` before accessing data!")
         return self._data
 
-    def get_example(
-        self, t0_datetime_utc: pd.Timestamp, x_center_osgb: Number, y_center_osgb: Number
-    ) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get Example data
 
         Args:
-            t0_datetime_utc: list of timestamps for the datetime of the batches.
-                The batch will also include data for historic and future depending
-                on `history_minutes` and `future_minutes`.
-            x_center_osgb: x center batch locations
-            y_center_osgb: y center batch locations
+            location: A location object of the example which contains
+                - a timestamp of the example (t0_datetime_utc),
+                - the x center location of the example (x_location_osgb)
+                - the y center location of the example(y_location_osgb)
 
         Returns: Example Data
 
         """
+
+        t0_datetime_utc = location.t0_datetime_utc
+        x_center_osgb = location.x_center_osgb
+        y_center_osgb = location.y_center_osgb
 
         logger.debug(
             f"Getting example for {t0_datetime_utc=},  " f"{x_center_osgb=} and  {y_center_osgb=}"

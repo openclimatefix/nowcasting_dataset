@@ -16,7 +16,7 @@ import xarray as xr
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing
@@ -198,7 +198,7 @@ class SatelliteDataSource(ZarrDataSource):
         )
         return data_array
 
-    def get_example(self, location: Location) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get Example data
 

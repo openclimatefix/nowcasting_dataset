@@ -76,7 +76,7 @@ def test_gsp_pv_data_source_get_all_locations():
     x_locations = gsp.metadata.location_x
 
     locations = gsp.get_all_locations(t0_datetimes_utc=t0_datetimes_utc)
-    metadata = Metadata(locations=locations, batch_size=32)
+    metadata = Metadata(space_time_locations=locations, batch_size=32)
 
     # check first few are the same datetime
     assert (metadata.x_centers_osgb[0:N_gsps] == x_locations.values).all()

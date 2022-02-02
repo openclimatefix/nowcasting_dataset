@@ -14,7 +14,7 @@ import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset import square, utils
 from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
@@ -137,7 +137,7 @@ class DataSource:
     @utils.exception_logger
     def create_batches(
         self,
-        spatial_and_temporal_locations_of_each_example: List[Location],
+        spatial_and_temporal_locations_of_each_example: List[SpaceTimeLocation],
         idx_of_first_batch: int,
         batch_size: int,
         dst_path: Path,
@@ -225,7 +225,7 @@ class DataSource:
                 dst_path=dst_path, local_path=path_to_write_to
             )
 
-    def get_batch(self, locations: List[Location]) -> DataSourceOutput:
+    def get_batch(self, locations: List[SpaceTimeLocation]) -> DataSourceOutput:
         """
         Get Batch Data
 
@@ -347,7 +347,7 @@ class DataSource:
 
     def get_example(
         self,
-        location: Location,  #: Datetime of "now": The most recent obs.
+        location: SpaceTimeLocation,  #: Datetime of "now": The most recent obs.
     ) -> xr.Dataset:
         """Must be overridden by child classes."""
         raise NotImplementedError()
@@ -419,7 +419,7 @@ class ZarrDataSource(ImageDataSource):
             raise RuntimeError("Please run `open()` before accessing data!")
         return self._data
 
-    def get_example(self, location: Location) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get Example data
 

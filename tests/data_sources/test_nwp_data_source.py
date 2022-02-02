@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 import nowcasting_dataset
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.nwp.nwp_data_source import NWPDataSource
 
 PATH = os.path.dirname(nowcasting_dataset.__file__)
@@ -49,7 +49,9 @@ def test_nwp_data_source_batch():  # noqa: D103
     locations = []
     for i in range(0, 4):
         locations.append(
-            Location(t0_datetime_utc=t0_datetimes[i], x_center_osgb=x[i], y_center_osgb=y[i])
+            SpaceTimeLocation(
+                t0_datetime_utc=t0_datetimes[i], x_center_osgb=x[i], y_center_osgb=y[i]
+            )
         )
 
     batch = nwp.get_batch(locations)
@@ -77,7 +79,7 @@ def test_nwp_data_source_batch_not_on_hour():  # noqa: D103
 
     locations = []
     locations.append(
-        Location(t0_datetime_utc=t0_datetimes[0], x_center_osgb=x[0], y_center_osgb=y[0])
+        SpaceTimeLocation(t0_datetime_utc=t0_datetimes[0], x_center_osgb=x[0], y_center_osgb=y[0])
     )
 
     batch = nwp.get_batch(locations)

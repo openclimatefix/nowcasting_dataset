@@ -14,8 +14,8 @@ from nowcasting_dataset import config
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
 from nowcasting_dataset.data_sources.metadata.metadata_model import (
-    Location,
     Metadata,
+    SpaceTimeLocation,
     load_from_csv,
 )
 from nowcasting_dataset.dataset.split import split
@@ -156,7 +156,7 @@ class Manager(ManagerBase):
             logger.info(f"Making {path_for_csv} if it does not exist.")
             nd_fs_utils.makedirs(path_for_csv, exist_ok=True)
             # logger.debug(f"Writing {output_filename}")
-            logger.debug(f"Saving {len(metadata.locations)} locations to csv")
+            logger.debug(f"Saving {len(metadata.space_time_locations)} locations to csv")
             metadata.save_to_csv(path_for_csv)
 
     def _get_n_batches_requested_for_split_name(self, split_name: str) -> int:
@@ -227,7 +227,7 @@ class Manager(ManagerBase):
 
     def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetimes: pd.DatetimeIndex, n_examples: int, get_all_locations: bool = False
-    ) -> List[Location]:
+    ) -> List[SpaceTimeLocation]:
         """
         Computes the geospatial and temporal locations for each training example.
 
@@ -372,13 +372,15 @@ class Manager(ManagerBase):
                 return
 
         # Load locations for each example off disk.
-        locations_for_each_example_of_each_split: dict[split.SplitName, List[Location]] = {}
+        locations_for_each_example_of_each_split: dict[
+            split.SplitName, List[SpaceTimeLocation]
+        ] = {}
         for split_name in splits_which_need_more_batches:
             filename = self._filename_of_locations_csv_file(split_name.value)
             logger.info(f"Loading {filename}.")
 
             metadata = load_from_csv(path=filename, batch_size=self.config.process.batch_size)
-            locations_for_each_example = metadata.locations
+            locations_for_each_example = metadata.space_time_locations
 
             logger.debug(f"Got {len(locations_for_each_example)} locations")
 

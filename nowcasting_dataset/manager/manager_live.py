@@ -15,8 +15,8 @@ from nowcasting_dataset.consts import (
     SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME,
 )
 from nowcasting_dataset.data_sources.metadata.metadata_model import (
-    Location,
     Metadata,
+    SpaceTimeLocation,
     load_from_csv,
 )
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
@@ -87,7 +87,7 @@ class ManagerLive(ManagerBase):
 
     def sample_spatial_and_temporal_locations_for_examples(
         self, t0_datetime: datetime
-    ) -> List[Location]:
+    ) -> List[SpaceTimeLocation]:
         """
         Computes the geospatial and temporal locations for each training example.
 
@@ -108,7 +108,7 @@ class ManagerLive(ManagerBase):
         # note that the returned 'shuffled_t0_datetimes'
         # has duplicate datetimes for each location
         locations: List[
-            Location
+            SpaceTimeLocation
         ] = self.data_source_which_defines_geospatial_locations.get_all_locations(
             t0_datetimes_utc=pd.DatetimeIndex([t0_datetime])
         )
@@ -125,7 +125,7 @@ class ManagerLive(ManagerBase):
             extra_examples_needed = self.config.process.batch_size - n_examples_last_batch
             for _ in range(0, extra_examples_needed):
                 locations.append(
-                    Location(
+                    SpaceTimeLocation(
                         t0_datetime_utc=locations[0].t0_datetime_utc,
                         x_center_osgb=locations[0].x_center_osgb,
                         y_center_osgb=locations[0].y_center_osgb,
@@ -153,7 +153,7 @@ class ManagerLive(ManagerBase):
 
         # TODO add pydantic model for this
         metadata = load_from_csv(path=filename, batch_size=self.config.process.batch_size)
-        locations_for_each_example = metadata.locations
+        locations_for_each_example = metadata.space_time_locations
 
         # Fire up a separate process for each DataSource, and pass it a list of batches to
         # create, and whether to utils.upload_and_delete_local_files().

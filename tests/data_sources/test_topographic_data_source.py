@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from nowcasting_dataset.data_sources import TopographicDataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     )
     t0_dt = pd.Timestamp("2019-01-01T13:00")
     topo_data = topo_source.get_example(
-        Location(t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y)
+        SpaceTimeLocation(t0_datetime_utc=t0_dt, x_center_osgb=x, y_center_osgb=y)
     )
     assert topo_data.data.shape == (128, 128)
     assert len(topo_data.x_osgb) == 128
@@ -80,7 +80,9 @@ def test_get_batch_2km(x, y, left, right, top, bottom):
     locations = []
     for i in range(batch_size):
         locations.append(
-            Location(t0_datetime_utc=t0_datetimes[i], x_center_osgb=x[i], y_center_osgb=y[i])
+            SpaceTimeLocation(
+                t0_datetime_utc=t0_datetimes[i], x_center_osgb=x[i], y_center_osgb=y[i]
+            )
         )
 
     topo_data = topo_source.get_batch(locations=locations)

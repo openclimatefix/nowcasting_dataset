@@ -18,7 +18,7 @@ import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.pv.pv_model import PV
 from nowcasting_dataset.square import get_bounding_box_mask, get_closest_coordinate_order
 
@@ -225,7 +225,7 @@ class PVDataSource(ImageDataSource):
 
         return pv_system_ids
 
-    def get_example(self, location: Location) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get Example data for PV data
 
@@ -316,9 +316,7 @@ class PVDataSource(ImageDataSource):
 
         return pv
 
-    def get_locations(
-        self, t0_datetimes_utc: pd.DatetimeIndex
-    ) -> Tuple[List[Number], List[Number]]:
+    def get_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[SpaceTimeLocation]:
         """Find a valid geographical location for each t0_datetime.
 
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
@@ -337,18 +335,25 @@ class PVDataSource(ImageDataSource):
 
         # Pick a random PV system for each t0_datetime, and then grab
         # their geographical location.
-        x_locations = []
-        y_locations = []
+        locations = []
         for t0_datetime in t0_datetimes_utc:
             pv_system_ids = _get_pv_system_ids(t0_datetime)
             pv_system_id = self.rng.choice(pv_system_ids)
 
             # Get metadata for PV system
             metadata_for_pv_system = self.pv_metadata.loc[pv_system_id]
-            x_locations.append(metadata_for_pv_system.location_x)
-            y_locations.append(metadata_for_pv_system.location_y)
 
-        return x_locations, y_locations
+            locations.append(
+                SpaceTimeLocation(
+                    t0_datetime_utc=t0_datetime,
+                    x_center_osgb=metadata_for_pv_system.location_x,
+                    y_center_osgb=metadata_for_pv_system.location_y,
+                    id=pv_system_id,
+                    id_type="pv_system",
+                )
+            )
+
+        return locations
 
     def datetime_index(self) -> pd.DatetimeIndex:
         """Returns a complete list of all available datetimes."""

@@ -11,7 +11,7 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.data_sources import DataSource
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.optical_flow.format_images import crop_center, remap_image
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow
 from nowcasting_dataset.dataset.xr_utils import convert_arrays_to_uint8
@@ -104,7 +104,7 @@ class OpticalFlowDataSource(DataSource):
         """Open the underlying self.source_data_source."""
         self.source_data_source.open()
 
-    def get_example(self, location: Location) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get Optical Flow Example data
 

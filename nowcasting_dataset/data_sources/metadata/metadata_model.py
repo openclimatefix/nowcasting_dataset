@@ -11,7 +11,7 @@ from nowcasting_dataset.filesystem.utils import check_path_exists
 from nowcasting_dataset.utils import get_start_and_end_example_index
 
 
-class Location(BaseModel):
+class SpaceTimeLocation(BaseModel):
     """Location of the example"""
 
     t0_datetime_utc: pd.Timestamp = Field(
@@ -31,13 +31,24 @@ class Location(BaseModel):
 
     id: Optional[int] = Field(
         None,
-        description="The id of the GSP or the PV system. " "This is optional so can be None",
+        description="The id of the GSP or the PV system. This is optional so can be None",
+    )
+
+    id_type: Optional[str] = Field(
+        None,
+        description="The type of the id. Should be either None, 'gsp' or 'pv_system'",
     )
 
     @validator("t0_datetime_utc")
     def v_t0_datetime_utc(cls, t0_datetime_utc):
         """Make sure t0_datetime_utc is pandas Timestamp"""
         return pd.Timestamp(t0_datetime_utc)
+
+    @validator("id_type")
+    def v_id_type(cls, id_type):
+        """Make sure id_type is either None, 'gsp' or 'pv_system'"""
+        assert id_type in [None, "gsp", "pv_system"]
+        return id_type
 
 
 class Metadata(BaseModel):
@@ -50,27 +61,27 @@ class Metadata(BaseModel):
         "then this item stores one data item",
     )
 
-    locations: List[Location]
+    space_time_locations: List[SpaceTimeLocation]
 
     @property
     def t0_datetimes_utc(self) -> list:
         """Return all the t0"""
-        return [location.t0_datetime_utc for location in self.locations]
+        return [location.t0_datetime_utc for location in self.space_time_locations]
 
     @property
     def x_centers_osgb(self) -> List[float]:
         """List of all the x centers from all the locations"""
-        return [location.x_center_osgb for location in self.locations]
+        return [location.x_center_osgb for location in self.space_time_locations]
 
     @property
     def y_centers_osgb(self) -> List[float]:
         """List of all the x centers from all the locations"""
-        return [location.y_center_osgb for location in self.locations]
+        return [location.y_center_osgb for location in self.space_time_locations]
 
     @property
     def ids(self) -> List[float]:
         """List of all the ids from all the locations"""
-        return [location.id for location in self.locations]
+        return [location.id for location in self.space_time_locations]
 
     def save_to_csv(self, path):
         """
@@ -82,7 +93,7 @@ class Metadata(BaseModel):
         """
 
         filename = f"{path}/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
-        metadata_dict = [location.dict() for location in self.locations]
+        metadata_dict = [location.dict() for location in self.space_time_locations]
         # metadata_dict.pop("batch_size")
 
         # if file exists, add to it
@@ -127,7 +138,7 @@ def load_from_csv(
         skiprows = 1  # ignore header
         nrows = None
 
-    names = ["t0_datetime_utc", "x_center_osgb", "y_center_osgb", "id"]
+    names = list(SpaceTimeLocation.__fields__)
 
     # read the file
     # kswargs = {}
@@ -146,6 +157,6 @@ def load_from_csv(
 
     # add batch_size
     locations_dict = metadata_df.to_dict("records")
-    metadata_dict = {"locations": locations_dict, "batch_size": batch_size}
+    metadata_dict = {"space_time_locations": locations_dict, "batch_size": batch_size}
 
     return Metadata(**metadata_dict)

@@ -18,7 +18,7 @@ from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
 
@@ -131,7 +131,7 @@ class GSPDataSource(ImageDataSource):
 
         return len(self.metadata.location_x)
 
-    def get_all_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[Location]:
+    def get_all_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[SpaceTimeLocation]:
         """
         Make locations for all GSP
 
@@ -192,7 +192,7 @@ class GSPDataSource(ImageDataSource):
             # TODO make dataframe -> List[dict] -> List[Locations]
             for i in range(len(t0_datetimes_utc_all_gsps)):
                 locations.append(
-                    Location(
+                    SpaceTimeLocation(
                         t0_datetime_utc=t0_datetimes_utc_all_gsps[i],
                         x_center_osgb=x_centers_osgb_all_gsps[i],
                         y_center_osgb=y_centers_osgb_all_gsps[i],
@@ -202,7 +202,7 @@ class GSPDataSource(ImageDataSource):
 
             return locations
 
-    def get_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[Location]:
+    def get_locations(self, t0_datetimes_utc: pd.DatetimeIndex) -> List[SpaceTimeLocation]:
         """
         Get x and y locations. Assume that all data is available for all GSP.
 
@@ -276,17 +276,18 @@ class GSPDataSource(ImageDataSource):
         for i in range(len(x_centers_osgb)):
 
             locations.append(
-                Location(
+                SpaceTimeLocation(
                     t0_datetime_utc=t0_datetimes_utc[i],
                     x_center_osgb=x_centers_osgb[i],
                     y_center_osgb=y_centers_osgb[i],
                     id=ids[i],
+                    id_type="gsp",
                 )
             )
 
         return locations
 
-    def get_example(self, location: Location) -> xr.Dataset:
+    def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:
         """
         Get data example from one time point (t0_dt) and for x and y coords.
 

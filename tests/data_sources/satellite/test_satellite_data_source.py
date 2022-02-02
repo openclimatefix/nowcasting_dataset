@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from nowcasting_dataset.data_sources.metadata.metadata_model import Location
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 
 
@@ -40,7 +40,9 @@ def _test_get_example(
     data_source.open()
     t0_dt = pd.Timestamp("2020-04-01T13:00")
     sat_data = data_source.get_example(
-        Location(t0_datetime_utc=t0_dt, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb)
+        SpaceTimeLocation(
+            t0_datetime_utc=t0_dt, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
+        )
     )
 
     # sat_data.y is top-to-bottom.

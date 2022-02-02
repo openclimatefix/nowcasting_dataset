@@ -142,10 +142,11 @@ class GSPDataSource(ImageDataSource):
             t0_datetimes_utc: list of available t0 datetimes.
 
         Returns:
-            1. list of datetimes
-            2. list of x locations
-            3. list of y locations
-            4. list of gsp ids
+            List of space time locations which includes
+            1. datetimes
+            2. x locations
+            3. y locations
+            4. gsp ids
 
         """
 

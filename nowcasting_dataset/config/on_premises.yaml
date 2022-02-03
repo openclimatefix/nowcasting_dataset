@@ -34,6 +34,9 @@ input_data:
       - label: passiv
         pv_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/passiv.netcdf
         pv_metadata_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/Passiv/ocf_formatted/v0/system_metadata_OCF_ONLY.csv
+      - label: pvoutput
+        pv_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/PVOutput.org/UK_PV_timeseries_batch.nc
+        pv_metadata_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/PVOutput.org/UK_PV_metadata.csv
     get_center: false
     history_minutes: 90
     log_level: "INFO"

@@ -27,6 +27,7 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     NWP_VARIABLE_NAMES,
+    PV_PROVIDERS,
     SAT_VARIABLE_NAMES,
 )
 from nowcasting_dataset.dataset.split import split
@@ -192,7 +193,7 @@ class PVFiles(BaseModel):
     @validator("label")
     def v_label0(cls, v):
         """Validate 'label'"""
-        assert v in ["pvoutput", "passiv"]
+        assert v in PV_PROVIDERS
         return v
 
 

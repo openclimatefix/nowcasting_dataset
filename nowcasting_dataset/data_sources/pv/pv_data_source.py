@@ -17,7 +17,7 @@ import xarray as xr
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
 from nowcasting_dataset.config.model import PVFiles
-from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE, PV_PROVIDERS
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.pv.pv_model import PV
@@ -486,7 +486,11 @@ def encode_label(indexes: List[str], label: str):
 
     Returns: list of indexes encoded by label
     """
-    label_index = 1 if label == "passiv" else 2
+    assert label in PV_PROVIDERS
+    # this encoding does work if the number of pv providers is more than 10
+    assert len(PV_PROVIDERS) < 10
+
+    label_index = PV_PROVIDERS.index(label)
     new_index = [str(int(col) * 10 + label_index) for col in indexes]
 
     return new_index

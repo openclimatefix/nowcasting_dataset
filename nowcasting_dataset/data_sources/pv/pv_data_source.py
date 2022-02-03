@@ -142,8 +142,11 @@ class PVDataSource(ImageDataSource):
         assert not pv_power.columns.duplicated().any()
 
         # A bit of hand-crafted cleaning
-        if 30248 in pv_power.columns:
-            pv_power[30248]["2018-10-29":"2019-01-03"] = np.NaN
+        bad_pvputput_indexes = [30248]
+        bad_pvputput_indexes = encode_label(bad_pvputput_indexes, label="pvoutput")
+        for bad_index in bad_pvputput_indexes:
+            if bad_index in pv_power.columns:
+                pv_power[bad_index]["2018-10-29":"2019-01-03"] = np.NaN
 
         # Drop columns and rows with all NaNs.
         pv_power.dropna(axis="columns", how="all", inplace=True)

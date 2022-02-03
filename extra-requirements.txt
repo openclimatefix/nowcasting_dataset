@@ -1,0 +1,6 @@
+black
+plotly
+gcsfs
+matplotlib
+ipykernel
+pre-commit

@@ -84,16 +84,14 @@ class PVDataSource(ImageDataSource):
 
         # collect all metadata together
         pv_metadata = []
-        for i, pv_files in enumerate(self.files_groups):
+        for pv_files in self.files_groups:
             metadata_filename = pv_files.pv_metadata_filename
 
             # read metadata file
             metadata = pd.read_csv(metadata_filename, index_col="system_id")
 
-            # add i to index, to make sure the indexes are unique
-            new_index = metadata.index.astype(str)
-            new_index = new_index + f"_{i}"
-            metadata.index = new_index
+            # encode index, to make sure the indexes are unique
+            metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
 
             pv_metadata.append(metadata)
         pv_metadata = pd.concat(pv_metadata)
@@ -126,7 +124,7 @@ class PVDataSource(ImageDataSource):
 
         # collect all PV power timeseries together
         pv_power_all = []
-        for i, pv_files in enumerate(self.files_groups):
+        for pv_files in self.files_groups:
             filename = pv_files.pv_filename
 
             # get pv power data
@@ -134,23 +132,14 @@ class PVDataSource(ImageDataSource):
                 filename, start_dt=self.start_datetime, end_dt=self.end_datetime
             )
 
-            # add i to columns, to make sure the columns are unique
-            new_columns = pv_power.columns.astype(str)
-            new_columns = new_columns + f"_{i}"
+            # encode index, to make sure the columns are unique
+            new_columns = encode_label(indexes=pv_power.columns, label=pv_files.label)
             pv_power.columns = new_columns
 
             pv_power_all.append(pv_power)
 
-        # join together pv power. Index is time, columns are pv ids. Make sure the ids are unique
-        pv_power = pv_power_all.pop(0)
-        while len(pv_power_all) > 0:
-
-            # Make sure the ids are unique
-            indexes = list(pv_power.columns)
-            new_indexes = list(pv_power_all[0].columns)
-            assert len(pd.unique(indexes + new_indexes)) == len(indexes) + len(new_indexes)
-
-            pv_power.join(pv_power_all.pop(0))
+        pv_power = pd.concat(pv_power_all, axis="columns")
+        assert not pv_power.columns.duplicated().any()
 
         # A bit of hand-crafted cleaning
         if 30248 in pv_power.columns:
@@ -166,7 +155,6 @@ class PVDataSource(ImageDataSource):
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
         # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
         # doesn't need all the data to be perfectly aligned).
-        print(pv_power)
         pv_power = pv_power.resample("5T").interpolate(method="time", limit=3)
         pv_power.dropna(axis="index", how="all", inplace=True)
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
@@ -478,3 +466,24 @@ def drop_pv_systems_which_produce_overnight(pv_power: pd.DataFrame) -> pd.DataFr
     bad_systems = pv_power.columns[pv_above_threshold_at_night]
     print(len(bad_systems), "bad PV systems found and removed!")
     return pv_power.drop(columns=bad_systems)
+
+
+def encode_label(indexes: List[str], label: str):
+    """
+    Encode the label to a list of indexes.
+
+    The new encoding must be integers and unique.
+    It would be useful if the indexes can read and deciphered by humans.
+    This is done by times the original index by 10
+    and adding 1 for passive or 2 for other lables
+
+    Args:
+        indexes: list of indexes
+        label: either 'passiv' or 'pvoutput'
+
+    Returns: list of indexes encoded by label
+    """
+    label_index = 1 if label == "passiv" else 2
+    new_index = [str(int(col) * 10 + label_index) for col in indexes]
+
+    return new_index

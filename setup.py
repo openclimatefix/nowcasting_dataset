@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 install_requires = (this_directory / "requirements.txt").read_text().splitlines()
-extra_install_requires = (this_directory / "extra-requirements.txt.txt").read_text().splitlines()
+extra_install_requires = (this_directory / "extra-requirements.txt").read_text().splitlines()
 
 setup(
     name="nowcasting_dataset",

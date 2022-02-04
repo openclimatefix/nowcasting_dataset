@@ -20,15 +20,18 @@ def create_random_point_coordinates_osgb(
 
 
 def make_random_image_coords_osgb(
-    size: int, x_center_osgb: Optional = None, y_center_osgb: Optional = None
+    size: int,
+    x_center_osgb: Optional = None,
+    y_center_osgb: Optional = None,
+    km_spaceing: Optional[int] = 4,
 ):
     """Make random coords for image. These are ranges for the pixels"""
 
     ONE_KILOMETER = 10**3
 
     # 4 kilometer spacing seemed about right for real satellite images
-    x = 4 * ONE_KILOMETER * np.array((range(0, size)))
-    y = 4 * ONE_KILOMETER * np.array((range(size, 0, -1)))
+    x = km_spaceing * ONE_KILOMETER * np.array((range(0, size)))
+    y = km_spaceing * ONE_KILOMETER * np.array((range(size, 0, -1)))
 
     return add_uk_centroid_osgb(
         x, y, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb, first_value_center=False

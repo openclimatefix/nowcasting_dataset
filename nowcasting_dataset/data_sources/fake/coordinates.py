@@ -25,7 +25,17 @@ def make_random_image_coords_osgb(
     y_center_osgb: Optional = None,
     km_spaceing: Optional[int] = 4,
 ):
-    """Make random coords for image. These are ranges for the pixels"""
+    """
+    Make random coords for image. These are ranges for the pixels
+
+    Args:
+        size: The size of the coordinates to make
+        x_center_osgb: center coord for x (in osgb)
+        y_center_osgb: center coord for y (in osgb)
+        km_spaceing: the km spacing between the coordinates.
+
+    Returns: X,Y random coordinates [OSGB]
+    """
 
     ONE_KILOMETER = 10**3
 

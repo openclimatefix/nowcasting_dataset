@@ -1,5 +1,6 @@
 """ Model for output of general/metadata data, useful for a batch """
 
+import logging
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -9,6 +10,8 @@ from pydantic import BaseModel, Field, validator
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.filesystem.utils import check_path_exists
 from nowcasting_dataset.utils import get_start_and_end_example_index
+
+logger = logging.getLogger(__name__)
 
 
 class SpaceTimeLocation(BaseModel):
@@ -163,10 +166,17 @@ def load_from_csv(
         len(metadata_df) > 0
     ), f"Could not load metadata for {batch_size=} {batch_idx=} {filename=}"
 
-    metadata_df["id_type"].fillna("None", inplace=True)
+    if "id_type" in metadata_df.columns:
+        metadata_df["id_type"].fillna("None", inplace=True)
 
     # add batch_size
     locations_dict = metadata_df.to_dict("records")
     metadata_dict = {"space_time_locations": locations_dict, "batch_size": batch_size}
 
-    return Metadata(**metadata_dict)
+    try:
+        metadata = Metadata(**metadata_dict)
+    except Exception as e:
+        logger.error(f"Try to make Metadata object from {metadata_dict}")
+        raise e
+
+    return metadata

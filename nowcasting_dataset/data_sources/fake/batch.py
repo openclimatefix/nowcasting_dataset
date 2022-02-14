@@ -155,7 +155,7 @@ def metadata_fake(
         metadata.set_index("gsp_id", drop=False, inplace=True)
 
         # choose random index
-        index = np.random.choice(len(metadata), size=batch_size)
+        index = np.random.choice(len(metadata), size=batch_size, replace=False)
 
         lat = list(metadata.iloc[index].centroid_lat)
         lon = list(metadata.iloc[index].centroid_lon)

@@ -23,7 +23,7 @@ def upload_and_delete_local_files(dst_path: Union[str, Path], local_path: Union[
 def get_filesystem(path: Union[str, Path]) -> fsspec.AbstractFileSystem:
     r"""Get the fsspect FileSystem from a path.
 
-    For example, if `path` starts with `gs:\\` then return a fsspec.GCSFileSystem.
+    For example, if `path` starts with `gs://` then return a gcsfs.GCSFileSystem.
 
     It is safe for `path` to include wildcards in the final filename.
     """

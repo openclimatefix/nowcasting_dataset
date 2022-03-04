@@ -120,7 +120,7 @@ def configure_logger(log_level: str, logger_name: str, handlers=list[logging.Han
         local_logger.addHandler(handler)
 
 
-def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> (int, int):
+def get_start_and_end_example_index(batch_idx: int, batch_size: int) -> tuple[int, int]:
     """
     Get the start and end example index
 
@@ -260,3 +260,11 @@ def drop_non_monotonic_increasing(
         logger.info(f"Fixed {total_n_out_of_order_times:,d} out of order {time_dim}.")
 
     return data_array
+
+
+def is_sorted(array: np.ndarray) -> bool:
+    """Return True if array is sorted in ascending order."""
+    # Adapted from https://stackoverflow.com/a/47004507/732596
+    if len(array) == 0:
+        return False
+    return np.all(array[:-1] <= array[1:])

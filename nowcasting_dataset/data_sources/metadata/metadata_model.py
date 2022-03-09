@@ -161,6 +161,7 @@ def load_from_csv(
         nrows=nrows,
         names=names,
     )
+    metadata_df = metadata_df.dropna(axis="columns", how="all")
 
     assert (
         len(metadata_df) > 0

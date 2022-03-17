@@ -161,6 +161,9 @@ def load_from_csv(
         nrows=nrows,
         names=names,
     )
+    # If the CSV doesn't contain the optional columns, then drop those missing columns.
+    # (Otherwise Pandas creates a column with NaNs, which confuses Pydantic!)
+    metadata_df = metadata_df.dropna(axis="columns", how="all")
 
     assert (
         len(metadata_df) > 0

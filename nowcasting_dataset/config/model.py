@@ -126,14 +126,13 @@ class DataSourceMixin(Base):
 class TimeResolutionMixin(Base):
     """Time resolution mix in"""
 
-    # TODO: Issue #584: Rename to `sample_period_minutes`
-    time_resolution_minutes: int = Field(
+    sample_period_minutes: int = Field(
         5,
         description="The temporal resolution (in minutes) of the satellite images."
         "Note that this needs to be divisible by 5.",
     )
 
-    @validator("time_resolution_minutes")
+    @validator("sample_period_minutes")
     def forecast_minutes_divide_by_5(cls, v):
         """Validate 'forecast_minutes'"""
         assert v % 5 == 0, f"The time resolution ({v}) is not divisible by 5"

@@ -148,7 +148,7 @@ def test_geospatial_border(sat_data_source):  # noqa: D103
 
 
 def test_wrong_sample_period(sat_filename):
-    """Test that a error is raise when the time_resolution_minutes is not divisible by 5"""
+    """Test that a error is raise when the sample_period_minutes is not divisible by 5"""
     with pytest.raises(Exception):
         _ = SatelliteDataSource(
             image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
@@ -157,5 +157,5 @@ def test_wrong_sample_period(sat_filename):
             forecast_minutes=15,
             channels=("IR_016",),
             meters_per_pixel=6000,
-            time_resolution_minutes=27,
+            sample_period_minutes=27,
         )

@@ -55,7 +55,7 @@ class OpticalFlowDataSource(DataSource):
         the input image after it has been "flowed".
     source_data_source_class_name: Either HRVSatelliteDataSource or SatelliteDataSource.
     channels: The satellite channels to compute optical flow for.
-    time_resolution_minutes: time resolution of optical flow images.
+    sample_period_minutes: time resolution of optical flow images.
         Needs to be the same as the satellite images used to make the flow fields.
     """
 
@@ -65,7 +65,7 @@ class OpticalFlowDataSource(DataSource):
     meters_per_pixel: int = 2000
     output_image_size_pixels: int = 32
     source_data_source_class_name: str = "SatelliteDataSource"
-    time_resolution_minutes: int = 5
+    sample_period_minutes: int = 5
 
     def __post_init__(self):  # noqa
         assert self.output_image_size_pixels <= self.input_image_size_pixels, (
@@ -98,7 +98,7 @@ class OpticalFlowDataSource(DataSource):
     @property
     def sample_period_minutes(self) -> int:
         """Override the default sample minutes"""
-        return self.time_resolution_minutes
+        return self.sample_period_minutes
 
     def open(self):
         """Open the underlying self.source_data_source."""

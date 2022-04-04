@@ -2,7 +2,6 @@
 
 import datetime
 import functools
-import io
 import logging
 from dataclasses import dataclass
 from numbers import Number
@@ -416,22 +415,10 @@ def load_solar_pv_data(
     """
     logger.debug(f"Loading Solar PV Data from {filename} from {start_dt} to {end_dt}.")
 
-    # It is possible to simplify the code below and do
-    # xr.open_dataset(file, engine='h5netcdf')
-    # in the first 'with' block, and delete the second 'with' block.
-    # But that takes 1 minute to load the data, where as loading into memory
-    # first and then loading from memory takes 23 seconds!
     with fsspec.open(filename, mode="rb") as file:
-        file_bytes = file.read()
-
-    with io.BytesIO(file_bytes) as file:
         pv_power = xr.open_dataset(file, engine="h5netcdf")
         pv_power = pv_power.sel(datetime=slice(start_dt, end_dt))
         pv_power_df = pv_power.to_dataframe()
-
-    # Save memory
-    del file_bytes
-    del pv_power
 
     # Process the data a little
     pv_power_df = pv_power_df.dropna(axis="columns", how="all")

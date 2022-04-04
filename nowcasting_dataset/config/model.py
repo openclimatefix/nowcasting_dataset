@@ -217,6 +217,34 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
         "PVDataSource is used to define the geospatial positions of each example.",
     )
 
+    pv_filename: str = Field(
+        None,
+        description="The NetCDF files holding the solar PV power timeseries.",
+    )
+    pv_metadata_filename: str = Field(
+        None,
+        description="Tthe CSV files describing each PV system.",
+    )
+
+    @classmethod
+    def model_validation(cls, v):
+        """Move old way of storing filenames to new way"""
+
+        if (v.pv_filename is not None) and (v.pv_metadata_filename is not None):
+            logger.warning(
+                "Loading pv files the old way, and moving them the new way. "
+                "Please update configuration file"
+            )
+            label = "pvoutput" if "pvoutput" in v.pv_filename.lower() else "passiv"
+            pv_file = PVFiles(
+                pv_filename=v.pv_filename, pv_metadata_filename=v.pv_metadata_filename, label=label
+            )
+            v.pv_files_groups = [pv_file]
+            v.pv_filename = None
+            v.pv_metadata_filename = None
+
+        return v
+
 
 class Satellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model"""

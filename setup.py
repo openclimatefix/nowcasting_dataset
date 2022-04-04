@@ -7,10 +7,11 @@ from setuptools import find_packages, setup
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 install_requires = (this_directory / "requirements.txt").read_text().splitlines()
+extra_install_requires = (this_directory / "extra-requirements.txt").read_text().splitlines()
 
 setup(
     name="nowcasting_dataset",
-    version="3.1.56",
+    version="3.1.63",
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",
@@ -22,4 +23,5 @@ setup(
     package_data={"config": ["nowcasting_dataset/config/*.yaml"]},
     include_package_data=True,
     packages=find_packages(),
+    extras_require={"full": extra_install_requires},
 )

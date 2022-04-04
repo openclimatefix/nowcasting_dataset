@@ -19,7 +19,7 @@ from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
 from nowcasting_dataset.geospatial import OSGB
-from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing
+from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing, is_sorted
 
 _LOG = logging.getLogger(__name__)
 _LOG_HRV = logging.getLogger(__name__.replace("satellite", "hrvsatellite"))
@@ -73,6 +73,10 @@ class SatelliteDataSource(ZarrDataSource):
             )
         self._data = self._data.sel(channels=list(self.channels))
         self._load_geostationary_area_definition_and_transform()
+
+        # Check the x and y coords are ascending. If they are not then searchsorted won't work!
+        assert is_sorted(self._data.x_geostationary)
+        assert is_sorted(self._data.y_geostationary)
 
     def _load_geostationary_area_definition_and_transform(self) -> None:
         area_definition_yaml = self._data.attrs["area"]

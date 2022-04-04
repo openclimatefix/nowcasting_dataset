@@ -2,10 +2,8 @@ rioxarray
 numpy
 pandas
 geopandas
-matplotlib
 zarr
 xarray
-ipykernel
 h5netcdf
 gcsfs
 dask
@@ -17,10 +15,7 @@ pytest-cov
 jedi
 mypy
 pydantic
-plotly
 tqdm
-black
-pre-commit
 fsspec
 pathy
 opencv-contrib-python-headless

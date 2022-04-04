@@ -191,7 +191,7 @@ class Batch(BaseModel):
 
         if batch_idx == 0:
             for data_source in data_sources_names:
-                os.mkdir(f"{tmp_path}/{data_source}")
+                os.makedirs(f"{tmp_path}/{data_source}")
 
         # download all data files
         for data_source in data_sources_names:

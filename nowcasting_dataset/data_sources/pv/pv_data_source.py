@@ -36,8 +36,8 @@ class PVDataSource(ImageDataSource):
     # This are just keep in for the moment, but don't do anything.
     # THey are needed for manager.py to work
     # TODO: #631
-    filename: Union[str, Path, List]
-    metadata_filename: Union[str, Path, List]
+    filename = None
+    metadata_filename = None
 
     files_groups: List[Union[PVFiles, dict]]
     # TODO: Issue #425: Use config to set start_dt and end_dt.

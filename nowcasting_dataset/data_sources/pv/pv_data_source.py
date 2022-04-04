@@ -33,8 +33,12 @@ class PVDataSource(ImageDataSource):
     defined by image_size_pixels and meters_per_pixel.
     """
 
-    # filenames: Union[str, Path, List]
-    # metadata_filenames: Union[str, Path, List]
+    # This are just keep in for the moment, but don't do anything.
+    # THey are needed for manager.py to work
+    # TODO: #631
+    filename: Union[str, Path, List]
+    metadata_filename: Union[str, Path, List]
+
     files_groups: List[Union[PVFiles, dict]]
     # TODO: Issue #425: Use config to set start_dt and end_dt.
     start_datetime: Optional[datetime.datetime] = None
@@ -49,6 +53,9 @@ class PVDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
+
+        assert self.filename is None
+        assert self.metadata_filename is None
 
         if type(self.files_groups[0]) == dict:
             self.files_groups = [PVFiles(**files) for files in self.files_groups]

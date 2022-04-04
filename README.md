@@ -1,6 +1,6 @@
 # nowcasting_dataset
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![codecov](https://codecov.io/gh/openclimatefix/nowcasting_dataset/branch/main/graph/badge.svg?token=X0P4KTHWVA)](https://codecov.io/gh/openclimatefix/nowcasting_dataset)
@@ -149,6 +149,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/RishiKumarRay"><img src="https://avatars.githubusercontent.com/u/87641376?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rishi Kumar Ray</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=RishiKumarRay" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/JanEbbing"><img src="https://avatars.githubusercontent.com/u/5873110?v=4?s=100" width="100px;" alt=""/><br /><sub><b>JanEbbing</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting_dataset/commits?author=JanEbbing" title="Code">💻</a></td>
   </tr>
 </table>
 

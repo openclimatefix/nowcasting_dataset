@@ -69,11 +69,20 @@ class ManagerBase:
                 config_for_data_source, pattern_to_remove=f"^{data_source_name}_"
             )
 
+            # TODO: #631 remove
+            if data_source_name == "pv":
+                config_for_data_source.pop("filename")
+                config_for_data_source.pop("metadata_filename")
+
             data_source_class = MAP_DATA_SOURCE_NAME_TO_CLASS[data_source_name]
             try:
                 data_source = data_source_class(**config_for_data_source)
             except Exception:
-                logger.exception(f"Exception whilst instantiating {data_source_name}!")
+                logger.exception(
+                    f"Exception whilst instantiating {data_source_name}! "
+                    f"Tried with configuration {config_for_data_source} "
+                    f"in {data_source_class}"
+                )
                 raise
             self.data_sources[data_source_name] = data_source
 

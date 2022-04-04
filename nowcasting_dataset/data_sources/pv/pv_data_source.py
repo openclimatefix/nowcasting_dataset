@@ -2,7 +2,6 @@
 
 import datetime
 import functools
-import io
 import logging
 from dataclasses import dataclass
 from numbers import Number
@@ -16,7 +15,8 @@ import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
-from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
+from nowcasting_dataset.config.model import PVFiles
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE, PV_PROVIDERS
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.pv.pv_model import PV
@@ -33,8 +33,7 @@ class PVDataSource(ImageDataSource):
     defined by image_size_pixels and meters_per_pixel.
     """
 
-    filename: Union[str, Path]
-    metadata_filename: Union[str, Path]
+    files_groups: List[Union[PVFiles, dict]]
     # TODO: Issue #425: Use config to set start_dt and end_dt.
     start_datetime: Optional[datetime.datetime] = None
     end_datetime: Optional[datetime.datetime] = None
@@ -48,6 +47,10 @@ class PVDataSource(ImageDataSource):
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
+
+        if type(self.files_groups[0]) == dict:
+            self.files_groups = [PVFiles(**files) for files in self.files_groups]
+
         super().__post_init__(image_size_pixels, meters_per_pixel)
 
         self.rng = np.random.default_rng()
@@ -55,8 +58,9 @@ class PVDataSource(ImageDataSource):
 
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
-        for filename in [self.filename, self.metadata_filename]:
-            nd_fs_utils.check_path_exists(filename)
+        for pv_files in self.files_groups:
+            for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
+                nd_fs_utils.check_path_exists(filename)
 
     def load(self):
         """
@@ -73,9 +77,23 @@ class PVDataSource(ImageDataSource):
 
     def _load_metadata(self):
 
-        logger.debug(f"Loading PV metadata from {self.metadata_filename}")
+        logger.debug(f"Loading PV metadata from {self.files_groups}")
 
-        pv_metadata = pd.read_csv(self.metadata_filename, index_col="system_id")
+        # collect all metadata together
+        pv_metadata = []
+        for pv_files in self.files_groups:
+            metadata_filename = pv_files.pv_metadata_filename
+
+            # read metadata file
+            metadata = pd.read_csv(metadata_filename, index_col="system_id")
+
+            # encode index, to make sure the indexes are unique
+            metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
+
+            pv_metadata.append(metadata)
+        pv_metadata = pd.concat(pv_metadata)
+
+        # drop any systems with no lon or lat
         pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
 
         pv_metadata["location_x"], pv_metadata["location_y"] = geospatial.lat_lon_to_osgb(
@@ -99,15 +117,33 @@ class PVDataSource(ImageDataSource):
 
     def _load_pv_power(self):
 
-        logger.debug(f"Loading PV Power data from {self.filename}")
+        logger.debug(f"Loading PV Power data from {self.files_groups}")
 
-        pv_power = load_solar_pv_data(
-            self.filename, start_dt=self.start_datetime, end_dt=self.end_datetime
-        )
+        # collect all PV power timeseries together
+        pv_power_all = []
+        for pv_files in self.files_groups:
+            filename = pv_files.pv_filename
+
+            # get pv power data
+            pv_power = load_solar_pv_data(
+                filename, start_dt=self.start_datetime, end_dt=self.end_datetime
+            )
+
+            # encode index, to make sure the columns are unique
+            new_columns = encode_label(indexes=pv_power.columns, label=pv_files.label)
+            pv_power.columns = new_columns
+
+            pv_power_all.append(pv_power)
+
+        pv_power = pd.concat(pv_power_all, axis="columns")
+        assert not pv_power.columns.duplicated().any()
 
         # A bit of hand-crafted cleaning
-        if 30248 in pv_power.columns:
-            pv_power[30248]["2018-10-29":"2019-01-03"] = np.NaN
+        bad_pvputput_indexes = [30248]
+        bad_pvputput_indexes = encode_label(bad_pvputput_indexes, label="pvoutput")
+        for bad_index in bad_pvputput_indexes:
+            if bad_index in pv_power.columns:
+                pv_power[bad_index]["2018-10-29":"2019-01-03"] = np.NaN
 
         # Drop columns and rows with all NaNs.
         pv_power.dropna(axis="columns", how="all", inplace=True)
@@ -418,3 +454,28 @@ def drop_pv_systems_which_produce_overnight(pv_power: pd.DataFrame) -> pd.DataFr
     bad_systems = pv_power.columns[pv_above_threshold_at_night]
     print(len(bad_systems), "bad PV systems found and removed!")
     return pv_power.drop(columns=bad_systems)
+
+
+def encode_label(indexes: List[str], label: str):
+    """
+    Encode the label to a list of indexes.
+
+    The new encoding must be integers and unique.
+    It would be useful if the indexes can read and deciphered by humans.
+    This is done by times the original index by 10
+    and adding 1 for passive or 2 for other lables
+
+    Args:
+        indexes: list of indexes
+        label: either 'passiv' or 'pvoutput'
+
+    Returns: list of indexes encoded by label
+    """
+    assert label in PV_PROVIDERS
+    # this encoding does work if the number of pv providers is more than 10
+    assert len(PV_PROVIDERS) < 10
+
+    label_index = PV_PROVIDERS.index(label)
+    new_index = [str(int(col) * 10 + label_index) for col in indexes]
+
+    return new_index

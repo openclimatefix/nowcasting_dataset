@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 import nowcasting_dataset
+from nowcasting_dataset.config.model import PVFiles
 from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.fake.batch import pv_fake
 from nowcasting_dataset.data_sources.pv.pv_data_source import (
@@ -39,16 +40,17 @@ def test_get_example_and_batch():  # noqa: D103
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)
-    PV_DATA_FILENAME = f"{path}/../tests/data/pv_data/test.nc"
-    PV_METADATA_FILENAME = f"{path}/../tests/data/pv_metadata/UK_PV_metadata.csv"
+    PV_DATA_FILENAME = f"{path}/../tests/data/pv/passiv/test.nc"
+    PV_METADATA_FILENAME = f"{path}/../tests/data/pv/passiv/UK_PV_metadata.csv"
 
     pv_data_source = PVDataSource(
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels=64,
         meters_per_pixel=2000,
-        filename=PV_DATA_FILENAME,
-        metadata_filename=PV_METADATA_FILENAME,
+        files_groups=[
+            PVFiles(pv_filename=PV_DATA_FILENAME, pv_metadata_filename=PV_METADATA_FILENAME)
+        ],
         start_datetime=datetime.fromisoformat("2020-04-01 00:00:00.000"),
         end_datetime=datetime.fromisoformat("2020-04-02 00:00:00.000"),
         load_azimuth_and_elevation=False,
@@ -79,8 +81,7 @@ def test_passive():
     filename_metadata = output_dir + "/system_metadata.csv"
 
     pv = PVDataSource(
-        filename=filename,
-        metadata_filename=filename_metadata,
+        files_groups=[PVFiles(pv_filename=filename, pv_metadata_filename=filename_metadata)],
         start_datetime=datetime(2020, 3, 28),
         end_datetime=datetime(2020, 4, 1),
         history_minutes=60,

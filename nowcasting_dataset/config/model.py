@@ -27,6 +27,7 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     NWP_VARIABLE_NAMES,
+    PV_PROVIDERS,
     SAT_VARIABLE_NAMES,
 )
 from nowcasting_dataset.dataset.split import split
@@ -175,17 +176,32 @@ class StartEndDatetimeMixin(Base):
         return values
 
 
-class PV(DataSourceMixin, StartEndDatetimeMixin):
-    """PV configuration model"""
+class PVFiles(BaseModel):
+    """Model to hold pv file and metadata file"""
 
     pv_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_timeseries_batch.nc",
-        description=("The NetCDF file holding the solar PV power timeseries."),
+        description="The NetCDF files holding the solar PV power timeseries.",
     )
     pv_metadata_filename: str = Field(
         "gs://solar-pv-nowcasting-data/PV/PVOutput.org/UK_PV_metadata.csv",
-        description="The CSV file describing each PV system.",
+        description="Tthe CSV files describing each PV system.",
     )
+
+    label: str = Field("pvoutput", description="Label of where the pv data came from")
+
+    @validator("label")
+    def v_label0(cls, v):
+        """Validate 'label'"""
+        assert v in PV_PROVIDERS
+        return v
+
+
+class PV(DataSourceMixin, StartEndDatetimeMixin):
+    """PV configuration model"""
+
+    pv_files_groups: List[PVFiles] = [PVFiles()]
+
     n_pv_systems_per_example: int = Field(
         DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
         description="The number of PV systems samples per example. "
@@ -200,6 +216,34 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
         "Typically, get_center would be set to true if and only if "
         "PVDataSource is used to define the geospatial positions of each example.",
     )
+
+    pv_filename: str = Field(
+        None,
+        description="The NetCDF files holding the solar PV power timeseries.",
+    )
+    pv_metadata_filename: str = Field(
+        None,
+        description="Tthe CSV files describing each PV system.",
+    )
+
+    @classmethod
+    def model_validation(cls, v):
+        """Move old way of storing filenames to new way"""
+
+        if (v.pv_filename is not None) and (v.pv_metadata_filename is not None):
+            logger.warning(
+                "Loading pv files the old way, and moving them the new way. "
+                "Please update configuration file"
+            )
+            label = "pvoutput" if "pvoutput" in v.pv_filename.lower() else "passiv"
+            pv_file = PVFiles(
+                pv_filename=v.pv_filename, pv_metadata_filename=v.pv_metadata_filename, label=label
+            )
+            v.pv_files_groups = [pv_file]
+            v.pv_filename = None
+            v.pv_metadata_filename = None
+
+        return v
 
 
 class Satellite(DataSourceMixin, TimeResolutionMixin):

@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 import nowcasting_dataset
 from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.config.model import Configuration, set_git_commit
+from nowcasting_dataset.config.model import PV, Configuration, set_git_commit
 from nowcasting_dataset.config.save import save_yaml_configuration
 
 
@@ -114,3 +114,26 @@ def test_config_get():
     assert type(config.git.message) == str
     assert type(config.git.hash) == str
     assert type(config.git.committed_date) == datetime
+
+
+def test_old_pv():
+    """Test that old config pydantic works"""
+    pv = PV(pv_metadata_filename="test_metadata.csv", pv_filename="test.csv")
+
+    # validate model, this happens normal when doing a whole config
+    pv = pv.model_validation(v=pv)
+    assert len(pv.pv_files_groups) == 1
+    assert pv.pv_files_groups[0].pv_metadata_filename == "test_metadata.csv"
+    assert pv.pv_files_groups[0].pv_filename == "test.csv"
+    assert pv.pv_filename is None
+    assert pv.pv_metadata_filename is None
+
+
+def test_old_pv_load():
+    """Test that old pv yaml loading works"""
+
+    filename = os.path.join(
+        os.path.dirname(nowcasting_dataset.__file__), "../tests/config", "test_old_pv.yaml"
+    )
+
+    _ = load_yaml_configuration(filename)

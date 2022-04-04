@@ -9,6 +9,10 @@ gcsfs
 dask
 pvlib
 pyproj
+pytest
+coverage<6.3
+pytest-cov
+jedi
 mypy
 pydantic
 tqdm

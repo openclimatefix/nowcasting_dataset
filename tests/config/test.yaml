@@ -13,8 +13,13 @@ input_data:
     history_minutes: 60
     forecast_minutes: 60
   pv:
-    pv_filename: tests/data/pv_data/test.nc
-    pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
+    pv_files_groups:
+      - label: passiv
+        pv_filename: tests/data/pv/passiv/test.nc
+        pv_metadata_filename: tests/data/pv/passiv/UK_PV_metadata.csv
+      - label: pvoutput
+        pv_filename: tests/data/pv/pvoutput/test.nc
+        pv_metadata_filename: tests/data/pv/pvoutput/UK_PV_metadata.csv
     get_center: false
   satellite:
     satellite_channels:

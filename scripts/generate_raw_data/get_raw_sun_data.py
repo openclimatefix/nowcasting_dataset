@@ -40,7 +40,7 @@ config = load_yaml_configuration(config_filename)
 
 
 # set up
-PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filename
+PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filenames
 sun_file_zarr = config.input_data.sun.sun_zarr_path
 
 # set up variables

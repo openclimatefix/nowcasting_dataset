@@ -159,6 +159,32 @@ class Batch(BaseModel):
         metadata = load_from_csv(path=local_netcdf_path, batch_size=batch_size, batch_idx=batch_idx)
         batch_dict["metadata"] = metadata.dict()
 
+        # quick options to turn on when using legacy data e.g v15
+        legacy_data = False
+        if legacy_data:
+            # legacy GSP
+            if "gsp" in batch_dict.keys():
+                batch_dict["gsp"] = batch_dict["gsp"].rename(
+                    {"x_coords": "x_osgb", "y_coords": "y_osgb"}
+                )
+
+            # legacy PV
+            if "pv" in batch_dict.keys():
+                batch_dict["pv"] = batch_dict["pv"].rename(
+                    {"x_coords": "x_osgb", "y_coords": "y_osgb"}
+                )
+
+            # legacy NWP
+            if "nwp" in batch_dict.keys():
+                batch_dict["nwp"] = batch_dict["nwp"].rename(
+                    {
+                        "x_index": "x_osgb_index",
+                        "y_index": "y_osgb_index",
+                        "x": "x_osgb",
+                        "y": "y_osgb",
+                    }
+                )
+
         try:
             batch = Batch(**batch_dict)
         except Exception as e:
@@ -191,7 +217,7 @@ class Batch(BaseModel):
 
         if batch_idx == 0:
             for data_source in data_sources_names:
-                os.makedirs(f"{tmp_path}/{data_source}")
+                os.makedirs(f"{tmp_path}/{data_source}", exist_ok=True)
 
         # download all data files
         for data_source in data_sources_names:

@@ -50,7 +50,7 @@ def convert_coordinates_to_indexes(dataset: xr.Dataset) -> xr.Dataset:
         original_coords = dataset[original_dim_name]
         new_index_coords = np.arange(len(original_coords)).astype("int32")
         new_index_dim_name = f"{original_dim_name}_index"
-        dataset[original_dim_name] = new_index_coords.astype("int32")
+        dataset[original_dim_name] = new_index_coords
         dataset = dataset.rename({original_dim_name: new_index_dim_name})
         # Save the original_coords back into dataset, but this time it won't be used as
         # coords for the variables payload in the dataset.

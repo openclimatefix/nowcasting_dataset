@@ -342,13 +342,16 @@ class PVDataSource(ImageDataSource):
             data=pv_system_row_number,
             dims=["id"],
         )
-        pv["x_osgb"] = x_coords
-        pv["y_osgb"] = y_coords
+        pv["x_osgb"] = x_coords.astype("float32")
+        pv["y_osgb"] = y_coords.astype("float32")
         pv["pv_system_row_number"] = pv_system_row_number
 
         # pad out so that there are always n_pv_systems_per_example, pad with zeros
         pad_n = self.n_pv_systems_per_example - len(pv.id)
         pv = pv.pad(id=(0, pad_n), power_mw=((0, 0), (0, pad_n)), constant_values=0)
+
+        # format id
+        pv.__setitem__("id", pv.id.astype("int32"))
 
         return pv
 

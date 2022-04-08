@@ -42,6 +42,10 @@ class Satellite(DataSourceOutput):
         v.check_data_var_dim(v.x_geostationary, ("example", "x_geostationary_index"))
         v.check_data_var_dim(v.y_geostationary, ("example", "y_geostationary_index"))
 
+        # re-order dims
+        if v.data.dims != satellite_expected_dims_order:
+            v.__setitem__("data", v.data.transpose(*satellite_expected_dims_order))
+
         return v
 
 

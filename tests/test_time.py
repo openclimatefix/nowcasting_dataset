@@ -27,6 +27,31 @@ def test_select_daylight_datetimes_dusk():
     np.testing.assert_array_equal(daylight_datetimes, correct_daylight_datetimes)
 
 
+def test_select_daylight_datetimes_dusk_non_gridded_date():
+    """Test day light filter works with keeping dusk and dawn extra hours
+
+    This is for non-gridded date.
+    This is to check that no extra datetimes are being returned
+    """
+    datetimes = pd.DatetimeIndex(
+        [
+            "2020-01-01 07:00",
+            "2020-01-01 16:00",
+            "2020-01-01 17:00",
+            "2020-01-01 18:00",
+            "2020-01-01 19:00",
+        ]
+    )
+    correct_daylight_datetimes = pd.DatetimeIndex(
+        ["2020-01-01 07:00", "2020-01-01 16:00", "2020-01-01 17:00", "2020-01-01 18:00"]
+    )
+    locations = [(0, 0), (20_000, 20_000)]
+    daylight_datetimes = nd_time.select_daylight_datetimes(
+        datetimes=datetimes, locations=locations, keep_dawn_dusk_hours=2
+    )
+    np.testing.assert_array_equal(daylight_datetimes, correct_daylight_datetimes)
+
+
 @pytest.mark.parametrize("min_seq_length", [2, 3, 12])
 def test_get_contiguous_time_periods_1_with_1_chunk(min_seq_length):
     """Test getting continuous chunks of data with 1 chunk of data"""

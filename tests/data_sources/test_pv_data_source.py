@@ -64,6 +64,9 @@ def test_get_example_and_batch():  # noqa: D103
     # start at 6, to avoid some nans
     batch = pv_data_source.get_batch(locations=locations[6:16])
     assert batch.power_mw.shape == (10, 19, DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE)
+    assert str(batch.x_osgb.dtype) == "float32"
+    assert str(batch.y_osgb.dtype) == "float32"
+    assert str(batch.id.dtype) == "int64"
 
 
 def test_drop_pv_systems_which_produce_overnight():  # noqa: D103

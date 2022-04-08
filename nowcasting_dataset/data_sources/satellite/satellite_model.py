@@ -7,6 +7,14 @@ from nowcasting_dataset.data_sources.datasource_output import DataSourceOutput
 
 logger = logging.getLogger(__name__)
 
+satellite_expected_dims_order = (
+    "example",
+    "time_index",
+    "channels_index",
+    "y_geostationary_index",
+    "x_geostationary_index",
+)
+
 
 class Satellite(DataSourceOutput):
     """Class to store satellite data as a xr.Dataset with some validation"""

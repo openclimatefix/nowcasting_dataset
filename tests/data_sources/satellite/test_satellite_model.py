@@ -6,13 +6,22 @@ import numpy as np
 import pytest
 
 from nowcasting_dataset.data_sources.fake.batch import satellite_fake
-from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.data_sources.satellite.satellite_model import (
+    Satellite,
+    satellite_expected_dims_order,
+)
 
 
 def test_satellite_init():  # noqa: D103
     satellite = satellite_fake()
 
     assert satellite.x_geostationary.dims == ("example", "x_geostationary_index")
+
+
+def test_satellite_dims_order():  # noqa: D103
+    satellite = satellite_fake()
+    satellite = Satellite.model_validation(satellite)
+    assert satellite.data.dims == satellite_expected_dims_order
 
 
 def test_satellite_validation():  # noqa: D103

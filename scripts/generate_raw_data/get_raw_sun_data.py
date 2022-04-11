@@ -74,9 +74,6 @@ azimuth, elevation = get_azimuth_and_elevation(
     x_centers=x_centers, y_centers=y_centers, datestamps=datestamps
 )
 
-azimuth = azimuth.astype(int)
-elevation = elevation.astype(int)
-
 # save it locally and in the cloud, just in case when saving in the cloud it fails
 save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path="./sun.zarr")
 save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path=sun_file_zarr)

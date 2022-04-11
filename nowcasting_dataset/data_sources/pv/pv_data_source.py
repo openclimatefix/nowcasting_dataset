@@ -90,6 +90,12 @@ class PVDataSource(ImageDataSource):
             # encode index, to make sure the indexes are unique
             metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
 
+            # filter for zero capacity
+            if pv_files.label == "pvoutput":
+                metadata = metadata[metadata["system_size_watts"] > 0]
+            elif pv_files.label == "passiv":
+                metadata = metadata[metadata["kwp"] > 0]
+
             pv_metadata.append(metadata)
         pv_metadata = pd.concat(pv_metadata)
 

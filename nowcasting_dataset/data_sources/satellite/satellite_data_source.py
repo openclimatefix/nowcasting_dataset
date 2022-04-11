@@ -34,6 +34,7 @@ class SatelliteDataSource(ZarrDataSource):
     meters_per_pixel: InitVar[int] = 2_000
     logger = _LOG
     time_resolution_minutes: int = 5
+    keep_dawn_dusk_hours: int = 0
 
     def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
         """Post Init"""
@@ -303,7 +304,9 @@ class SatelliteDataSource(ZarrDataSource):
         if remove_night:
             border_locations = self.geospatial_border()
             datetime_index = nd_time.select_daylight_datetimes(
-                datetimes=datetime_index, locations=border_locations
+                datetimes=datetime_index,
+                locations=border_locations,
+                keep_dawn_dusk_hours=self.keep_dawn_dusk_hours,
             )
 
         return datetime_index

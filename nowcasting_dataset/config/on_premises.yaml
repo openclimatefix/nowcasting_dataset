@@ -8,6 +8,7 @@ input_data:
   gsp:
     gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v3/pv_gsp.zarr
     history_minutes: 90
+    forecast_minutes: 360
     log_level: "INFO"
 
   #---------------------- NWP -------------------
@@ -25,7 +26,7 @@ input_data:
       - hcc
     nwp_image_size_pixels: 64
     nwp_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_3.zarr
-    forecast_minutes: 180
+    forecast_minutes: 360
     history_minutes: 60
 
   #---------------------- PV -------------------
@@ -39,6 +40,7 @@ input_data:
         pv_metadata_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/PVOutput.org/UK_PV_metadata.csv
     get_center: false
     history_minutes: 90
+    forecast_minutes: 360
     log_level: "INFO"
 
   #---------------------- Satellite -------------

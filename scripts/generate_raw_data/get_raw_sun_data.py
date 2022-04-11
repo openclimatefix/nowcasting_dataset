@@ -40,22 +40,26 @@ config = load_yaml_configuration(config_filename)
 
 
 # set up
-PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filenames
 sun_file_zarr = config.input_data.sun.sun_zarr_path
 
 # set up variables
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
-metadata_filename = f"gs://{PV_METADATA_FILENAME}"
 start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")
 end_dt = datetime.fromisoformat("2020-01-01 00:00:00.000+00:00")
 datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
 
 # PV metadata
-pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
-pv_metadata = pv_metadata.dropna(subset=["longitude", "latitude"])
-pv_metadata["location_x"], pv_metadata["location_y"] = lat_lon_to_osgb(
-    pv_metadata["latitude"], pv_metadata["longitude"]
-)
+pv_metadatas = []
+for pv_files in config.input_data.pv.pv_files_groups:
+    metadata_filename = pv_files.pv_metadata_filename
+    pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
+    pv_metadata = pv_metadata.dropna(subset=["longitude", "latitude"])
+    pv_metadata["location_x"], pv_metadata["location_y"] = lat_lon_to_osgb(
+        pv_metadata["latitude"], pv_metadata["longitude"]
+    )
+    pv_metadatas.append(pv_metadata)
+
+pv_metadata = pd.concat(pv_metadatas)
 pv_x = pv_metadata["location_x"]
 pv_y = pv_metadata["location_y"]
 

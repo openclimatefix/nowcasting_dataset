@@ -49,13 +49,19 @@ def test_get_example_and_batch():  # noqa: D103
         image_size_pixels=64,
         meters_per_pixel=2000,
         files_groups=[
-            PVFiles(pv_filename=PV_DATA_FILENAME, pv_metadata_filename=PV_METADATA_FILENAME)
+            PVFiles(
+                pv_filename=PV_DATA_FILENAME,
+                pv_metadata_filename=PV_METADATA_FILENAME,
+                label="passiv",
+            )
         ],
         start_datetime=datetime.fromisoformat("2020-04-01 00:00:00.000"),
         end_datetime=datetime.fromisoformat("2020-04-02 00:00:00.000"),
         load_azimuth_and_elevation=False,
         load_from_gcs=False,
     )
+
+    assert pv_data_source.pv_metadata["kwp"].min() > 0
 
     locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
 

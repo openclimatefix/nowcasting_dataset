@@ -19,15 +19,13 @@ import logging
 import os
 from datetime import datetime
 
-import fsspec
-import numpy as np
 import pandas as pd
-import xarray as xr
 from pathy import Pathy
 
 import nowcasting_dataset
 from nowcasting_dataset.config import load_yaml_configuration
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
+from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
     get_azimuth_and_elevation,
     save_to_zarr,
@@ -52,32 +50,18 @@ end_dt = datetime.fromisoformat("2020-01-01 00:00:00.000+00:00")
 datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
 
 # PV metadata
-pv_metadatas = []
-for pv_files in config.input_data.pv.pv_files_groups:
-    metadata_filename = pv_files.pv_metadata_filename
-    pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
-    pv_metadata = pv_metadata.dropna(subset=["longitude", "latitude"])
-    pv_metadata["location_x"], pv_metadata["location_y"] = lat_lon_to_osgb(
-        pv_metadata["latitude"], pv_metadata["longitude"]
-    )
 
-    # let load pv data and only use metadata where there is data
-    with fsspec.open(pv_files.pv_filename, mode="rb") as file:
-        pv_power = xr.load_dataset(file, engine="h5netcdf")
-        pv_power = pv_power.sel(datetime=slice(datetime(2020, 1, 1), datetime(2020, 1, 2)))
-        pv_power_df = pv_power.to_dataframe()
+pv = PVDataSource(
+    history_minutes=30,
+    forecast_minutes=60,
+    files_groups=config.input_data.pv.pv_files_groups,
+    start_datetime=start_dt,
+    end_datetime=end_dt,
+    image_size_pixels=128,
+    meters_per_pixel=2000,
+)
 
-    # select just the metadata in the power data
-    ids = [int(id) for id in pv_power_df.columns]
-    pv_system_ids = pv_metadata.index.intersection(ids)
-    pv_system_ids = np.sort(pv_system_ids)
-    pv_metadata = pv_metadata[pv_metadata["ss_id"].isin(pv_system_ids)]
-
-    pv_metadatas.append(pv_metadata)
-
-pv_metadata = pd.concat(pv_metadatas)
-pv_x = pv_metadata["location_x"]
-pv_y = pv_metadata["location_y"]
+pv_x, pv_y = lat_lon_to_osgb(pv.metadata["latitude"], pv.metadata["longitude"])
 
 # GSP Metadata
 gsp_metadata = get_gsp_metadata_from_eso()

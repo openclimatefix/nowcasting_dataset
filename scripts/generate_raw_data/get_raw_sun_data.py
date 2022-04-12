@@ -46,7 +46,7 @@ sun_file_zarr = config.input_data.sun.sun_zarr_path
 # set up variables
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")
-end_dt = datetime.fromisoformat("2019-01-02 00:00:00.000+00:00")
+end_dt = datetime.fromisoformat("2020-01-01 00:00:00.000+00:00")
 datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
 
 # PV metadata
@@ -55,13 +55,13 @@ pv = PVDataSource(
     history_minutes=30,
     forecast_minutes=60,
     files_groups=config.input_data.pv.pv_files_groups,
-    start_datetime=start_dt,
-    end_datetime=end_dt,
+    start_datetime=datetime(2010, 1, 1),
+    end_datetime=datetime(2030, 1, 2),
     image_size_pixels=128,
     meters_per_pixel=2000,
 )
 
-pv_x, pv_y = lat_lon_to_osgb(pv.metadata["latitude"], pv.metadata["longitude"])
+pv_x, pv_y = lat_lon_to_osgb(pv.pv_metadata["latitude"], pv.pv_metadata["longitude"])
 
 # GSP Metadata
 gsp_metadata = get_gsp_metadata_from_eso()
@@ -70,8 +70,8 @@ gsp_x = gsp_metadata["centroid_x"]
 gsp_y = gsp_metadata["centroid_y"]
 
 # join all sites together
-x_centers = list(pv_x.values) + list(gsp_x.values)
-y_centers = list(pv_y.values) + list(gsp_y.values)
+x_centers = list(pv_x) + list(gsp_x.values)
+y_centers = list(pv_y) + list(gsp_y.values)
 
 # make d
 azimuth, elevation = get_azimuth_and_elevation(

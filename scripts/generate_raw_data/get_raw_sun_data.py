@@ -19,7 +19,10 @@ import logging
 import os
 from datetime import datetime
 
+import fsspec
+import numpy as np
 import pandas as pd
+import xarray as xr
 from pathy import Pathy
 
 import nowcasting_dataset
@@ -57,6 +60,19 @@ for pv_files in config.input_data.pv.pv_files_groups:
     pv_metadata["location_x"], pv_metadata["location_y"] = lat_lon_to_osgb(
         pv_metadata["latitude"], pv_metadata["longitude"]
     )
+
+    # let load pv data and only use metadata where there is data
+    with fsspec.open(pv_files.pv_filename, mode="rb") as file:
+        pv_power = xr.load_dataset(file, engine="h5netcdf")
+        pv_power = pv_power.sel(datetime=slice(datetime(2020, 1, 1), datetime(2020, 1, 2)))
+        pv_power_df = pv_power.to_dataframe()
+
+    # select just the metadata in the power data
+    ids = [int(id) for id in pv_power_df.columns]
+    pv_system_ids = pv_metadata.index.intersection(ids)
+    pv_system_ids = np.sort(pv_system_ids)
+    pv_metadata = pv_metadata[pv_metadata["ss_id"].isin(pv_system_ids)]
+
     pv_metadatas.append(pv_metadata)
 
 pv_metadata = pd.concat(pv_metadatas)

@@ -46,7 +46,7 @@ sun_file_zarr = config.input_data.sun.sun_zarr_path
 # set up variables
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
 start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")
-end_dt = datetime.fromisoformat("2020-01-01 00:00:00.000+00:00")
+end_dt = datetime.fromisoformat("2019-01-02 00:00:00.000+00:00")
 datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
 
 # PV metadata

@@ -35,6 +35,18 @@ def test_yaml_load():
     assert "gs://" in str(config.output_data.filepath)
 
 
+def test_yaml_load_on_premises():
+    """Test that yaml loading works for 'on_premises.yaml'"""
+
+    filename = os.path.join(
+        os.path.dirname(nowcasting_dataset.__file__), "config", "on_premises.yaml"
+    )
+
+    config = load_yaml_configuration(filename)
+
+    assert isinstance(config, Configuration)
+
+
 def test_yaml_save():
     """
     Check a configuration can be saved to a yaml file

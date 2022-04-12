@@ -266,6 +266,14 @@ class Satellite(DataSourceMixin, TimeResolutionMixin):
         description="The number of meters per pixel for non-HRV satellite channels.",
     )
 
+    keep_dawn_dusk_hours: int = Field(
+        0,
+        description="The number hours around dawn and dusk that should be keep. "
+        "I.e 'keep_dawn_dusk_hours'=2,"
+        " then if dawn if 07.00, "
+        " then data is keep from 06.00",
+    )
+
 
 class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model for HRV data"""

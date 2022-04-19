@@ -23,7 +23,8 @@ def test_gsp_pv_data_source_init():
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
     )
 
@@ -38,7 +39,8 @@ def test_gsp_pv_data_source_get_locations():
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
     )
 
@@ -66,7 +68,8 @@ def test_gsp_pv_data_source_get_all_locations():
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
     )
 
@@ -108,7 +111,8 @@ def test_gsp_pv_data_source_get_example():
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
     )
 
@@ -132,7 +136,8 @@ def test_gsp_pv_data_source_get_batch():
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
     )
 
@@ -158,7 +163,8 @@ def test_drop_gsp_north_of_boundary(test_data_folder):
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
         northern_boundary_osgb=None,
     )

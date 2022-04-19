@@ -70,7 +70,10 @@ class OpticalFlowDataSource(DataSource):
     time_resolution_minutes: int = 5
 
     def __post_init__(self):  # noqa
-        assert self.output_image_size_pixels_height <= self.input_image_size_pixels_height and self.output_image_size_pixels_width <= self.input_image_size_pixels_width, (
+        assert (
+            self.output_image_size_pixels_height <= self.input_image_size_pixels_height
+            and self.output_image_size_pixels_width <= self.input_image_size_pixels_width
+        ), (
             "output_image_size_pixels must be equal to or smaller than input_image_size_pixels"
             f" {self.output_image_size_pixels_height=}, {self.input_image_size_pixels_height=}"
             f" {self.output_image_size_pixels_width=}, {self.input_image_size_pixels_width=}"
@@ -159,7 +162,11 @@ class OpticalFlowDataSource(DataSource):
 
         # Select the center crop.
         satellite_data_cropped = satellite_data.isel(time=0, channels=0)
-        satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels_height, self.output_image_size_pixels_width)
+        satellite_data_cropped = crop_center(
+            satellite_data_cropped,
+            self.output_image_size_pixels_height,
+            self.output_image_size_pixels_width,
+        )
 
         # Put into DataArray:
         predictions_data_array = xr.DataArray(
@@ -237,7 +244,11 @@ class OpticalFlowDataSource(DataSource):
             for prediction_timestep in range(self.forecast_length):
                 flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(image=t0_image, flow=flow)
-                warped_image = crop_center(warped_image, self.output_image_size_pixels_height, self.output_image_size_pixels_width)
+                warped_image = crop_center(
+                    warped_image,
+                    self.output_image_size_pixels_height,
+                    self.output_image_size_pixels_width,
+                )
                 prediction_block[prediction_timestep, :, :, channel_i] = warped_image
 
         data_array = self._put_predictions_into_data_array(

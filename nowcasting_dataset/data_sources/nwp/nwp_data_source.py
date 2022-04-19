@@ -56,7 +56,9 @@ class NWPDataSource(ZarrDataSource):
     image_size_pixels_width: InitVar[int] = 2
     meters_per_pixel: InitVar[int] = 2_000
 
-    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """
         Post init
 

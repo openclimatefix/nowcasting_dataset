@@ -460,7 +460,8 @@ class ZarrDataSource(ImageDataSource):
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
-            x_osgb=slice(0, self._square.size_pixels_width), y_osgb=slice(0, self._square.size_pixels_height)
+            x_osgb=slice(0, self._square.size_pixels_width),
+            y_osgb=slice(0, self._square.size_pixels_height),
         )
 
         selected_data = self._post_process_example(selected_data, t0_datetime_utc)

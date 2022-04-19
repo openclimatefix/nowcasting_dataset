@@ -41,7 +41,9 @@ def remap_image(
     return remapped_image
 
 
-def crop_center(image: np.ndarray, output_image_size_pixels_height: int, output_image_size_pixels_width: int) -> np.ndarray:
+def crop_center(
+    image: np.ndarray, output_image_size_pixels_height: int, output_image_size_pixels_width: int
+) -> np.ndarray:
     """
     Crop center of a 2D numpy image.
 

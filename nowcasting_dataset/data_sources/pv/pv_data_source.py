@@ -45,7 +45,9 @@ class PVDataSource(ImageDataSource):
     load_from_gcs: bool = True  # option to load data from gcs, or local file
     get_center: bool = True
 
-    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post Init"""
 
         if type(self.files_groups[0]) == dict:

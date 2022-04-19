@@ -49,6 +49,7 @@ class Square:
             right=x_center_osgb + self._half_size_meters,
         )
 
+
 class Rectangle:
     """Class for computing bounding box for satellite imagery."""
 
@@ -84,6 +85,7 @@ class Rectangle:
             left=x_center_osgb - self._half_size_meters_width,
             right=x_center_osgb + self._half_size_meters_width,
         )
+
 
 def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array) -> Array:
     """

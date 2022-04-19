@@ -376,11 +376,15 @@ class ImageDataSource(DataSource):
     image_size_pixels_width: InitVar[int]
     meters_per_pixel: InitVar[int]
 
-    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post Init"""
         super().__post_init__()
         self._square = square.Rectangle(
-            size_pixels_height=image_size_pixels_height, size_pixels_width=image_size_pixels_width, meters_per_pixel=meters_per_pixel
+            size_pixels_height=image_size_pixels_height,
+            size_pixels_width=image_size_pixels_width,
+            meters_per_pixel=meters_per_pixel,
         )
 
 
@@ -404,7 +408,9 @@ class ZarrDataSource(ImageDataSource):
     channels: Iterable[str] = None
     consolidated: bool = True
 
-    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post init"""
         super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         self._data = None

@@ -37,7 +37,9 @@ class SatelliteDataSource(ZarrDataSource):
     time_resolution_minutes: int = 5
     keep_dawn_dusk_hours: int = 0
 
-    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post Init"""
         assert len(self.channels) > 0, "channels cannot be empty!"
         assert image_size_pixels_height > 0, "image_size_pixels_height cannot be <= 0!"

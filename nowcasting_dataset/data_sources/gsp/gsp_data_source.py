@@ -64,7 +64,9 @@ class GSPDataSource(ImageDataSource):
     # Only load metadata
     metadata_only: bool = False
 
-    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """
         Set random seed and load data
         """

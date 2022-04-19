@@ -23,7 +23,8 @@ input_data:
       - lcc
       - mcc
       - hcc
-    nwp_image_size_pixels: 64
+    nwp_image_size_pixels_height: 64
+    nwp_image_size_pixels_width: 64
     nwp_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/NWP/UK_Met_Office/UKV/zarr/UKV_intermediate_version_3.zarr
     forecast_minutes: 180
     history_minutes: 60
@@ -55,7 +56,8 @@ input_data:
       - VIS008
       - WV_062
       - WV_073
-    satellite_image_size_pixels: 24
+    satellite_image_size_pixels_height: 24
+    satellite_image_size_pixels_width: 48
     satellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_uk.zarr
     keep_dawn_dusk_hours: 2
 
@@ -63,7 +65,8 @@ input_data:
   hrvsatellite:
     hrvsatellite_channels:
       - HRV
-    hrvsatellite_image_size_pixels: 64
+    hrvsatellite_image_size_pixels_height: 64
+    hrvsatellite_image_size_pixels_width: 128
     hrvsatellite_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_hrv_uk.zarr
 
   # ------------------------- Sun ------------------------

@@ -61,16 +61,19 @@ class OpticalFlowDataSource(DataSource):
 
     zarr_path: Union[Path, str]
     channels: Iterable[str]
-    input_image_size_pixels: int = 64
+    input_image_size_pixels_height: int = 64
+    input_image_size_pixels_width: int = 64
     meters_per_pixel: int = 2000
-    output_image_size_pixels: int = 32
+    output_image_size_pixels_height: int = 32
+    output_image_size_pixels_width: int = 32
     source_data_source_class_name: str = "SatelliteDataSource"
     time_resolution_minutes: int = 5
 
     def __post_init__(self):  # noqa
-        assert self.output_image_size_pixels <= self.input_image_size_pixels, (
+        assert self.output_image_size_pixels_height <= self.input_image_size_pixels_height and self.output_image_size_pixels_width <= self.input_image_size_pixels_width, (
             "output_image_size_pixels must be equal to or smaller than input_image_size_pixels"
-            f" {self.output_image_size_pixels=}, {self.input_image_size_pixels=}"
+            f" {self.output_image_size_pixels_height=}, {self.input_image_size_pixels_height=}"
+            f" {self.output_image_size_pixels_width=}, {self.input_image_size_pixels_width=}"
         )
 
         super().__post_init__()
@@ -88,7 +91,8 @@ class OpticalFlowDataSource(DataSource):
         ]
         self.source_data_source = source_data_source_class(
             zarr_path=self.zarr_path,
-            image_size_pixels=self.input_image_size_pixels,
+            image_size_pixels_height=self.input_image_size_pixels_height,
+            image_size_pixels_width=self.input_image_size_pixels_width,
             history_minutes=self.history_minutes,
             forecast_minutes=0,
             channels=self.channels,
@@ -155,7 +159,7 @@ class OpticalFlowDataSource(DataSource):
 
         # Select the center crop.
         satellite_data_cropped = satellite_data.isel(time=0, channels=0)
-        satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels)
+        satellite_data_cropped = crop_center(satellite_data_cropped, self.output_image_size_pixels_height, self.output_image_size_pixels_width)
 
         # Put into DataArray:
         predictions_data_array = xr.DataArray(
@@ -202,8 +206,8 @@ class OpticalFlowDataSource(DataSource):
         prediction_block = np.full(
             shape=(
                 self.forecast_length,
-                self.output_image_size_pixels,
-                self.output_image_size_pixels,
+                self.output_image_size_pixels_height,
+                self.output_image_size_pixels_width,
                 n_channels,
             ),
             fill_value=-1,
@@ -233,7 +237,7 @@ class OpticalFlowDataSource(DataSource):
             for prediction_timestep in range(self.forecast_length):
                 flow = optical_flow * (prediction_timestep + 1)
                 warped_image = remap_image(image=t0_image, flow=flow)
-                warped_image = crop_center(warped_image, self.output_image_size_pixels)
+                warped_image = crop_center(warped_image, self.output_image_size_pixels_height, self.output_image_size_pixels_width)
                 prediction_block[prediction_timestep, :, :, channel_i] = warped_image
 
         data_array = self._put_predictions_into_data_array(

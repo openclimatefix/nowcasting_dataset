@@ -30,23 +30,25 @@ class SatelliteDataSource(ZarrDataSource):
     """Satellite Data Source."""
 
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES[1:]
-    image_size_pixels: InitVar[int] = 128
+    image_size_pixels_height: InitVar[int] = 128
+    image_size_pixels_width: InitVar[int] = 256
     meters_per_pixel: InitVar[int] = 2_000
     logger = _LOG
     time_resolution_minutes: int = 5
     keep_dawn_dusk_hours: int = 0
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int):
         """Post Init"""
         assert len(self.channels) > 0, "channels cannot be empty!"
-        assert image_size_pixels > 0, "image_size_pixels cannot be <= 0!"
+        assert image_size_pixels_height > 0, "image_size_pixels_height cannot be <= 0!"
+        assert image_size_pixels_width > 0, "image_size_pixels_width cannot be <= 0!"
         assert meters_per_pixel > 0, "meters_per_pixel cannot be <= 0!"
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (
             self.total_seq_length,
-            image_size_pixels,
-            image_size_pixels,
+            image_size_pixels_height,
+            image_size_pixels_width,
             n_channels,
         )
         self._osgb_to_geostationary: Callable = None

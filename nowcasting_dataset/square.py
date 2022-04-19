@@ -49,6 +49,41 @@ class Square:
             right=x_center_osgb + self._half_size_meters,
         )
 
+class Rectangle:
+    """Class for computing bounding box for satellite imagery."""
+
+    def __init__(self, size_pixels_height: int, size_pixels_width: int, meters_per_pixel: Number):
+        """
+        Init
+
+        Args:
+            size_pixels: number of pixels
+            meters_per_pixel: how many meters for each pixel
+        """
+        self.size_pixels_height = size_pixels_height
+        self.size_pixels_width = size_pixels_width
+        size_meters_height = size_pixels_height * meters_per_pixel
+        self._half_size_meters_height = size_meters_height / 2
+        size_meters_width = size_pixels_width * meters_per_pixel
+        self._half_size_meters_width = size_meters_width / 2
+
+    def bounding_box_centered_on(self, x_center_osgb: Number, y_center_osgb: Number) -> BoundingBox:
+        """
+        Get bounding box from a centre
+
+        Args:
+            x_center_osgb: x center of the bounding box
+            y_center_osgb: y center of the bounding box
+
+        Returns: Bounding box
+
+        """
+        return BoundingBox(
+            top=y_center_osgb + self._half_size_meters_height,
+            bottom=y_center_osgb - self._half_size_meters_height,
+            left=x_center_osgb - self._half_size_meters_width,
+            right=x_center_osgb + self._half_size_meters_width,
+        )
 
 def get_bounding_box_mask(bounding_box: BoundingBox, x: Array, y: Array) -> Array:
     """

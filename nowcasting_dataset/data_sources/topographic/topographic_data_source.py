@@ -89,14 +89,14 @@ class TopographicDataSource(ImageDataSource):
             # Useful if using different spatially sized grids
             selected_data = selected_data.rio.reproject(
                 dst_crs=selected_data.attrs["crs"],
-                shape=(self._square.size_pixels, self._square.size_pixels),
+                shape=(self._square.size_pixels_height, self._square.size_pixels_width),
                 resampling=Resampling.bilinear,
             )
 
         # selected_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
-            x_osgb=slice(0, self._square.size_pixels), y_osgb=slice(0, self._square.size_pixels)
+            x_osgb=slice(0, self._square.size_pixels_wisth), y_osgb=slice(0, self._square.size_pixels_height)
         )
 
         selected_data = self._post_process_example(selected_data, t0_datetime_utc)

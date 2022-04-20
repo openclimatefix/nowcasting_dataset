@@ -58,7 +58,8 @@ class Rectangle:
         Init
 
         Args:
-            size_pixels: number of pixels
+            size_pixels_height: number of pixels for height
+            size_pixels_width: number of pixels for width
             meters_per_pixel: how many meters for each pixel
         """
         self.size_pixels_height = size_pixels_height

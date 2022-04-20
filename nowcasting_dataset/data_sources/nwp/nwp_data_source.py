@@ -63,7 +63,8 @@ class NWPDataSource(ZarrDataSource):
         Post init
 
         Args:
-            image_size_pixels: number of pixels in image
+            image_size_pixels_height: number of pixels in image height
+            image_size_pixels_width: number of pixels in image width
             meters_per_pixel: how many meteres for each pixel
 
         """

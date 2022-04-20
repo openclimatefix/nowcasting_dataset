@@ -156,8 +156,6 @@ class SatelliteDataSource(ZarrDataSource):
         )
         half_image_size_pixels_height = self._square.size_pixels_height // 2
         half_image_size_pixels_width = self._square.size_pixels_width // 2
-        # TODO Do it per x and y coordinate, as non-square cutouts could mean it falls within the area of data
-        # but would be calculated as outside of it.
         half_image_size_pixels = max(half_image_size_pixels_height, half_image_size_pixels_width)
         min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
         max_x_and_y_index = x_and_y_index_at_center + half_image_size_pixels

@@ -84,8 +84,8 @@ def make_fake_batch(configuration: Configuration, temporally_align_examples: boo
         topographic=topographic_fake(
             batch_size=batch_size,
             metadata=metadata,
-            image_size_pixels_height=configuration.input_data.topographic.topographic_image_size_pixels_height,
-            image_size_pixels_width=configuration.input_data.topographic.topographic_image_size_pixels_width,
+            image_size_pixels_height=configuration.input_data.topographic.topographic_image_size_pixels_height,  # noqa
+            image_size_pixels_width=configuration.input_data.topographic.topographic_image_size_pixels_width,  # noqa
         ),
     )
 

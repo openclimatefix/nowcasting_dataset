@@ -265,8 +265,8 @@ class Satellite(DataSourceMixin, TimeResolutionMixin):
     satellite_image_size_pixels_width: int = Field(
         IMAGE_SIZE_PIXELS_FIELD.default // 3,
         description="The number of pixels of the region of interest for non-HRV satellite "
-                    "channels.",
-        )
+        "channels.",
+    )
     satellite_meters_per_pixel: int = Field(
         METERS_PER_PIXEL_FIELD.default * 3,
         description="The number of meters per pixel for non-HRV satellite channels.",
@@ -344,7 +344,7 @@ class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
             " mean that, even after the image has been flowed, all edges of the output image are"
             " real pixels values, and not NaNs."
         ),
-        )
+    )
     opticalflow_output_image_size_pixels_width: int = Field(
         IMAGE_SIZE_PIXELS,
         description=(

@@ -347,8 +347,12 @@ def hrv_satellite_fake(
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
     batch_size = configuration.process.batch_size
-    image_size_pixels_height = configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels_height
-    image_size_pixels_width = configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels_width
+    image_size_pixels_height = (
+        configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels_height
+    )
+    image_size_pixels_width = (
+        configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels_width
+    )
     history_seq_length = configuration.input_data.hrvsatellite.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.hrvsatellite.seq_length_5_minutes
 
@@ -393,8 +397,12 @@ def optical_flow_fake(
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
     batch_size = configuration.process.batch_size
-    image_size_pixels_height = configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_height
-    image_size_pixels_width = configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_width
+    image_size_pixels_height = (
+        configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_height
+    )
+    image_size_pixels_width = (
+        configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_width
+    )
     history_seq_length = configuration.input_data.opticalflow.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.opticalflow.seq_length_5_minutes
     satellite_channels = configuration.input_data.opticalflow.opticalflow_channels
@@ -455,7 +463,12 @@ def sun_fake(
     return Sun(xr_dataset)
 
 
-def topographic_fake(batch_size, image_size_pixels_height, image_size_pixels_width, metadata: Optional[Metadata] = None):
+def topographic_fake(
+    batch_size,
+    image_size_pixels_height,
+    image_size_pixels_width,
+    metadata: Optional[Metadata] = None,
+):
     """Create fake data"""
 
     if metadata is None:
@@ -513,7 +526,10 @@ def create_image_array(
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
     x, y = make_random_image_coords_osgb(
-        size_y=image_size_pixels_height, size_x=image_size_pixels_width, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
+        size_y=image_size_pixels_height,
+        size_x=image_size_pixels_width,
+        x_center_osgb=x_center_osgb,
+        y_center_osgb=y_center_osgb,
     )
 
     time = pd.date_range(end=t0_datetime_utc, freq=freq, periods=history_seq_length + 1).union(

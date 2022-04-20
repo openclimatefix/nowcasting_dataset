@@ -71,8 +71,4 @@ def test_sun():
 
 def test_topo():
     """Test topo fake"""
-    _ = topographic_fake(
-        batch_size=4,
-        image_size_pixels_height=64,
-        image_size_pixels_width=64
-    )
+    _ = topographic_fake(batch_size=4, image_size_pixels_height=64, image_size_pixels_width=64)

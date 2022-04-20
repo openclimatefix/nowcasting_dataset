@@ -66,6 +66,6 @@ def crop_center(
     half_output_image_size_pixels_width = output_image_size_pixels_width // 2
     start_x = (input_size_x // 2) - half_output_image_size_pixels_width
     start_y = (input_size_y // 2) - half_output_image_size_pixels_height
-    end_x = start_x + half_output_image_size_pixels_width
-    end_y = start_y + half_output_image_size_pixels_height
+    end_x = start_x + output_image_size_pixels_width
+    end_y = start_y + output_image_size_pixels_height
     return image[start_y:end_y, start_x:end_x]

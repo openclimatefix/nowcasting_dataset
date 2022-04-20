@@ -29,8 +29,10 @@ def _get_optical_flow_data_source(
         channels=("IR_016",),
         history_minutes=history_minutes,
         forecast_minutes=120,
-        input_image_size_pixels=64,
-        output_image_size_pixels=32,
+        input_image_size_pixels_height=64,
+        output_image_size_pixels_height=32,
+        input_image_size_pixels_width=64,
+        output_image_size_pixels_width=32,
     )
 
 

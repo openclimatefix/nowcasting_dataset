@@ -40,7 +40,8 @@ def sat_filename(use_cloud_data: bool) -> Path:  # noqa: D103
 @pytest.fixture
 def sat_data_source(sat_filename: Path):  # noqa: D103
     return SatelliteDataSource(
-        image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
+        image_size_pixels_height=pytest.IMAGE_SIZE_PIXELS,
+        image_size_pixels_width=pytest.IMAGE_SIZE_PIXELS,
         zarr_path=sat_filename,
         history_minutes=0,
         forecast_minutes=15,
@@ -62,7 +63,8 @@ def hrv_sat_filename(use_cloud_data: bool) -> Path:  # noqa: D103
 @pytest.fixture
 def hrv_sat_data_source(hrv_sat_filename: Path):  # noqa: D103
     return SatelliteDataSource(
-        image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
+        image_size_pixels_height=pytest.IMAGE_SIZE_PIXELS,
+        image_size_pixels_width=pytest.IMAGE_SIZE_PIXELS,
         zarr_path=hrv_sat_filename,
         history_minutes=0,
         forecast_minutes=15,

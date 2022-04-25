@@ -207,7 +207,8 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
         description="The number of PV systems samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
     )
-    pv_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    pv_image_size_pixels_height: int = IMAGE_SIZE_PIXELS_FIELD
+    pv_image_size_pixels_width: int = IMAGE_SIZE_PIXELS_FIELD
     pv_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
     get_center: bool = Field(
         False,
@@ -256,10 +257,15 @@ class Satellite(DataSourceMixin, TimeResolutionMixin):
     satellite_channels: tuple = Field(
         SAT_VARIABLE_NAMES[1:], description="the satellite channels that are used"
     )
-    satellite_image_size_pixels: int = Field(
+    satellite_image_size_pixels_height: int = Field(
         IMAGE_SIZE_PIXELS_FIELD.default // 3,
-        description="The number of pixels of the region of interest for non-HRV satellite "
-        "channels.",
+        description="The number of pixels of the height of the region of interest"
+        " for non-HRV satellite channels.",
+    )
+    satellite_image_size_pixels_width: int = Field(
+        IMAGE_SIZE_PIXELS_FIELD.default // 3,
+        description="The number of pixels of the width of the region "
+        "of interest for non-HRV satellite channels.",
     )
     satellite_meters_per_pixel: int = Field(
         METERS_PER_PIXEL_FIELD.default * 3,
@@ -288,7 +294,8 @@ class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     )
     # HRV is 3x the resolution, so to cover the same area, its 1/3 the meters per pixel and 3
     # time the number of pixels
-    hrvsatellite_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    hrvsatellite_image_size_pixels_height: int = IMAGE_SIZE_PIXELS_FIELD
+    hrvsatellite_image_size_pixels_width: int = IMAGE_SIZE_PIXELS_FIELD
     hrvsatellite_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
@@ -313,19 +320,35 @@ class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
     # Duration of the optical flow predictions.
 
     opticalflow_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
-    opticalflow_input_image_size_pixels: int = Field(
+    opticalflow_input_image_size_pixels_height: int = Field(
         IMAGE_SIZE_PIXELS * 2,
         description=(
-            "The *input* image size (i.e. the image size to load off disk)."
+            "The *input* image height (i.e. the image size to load off disk)."
             " This should be larger than output_image_size_pixels to provide sufficient border to"
             " mean that, even after the image has been flowed, all edges of the output image are"
             " real pixels values, and not NaNs."
         ),
     )
-    opticalflow_output_image_size_pixels: int = Field(
+    opticalflow_output_image_size_pixels_height: int = Field(
         IMAGE_SIZE_PIXELS,
         description=(
-            "The size of the images after optical flow has been applied. The output image is a"
+            "The height of the images after optical flow has been applied. The output image is a"
+            " center-crop of the input image, after it has been flowed."
+        ),
+    )
+    opticalflow_input_image_size_pixels_width: int = Field(
+        IMAGE_SIZE_PIXELS * 2,
+        description=(
+            "The *input* image width (i.e. the image size to load off disk)."
+            " This should be larger than output_image_size_pixels to provide sufficient border to"
+            " mean that, even after the image has been flowed, all edges of the output image are"
+            " real pixels values, and not NaNs."
+        ),
+    )
+    opticalflow_output_image_size_pixels_width: int = Field(
+        IMAGE_SIZE_PIXELS,
+        description=(
+            "The width of the images after optical flow has been applied. The output image is a"
             " center-crop of the input image, after it has been flowed."
         ),
     )
@@ -351,7 +374,8 @@ class NWP(DataSourceMixin):
         description="The path which holds the NWP zarr.",
     )
     nwp_channels: tuple = Field(NWP_VARIABLE_NAMES, description="the channels used in the nwp data")
-    nwp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    nwp_image_size_pixels_height: int = IMAGE_SIZE_PIXELS_FIELD
+    nwp_image_size_pixels_width: int = IMAGE_SIZE_PIXELS_FIELD
     nwp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 
@@ -364,7 +388,8 @@ class GSP(DataSourceMixin, StartEndDatetimeMixin):
         description="The number of GSP samples per example. "
         "If there are less in the ROI then the data is padded with zeros. ",
     )
-    gsp_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    gsp_image_size_pixels_height: int = IMAGE_SIZE_PIXELS_FIELD
+    gsp_image_size_pixels_width: int = IMAGE_SIZE_PIXELS_FIELD
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
     metadata_only: bool = Field(False, description="Option to only load metadata.")
 
@@ -388,7 +413,8 @@ class Topographic(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/Topographic/europe_dem_1km_osgb.tif",
         description="Path to the GeoTIFF Topographic data source",
     )
-    topographic_image_size_pixels: int = IMAGE_SIZE_PIXELS_FIELD
+    topographic_image_size_pixels_height: int = IMAGE_SIZE_PIXELS_FIELD
+    topographic_image_size_pixels_width: int = IMAGE_SIZE_PIXELS_FIELD
     topographic_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
 
 

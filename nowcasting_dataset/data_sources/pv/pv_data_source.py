@@ -45,13 +45,15 @@ class PVDataSource(ImageDataSource):
     load_from_gcs: bool = True  # option to load data from gcs, or local file
     get_center: bool = True
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post Init"""
 
         if type(self.files_groups[0]) == dict:
             self.files_groups = [PVFiles(**files) for files in self.files_groups]
 
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
 
         self.rng = np.random.default_rng()
         self.load()
@@ -241,7 +243,7 @@ class PVDataSource(ImageDataSource):
         """
         logger.debug(f"Getting PV example data for {x_center_osgb} and {y_center_osgb}")
 
-        bounding_box = self._square.bounding_box_centered_on(
+        bounding_box = self._rectangle.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         x = self.pv_metadata.location_x

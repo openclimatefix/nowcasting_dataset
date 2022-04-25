@@ -154,8 +154,8 @@ class SatelliteDataSource(ZarrDataSource):
         x_and_y_index_at_center = pd.Series(
             {"x_index_at_center": x_index_at_center, "y_index_at_center": y_index_at_center}
         )
-        half_image_size_pixels_height = self._square.size_pixels_height // 2
-        half_image_size_pixels_width = self._square.size_pixels_width // 2
+        half_image_size_pixels_height = self._rectangle.size_pixels_height // 2
+        half_image_size_pixels_width = self._rectangle.size_pixels_width // 2
         half_image_size_pixels = max(half_image_size_pixels_height, half_image_size_pixels_width)
         min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
         max_x_and_y_index = x_and_y_index_at_center + half_image_size_pixels
@@ -173,7 +173,7 @@ class SatelliteDataSource(ZarrDataSource):
         # with a helpful message:
         if suggested_reduction_of_image_size_pixels > 0:
             new_suggested_image_size_pixels = (
-                self._square.size_pixels - suggested_reduction_of_image_size_pixels
+                self._rectangle.size_pixels - suggested_reduction_of_image_size_pixels
             )
             raise RuntimeError(
                 "Requested region of interest of satellite data steps outside of the available"
@@ -185,7 +185,7 @@ class SatelliteDataSource(ZarrDataSource):
                 f" y={max_x_and_y_index.y_index_at_center}."
                 f" In the Zarr data, len(x)={len(data_array.x_geostationary)},"
                 f" len(y)={len(data_array.y_geostationary)}."
-                f" Try reducing image_size_pixels from {self._square.size_pixels} to"
+                f" Try reducing image_size_pixels from {self._rectangle.size_pixels} to"
                 f" {new_suggested_image_size_pixels} pixels."
                 f" {self.history_length=}; {self.forecast_length=}; {x_center_osgb=};"
                 f" {y_center_osgb=}; {x_center_geostationary=}; {y_center_geostationary=};"

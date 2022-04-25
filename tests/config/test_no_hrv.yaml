@@ -23,7 +23,7 @@ input_data:
     satellite_channels:
       - IR_016
     satellite_image_size_pixels_height: 24
-    satellite_image_size_pixels_width: 24
+    satellite_image_size_pixels_width: 12
     satellite_zarr_path: tests/data/sat_data.zarr
   sun:
     sun_zarr_path: tests/data/sun/test.zarr
@@ -35,8 +35,8 @@ input_data:
     opticalflow_zarr_path: tests/data/sat_data.zarr
     opticalflow_input_image_size_pixels_height: 32
     opticalflow_output_image_size_pixels_height: 8
-    opticalflow_input_image_size_pixels_width: 32
-    opticalflow_output_image_size_pixels_width: 8
+    opticalflow_input_image_size_pixels_width: 16
+    opticalflow_output_image_size_pixels_width: 4
     opticalflow_channels:
       - IR_016
 output_data:

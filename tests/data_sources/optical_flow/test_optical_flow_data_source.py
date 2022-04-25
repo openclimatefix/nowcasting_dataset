@@ -31,8 +31,8 @@ def _get_optical_flow_data_source(
         forecast_minutes=120,
         input_image_size_pixels_height=64,
         output_image_size_pixels_height=32,
-        input_image_size_pixels_width=64,
-        output_image_size_pixels_width=32,
+        input_image_size_pixels_width=32,
+        output_image_size_pixels_width=16,
     )
 
 
@@ -54,4 +54,4 @@ def test_optical_flow_get_example(
             t0_datetime_utc=t0_dt, x_center_osgb=10_000, y_center_osgb=10_000
         )
     )
-    assert example["data"].shape == (n_seq, 32, 32, 1)  # timesteps, height, width, channels
+    assert example["data"].shape == (n_seq, 32, 16, 1)  # timesteps, height, width, channels

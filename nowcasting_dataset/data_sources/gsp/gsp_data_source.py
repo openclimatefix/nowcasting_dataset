@@ -454,7 +454,7 @@ class GSPDataSource(ImageDataSource):
         logger.debug(f"Getting all gsp in ROI ({x_center_osgb=},{y_center_osgb=})")
 
         # creating bounding box
-        bounding_box = self._square.bounding_box_centered_on(
+        bounding_box = self._rectangle.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
 

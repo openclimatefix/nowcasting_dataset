@@ -78,8 +78,8 @@ class NWPDataSource(ZarrDataSource):
         )
         _LOG.info(
             f"NWPDataSource instantiated with {self.channels=},"
-            f" {self._square.size_pixels_height=},"
-            f" {self._square.size_pixels_width=},"
+            f" {self._rectangle.size_pixels_height=},"
+            f" {self._rectangle.size_pixels_width=},"
             f" {self.zarr_path=}"
         )
 

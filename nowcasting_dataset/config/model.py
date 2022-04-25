@@ -259,13 +259,13 @@ class Satellite(DataSourceMixin, TimeResolutionMixin):
     )
     satellite_image_size_pixels_height: int = Field(
         IMAGE_SIZE_PIXELS_FIELD.default // 3,
-        description="The number of pixels of the region of interest for non-HRV satellite "
-        "channels.",
+        description="The number of pixels of the height of the region of interest"
+        " for non-HRV satellite channels.",
     )
     satellite_image_size_pixels_width: int = Field(
         IMAGE_SIZE_PIXELS_FIELD.default // 3,
-        description="The number of pixels of the region of interest for non-HRV satellite "
-        "channels.",
+        description="The number of pixels of the width of the region "
+        "of interest for non-HRV satellite channels.",
     )
     satellite_meters_per_pixel: int = Field(
         METERS_PER_PIXEL_FIELD.default * 3,
@@ -323,7 +323,7 @@ class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
     opticalflow_input_image_size_pixels_height: int = Field(
         IMAGE_SIZE_PIXELS * 2,
         description=(
-            "The *input* image size (i.e. the image size to load off disk)."
+            "The *input* image height (i.e. the image size to load off disk)."
             " This should be larger than output_image_size_pixels to provide sufficient border to"
             " mean that, even after the image has been flowed, all edges of the output image are"
             " real pixels values, and not NaNs."
@@ -332,14 +332,14 @@ class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
     opticalflow_output_image_size_pixels_height: int = Field(
         IMAGE_SIZE_PIXELS,
         description=(
-            "The size of the images after optical flow has been applied. The output image is a"
+            "The height of the images after optical flow has been applied. The output image is a"
             " center-crop of the input image, after it has been flowed."
         ),
     )
     opticalflow_input_image_size_pixels_width: int = Field(
         IMAGE_SIZE_PIXELS * 2,
         description=(
-            "The *input* image size (i.e. the image size to load off disk)."
+            "The *input* image width (i.e. the image size to load off disk)."
             " This should be larger than output_image_size_pixels to provide sufficient border to"
             " mean that, even after the image has been flowed, all edges of the output image are"
             " real pixels values, and not NaNs."
@@ -348,7 +348,7 @@ class OpticalFlow(DataSourceMixin, TimeResolutionMixin):
     opticalflow_output_image_size_pixels_width: int = Field(
         IMAGE_SIZE_PIXELS,
         description=(
-            "The size of the images after optical flow has been applied. The output image is a"
+            "The width of the images after optical flow has been applied. The output image is a"
             " center-crop of the input image, after it has been flowed."
         ),
     )

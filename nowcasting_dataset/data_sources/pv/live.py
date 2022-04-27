@@ -67,7 +67,10 @@ def get_pv_power_from_database(history_duration: timedelta) -> pd.DataFrame:
             [(PVYield.from_orm(pv_yield)).__dict__ for pv_yield in pv_yields]
         )
 
-    logger.debug(f"Found {len(pv_yields_df)} pv yields")
+    if len(pv_yields_df):
+        logger.warning("Found no pv yields, this might cause an error")
+    else:
+        logger.debug(f"Found {len(pv_yields_df)} pv yields")
 
     # get the system id from 'pv_system_id=xxxx provider=.....'
     print(pv_yields_df.columns)

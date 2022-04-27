@@ -1,4 +1,5 @@
 """ Function to get data from live database """
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import List
@@ -11,6 +12,8 @@ from nowcasting_datamodel.read.read_pv import get_pv_systems, get_pv_yield
 
 from nowcasting_dataset.data_sources.pv.utils import encode_label
 
+logger = logging.getLogger(__name__)
+
 
 def get_metadata_from_database() -> pd.DataFrame:
     """
@@ -19,6 +22,7 @@ def get_metadata_from_database() -> pd.DataFrame:
     Returns: pandas data frame with the following columns
         - latitude
         - longitude
+        - kwp
         The index is the pv_system_id
     """
 
@@ -63,7 +67,11 @@ def get_pv_power_from_database(history_duration: timedelta) -> pd.DataFrame:
             [(PVYield.from_orm(pv_yield)).__dict__ for pv_yield in pv_yields]
         )
 
+    logger.debug(f"Found {len(pv_yields_df)} pv yields")
+
     # get the system id from 'pv_system_id=xxxx provider=.....'
+    print(pv_yields_df.columns)
+    print(pv_yields_df["pv_system"])
     pv_yields_df["pv_system_id"] = (
         pv_yields_df["pv_system"].astype(str).str.split(" ").str[0].str.split("=").str[-1]
     )

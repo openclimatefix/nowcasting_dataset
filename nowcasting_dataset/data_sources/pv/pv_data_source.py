@@ -66,9 +66,10 @@ class PVDataSource(ImageDataSource):
 
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
-        for pv_files in self.files_groups:
-            for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
-                nd_fs_utils.check_path_exists(filename)
+        if not self.is_live:
+            for pv_files in self.files_groups:
+                for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
+                    nd_fs_utils.check_path_exists(filename)
 
     def load(self):
         """
@@ -112,8 +113,12 @@ class PVDataSource(ImageDataSource):
         else:
             pv_metadata = get_metadata_from_database()
 
+            logger.debug(f"Found {len(pv_metadata)} pv systems from database")
+
         # drop any systems with no lon or lat
         pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
+
+        logger.debug(f"Found {len(pv_metadata)} pv systems with locations")
 
         pv_metadata["location_x"], pv_metadata["location_y"] = geospatial.lat_lon_to_osgb(
             pv_metadata["latitude"], pv_metadata["longitude"]
@@ -127,12 +132,15 @@ class PVDataSource(ImageDataSource):
             "NORTH": 1_222_000,
             "SOUTH": -184_000,
         }
+
         self.pv_metadata = pv_metadata[
             (pv_metadata.location_x >= GEO_BOUNDARY_OSGB["WEST"])
             & (pv_metadata.location_x <= GEO_BOUNDARY_OSGB["EAST"])
             & (pv_metadata.location_y <= GEO_BOUNDARY_OSGB["NORTH"])
             & (pv_metadata.location_y >= GEO_BOUNDARY_OSGB["SOUTH"])
         ]
+
+        logger.debug(f"Found {len(pv_metadata)} pv systems")
 
     def _load_pv_power(self):
 
@@ -158,7 +166,9 @@ class PVDataSource(ImageDataSource):
             pv_power = pd.concat(pv_power_all, axis="columns")
 
         else:
-            get_pv_power_from_database(history_duration=self.history_duration)
+            pv_power = get_pv_power_from_database(history_duration=self.history_duration)
+            logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
+            logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
 
         assert not pv_power.columns.duplicated().any()
 
@@ -173,8 +183,19 @@ class PVDataSource(ImageDataSource):
         pv_power.dropna(axis="columns", how="all", inplace=True)
         pv_power.dropna(axis="index", how="all", inplace=True)
 
+        logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
+        logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
+
         # drop systems with over night power
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
+
+        logger.debug(
+            f"Found {len(pv_power)} pv power datetimes " f"after filtering for over night power  "
+        )
+        logger.debug(
+            f"Found {len(pv_power.columns)} pv power pv system ids "
+            f"after filtering for over night power"
+        )
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
         # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
@@ -184,6 +205,9 @@ class PVDataSource(ImageDataSource):
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
         print("pv_power = {:,.1f} MB".format(pv_power.values.nbytes / 1e6))
         self.pv_power = pv_power
+
+        logger.debug(f"Found {len(self.pv_power)} pv power datetimes")
+        logger.debug(f"Found {len(self.pv_power.columns)} pv power pv system ids")
 
         # get the max generation / capacity for each system
         self.pv_capacity = pv_power.max()
@@ -476,5 +500,5 @@ def drop_pv_systems_which_produce_overnight(pv_power: pd.DataFrame) -> pd.DataFr
     pv_data_at_night = pv_power.loc[pv_power.index.hour.isin(night_hours)]
     pv_above_threshold_at_night = (pv_data_at_night > NIGHT_YIELD_THRESHOLD).any()
     bad_systems = pv_power.columns[pv_above_threshold_at_night]
-    print(len(bad_systems), "bad PV systems found and removed!")
+    logger.debug(f"{len(bad_systems)} bad PV systems found and removed!")
     return pv_power.drop(columns=bad_systems)

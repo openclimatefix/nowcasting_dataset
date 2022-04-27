@@ -1,5 +1,6 @@
 """ functions for testing pv live """
 import os
+import tempfile
 from datetime import datetime
 
 import pytest
@@ -17,15 +18,16 @@ https://gist.github.com/kissgyorgy/e2365f25a213de44b9a2 helped me get going
 def db_connection_pv():
     """Create data connection"""
 
-    os.environ["DB_URL_PV"] = "sqlite:///test_pv.db"
-    url = os.getenv("DB_URL_PV", "sqlite:///test_pv.db")
+    with tempfile.NamedTemporaryFile(suffix=".db") as temp:
+        url = f"sqlite:///{temp.name}"
+        os.environ["DB_URL_PV"] = url
 
-    connection = DatabaseConnection(url=url, base=Base_PV)
-    Base_PV.metadata.create_all(connection.engine)
+        connection = DatabaseConnection(url=url, base=Base_PV)
+        Base_PV.metadata.create_all(connection.engine)
 
-    yield connection
+        yield connection
 
-    Base_PV.metadata.drop_all(connection.engine)
+        Base_PV.metadata.drop_all(connection.engine)
 
 
 @pytest.fixture(scope="function", autouse=True)

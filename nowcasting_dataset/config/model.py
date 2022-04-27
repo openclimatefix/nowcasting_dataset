@@ -227,6 +227,10 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
         description="Tthe CSV files describing each PV system.",
     )
 
+    is_live: bool = Field(
+        False, description="Option if to use live data from the nowcasting pv database"
+    )
+
     @classmethod
     def model_validation(cls, v):
         """Move old way of storing filenames to new way"""

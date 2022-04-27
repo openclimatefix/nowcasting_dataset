@@ -37,10 +37,6 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
 def test_get_example_and_batch(pv_yields_and_systems):
     """Test PVDataSource with data source from database"""
 
-    # Solar PV data (test data)
-    PV_DATA_FILENAME = "not needed"
-    PV_METADATA_FILENAME = "not needed"
-
     pv_data_source = PVDataSource(
         history_minutes=30,
         forecast_minutes=60,
@@ -50,13 +46,13 @@ def test_get_example_and_batch(pv_yields_and_systems):
         is_live=True,
         files_groups=[
             PVFiles(
-                pv_filename=PV_DATA_FILENAME,
-                pv_metadata_filename=PV_METADATA_FILENAME,
+                pv_filename="not needed",
+                pv_metadata_filename="not needed",
                 label="pvoutput",
             )
         ],
-        start_datetime=datetime.fromisoformat("2022-01-01 00:00:00.000"),
-        end_datetime=datetime.fromisoformat("2022-01-02 00:00:00.000"),
+        start_datetime=datetime.fromisoformat("2022-04-26 00:00:00.000"),
+        end_datetime=datetime.fromisoformat("2022-04-27 00:00:00.000"),
         load_azimuth_and_elevation=False,
         load_from_gcs=False,
     )

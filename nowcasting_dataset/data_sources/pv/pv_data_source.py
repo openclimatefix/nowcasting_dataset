@@ -65,11 +65,17 @@ class PVDataSource(ImageDataSource):
         self.load()
 
     def check_input_paths_exist(self) -> None:
-        """Check input paths exist.  If not, raise a FileNotFoundError."""
-        if not self.is_live:
-            for pv_files in self.files_groups:
-                for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
-                    nd_fs_utils.check_path_exists(filename)
+        """Check input paths exist.
+
+        If using live data, dont check Files, as we are loading data from the database
+        If not, raise a FileNotFoundError.
+        """
+        if self.is_live:
+            return None
+
+        for pv_files in self.files_groups:
+            for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
+                nd_fs_utils.check_path_exists(filename)
 
     def load(self):
         """

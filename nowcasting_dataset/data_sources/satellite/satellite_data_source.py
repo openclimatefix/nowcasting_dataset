@@ -1,4 +1,5 @@
 """ Satellite Data Source """
+import io
 import itertools
 import logging
 from dataclasses import InitVar, dataclass
@@ -7,6 +8,7 @@ from numbers import Number
 from typing import Callable, Iterable, Optional
 
 import dask
+import fsspec
 import numpy as np
 import pandas as pd
 import pyproj
@@ -411,18 +413,26 @@ def open_sat_data(
 
     # add logger to preprocess function
     p_dedupe_time_coords = partial(dedupe_time_coords, logger=logger)
+    if zarr_path.split(".")[-1] == "nc":
+        # loading netcdf file, download bytes and then load as xarray
+        with fsspec.open(zarr_path, mode="rb") as file:
+            file_bytes = file.read()
 
-    # Open datasets.
-    dataset = xr.open_mfdataset(
-        zarr_path,
-        chunks="auto",  # See issue #456 for why we use "auto".
-        mode="r",
-        engine="zarr",
-        concat_dim="time",
-        preprocess=p_dedupe_time_coords,
-        consolidated=consolidated,
-        combine="nested",
-    )
+        with io.BytesIO(file_bytes) as file:
+            dataset = xr.load_dataset(file, engine="h5netcdf")
+
+    else:
+        # Open datasets.
+        dataset = xr.open_mfdataset(
+            zarr_path,
+            chunks="auto",  # See issue #456 for why we use "auto".
+            mode="r",
+            engine="zarr",
+            concat_dim="time",
+            preprocess=p_dedupe_time_coords,
+            consolidated=consolidated,
+            combine="nested",
+        )
 
     # Rename
     # These renamings will no longer be necessary when the Zarr uses the 'correct' names,

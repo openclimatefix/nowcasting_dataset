@@ -411,18 +411,21 @@ def open_sat_data(
 
     # add logger to preprocess function
     p_dedupe_time_coords = partial(dedupe_time_coords, logger=logger)
+    if str(zarr_path).split(".")[-1] == "nc":
+        dataset = xr.load_dataset(str(zarr_path), engine="h5netcdf")
 
-    # Open datasets.
-    dataset = xr.open_mfdataset(
-        zarr_path,
-        chunks="auto",  # See issue #456 for why we use "auto".
-        mode="r",
-        engine="zarr",
-        concat_dim="time",
-        preprocess=p_dedupe_time_coords,
-        consolidated=consolidated,
-        combine="nested",
-    )
+    else:
+        # Open datasets.
+        dataset = xr.open_mfdataset(
+            zarr_path,
+            chunks="auto",  # See issue #456 for why we use "auto".
+            mode="r",
+            engine="zarr",
+            concat_dim="time",
+            preprocess=p_dedupe_time_coords,
+            consolidated=consolidated,
+            combine="nested",
+        )
 
     # Rename
     # These renamings will no longer be necessary when the Zarr uses the 'correct' names,

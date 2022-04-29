@@ -1,5 +1,4 @@
 """ Satellite Data Source """
-import io
 import itertools
 import logging
 from dataclasses import InitVar, dataclass
@@ -8,7 +7,6 @@ from numbers import Number
 from typing import Callable, Iterable, Optional
 
 import dask
-import fsspec
 import numpy as np
 import pandas as pd
 import pyproj
@@ -413,13 +411,8 @@ def open_sat_data(
 
     # add logger to preprocess function
     p_dedupe_time_coords = partial(dedupe_time_coords, logger=logger)
-    if zarr_path.split(".")[-1] == "nc":
-        # loading netcdf file, download bytes and then load as xarray
-        with fsspec.open(zarr_path, mode="rb") as file:
-            file_bytes = file.read()
-
-        with io.BytesIO(file_bytes) as file:
-            dataset = xr.load_dataset(file, engine="h5netcdf")
+    if str(zarr_path).split(".")[-1] == "nc":
+        dataset = xr.load_dataset(str(zarr_path), engine="h5netcdf")
 
     else:
         # Open datasets.

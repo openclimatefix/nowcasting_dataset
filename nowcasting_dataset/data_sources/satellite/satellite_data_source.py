@@ -412,7 +412,7 @@ def open_sat_data(
     # add logger to preprocess function
     p_dedupe_time_coords = partial(dedupe_time_coords, logger=logger)
     if str(zarr_path).split(".")[-1] == "zip":
-        dataset = xr.load_dataset("zip:///"+str(zarr_path))
+        dataset = xr.load_dataset("zip:///" + str(zarr_path))
 
     else:
         # Open datasets.

@@ -1,6 +1,4 @@
 """Test SatelliteDataSource."""
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -57,8 +55,7 @@ def _test_get_example(
     assert len(sat_data.x_geostationary.shape) == 1
 
 
-def test_padding():  # noqa: D103
-    sat_filename = Path("/home/jacob/Development/nowcasting_dataset/tests/data/sat_data.zarr")
+def test_padding(sat_filename):  # noqa: D103
     data_source = SatelliteDataSource(
         image_size_pixels_height=1024,
         image_size_pixels_width=1024,

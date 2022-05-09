@@ -11,7 +11,7 @@ extra_install_requires = (this_directory / "extra-requirements.txt").read_text()
 
 setup(
     name="nowcasting_dataset",
-    version="3.2.7",
+    version="3.2.8",
     license="MIT",
     description="Nowcasting Dataset",
     author="Jack Kelly, Peter Dudfield, Jacob Bieker",

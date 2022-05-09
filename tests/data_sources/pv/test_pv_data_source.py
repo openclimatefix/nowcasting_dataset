@@ -46,7 +46,8 @@ def test_get_example_and_batch():  # noqa: D103
     pv_data_source = PVDataSource(
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
         files_groups=[
             PVFiles(

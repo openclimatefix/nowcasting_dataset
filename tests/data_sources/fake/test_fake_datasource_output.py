@@ -28,7 +28,8 @@ def test_nwp(configuration):
     configuration.process.batch_size = 4
     configuration.input_data.nwp.history_minutes = 0
     configuration.input_data.nwp.forecast_minutes = 60
-    configuration.input_data.nwp.nwp_image_size_pixels = 64
+    configuration.input_data.nwp.nwp_image_size_pixels_height = 64
+    configuration.input_data.nwp.nwp_image_size_pixels_width = 64
     configuration.input_data.nwp.nwp_channels = ["test_channel"] * 8
 
     _ = nwp_fake(configuration=configuration)
@@ -51,7 +52,8 @@ def test_satellite(configuration):
     configuration.process.batch_size = 4
     configuration.input_data.satellite.history_minutes = 30
     configuration.input_data.satellite.forecast_minutes = 30
-    configuration.input_data.satellite.satellite_image_size_pixels = 64
+    configuration.input_data.satellite.satellite_image_size_pixels_height = 64
+    configuration.input_data.satellite.satellite_image_size_pixels_width = 64
     configuration.input_data.satellite.satellite_channels = ["test_channel"] * 8
 
     s = satellite_fake(configuration=configuration)
@@ -69,7 +71,4 @@ def test_sun():
 
 def test_topo():
     """Test topo fake"""
-    _ = topographic_fake(
-        batch_size=4,
-        image_size_pixels=64,
-    )
+    _ = topographic_fake(batch_size=4, image_size_pixels_height=64, image_size_pixels_width=64)

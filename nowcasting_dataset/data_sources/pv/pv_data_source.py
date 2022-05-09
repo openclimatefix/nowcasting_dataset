@@ -16,10 +16,15 @@ import xarray as xr
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
 from nowcasting_dataset.config.model import PVFiles
-from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE, PV_PROVIDERS
+from nowcasting_dataset.consts import DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
+from nowcasting_dataset.data_sources.pv.live import (
+    get_metadata_from_database,
+    get_pv_power_from_database,
+)
 from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.data_sources.pv.utils import encode_label
 from nowcasting_dataset.square import get_bounding_box_mask, get_closest_coordinate_order
 
 logger = logging.getLogger(__name__)
@@ -44,20 +49,30 @@ class PVDataSource(ImageDataSource):
     load_azimuth_and_elevation: bool = False
     load_from_gcs: bool = True  # option to load data from gcs, or local file
     get_center: bool = True
+    is_live: bool = False
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post Init"""
 
         if type(self.files_groups[0]) == dict:
             self.files_groups = [PVFiles(**files) for files in self.files_groups]
 
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
 
         self.rng = np.random.default_rng()
         self.load()
 
     def check_input_paths_exist(self) -> None:
-        """Check input paths exist.  If not, raise a FileNotFoundError."""
+        """Check input paths exist.
+
+        If using live data, dont check Files, as we are loading data from the database
+        If not, raise a FileNotFoundError.
+        """
+        if self.is_live:
+            return None
+
         for pv_files in self.files_groups:
             for filename in [pv_files.pv_filename, pv_files.pv_metadata_filename]:
                 nd_fs_utils.check_path_exists(filename)
@@ -68,6 +83,7 @@ class PVDataSource(ImageDataSource):
         """
         self._load_metadata()
         self._load_pv_power()
+
         self.pv_metadata, self.pv_power = align_pv_system_ids(self.pv_metadata, self.pv_power)
 
     @staticmethod
@@ -80,27 +96,35 @@ class PVDataSource(ImageDataSource):
         logger.debug(f"Loading PV metadata from {self.files_groups}")
 
         # collect all metadata together
-        pv_metadata = []
-        for pv_files in self.files_groups:
-            metadata_filename = pv_files.pv_metadata_filename
+        if not self.is_live:
+            pv_metadata = []
+            for pv_files in self.files_groups:
+                metadata_filename = pv_files.pv_metadata_filename
 
-            # read metadata file
-            metadata = pd.read_csv(metadata_filename, index_col="system_id")
+                # read metadata file
+                metadata = pd.read_csv(metadata_filename, index_col="system_id")
 
-            # encode index, to make sure the indexes are unique
-            metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
+                # encode index, to make sure the indexes are unique
+                metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
 
-            # filter for zero capacity
-            if pv_files.label == "pvoutput":
-                metadata = metadata[metadata["system_size_watts"] > 0]
-            elif pv_files.label == "passiv":
-                metadata = metadata[metadata["kwp"] > 0]
+                # filter for zero capacity
+                if pv_files.label == "pvoutput":
+                    metadata = metadata[metadata["system_size_watts"] > 0]
+                elif pv_files.label == "passiv":
+                    metadata = metadata[metadata["kwp"] > 0]
 
-            pv_metadata.append(metadata)
-        pv_metadata = pd.concat(pv_metadata)
+                pv_metadata.append(metadata)
+            pv_metadata = pd.concat(pv_metadata)
+
+        else:
+            pv_metadata = get_metadata_from_database()
+
+            logger.debug(f"Found {len(pv_metadata)} pv systems from database")
 
         # drop any systems with no lon or lat
         pv_metadata.dropna(subset=["longitude", "latitude"], how="any", inplace=True)
+
+        logger.debug(f"Found {len(pv_metadata)} pv systems with locations")
 
         pv_metadata["location_x"], pv_metadata["location_y"] = geospatial.lat_lon_to_osgb(
             pv_metadata["latitude"], pv_metadata["longitude"]
@@ -114,6 +138,7 @@ class PVDataSource(ImageDataSource):
             "NORTH": 1_222_000,
             "SOUTH": -184_000,
         }
+
         self.pv_metadata = pv_metadata[
             (pv_metadata.location_x >= GEO_BOUNDARY_OSGB["WEST"])
             & (pv_metadata.location_x <= GEO_BOUNDARY_OSGB["EAST"])
@@ -121,27 +146,36 @@ class PVDataSource(ImageDataSource):
             & (pv_metadata.location_y >= GEO_BOUNDARY_OSGB["SOUTH"])
         ]
 
+        logger.debug(f"Found {len(pv_metadata)} pv systems")
+
     def _load_pv_power(self):
 
         logger.debug(f"Loading PV Power data from {self.files_groups}")
 
-        # collect all PV power timeseries together
-        pv_power_all = []
-        for pv_files in self.files_groups:
-            filename = pv_files.pv_filename
+        if not self.is_live:
+            # collect all PV power timeseries together
+            pv_power_all = []
+            for pv_files in self.files_groups:
+                filename = pv_files.pv_filename
 
-            # get pv power data
-            pv_power = load_solar_pv_data(
-                filename, start_dt=self.start_datetime, end_dt=self.end_datetime
-            )
+                # get pv power data
+                pv_power = load_solar_pv_data(
+                    filename, start_dt=self.start_datetime, end_dt=self.end_datetime
+                )
 
-            # encode index, to make sure the columns are unique
-            new_columns = encode_label(indexes=pv_power.columns, label=pv_files.label)
-            pv_power.columns = new_columns
+                # encode index, to make sure the columns are unique
+                new_columns = encode_label(indexes=pv_power.columns, label=pv_files.label)
+                pv_power.columns = new_columns
 
-            pv_power_all.append(pv_power)
+                pv_power_all.append(pv_power)
 
-        pv_power = pd.concat(pv_power_all, axis="columns")
+            pv_power = pd.concat(pv_power_all, axis="columns")
+
+        else:
+            pv_power = get_pv_power_from_database(history_duration=self.history_duration)
+            logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
+            logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
+
         assert not pv_power.columns.duplicated().any()
 
         # A bit of hand-crafted cleaning
@@ -155,8 +189,19 @@ class PVDataSource(ImageDataSource):
         pv_power.dropna(axis="columns", how="all", inplace=True)
         pv_power.dropna(axis="index", how="all", inplace=True)
 
+        logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
+        logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
+
         # drop systems with over night power
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
+
+        logger.debug(
+            f"Found {len(pv_power)} pv power datetimes " f"after filtering for over night power  "
+        )
+        logger.debug(
+            f"Found {len(pv_power.columns)} pv power pv system ids "
+            f"after filtering for over night power"
+        )
 
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
         # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
@@ -166,6 +211,9 @@ class PVDataSource(ImageDataSource):
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
         print("pv_power = {:,.1f} MB".format(pv_power.values.nbytes / 1e6))
         self.pv_power = pv_power
+
+        logger.debug(f"Found {len(self.pv_power)} pv power datetimes")
+        logger.debug(f"Found {len(self.pv_power.columns)} pv power pv system ids")
 
         # get the max generation / capacity for each system
         self.pv_capacity = pv_power.max()
@@ -241,7 +289,7 @@ class PVDataSource(ImageDataSource):
         """
         logger.debug(f"Getting PV example data for {x_center_osgb} and {y_center_osgb}")
 
-        bounding_box = self._square.bounding_box_centered_on(
+        bounding_box = self._rectangle.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         x = self.pv_metadata.location_x
@@ -458,30 +506,5 @@ def drop_pv_systems_which_produce_overnight(pv_power: pd.DataFrame) -> pd.DataFr
     pv_data_at_night = pv_power.loc[pv_power.index.hour.isin(night_hours)]
     pv_above_threshold_at_night = (pv_data_at_night > NIGHT_YIELD_THRESHOLD).any()
     bad_systems = pv_power.columns[pv_above_threshold_at_night]
-    print(len(bad_systems), "bad PV systems found and removed!")
+    logger.debug(f"{len(bad_systems)} bad PV systems found and removed!")
     return pv_power.drop(columns=bad_systems)
-
-
-def encode_label(indexes: List[str], label: str):
-    """
-    Encode the label to a list of indexes.
-
-    The new encoding must be integers and unique.
-    It would be useful if the indexes can read and deciphered by humans.
-    This is done by times the original index by 10
-    and adding 1 for passive or 2 for other lables
-
-    Args:
-        indexes: list of indexes
-        label: either 'passiv' or 'pvoutput'
-
-    Returns: list of indexes encoded by label
-    """
-    assert label in PV_PROVIDERS
-    # this encoding does work if the number of pv providers is more than 10
-    assert len(PV_PROVIDERS) < 10
-
-    label_index = PV_PROVIDERS.index(label)
-    new_index = [str(int(col) * 10 + label_index) for col in indexes]
-
-    return new_index

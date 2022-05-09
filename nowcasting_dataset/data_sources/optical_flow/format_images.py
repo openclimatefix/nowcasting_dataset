@@ -41,27 +41,31 @@ def remap_image(
     return remapped_image
 
 
-def crop_center(image: np.ndarray, output_image_size_pixels: int) -> np.ndarray:
+def crop_center(
+    image: np.ndarray, output_image_size_pixels_height: int, output_image_size_pixels_width: int
+) -> np.ndarray:
     """
     Crop center of a 2D numpy image.
 
     Args:
         image: The input image to crop.
-        output_image_size_pixels: The requested size of the output image.
+        output_image_size_pixels_height: The requested size of the output image height.
+        output_image_size_pixels_width: The requested size of the output image width.
 
     Returns:
         The cropped image, of size output_image_size_pixels x output_image_size_pixels
     """
     input_size_y, input_size_x = image.shape
     assert (
-        input_size_x >= output_image_size_pixels
+        input_size_x >= output_image_size_pixels_width
     ), "output_image_size_pixels is larger than the input image!"
     assert (
-        input_size_y >= output_image_size_pixels
+        input_size_y >= output_image_size_pixels_height
     ), "output_image_size_pixels is larger than the input image!"
-    half_output_image_size_pixels = output_image_size_pixels // 2
-    start_x = (input_size_x // 2) - half_output_image_size_pixels
-    start_y = (input_size_y // 2) - half_output_image_size_pixels
-    end_x = start_x + output_image_size_pixels
-    end_y = start_y + output_image_size_pixels
+    half_output_image_size_pixels_height = output_image_size_pixels_height // 2
+    half_output_image_size_pixels_width = output_image_size_pixels_width // 2
+    start_x = (input_size_x // 2) - half_output_image_size_pixels_width
+    start_y = (input_size_y // 2) - half_output_image_size_pixels_height
+    end_x = start_x + output_image_size_pixels_width
+    end_y = start_y + output_image_size_pixels_height
     return image[start_y:end_y, start_x:end_x]

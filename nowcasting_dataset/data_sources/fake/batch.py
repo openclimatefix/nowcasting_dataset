@@ -84,7 +84,8 @@ def make_fake_batch(configuration: Configuration, temporally_align_examples: boo
         topographic=topographic_fake(
             batch_size=batch_size,
             metadata=metadata,
-            image_size_pixels=configuration.input_data.topographic.topographic_image_size_pixels,
+            image_size_pixels_height=configuration.input_data.topographic.topographic_image_size_pixels_height,  # noqa
+            image_size_pixels_width=configuration.input_data.topographic.topographic_image_size_pixels_width,  # noqa
         ),
     )
 
@@ -202,7 +203,8 @@ def nwp_fake(
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
     batch_size = configuration.process.batch_size
-    image_size_pixels = configuration.input_data.nwp.nwp_image_size_pixels
+    image_size_pixels_height = configuration.input_data.nwp.nwp_image_size_pixels_height
+    image_size_pixels_width = configuration.input_data.nwp.nwp_image_size_pixels_width
     history_seq_length = configuration.input_data.nwp.history_seq_length_60_minutes
     seq_length_60 = configuration.input_data.nwp.seq_length_60_minutes
     nwp_channels = configuration.input_data.nwp.nwp_channels
@@ -221,7 +223,8 @@ def nwp_fake(
             nwp_or_satellite="nwp",
             seq_length=seq_length_60,
             history_seq_length=history_seq_length,
-            image_size_pixels=image_size_pixels,
+            image_size_pixels_height=image_size_pixels_height,
+            image_size_pixels_width=image_size_pixels_width,
             channels=nwp_channels,
             freq="60T",
             t0_datetime_utc=t0_datetimes_utc[i],
@@ -297,7 +300,8 @@ def satellite_fake(
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
     batch_size = configuration.process.batch_size
-    image_size_pixels = configuration.input_data.satellite.satellite_image_size_pixels
+    image_size_pixels_height = configuration.input_data.satellite.satellite_image_size_pixels_height
+    image_size_pixels_width = configuration.input_data.satellite.satellite_image_size_pixels_width
     history_seq_length = configuration.input_data.satellite.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.satellite.seq_length_5_minutes
     satellite_channels = configuration.input_data.satellite.satellite_channels
@@ -316,7 +320,8 @@ def satellite_fake(
             nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
-            image_size_pixels=image_size_pixels,
+            image_size_pixels_height=image_size_pixels_height,
+            image_size_pixels_width=image_size_pixels_width,
             channels=satellite_channels,
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
@@ -342,7 +347,12 @@ def hrv_satellite_fake(
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
     batch_size = configuration.process.batch_size
-    image_size_pixels = configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels
+    image_size_pixels_height = (
+        configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels_height
+    )
+    image_size_pixels_width = (
+        configuration.input_data.hrvsatellite.hrvsatellite_image_size_pixels_width
+    )
     history_seq_length = configuration.input_data.hrvsatellite.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.hrvsatellite.seq_length_5_minutes
 
@@ -360,7 +370,8 @@ def hrv_satellite_fake(
             nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
-            image_size_pixels=image_size_pixels * 3,  # HRV images are 3x other images
+            image_size_pixels_height=image_size_pixels_height * 3,  # HRV images are 3x other images
+            image_size_pixels_width=image_size_pixels_width * 3,  # HRV images are 3x other images
             channels=SAT_VARIABLE_NAMES[0:1],
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
@@ -386,7 +397,12 @@ def optical_flow_fake(
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
     batch_size = configuration.process.batch_size
-    image_size_pixels = configuration.input_data.opticalflow.opticalflow_input_image_size_pixels
+    image_size_pixels_height = (
+        configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_height
+    )
+    image_size_pixels_width = (
+        configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_width
+    )
     history_seq_length = configuration.input_data.opticalflow.history_seq_length_5_minutes
     seq_length_5 = configuration.input_data.opticalflow.seq_length_5_minutes
     satellite_channels = configuration.input_data.opticalflow.opticalflow_channels
@@ -406,7 +422,8 @@ def optical_flow_fake(
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
             freq="5T",
-            image_size_pixels=image_size_pixels,
+            image_size_pixels_height=image_size_pixels_height,
+            image_size_pixels_width=image_size_pixels_width,
             channels=satellite_channels,
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
@@ -446,7 +463,12 @@ def sun_fake(
     return Sun(xr_dataset)
 
 
-def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata] = None):
+def topographic_fake(
+    batch_size,
+    image_size_pixels_height,
+    image_size_pixels_width,
+    metadata: Optional[Metadata] = None,
+):
     """Create fake data"""
 
     if metadata is None:
@@ -460,15 +482,16 @@ def topographic_fake(batch_size, image_size_pixels, metadata: Optional[Metadata]
     for i in range(batch_size):
 
         x, y = make_random_image_coords_osgb(
-            size=image_size_pixels,
+            size_x=image_size_pixels_width,
+            size_y=image_size_pixels_height,
             x_center_osgb=x_centers_osgb[i],
             y_center_osgb=y_centers_osgb[i],
         )
 
         xr_array = xr.DataArray(
             data=np.random.randn(
-                image_size_pixels,
-                image_size_pixels,
+                image_size_pixels_height,
+                image_size_pixels_width,
             ),
             dims=["x_osgb", "y_osgb"],
             coords=dict(
@@ -489,7 +512,8 @@ def create_image_array(
     nwp_or_satellite="nwp",
     seq_length=19,
     history_seq_length=5,
-    image_size_pixels=64,
+    image_size_pixels_height=64,
+    image_size_pixels_width=64,
     channels=SAT_VARIABLE_NAMES,
     freq="5T",
     t0_datetime_utc: Optional = None,
@@ -502,7 +526,10 @@ def create_image_array(
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
     x, y = make_random_image_coords_osgb(
-        size=image_size_pixels, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
+        size_y=image_size_pixels_height,
+        size_x=image_size_pixels_width,
+        x_center_osgb=x_center_osgb,
+        y_center_osgb=y_center_osgb,
     )
 
     time = pd.date_range(end=t0_datetime_utc, freq=freq, periods=history_seq_length + 1).union(
@@ -528,7 +555,7 @@ def create_image_array(
             np.random.uniform(
                 0,
                 200,
-                size=(seq_length, image_size_pixels, image_size_pixels, len(channels)),
+                size=(seq_length, image_size_pixels_height, image_size_pixels_width, len(channels)),
             )
         ),
         coords=coords,

@@ -22,7 +22,8 @@ def sat():
         zarr_path=filename,
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=24,
+        image_size_pixels_height=24,
+        image_size_pixels_width=24,
         meters_per_pixel=6000,
         channels=("IR_016",),
     )
@@ -38,7 +39,8 @@ def hrvsat():
         zarr_path=filename,
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
         channels=("HRV",),
     )
@@ -57,7 +59,8 @@ def gsp():
         end_datetime=datetime(2020, 4, 2),
         history_minutes=30,
         forecast_minutes=60,
-        image_size_pixels=64,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
         meters_per_pixel=2000,
     )
 

@@ -30,23 +30,27 @@ class SatelliteDataSource(ZarrDataSource):
     """Satellite Data Source."""
 
     channels: Optional[Iterable[str]] = SAT_VARIABLE_NAMES[1:]
-    image_size_pixels: InitVar[int] = 128
+    image_size_pixels_height: InitVar[int] = 128
+    image_size_pixels_width: InitVar[int] = 256
     meters_per_pixel: InitVar[int] = 2_000
     logger = _LOG
     time_resolution_minutes: int = 5
     keep_dawn_dusk_hours: int = 0
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post Init"""
         assert len(self.channels) > 0, "channels cannot be empty!"
-        assert image_size_pixels > 0, "image_size_pixels cannot be <= 0!"
+        assert image_size_pixels_height > 0, "image_size_pixels_height cannot be <= 0!"
+        assert image_size_pixels_width > 0, "image_size_pixels_width cannot be <= 0!"
         assert meters_per_pixel > 0, "meters_per_pixel cannot be <= 0!"
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (
             self.total_seq_length,
-            image_size_pixels,
-            image_size_pixels,
+            image_size_pixels_height,
+            image_size_pixels_width,
             n_channels,
         )
         self._osgb_to_geostationary: Callable = None
@@ -150,37 +154,54 @@ class SatelliteDataSource(ZarrDataSource):
         x_and_y_index_at_center = pd.Series(
             {"x_index_at_center": x_index_at_center, "y_index_at_center": y_index_at_center}
         )
-        half_image_size_pixels = self._square.size_pixels // 2
-        min_x_and_y_index = x_and_y_index_at_center - half_image_size_pixels
-        max_x_and_y_index = x_and_y_index_at_center + half_image_size_pixels
+        half_image_size_pixels_height = self._rectangle.size_pixels_height // 2
+        half_image_size_pixels_width = self._rectangle.size_pixels_width // 2
+        min_x_and_y_index_width = x_and_y_index_at_center - half_image_size_pixels_width
+        max_x_and_y_index_width = x_and_y_index_at_center + half_image_size_pixels_width
+        min_x_and_y_index_height = x_and_y_index_at_center - half_image_size_pixels_height
+        max_x_and_y_index_height = x_and_y_index_at_center + half_image_size_pixels_height
 
         # Check whether the requested region of interest steps outside of the available data:
-        suggested_reduction_of_image_size_pixels = (
+        suggested_reduction_of_image_size_pixels_width = (
             max(
-                (-min_x_and_y_index.min() if (min_x_and_y_index < 0).any() else 0),
-                (max_x_and_y_index.x_index_at_center - len(data_array.x_geostationary)),
-                (max_x_and_y_index.y_index_at_center - len(data_array.y_geostationary)),
+                (-min_x_and_y_index_width.min() if (min_x_and_y_index_width < 0).any() else 0),
+                (min_x_and_y_index_width.x_index_at_center - len(data_array.x_geostationary)),
+            )
+            * 2
+        )
+        suggested_reduction_of_image_size_pixels_height = (
+            max(
+                (-max_x_and_y_index_height.min() if (max_x_and_y_index_height < 0).any() else 0),
+                (max_x_and_y_index_height.y_index_at_center - len(data_array.y_geostationary)),
             )
             * 2
         )
         # If the requested region does step outside the available data then raise an exception
         # with a helpful message:
-        if suggested_reduction_of_image_size_pixels > 0:
-            new_suggested_image_size_pixels = (
-                self._square.size_pixels - suggested_reduction_of_image_size_pixels
+        if (
+            suggested_reduction_of_image_size_pixels_width > 0
+            or suggested_reduction_of_image_size_pixels_height > 0
+        ):
+            new_suggested_image_size_pixels_width = (
+                self._rectangle.size_pixels_width - suggested_reduction_of_image_size_pixels_width
+            )
+            new_suggested_image_size_pixels_height = (
+                self._rectangle.size_pixels_height - suggested_reduction_of_image_size_pixels_height
             )
             raise RuntimeError(
                 "Requested region of interest of satellite data steps outside of the available"
                 " geographical extent of the Zarr data.  The requested region of interest extends"
                 f" from pixel indicies"
-                f" x={min_x_and_y_index.x_index_at_center} to"
-                f" x={max_x_and_y_index.x_index_at_center},"
-                f" y={min_x_and_y_index.y_index_at_center} to"
-                f" y={max_x_and_y_index.y_index_at_center}."
+                f" x={min_x_and_y_index_width.x_index_at_center} to"
+                f" x={min_x_and_y_index_width.x_index_at_center},"
+                f" y={min_x_and_y_index_width.y_index_at_center} to"
+                f" y={min_x_and_y_index_width.y_index_at_center}."
                 f" In the Zarr data, len(x)={len(data_array.x_geostationary)},"
                 f" len(y)={len(data_array.y_geostationary)}."
-                f" Try reducing image_size_pixels from {self._square.size_pixels} to"
-                f" {new_suggested_image_size_pixels} pixels."
+                f" Try reducing image_size_pixels_height from {self._rectangle.size_pixels_height}"
+                f" to {new_suggested_image_size_pixels_height} pixels."
+                f" Try reducing image_size_pixels_width from {self._rectangle.size_pixels_width}"
+                f" to {new_suggested_image_size_pixels_width} pixels."
                 f" {self.history_length=}; {self.forecast_length=}; {x_center_osgb=};"
                 f" {y_center_osgb=}; {x_center_geostationary=}; {y_center_geostationary=};"
                 f" {min(data_array.x_geostationary.values)=};"
@@ -195,10 +216,11 @@ class SatelliteDataSource(ZarrDataSource):
         # e.g. isel(x=slice(0, 3)) will return the first, second, and third values.
         data_array = data_array.isel(
             x_geostationary=slice(
-                min_x_and_y_index.x_index_at_center, max_x_and_y_index.x_index_at_center
+                min_x_and_y_index_width.x_index_at_center, max_x_and_y_index_width.x_index_at_center
             ),
             y_geostationary=slice(
-                min_x_and_y_index.y_index_at_center, max_x_and_y_index.y_index_at_center
+                min_x_and_y_index_height.y_index_at_center,
+                max_x_and_y_index_height.y_index_at_center,
             ),
         )
         return data_array
@@ -389,18 +411,25 @@ def open_sat_data(
 
     # add logger to preprocess function
     p_dedupe_time_coords = partial(dedupe_time_coords, logger=logger)
+    if str(zarr_path).split(".")[-1] == "zip":
+        if "s3://" or "gs://" in str(zarr_path):
+            data_path = "zip::" + str(zarr_path)
+        else:
+            data_path = "zip://" + str(zarr_path)
+        dataset = xr.open_dataset(data_path, engine="zarr")
 
-    # Open datasets.
-    dataset = xr.open_mfdataset(
-        zarr_path,
-        chunks="auto",  # See issue #456 for why we use "auto".
-        mode="r",
-        engine="zarr",
-        concat_dim="time",
-        preprocess=p_dedupe_time_coords,
-        consolidated=consolidated,
-        combine="nested",
-    )
+    else:
+        # Open datasets.
+        dataset = xr.open_mfdataset(
+            zarr_path,
+            chunks="auto",  # See issue #456 for why we use "auto".
+            mode="r",
+            engine="zarr",
+            concat_dim="time",
+            preprocess=p_dedupe_time_coords,
+            consolidated=consolidated,
+            combine="nested",
+        )
 
     # Rename
     # These renamings will no longer be necessary when the Zarr uses the 'correct' names,

@@ -25,7 +25,6 @@ def load_yaml_configuration(filename: Union[str, Pathy]) -> Configuration:
     # load the file to a dictionary
     with fsspec.open(filename, mode="r") as stream:
         configuration = yaml.safe_load(stream)
-
     # turn into pydantic class
     configuration = Configuration(**configuration)
 

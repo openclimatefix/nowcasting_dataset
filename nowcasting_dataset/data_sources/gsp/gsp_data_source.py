@@ -64,11 +64,13 @@ class GSPDataSource(ImageDataSource):
     # Only load metadata
     metadata_only: bool = False
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """
         Set random seed and load data
         """
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         self.rng = np.random.default_rng()
         self.load()
 
@@ -452,7 +454,7 @@ class GSPDataSource(ImageDataSource):
         logger.debug(f"Getting all gsp in ROI ({x_center_osgb=},{y_center_osgb=})")
 
         # creating bounding box
-        bounding_box = self._square.bounding_box_centered_on(
+        bounding_box = self._rectangle.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
 

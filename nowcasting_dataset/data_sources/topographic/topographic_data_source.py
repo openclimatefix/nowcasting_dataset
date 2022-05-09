@@ -23,12 +23,14 @@ class TopographicDataSource(ImageDataSource):
 
     filename: str = None
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """Post init"""
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         self._shape_of_example = (
-            image_size_pixels,
-            image_size_pixels,
+            image_size_pixels_height,
+            image_size_pixels_width,
         )
 
         logger.info(f"Loading Topological data {self.filename}")
@@ -75,7 +77,7 @@ class TopographicDataSource(ImageDataSource):
         x_center_osgb = location.x_center_osgb
         y_center_osgb = location.y_center_osgb
 
-        bounding_box = self._square.bounding_box_centered_on(
+        bounding_box = self._rectangle.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         selected_data = self._data.sel(
@@ -87,14 +89,15 @@ class TopographicDataSource(ImageDataSource):
             # Useful if using different spatially sized grids
             selected_data = selected_data.rio.reproject(
                 dst_crs=selected_data.attrs["crs"],
-                shape=(self._square.size_pixels, self._square.size_pixels),
+                shape=(self._rectangle.size_pixels_height, self._rectangle.size_pixels_width),
                 resampling=Resampling.bilinear,
             )
 
         # selected_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:
         selected_data = selected_data.isel(
-            x_osgb=slice(0, self._square.size_pixels), y_osgb=slice(0, self._square.size_pixels)
+            x_osgb=slice(0, self._rectangle.size_pixels_width),
+            y_osgb=slice(0, self._rectangle.size_pixels_height),
         )
 
         selected_data = self._post_process_example(selected_data, t0_datetime_utc)

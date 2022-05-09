@@ -72,7 +72,7 @@ input_data:
   sun:
     forecast_minutes: 60
     history_minutes: 30
-    sun_zarr_path: gs://solar-pv-nowcasting-data/Sun/v0/sun.zarr
+    sun_zarr_path: gs://solar-pv-nowcasting-data/Sun/v2/sun.zarr
 
   # ------------------------- Topographic ----------------
   topographic:

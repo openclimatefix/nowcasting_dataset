@@ -71,7 +71,7 @@ input_data:
 
   # ------------------------- Sun ------------------------
   sun:
-    sun_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Sun/v1/sun.zarr
+    sun_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Sun/v2/sun.zarr
 
   # ------------------------- Topographic ----------------
   topographic:

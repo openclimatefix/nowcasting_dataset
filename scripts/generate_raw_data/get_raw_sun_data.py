@@ -25,6 +25,7 @@ from pathy import Pathy
 import nowcasting_dataset
 from nowcasting_dataset.config import load_yaml_configuration
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
+from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
     get_azimuth_and_elevation,
     save_to_zarr,
@@ -40,24 +41,27 @@ config = load_yaml_configuration(config_filename)
 
 
 # set up
-PV_METADATA_FILENAME = config.input_data.pv.pv_metadata_filenames
 sun_file_zarr = config.input_data.sun.sun_zarr_path
 
 # set up variables
 local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
-metadata_filename = f"gs://{PV_METADATA_FILENAME}"
 start_dt = datetime.fromisoformat("2019-01-01 00:00:00.000+00:00")
 end_dt = datetime.fromisoformat("2020-01-01 00:00:00.000+00:00")
 datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
 
 # PV metadata
-pv_metadata = pd.read_csv(metadata_filename, index_col="system_id")
-pv_metadata = pv_metadata.dropna(subset=["longitude", "latitude"])
-pv_metadata["location_x"], pv_metadata["location_y"] = lat_lon_to_osgb(
-    pv_metadata["latitude"], pv_metadata["longitude"]
+
+pv = PVDataSource(
+    history_minutes=30,
+    forecast_minutes=60,
+    files_groups=config.input_data.pv.pv_files_groups,
+    start_datetime=datetime(2010, 1, 1),
+    end_datetime=datetime(2030, 1, 2),
+    image_size_pixels=128,
+    meters_per_pixel=2000,
 )
-pv_x = pv_metadata["location_x"]
-pv_y = pv_metadata["location_y"]
+
+pv_x, pv_y = lat_lon_to_osgb(pv.pv_metadata["latitude"], pv.pv_metadata["longitude"])
 
 # GSP Metadata
 gsp_metadata = get_gsp_metadata_from_eso()
@@ -66,16 +70,16 @@ gsp_x = gsp_metadata["centroid_x"]
 gsp_y = gsp_metadata["centroid_y"]
 
 # join all sites together
-x_centers = list(pv_x.values) + list(gsp_x.values)
-y_centers = list(pv_y.values) + list(gsp_y.values)
+x_centers = list(pv_x) + list(gsp_x.values)
+y_centers = list(pv_y) + list(gsp_y.values)
 
 # make d
 azimuth, elevation = get_azimuth_and_elevation(
     x_centers=x_centers, y_centers=y_centers, datestamps=datestamps
 )
 
-azimuth = azimuth.astype(int)
-elevation = elevation.astype(int)
+azimuth = azimuth.astype("float32")
+elevation = elevation.astype("float32")
 
 # save it locally and in the cloud, just in case when saving in the cloud it fails
 save_to_zarr(azimuth=azimuth, elevation=elevation, zarr_path="./sun.zarr")

@@ -17,7 +17,12 @@ def join_list_dataset_to_batch_dataset(datasets: list[xr.Dataset]) -> xr.Dataset
         new_dataset = dataset.expand_dims(dim="example").assign_coords(example=("example", [i]))
         new_datasets.append(new_dataset)
 
-    return xr.concat(new_datasets, dim="example")
+    joined_dataset = xr.concat(new_datasets, dim="example")
+
+    # format example index
+    joined_dataset.__setitem__("example", joined_dataset.example.astype("int32"))
+
+    return joined_dataset
 
 
 def convert_coordinates_to_indexes_for_list_datasets(
@@ -43,7 +48,7 @@ def convert_coordinates_to_indexes(dataset: xr.Dataset) -> xr.Dataset:
 
     for original_dim_name in original_dim_names:
         original_coords = dataset[original_dim_name]
-        new_index_coords = np.arange(len(original_coords))
+        new_index_coords = np.arange(len(original_coords)).astype("int32")
         new_index_dim_name = f"{original_dim_name}_index"
         dataset[original_dim_name] = new_index_coords
         dataset = dataset.rename({original_dim_name: new_index_dim_name})

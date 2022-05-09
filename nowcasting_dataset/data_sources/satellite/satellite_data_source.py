@@ -79,6 +79,16 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._data.sel(channels=list(self.channels))
         self._load_geostationary_area_definition_and_transform()
 
+        # Pad data for having extra space
+        self._data = self._data.pad(
+            pad_width={
+                "x_geostationary": self._rectangle.size_pixels_width,
+                "y_geostationary": self._rectangle.size_pixels_height,
+            },
+            mode="constant",
+            constant_values=0,
+        )
+
         # Check the x and y coords are ascending. If they are not then searchsorted won't work!
         assert is_sorted(self._data.x_geostationary)
         assert is_sorted(self._data.y_geostationary)
@@ -162,6 +172,7 @@ class SatelliteDataSource(ZarrDataSource):
         max_x_and_y_index_height = x_and_y_index_at_center + half_image_size_pixels_height
 
         # Check whether the requested region of interest steps outside of the available data:
+        # Need to know how much to pad the outputs, so can do that here
         suggested_reduction_of_image_size_pixels_width = (
             max(
                 (-min_x_and_y_index_width.min() if (min_x_and_y_index_width < 0).any() else 0),

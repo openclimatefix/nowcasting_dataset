@@ -2,8 +2,8 @@ general:
   description: Config for producing batches on OCF's on-premises hardware.
   name: on_premises
 input_data:
-  default_forecast_minutes: 120
-  default_history_minutes: 30
+  default_forecast_minutes: 240
+  default_history_minutes: 60
   #---------------------- GSP -------------------
   gsp:
     gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v3/pv_gsp.zarr
@@ -85,11 +85,11 @@ input_data:
   opticalflow:
     opticalflow_zarr_path: /mnt/storage_ssd_8tb/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/satellite/EUMETSAT/SEVIRI_RSS/zarr/v3/eumetsat_seviri_uk.zarr
     history_minutes: 5
-    forecast_minutes: 120
-    opticalflow_input_image_size_pixels_height: 94
-    opticalflow_output_image_size_pixels_height: 24
-    opticalflow_input_image_size_pixels_width: 188
-    opticalflow_output_image_size_pixels_width: 48
+    forecast_minutes: 240
+    opticalflow_input_image_size_pixels_height: 188
+    opticalflow_output_image_size_pixels_height: 48
+    opticalflow_input_image_size_pixels_width: 376
+    opticalflow_output_image_size_pixels_width: 96
     opticalflow_source_data_source_class_name: SatelliteDataSource
     opticalflow_channels:
       - IR_016

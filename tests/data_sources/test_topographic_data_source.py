@@ -26,7 +26,8 @@ def test_get_example_2km(x, y, left, right, top, bottom):
     size = 2000  # meters
     topo_source = TopographicDataSource(
         filename="tests/data/europe_dem_2km_osgb.tif",
-        image_size_pixels=128,
+        image_size_pixels_height=128,
+        image_size_pixels_width=128,
         meters_per_pixel=size,
         forecast_minutes=300,
         history_minutes=10,
@@ -68,7 +69,8 @@ def test_get_batch_2km(x, y, left, right, top, bottom):
     size = 2000  # meters
     topo_source = TopographicDataSource(
         filename="tests/data/europe_dem_2km_osgb.tif",
-        image_size_pixels=128,
+        image_size_pixels_height=128,
+        image_size_pixels_width=128,
         meters_per_pixel=size,
         forecast_minutes=300,
         history_minutes=10,
@@ -98,7 +100,8 @@ def test_get_example_gcs():
     size = 2000  # meters
     topo_source = TopographicDataSource(
         filename=filename,
-        image_size_pixels=128,
+        image_size_pixels_height=128,
+        image_size_pixels_width=128,
         meters_per_pixel=size,
         forecast_minutes=300,
         history_minutes=10,

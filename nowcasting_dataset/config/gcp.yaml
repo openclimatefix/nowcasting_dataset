@@ -26,7 +26,8 @@ input_data:
       - lcc
       - mcc
       - hcc
-    nwp_image_size_pixels: 64
+    nwp_image_size_pixels_height: 64
+    nwp_image_size_pixels_width: 64
     nwp_zarr_path: gs://solar-pv-nowcasting-data/NWP/UK_Met_Office/UKV__2018-01_to_2019-12__chunks__variable10__init_time1__step1__x548__y704__.zarr
 
   #---------------------- PV -------------------
@@ -59,7 +60,8 @@ input_data:
       - VIS008
       - WV_062
       - WV_073
-    satellite_image_size_pixels: 64
+    satellite_image_size_pixels_height: 64
+    satellite_image_size_pixels_width: 64
     satellite_zarr_path: gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
 
   #---------------------- HRVSatellite -------------
@@ -83,8 +85,10 @@ input_data:
     opticalflow_zarr_path: gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr
     history_minutes: 5
     forecast_minutes: 120
-    opticalflow_input_image_size_pixels: 102
-    opticalflow_output_image_size_pixels: 24
+    opticalflow_input_image_size_pixels_height: 102
+    opticalflow_output_image_size_pixels_height: 24
+    opticalflow_input_image_size_pixels_width: 102
+    opticalflow_output_image_size_pixels_width: 24
     opticalflow_source_data_source_class_name: SatelliteDataSource
     opticalflow_channels:
       - IR_016

@@ -79,16 +79,6 @@ class SatelliteDataSource(ZarrDataSource):
         self._data = self._data.sel(channels=list(self.channels))
         self._load_geostationary_area_definition_and_transform()
 
-        # Pad data for having extra space
-        self._data = self._data.pad(
-            pad_width={
-                "x_geostationary": self._rectangle.size_pixels_width,
-                "y_geostationary": self._rectangle.size_pixels_height,
-            },
-            mode="constant",
-            constant_values=0,
-        )
-
         # Check the x and y coords are ascending. If they are not then searchsorted won't work!
         assert is_sorted(self._data.x_geostationary)
         assert is_sorted(self._data.y_geostationary)
@@ -173,54 +163,14 @@ class SatelliteDataSource(ZarrDataSource):
 
         # Check whether the requested region of interest steps outside of the available data:
         # Need to know how much to pad the outputs, so can do that here
-        suggested_reduction_of_image_size_pixels_width = (
-            max(
-                (-min_x_and_y_index_width.min() if (min_x_and_y_index_width < 0).any() else 0),
-                (min_x_and_y_index_width.x_index_at_center - len(data_array.x_geostationary)),
-            )
-            * 2
+        min_width_padding = max(-min_x_and_y_index_width.x_index_at_center, 0)
+        max_width_padding = max(
+            max_x_and_y_index_width.x_index_at_center - len(data_array.x_geostationary), 0
         )
-        suggested_reduction_of_image_size_pixels_height = (
-            max(
-                (-max_x_and_y_index_height.min() if (max_x_and_y_index_height < 0).any() else 0),
-                (max_x_and_y_index_height.y_index_at_center - len(data_array.y_geostationary)),
-            )
-            * 2
+        min_height_padding = max(-min_x_and_y_index_height.y_index_at_center, 0)
+        max_height_padding = max(
+            max_x_and_y_index_height.y_index_at_center - len(data_array.y_geostationary), 0
         )
-        # If the requested region does step outside the available data then raise an exception
-        # with a helpful message:
-        if (
-            suggested_reduction_of_image_size_pixels_width > 0
-            or suggested_reduction_of_image_size_pixels_height > 0
-        ):
-            new_suggested_image_size_pixels_width = (
-                self._rectangle.size_pixels_width - suggested_reduction_of_image_size_pixels_width
-            )
-            new_suggested_image_size_pixels_height = (
-                self._rectangle.size_pixels_height - suggested_reduction_of_image_size_pixels_height
-            )
-            raise RuntimeError(
-                "Requested region of interest of satellite data steps outside of the available"
-                " geographical extent of the Zarr data.  The requested region of interest extends"
-                f" from pixel indicies"
-                f" x={min_x_and_y_index_width.x_index_at_center} to"
-                f" x={min_x_and_y_index_width.x_index_at_center},"
-                f" y={min_x_and_y_index_width.y_index_at_center} to"
-                f" y={min_x_and_y_index_width.y_index_at_center}."
-                f" In the Zarr data, len(x)={len(data_array.x_geostationary)},"
-                f" len(y)={len(data_array.y_geostationary)}."
-                f" Try reducing image_size_pixels_height from {self._rectangle.size_pixels_height}"
-                f" to {new_suggested_image_size_pixels_height} pixels."
-                f" Try reducing image_size_pixels_width from {self._rectangle.size_pixels_width}"
-                f" to {new_suggested_image_size_pixels_width} pixels."
-                f" {self.history_length=}; {self.forecast_length=}; {x_center_osgb=};"
-                f" {y_center_osgb=}; {x_center_geostationary=}; {y_center_geostationary=};"
-                f" {min(data_array.x_geostationary.values)=};"
-                f" {max(data_array.x_geostationary.values)=};"
-                f" {min(data_array.y_geostationary.values)=};"
-                f" {max(data_array.y_geostationary.values)=};\n"
-                f" {data_array=}"
-            )
 
         # Select the geographical region of interest.
         # Note that isel is *exclusive* of the end of the slice.
@@ -234,6 +184,24 @@ class SatelliteDataSource(ZarrDataSource):
                 max_x_and_y_index_height.y_index_at_center,
             ),
         )
+
+        # isel is wrong if padding before, so add padding after to be the correct size
+        # Get the difference for each direction and use that
+        if (
+            min_height_padding > 0
+            or min_width_padding > 0
+            or max_height_padding > 0
+            or max_width_padding > 0
+        ):
+            data_array = data_array.pad(
+                pad_width={
+                    "x_geostationary": (min_width_padding, max_width_padding),
+                    "y_geostationary": (min_height_padding, max_height_padding),
+                },
+                mode="constant",
+                constant_values=0,
+            )
+
         return data_array
 
     def get_example(self, location: SpaceTimeLocation) -> xr.Dataset:

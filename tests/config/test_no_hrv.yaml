@@ -8,7 +8,8 @@ input_data:
   nwp:
     nwp_channels:
       - t
-    nwp_image_size_pixels: 2
+    nwp_image_size_pixels_height: 2
+    nwp_image_size_pixels_width: 2
     nwp_zarr_path: tests/data/nwp_data/test.zarr
     history_minutes: 60
     forecast_minutes: 60
@@ -21,7 +22,8 @@ input_data:
   satellite:
     satellite_channels:
       - IR_016
-    satellite_image_size_pixels: 24
+    satellite_image_size_pixels_height: 24
+    satellite_image_size_pixels_width: 12
     satellite_zarr_path: tests/data/sat_data.zarr
   sun:
     sun_zarr_path: tests/data/sun/test.zarr
@@ -31,8 +33,10 @@ input_data:
     history_minutes: 15
     forecast_minutes: 30
     opticalflow_zarr_path: tests/data/sat_data.zarr
-    opticalflow_input_image_size_pixels: 32
-    opticalflow_output_image_size_pixels: 8
+    opticalflow_input_image_size_pixels_height: 32
+    opticalflow_output_image_size_pixels_height: 8
+    opticalflow_input_image_size_pixels_width: 16
+    opticalflow_output_image_size_pixels_width: 4
     opticalflow_channels:
       - IR_016
 output_data:

@@ -2,6 +2,7 @@
 import logging
 import random
 import warnings
+from datetime import timedelta
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -19,7 +20,10 @@ ONE_HOUR = pd.Timedelta("1 hour")
 
 
 def select_daylight_datetimes(
-    datetimes: pd.DatetimeIndex, locations: Iterable[Tuple[float, float]], ghi_threshold: float = 10
+    datetimes: pd.DatetimeIndex,
+    locations: Iterable[Tuple[float, float]],
+    ghi_threshold: float = 10,
+    keep_dawn_dusk_hours: int = 0,
 ) -> pd.DatetimeIndex:
     """
     Select only the day time datetimes
@@ -30,11 +34,38 @@ def select_daylight_datetimes(
         For example, use the four corners of the satellite imagery.
         ghi_threshold: Global horizontal irradiance threshold.
           (Watts per square meter?)
+        keep_dawn_dusk_hours: option to keep extra hours before dawn, or after dusk.
+            This is defaulted to zero
 
     Returns: datetimes for which the global horizontal irradiance (GHI) is above ghi_threshold
     across all locations.
 
     """
+
+    if keep_dawn_dusk_hours > 0:
+        # get dawn datetimes by
+        # - adding X hours the original datetimes,
+        # - running through select_daylight_datetimes
+        # - minusing X hours from the results
+        # similar for dusk
+        temp_keep_dawn_dusk_hours = 0
+        dawn = select_daylight_datetimes(
+            datetimes=datetimes + timedelta(hours=keep_dawn_dusk_hours),
+            locations=locations,
+            ghi_threshold=ghi_threshold,
+            keep_dawn_dusk_hours=temp_keep_dawn_dusk_hours,
+        ) - timedelta(hours=keep_dawn_dusk_hours)
+
+        dusk = select_daylight_datetimes(
+            datetimes=datetimes - timedelta(hours=keep_dawn_dusk_hours),
+            locations=locations,
+            ghi_threshold=ghi_threshold,
+            keep_dawn_dusk_hours=temp_keep_dawn_dusk_hours,
+        ) + timedelta(hours=keep_dawn_dusk_hours)
+
+        # take union of dusk and dawn
+        return dusk.union(dawn)
+
     ghi_for_all_locations = []
     for x, y in locations:
         lat, lon = geospatial.osgb_to_lat_lon(x, y)

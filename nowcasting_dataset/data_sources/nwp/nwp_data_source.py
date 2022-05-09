@@ -52,29 +52,34 @@ class NWPDataSource(ZarrDataSource):
     """
 
     channels: Optional[Iterable[str]] = NWP_VARIABLE_NAMES
-    image_size_pixels: InitVar[int] = 2
+    image_size_pixels_height: InitVar[int] = 2
+    image_size_pixels_width: InitVar[int] = 2
     meters_per_pixel: InitVar[int] = 2_000
 
-    def __post_init__(self, image_size_pixels: int, meters_per_pixel: int):
+    def __post_init__(
+        self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
+    ):
         """
         Post init
 
         Args:
-            image_size_pixels: number of pixels in image
+            image_size_pixels_height: number of pixels in image height
+            image_size_pixels_width: number of pixels in image width
             meters_per_pixel: how many meteres for each pixel
 
         """
-        super().__post_init__(image_size_pixels, meters_per_pixel)
+        super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         n_channels = len(self.channels)
         self._shape_of_example = (
             n_channels,
             self.total_seq_length,
-            image_size_pixels,
-            image_size_pixels,
+            image_size_pixels_height,
+            image_size_pixels_width,
         )
         _LOG.info(
             f"NWPDataSource instantiated with {self.channels=},"
-            f" {self._square.size_pixels=},"
+            f" {self._rectangle.size_pixels_height=},"
+            f" {self._rectangle.size_pixels_width=},"
             f" {self.zarr_path=}"
         )
 

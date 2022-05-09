@@ -78,7 +78,8 @@ input_data:
   # ------------------------- Topographic ----------------
   topographic:
     topographic_filename: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/Topographic/europe_dem_1km_osgb.tif
-    topographic_image_size_pixels: 300
+    topographic_image_size_pixels_width: 300
+    topographic_image_size_pixels_height: 300
 
   # ------------------------- Optical Flow ---------------
   opticalflow:

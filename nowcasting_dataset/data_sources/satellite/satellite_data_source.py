@@ -177,11 +177,12 @@ class SatelliteDataSource(ZarrDataSource):
         # e.g. isel(x=slice(0, 3)) will return the first, second, and third values.
         data_array = data_array.isel(
             x_geostationary=slice(
-                min_x_and_y_index_width.x_index_at_center, max_x_and_y_index_width.x_index_at_center
+                max(min_x_and_y_index_width.x_index_at_center, 0),
+                min(max_x_and_y_index_width.x_index_at_center, len(data_array.x_geostationary)),
             ),
             y_geostationary=slice(
-                min_x_and_y_index_height.y_index_at_center,
-                max_x_and_y_index_height.y_index_at_center,
+                max(min_x_and_y_index_height.y_index_at_center, 0),
+                min(max_x_and_y_index_height.y_index_at_center, len(data_array.y_geostationary)),
             ),
         )
 

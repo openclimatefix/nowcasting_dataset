@@ -77,15 +77,12 @@ def make_fake_batch(configuration: Configuration, temporally_align_examples: boo
             metadata=metadata,
         ),
         sun=sun_fake(
-            batch_size=batch_size,
-            seq_length_5=configuration.input_data.sun.seq_length_5_minutes,
+            configuration=configuration,
             metadata=metadata,
         ),
         topographic=topographic_fake(
-            batch_size=batch_size,
             metadata=metadata,
-            image_size_pixels_height=configuration.input_data.topographic.topographic_image_size_pixels_height,  # noqa
-            image_size_pixels_width=configuration.input_data.topographic.topographic_image_size_pixels_width,  # noqa
+            configuration=configuration,
         ),
     )
 
@@ -442,16 +439,22 @@ def optical_flow_fake(
 
 
 def sun_fake(
-    batch_size,
-    seq_length_5,
+    configuration,
     metadata: Optional[Metadata] = None,
 ):
     """Create fake data"""
+
+    if configuration.input_data.sun is None:
+        return None
+
+    batch_size = configuration.process.batch_size
 
     if metadata is None:
         t0_datetimes_utc = make_t0_datetimes_utc(batch_size)
     else:
         t0_datetimes_utc = metadata.t0_datetimes_utc
+
+    seq_length_5 = configuration.input_data.sun.seq_length_5_minutes
 
     # create dataset with both azimuth and elevation, index with time
     # make batch of arrays
@@ -467,12 +470,22 @@ def sun_fake(
 
 
 def topographic_fake(
-    batch_size,
-    image_size_pixels_height,
-    image_size_pixels_width,
+    configuration,
     metadata: Optional[Metadata] = None,
 ):
     """Create fake data"""
+
+    if configuration.input_data.topographic is None:
+        return None
+
+    batch_size = configuration.process.batch_size
+
+    image_size_pixels_height = (
+        configuration.input_data.topographic.topographic_image_size_pixels_height
+    )
+    image_size_pixels_width = (
+        configuration.input_data.topographic.topographic_image_size_pixels_width
+    )
 
     if metadata is None:
         x_centers_osgb, y_centers_osgb = make_random_x_and_y_osgb_centers(batch_size)

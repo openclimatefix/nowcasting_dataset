@@ -37,6 +37,13 @@ def test_metadata_fake_gsp():
     assert m.y_centers_osgb[0] in metadata["location_y"].values
 
 
+def test_model_no_opticalflow(configuration):  # noqa: D103
+
+    configuration.input_data.opticalflow = None
+
+    _ = Batch.fake(configuration=configuration)
+
+
 def test_model(configuration):  # noqa: D103
 
     assert configuration.input_data.opticalflow is not None

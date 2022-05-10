@@ -396,6 +396,9 @@ def optical_flow_fake(
         configuration = Configuration()
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
+    if configuration.input_data.opticalflow is None:
+        return None
+
     batch_size = configuration.process.batch_size
     image_size_pixels_height = (
         configuration.input_data.opticalflow.opticalflow_input_image_size_pixels_height

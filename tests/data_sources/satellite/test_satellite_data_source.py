@@ -55,6 +55,27 @@ def _test_get_example(
     assert len(sat_data.x_geostationary.shape) == 1
 
 
+def test_padding(sat_filename):  # noqa: D103
+    data_source = SatelliteDataSource(
+        image_size_pixels_height=1024,
+        image_size_pixels_width=1024,
+        zarr_path=sat_filename,
+        history_minutes=0,
+        forecast_minutes=15,
+        channels=("IR_016",),
+        meters_per_pixel=6000,
+    )
+    data_source.open()
+    t0_dt = pd.Timestamp("2020-04-01T13:00")
+    sat_data = data_source.get_example(
+        SpaceTimeLocation(t0_datetime_utc=t0_dt, x_center_osgb=0, y_center_osgb=0)
+    )
+
+    assert len(sat_data.x_geostationary) == 1024
+    assert len(sat_data.y_geostationary) == 1024
+    assert len(sat_data.x_geostationary.shape) == 1
+
+
 @pytest.mark.parametrize(
     "x_center_osgb, y_center_osgb, left_geostationary, right_geostationary,"
     " top_geostationary, bottom_geostationary",

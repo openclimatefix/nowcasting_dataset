@@ -163,12 +163,12 @@ class SatelliteDataSource(ZarrDataSource):
 
         # Check whether the requested region of interest steps outside of the available data:
         # Need to know how much to pad the outputs, so can do that here
-        min_width_padding = max(-min_x_and_y_index_width.x_index_at_center, 0)
-        max_width_padding = max(
+        left_width_padding = max(-min_x_and_y_index_width.x_index_at_center, 0)
+        right_width_padding = max(
             max_x_and_y_index_width.x_index_at_center - len(data_array.x_geostationary), 0
         )
-        min_height_padding = max(-min_x_and_y_index_height.y_index_at_center, 0)
-        max_height_padding = max(
+        bottom_height_padding = max(-min_x_and_y_index_height.y_index_at_center, 0)
+        top_height_padding = max(
             max_x_and_y_index_height.y_index_at_center - len(data_array.y_geostationary), 0
         )
 
@@ -189,15 +189,15 @@ class SatelliteDataSource(ZarrDataSource):
         # isel is wrong if padding before, so add padding after to be the correct size
         # Get the difference for each direction and use that
         if (
-            min_height_padding > 0
-            or min_width_padding > 0
-            or max_height_padding > 0
-            or max_width_padding > 0
+            bottom_height_padding > 0
+            or left_width_padding > 0
+            or top_height_padding > 0
+            or right_width_padding > 0
         ):
             data_array = data_array.pad(
                 pad_width={
-                    "x_geostationary": (min_width_padding, max_width_padding),
-                    "y_geostationary": (min_height_padding, max_height_padding),
+                    "x_geostationary": (left_width_padding, right_width_padding),
+                    "y_geostationary": (bottom_height_padding, top_height_padding),
                 },
                 mode="constant",
                 constant_values=0,

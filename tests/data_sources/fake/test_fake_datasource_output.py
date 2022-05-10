@@ -61,14 +61,14 @@ def test_satellite(configuration):
     assert s.x_geostationary is not None
 
 
-def test_sun():
+def test_sun(configuration):
     """Test sun fake"""
-    _ = sun_fake(
-        batch_size=4,
-        seq_length_5=13,
-    )
+
+    configuration.process.batch_size = 4
+    _ = sun_fake(configuration=configuration)
 
 
-def test_topo():
+def test_topo(configuration):
     """Test topo fake"""
-    _ = topographic_fake(batch_size=4, image_size_pixels_height=64, image_size_pixels_width=64)
+    configuration.process.batch_size = 4
+    _ = topographic_fake(configuration=configuration)

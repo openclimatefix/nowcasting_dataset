@@ -76,15 +76,15 @@ class ManagerLive(ManagerBase):
 
         n_batches_requested = int(np.ceil(n_gsps / self.config.process.batch_size))
 
-        n_examples = n_batches_requested * self.config.process.batch_size
         logger.debug(
             f"Creating {n_batches_requested:,d} batches x {self.config.process.batch_size:,d}"
-            f" examples per batch = {n_examples:,d} examples for {split_name}."
+            f" examples per batch = {n_batches_requested:,d} examples for {split_name}."
         )
 
         locations = self.sample_spatial_and_temporal_locations_for_examples(
-            t0_datetime=datetimes_for_split[0],
+            t0_datetime=datetimes_for_split[0], n_examples=n_gsps
         )
+
         metadata = Metadata(
             batch_size=self.config.process.batch_size, space_time_locations=locations
         )
@@ -95,7 +95,7 @@ class ManagerLive(ManagerBase):
         metadata.save_to_csv(path_for_csv)
 
     def sample_spatial_and_temporal_locations_for_examples(
-        self, t0_datetime: datetime
+        self, t0_datetime: datetime, n_examples: Optional[int] = None
     ) -> List[SpaceTimeLocation]:
         """
         Computes the geospatial and temporal locations for each training example.
@@ -121,6 +121,10 @@ class ManagerLive(ManagerBase):
         ] = self.data_source_which_defines_geospatial_locations.get_all_locations(
             t0_datetimes_utc=pd.DatetimeIndex([t0_datetime])
         )
+
+        # reduce locations to n_examples
+        if n_examples is not None:
+            locations = locations[:n_examples]
 
         # find out the number of examples in the last batch,
         # we maybe need to duplicate the last example into order to get a full batch

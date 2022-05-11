@@ -63,6 +63,42 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example(
         assert len(locations_df) == batch_size
 
 
+def test_create_files_locations_of_each_example_reduced(
+    test_configuration_filename,
+):
+    """Test to create locations, for a reduced number of n_gsps"""
+
+    manager = ManagerLive()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+    manager.config.process.batch_size = 5
+    manager.config.process.split_method = SplitMethod.SAME
+    manager.initialize_data_sources()
+    t0_datetime = datetime(2021, 4, 1)
+
+    batch_size = manager.config.process.batch_size
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example(
+            t0_datetime=t0_datetime, n_gsps=7
+        )  # noqa 101
+
+        live_file = f"{dst_path}/live/{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}"
+
+        assert os.path.exists(live_file)
+        locations_df = pd.read_csv(live_file)
+        # we've asked for 7 examples, but the batchsize is 5, so we get 10 examples,
+        # the last 3 being filled in
+        assert len(locations_df) == batch_size * 2
+        # check last 3 are filled in from the first one
+        assert locations_df.iloc[-3].id == 1
+        assert locations_df.iloc[-2].id == 1
+        assert locations_df.iloc[-1].id == 1
+
+
 def test_batches(test_configuration_filename, sat, gsp):
     """Test that batches can be made"""
 

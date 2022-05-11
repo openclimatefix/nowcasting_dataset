@@ -58,9 +58,14 @@ class DataSourceOutput(PydanticXArrayDataSet):
         """Check that all values are non NaNs and not infinite"""
 
         if np.isnan(data).any():
-            message = f"Some {self.__class__.__name__} data values are NaNs"
+            message = f"Some {self.__class__.__name__} data values are NaNs. \n"
+            message += f"There were {np.isnan(data).sum()} number of nans. \n"
             if variable_name is not None:
                 message += f" ({variable_name})"
+
+            for i in range(data.shape[0]):
+                if np.isnan(data[i]).any():
+                    message += f"Some data values are NaNs for example {i} \n"
             logger.error(message)
             raise Exception(message)
 

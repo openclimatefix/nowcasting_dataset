@@ -49,12 +49,19 @@ class ManagerLive(ManagerBase):
     def create_files_specifying_spatial_and_temporal_locations_of_each_example(
         self, t0_datetime: datetime, n_gsps: Optional[int] = N_GSPS
     ) -> None:
-        """Creates CSV files specifying the locations of each example if those files don't exist yet.
+        """
+        Creates CSV files specifying the locations of each example if those files don't exist yet.
 
         - Creates one file per split, in this location:
         `<output_data.filepath> / 'live' / spatial_and_temporal_locations_of_each_example.csv`
         - Creates the output directory if it does not exist.
         - This works on any compute environment.
+
+        Args:
+            t0_datetime: The datetime for the batch
+            n_gsps: the number of gsps we want to make, this is defaulted to N_GSPS=338
+
+        Returns: Nothing
         """
 
         logger.info(

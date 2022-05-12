@@ -133,3 +133,20 @@ dmypy.json
 
 # Custom
 .vscode/
+
+# Jack's ugly experiment files :)
+notebooks/accumulators.csv
+notebooks/gsp_accumulators.csv
+notebooks/hrvsatellite_accumulators.csv
+notebooks/hrvsatellite_mean.csv
+notebooks/hrvsatellite_std.csv
+notebooks/mean.csv
+notebooks/optical_flow.gif
+notebooks/satellite_accumulators.csv
+notebooks/satellite_mean.csv
+notebooks/satellite_std.csv
+notebooks/std.csv
+notebooks/test.zarr/
+notebooks/test2.zarr/
+notebooks/topographic_accumulators.csv
+notebooks/xarray_bug.ipynb

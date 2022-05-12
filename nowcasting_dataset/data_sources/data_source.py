@@ -362,15 +362,7 @@ class DataSource:
 
 @dataclass
 class ImageDataSource(DataSource):
-    """
-    Image Data source
-
-    Note that this is an abstract class.
-
-    Args:
-      image_size_pixels: Size of the width and height of the image crop
-        returned by get_sample().
-    """
+    """Abstract base class for image Data source."""
 
     image_size_pixels_height: InitVar[int]
     image_size_pixels_width: InitVar[int]

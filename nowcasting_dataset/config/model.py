@@ -284,6 +284,17 @@ class Satellite(DataSourceMixin, TimeResolutionMixin):
         " then data is keep from 06.00",
     )
 
+    is_live: bool = Field(
+        False,
+        description="Option if to use live data from the satelite consumer. "
+        "This is useful becasuse the data is about ~30 mins behind, "
+        "so we need to expect that",
+    )
+
+    live_delay_minutes: int = Field(
+        30, description="The expected delay in minutes of the satellite data"
+    )
+
 
 class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model for HRV data"""

@@ -2,6 +2,7 @@
 import itertools
 import logging
 from dataclasses import InitVar, dataclass
+from datetime import timedelta
 from functools import partial
 from numbers import Number
 from typing import Callable, Iterable, Optional
@@ -36,6 +37,8 @@ class SatelliteDataSource(ZarrDataSource):
     logger = _LOG
     time_resolution_minutes: int = 5
     keep_dawn_dusk_hours: int = 0
+    is_live: bool = False
+    live_delay_minutes: int = 30
 
     def __post_init__(
         self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
@@ -47,12 +50,20 @@ class SatelliteDataSource(ZarrDataSource):
         assert meters_per_pixel > 0, "meters_per_pixel cannot be <= 0!"
         super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
         n_channels = len(self.channels)
+
+        if self.is_live:
+            # This is to account for the delay in satellite data
+            self.total_seq_length = (
+                self.history_length - (self.live_delay_minutes / self.time_resolution_minutes) + 1
+            )
+
         self._shape_of_example = (
             self.total_seq_length,
             image_size_pixels_height,
             image_size_pixels_width,
             n_channels,
         )
+
         self._osgb_to_geostationary: Callable = None
 
     @property
@@ -109,6 +120,11 @@ class SatelliteDataSource(ZarrDataSource):
     def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> xr.DataArray:
         start_dt = self._get_start_dt(t0_datetime_utc)
         end_dt = self._get_end_dt(t0_datetime_utc)
+
+        # if live data, take 30 ins from the end time,
+        # so that we account for delay in data from satellite
+        if self.is_live:
+            end_dt = end_dt - timedelta(minutes=self.live_delay_minutes)
 
         # floor to 15 mins
         start_floor = start_dt.floor(f"{self.sample_period_minutes}T")

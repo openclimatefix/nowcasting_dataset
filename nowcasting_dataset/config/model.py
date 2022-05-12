@@ -291,6 +291,10 @@ class Satellite(DataSourceMixin, TimeResolutionMixin):
         "so we need to expect that",
     )
 
+    live_delay_minutes: int = Field(
+        30, description="The expected delay in minutes of the satellite data"
+    )
+
 
 class HRVSatellite(DataSourceMixin, TimeResolutionMixin):
     """Satellite configuration model for HRV data"""

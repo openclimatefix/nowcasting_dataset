@@ -38,6 +38,7 @@ class SatelliteDataSource(ZarrDataSource):
     time_resolution_minutes: int = 5
     keep_dawn_dusk_hours: int = 0
     is_live: bool = False
+    live_delay_minutes: int = 30
 
     def __post_init__(
         self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
@@ -52,7 +53,9 @@ class SatelliteDataSource(ZarrDataSource):
 
         if self.is_live:
             # This is to account for the delay in satellite data
-            self.total_seq_length = self.history_length - 6 + 1
+            self.total_seq_length = (
+                self.history_length - (self.live_delay_minutes / self.time_resolution_minutes) + 1
+            )
 
         self._shape_of_example = (
             self.total_seq_length,
@@ -121,7 +124,7 @@ class SatelliteDataSource(ZarrDataSource):
         # if live data, take 30 ins from the end time,
         # so that we account for delay in data from satellite
         if self.is_live:
-            end_dt = end_dt - timedelta(minutes=30)
+            end_dt = end_dt - timedelta(minutes=self.live_delay_minutes)
 
         # floor to 15 mins
         start_floor = start_dt.floor(f"{self.sample_period_minutes}T")

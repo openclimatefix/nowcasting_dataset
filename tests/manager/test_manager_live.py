@@ -129,6 +129,36 @@ def test_batches(test_configuration_filename, sat, gsp):
         assert os.path.exists(f"{dst_path}/live/satellite/000000.nc")
 
 
+def test_batches_not_async(test_configuration_filename, sat, gsp):
+    """Test that batches can be made"""
+
+    manager = ManagerLive()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        # set local temp path, and dst path
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        # Set data sources
+        manager.data_sources = {"gsp": gsp, "satellite": sat}
+        manager.data_source_which_defines_geospatial_locations = gsp
+
+        # make file for locations
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example(
+            t0_datetime=datetime(2020, 4, 1, 13)
+        )  # noqa 101
+
+        # make batches
+        manager.create_batches(use_async=False)
+
+        assert os.path.exists(f"{dst_path}/live")
+        assert os.path.exists(f"{dst_path}/live/gsp")
+        assert os.path.exists(f"{dst_path}/live/gsp/000000.nc")
+        assert os.path.exists(f"{dst_path}/live/satellite/000000.nc")
+
+
 def test_run_error(test_configuration_filename):
     """Test to initialize data sources and get batches"""
 

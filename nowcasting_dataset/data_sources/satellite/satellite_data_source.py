@@ -54,7 +54,9 @@ class SatelliteDataSource(ZarrDataSource):
         if self.is_live:
             # This is to account for the delay in satellite data
             self.total_seq_length = (
-                self.history_length - (self.live_delay_minutes / self.time_resolution_minutes) + 1
+                self.history_length
+                - int(self.live_delay_minutes / self.time_resolution_minutes)
+                + 1
             )
 
         self._shape_of_example = (

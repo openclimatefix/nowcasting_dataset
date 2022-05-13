@@ -192,7 +192,7 @@ def get_contiguous_time_periods(
     min_seq_length: int,
     max_gap_duration: pd.Timedelta = THIRTY_MINUTES,
 ) -> pd.DataFrame:
-    """Returns a pd.DataFrame where each row records the boundary of a contiguous time periods.
+    """Return a pd.DataFrame where each row records the boundary of a contiguous time period.
 
     Args:
       datetimes: The pd.DatetimeIndex of the timeseries. Must be sorted.
@@ -219,7 +219,7 @@ def get_contiguous_time_periods(
 
     # gap_indicies are the indices into dt_index for the timestep immediately
     # *before* the gap.  e.g. if the datetimes at 12:00, 12:05, 18:00, 18:05
-    # then gap_indicies will be [1].  So we add 1 to gap_indices to get
+    # then gap_indicies will be [1]. So we add 1 to gap_indices to get
     # segment_boundaries, an index into dt_index which identifies the _start_
     # of each segment.
     segment_boundaries = gap_indices + 1

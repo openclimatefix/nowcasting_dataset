@@ -216,7 +216,7 @@ class ManagerLive(ManagerBase):
                     f"About to submit create_batches task for {data_source_name}, {split_name}"
                 )
 
-                if use_async:
+                if ~use_async:
                     # Sometimes when debuggin it is easy to use non async
                     data_source.create_batches(**kwargs_for_create_batches)
                 else:
@@ -236,16 +236,18 @@ class ManagerLive(ManagerBase):
                     )
                     async_results_from_create_batches.append(async_result)
 
-                # Wait for all async_results to finish:
-                for async_result in async_results_from_create_batches:
-                    async_result.wait()
-                    if an_error_has_occured.is_set():
-                        # An error has occurred but, at this point in the code,
-                        # we don't know which worker process raised the exception.
-                        # But, with luck, the worker process
-                        # will have logged an informative exception via the _error_callback func.
-                        raise RuntimeError(
-                            f"A worker process raised an exception whilst working on {split_name}!"
-                        )
+                    # Wait for all async_results to finish:
+                    for async_result in async_results_from_create_batches:
+                        async_result.wait()
+                        if an_error_has_occured.is_set():
+                            # An error has occurred but, at this point in the code,
+                            # we don't know which worker process raised the exception.
+                            # But, with luck, the worker process
+                            # will have logged an informative exception via the
+                            # _error_callback func.
+                            raise RuntimeError(
+                                f"A worker process raised an exception whilst "
+                                f"working on {split_name}!"
+                            )
 
             logger.info(f"Finished creating batches for {split_name}!")

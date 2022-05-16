@@ -107,12 +107,17 @@ class SatelliteDataSource(ZarrDataSource):
         ).transform
 
     def _open_data(self) -> xr.DataArray:
-        return open_sat_data(
+        data_array = open_sat_data(
             zarr_path=self.zarr_path,
             consolidated=self.consolidated,
             logger=self.logger,
             sample_period_minutes=self.sample_period_minutes,
         )
+        # If live, then load into memory so the data
+        # doesn't disappear while its being used
+        if self.is_live:
+            data_array = data_array.load()
+        return data_array
 
     @staticmethod
     def get_data_model_for_batch():

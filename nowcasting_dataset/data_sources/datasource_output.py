@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import tempfile
 from pathlib import Path
 from typing import Tuple
 
@@ -10,7 +11,7 @@ import numpy as np
 import xarray as xr
 
 from nowcasting_dataset.dataset.xr_utils import PydanticXArrayDataSet
-from nowcasting_dataset.filesystem.utils import makedirs
+from nowcasting_dataset.filesystem.utils import get_filesystem, makedirs
 from nowcasting_dataset.utils import get_netcdf_filename
 
 logger = logging.getLogger(__name__)
@@ -48,11 +49,20 @@ class DataSourceOutput(PydanticXArrayDataSet):
             # only need to make the folder once, or check that the folder is there once
             makedirs(path=path)
 
-        # make file
-        local_filename = os.path.join(path, filename)
-
         encoding = {name: {"compression": "lzf"} for name in self.data_vars}
-        self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+
+        path_and_filename = os.path.join(path, filename)
+
+        # make file
+        if "s3://" not in path:
+            self.to_netcdf(path_and_filename, engine="h5netcdf", mode="w", encoding=encoding)
+        else:
+            with tempfile.TemporaryDirectory() as temp_path:
+                local_filename = os.path.join(temp_path, filename)
+                self.to_netcdf(local_filename, engine="h5netcdf", mode="w", encoding=encoding)
+
+                fs = get_filesystem(path)
+                fs.put(local_filename, path_and_filename)
 
     def check_nan_and_inf(self, data: xr.Dataset, variable_name: str = None):
         """Check that all values are non NaNs and not infinite"""

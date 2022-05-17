@@ -296,6 +296,9 @@ def satellite_fake(
         configuration = Configuration()
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
 
+    if configuration.input_data.satellite is None:
+        return None
+
     batch_size = configuration.process.batch_size
     image_size_pixels_height = configuration.input_data.satellite.satellite_image_size_pixels_height
     image_size_pixels_width = configuration.input_data.satellite.satellite_image_size_pixels_width
@@ -342,6 +345,9 @@ def hrv_satellite_fake(
     if configuration is None:
         configuration = Configuration()
         configuration.input_data = Configuration().input_data.set_all_to_defaults()
+
+    if configuration.input_data.hrvsatellite is None:
+        return None
 
     batch_size = configuration.process.batch_size
     image_size_pixels_height = (

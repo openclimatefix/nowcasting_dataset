@@ -218,7 +218,7 @@ class PVDataSource(ImageDataSource):
         # get the max generation / capacity for each system
         self.pv_capacity = pv_power.max()
 
-    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> [pd.DataFrame]:
+    def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> tuple[pd.DataFrame]:
         # TODO: Cache this?
         start_dt = self._get_start_dt(t0_datetime_utc)
         end_dt = self._get_end_dt(t0_datetime_utc)

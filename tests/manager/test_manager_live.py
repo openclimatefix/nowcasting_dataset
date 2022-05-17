@@ -199,3 +199,7 @@ def test_run(test_configuration_filename):
             t0_datetime=datetime(2020, 4, 1, 15)
         )  # noqa 101
         manager.create_batches()
+
+        with tempfile.TemporaryDirectory() as local_temp_path_save:
+            manager.save_batch(batch_idx=0, path=local_temp_path_save)
+            assert os.path.exists(f"{local_temp_path_save}/gsp/000000.nc")

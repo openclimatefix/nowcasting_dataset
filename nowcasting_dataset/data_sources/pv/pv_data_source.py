@@ -193,6 +193,9 @@ class PVDataSource(ImageDataSource):
         logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
 
         # drop systems with over night power
+        # TODO: Fix bug!
+        # drop_pv_systems_which_produce_overnight expects normalised data,
+        # but it doesn't receive normalised data. See Issue #664.
         pv_power = drop_pv_systems_which_produce_overnight(pv_power)
 
         logger.debug(
@@ -501,7 +504,11 @@ def align_pv_system_ids(
 
 
 def drop_pv_systems_which_produce_overnight(pv_power: pd.DataFrame) -> pd.DataFrame:
-    """Drop systems which produce power over night."""
+    """Drop systems which produce power over night.
+
+    Args:
+        pv_power: Normalised to [0, 1].
+    """
     # TODO: Of these bad systems, 24647, 42656, 42807, 43081, 51247, 59919
     # might have some salvagable data?
     NIGHT_YIELD_THRESHOLD = 0.4

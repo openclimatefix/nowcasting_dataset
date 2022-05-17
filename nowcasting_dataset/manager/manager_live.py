@@ -19,6 +19,7 @@ from nowcasting_dataset.data_sources.metadata.metadata_model import (
     SpaceTimeLocation,
     load_from_csv,
 )
+from nowcasting_dataset.dataset.batch import Batch
 from nowcasting_dataset.filesystem import utils as nd_fs_utils
 from nowcasting_dataset.manager.base import ManagerBase
 from nowcasting_dataset.manager.utils import callback, error_callback
@@ -251,3 +252,23 @@ class ManagerLive(ManagerBase):
                             )
 
             logger.info(f"Finished creating batches for {split_name}!")
+
+    def save_batch(self, batch_idx, path: str):
+        """
+        Option to save batch to a differnt location
+
+        Args:
+            path: the path to save the file to
+            batch_idx: the batch index
+
+        """
+
+        # load batch
+        batch = Batch.load_netcdf(
+            batch_idx=batch_idx,
+            data_sources_names=self.data_sources,
+            local_netcdf_path=self.config.output_data.filepath / "live",
+        )
+
+        # save batch
+        batch.save_netcdf(batch_i=batch_idx, path=path)

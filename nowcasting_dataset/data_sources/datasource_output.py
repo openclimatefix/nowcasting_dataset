@@ -54,7 +54,7 @@ class DataSourceOutput(PydanticXArrayDataSet):
         path_and_filename = os.path.join(path, filename)
 
         # make file
-        if "s3://" not in path:
+        if "s3://" not in str(path):
             self.to_netcdf(path_and_filename, engine="h5netcdf", mode="w", encoding=encoding)
         else:
             with tempfile.TemporaryDirectory() as temp_path:

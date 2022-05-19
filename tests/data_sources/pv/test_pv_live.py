@@ -22,7 +22,9 @@ def test_get_metadata_from_database(pv_yields_and_systems):
 @freeze_time("2022-01-01 05:00")
 def test_get_pv_power_from_database(pv_yields_and_systems):
     """Get pv power from database"""
-    pv_power = get_pv_power_from_database(history_duration=timedelta(hours=1))
+    pv_power = get_pv_power_from_database(
+        history_duration=timedelta(hours=1), load_extra_minutes=30, interpolate_minutes=30
+    )
 
     assert len(pv_power) == 13  # 1 hours at 5 mins = 6*12
     assert len(pv_power.columns) == 2

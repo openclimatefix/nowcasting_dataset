@@ -22,9 +22,15 @@ def set_fsspec_for_multiprocess() -> None:
     """
     Clear reference to the loop and thread.
 
-    This is necessary otherwise
-    gcsfs hangs in the ML training loop.  Only required for fsspec >= 0.9.0
-    See https://github.com/dask/gcsfs/issues/379#issuecomment-839929801
+    This is a nasty hack that was suggested but NOT recommended by the lead fsspec developer!
+
+    This appears necessary otherwise gcsfs hangs when used after forking multiple worker processes.
+    Only required for fsspec >= 0.9.0
+
+    See:
+    - https://github.com/fsspec/gcsfs/issues/379#issuecomment-839929801
+    - https://github.com/fsspec/filesystem_spec/pull/963#issuecomment-1131709948
+
     TODO: Try deleting this two lines to make sure this is still relevant.
     """
     fsspec.asyn.iothread[0] = None

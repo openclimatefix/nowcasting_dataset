@@ -33,6 +33,18 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
     )
 
 
+@freeze_time("2022-01-01 17:00")
+def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
+    """Get pv power from database, test out get extra minutes and interpolate"""
+    pv_power = get_pv_power_from_database(history_duration=timedelta(hours=1))
+    assert len(pv_power) == 0  # last data point is at 16:00
+
+    pv_power = get_pv_power_from_database(
+        history_duration=timedelta(hours=1), load_extra_minutes=60, interpolate_minutes=60
+    )
+    assert len(pv_power) == 12  # 1 hours at 5 mins = 12
+
+
 @freeze_time("2022-01-01")
 def test_get_example_and_batch(pv_yields_and_systems):
     """Test PVDataSource with data source from database"""

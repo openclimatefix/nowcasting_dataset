@@ -50,6 +50,8 @@ class PVDataSource(ImageDataSource):
     load_from_gcs: bool = True  # option to load data from gcs, or local file
     get_center: bool = True
     is_live: bool = False
+    live_interpolate_minutes: int = 30
+    live_load_extra_minutes: int = 60
 
     def __post_init__(
         self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
@@ -172,7 +174,11 @@ class PVDataSource(ImageDataSource):
             pv_power = pd.concat(pv_power_all, axis="columns")
 
         else:
-            pv_power = get_pv_power_from_database(history_duration=self.history_duration)
+            pv_power = get_pv_power_from_database(
+                history_duration=self.history_duration,
+                interpolate_minutes=self.live_interpolate_minutes,
+                load_extra_minutes=self.live_load_extra_minutes,
+            )
             logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
             logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
 

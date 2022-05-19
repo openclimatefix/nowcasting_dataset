@@ -231,6 +231,16 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
         False, description="Option if to use live data from the nowcasting pv database"
     )
 
+    live_interpolate_minutes: int = Field(
+        30, description="The number of minutes we allow PV data to interpolate"
+    )
+    live_load_extra_minutes: int = Field(
+        0,
+        description="The number of extra minutes in the past we should load. Then the recent "
+        "values can be interpolated, and the extra minutes removed. This is "
+        "because some live data takes ~1 hour to come in.",
+    )
+
     @classmethod
     def model_validation(cls, v):
         """Move old way of storing filenames to new way"""

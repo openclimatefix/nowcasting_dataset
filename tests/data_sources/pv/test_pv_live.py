@@ -33,16 +33,20 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
     )
 
 
-@freeze_time("2022-01-01 17:00")
+@freeze_time("2022-01-01 10:55:00")
 def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
     """Get pv power from database, test out get extra minutes and interpolate"""
-    pv_power = get_pv_power_from_database(history_duration=timedelta(hours=1))
-    assert len(pv_power) == 0  # last data point is at 16:00
 
     pv_power = get_pv_power_from_database(
-        history_duration=timedelta(hours=1), load_extra_minutes=60, interpolate_minutes=60
+        history_duration=timedelta(hours=0.5), load_extra_minutes=0, interpolate_minutes=0
     )
-    assert len(pv_power) == 12  # 1 hours at 5 mins = 12
+    assert len(pv_power) == 0  # last data point is at 09:55
+
+    pv_power = get_pv_power_from_database(
+        history_duration=timedelta(hours=1), load_extra_minutes=60, interpolate_minutes=30
+    )
+    assert len(pv_power) == 13  # 1 hours at 5 mins = 12
+    assert pv_power.isna().sum().sum() == 6  # the last 30 mins is still nans
 
 
 @freeze_time("2022-01-01")

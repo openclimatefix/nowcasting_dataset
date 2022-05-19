@@ -19,12 +19,14 @@ def test_get_metadata_from_database(pv_yields_and_systems):
     assert len(meteadata) == 2
 
 
-@freeze_time("2022-01-01")
+@freeze_time("2022-01-01 05:00")
 def test_get_pv_power_from_database(pv_yields_and_systems):
     """Get pv power from database"""
-    pv_power = get_pv_power_from_database(history_duration=timedelta(hours=1))
+    pv_power = get_pv_power_from_database(
+        history_duration=timedelta(hours=1), load_extra_minutes=30, interpolate_minutes=30
+    )
 
-    assert len(pv_power) == 72  # 6 hours at 5 mins = 6*12
+    assert len(pv_power) == 13  # 1 hours at 5 mins = 6*12
     assert len(pv_power.columns) == 2
     assert pv_power.columns[0] == "11"
     assert (
@@ -33,7 +35,23 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
     )
 
 
-@freeze_time("2022-01-01")
+@freeze_time("2022-01-01 10:55:00")
+def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
+    """Get pv power from database, test out get extra minutes and interpolate"""
+
+    pv_power = get_pv_power_from_database(
+        history_duration=timedelta(hours=0.5), load_extra_minutes=0, interpolate_minutes=0
+    )
+    assert len(pv_power) == 0  # last data point is at 09:55
+
+    pv_power = get_pv_power_from_database(
+        history_duration=timedelta(hours=1), load_extra_minutes=60, interpolate_minutes=30
+    )
+    assert len(pv_power) == 13  # 1 hours at 5 mins = 12
+    assert pv_power.isna().sum().sum() == 6  # the last 30 mins is still nans
+
+
+@freeze_time("2022-01-01 05:00")
 def test_get_example_and_batch(pv_yields_and_systems):
     """Test PVDataSource with data source from database"""
 
@@ -61,6 +79,6 @@ def test_get_example_and_batch(pv_yields_and_systems):
     assert len(pv_data_source.pv_metadata) > 0
 
     locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
-    assert len(locations) == 72  # 6 hours at 5 mins
+    assert len(locations) == 7  # 30 minutes at 5 mins, inclusive
 
     _ = pv_data_source.get_example(location=locations[0])

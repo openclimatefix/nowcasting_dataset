@@ -52,8 +52,8 @@ def pv_yields_and_systems(db_session_pv):
 
     Pv systems: Two systems
     PV yields:
-        FOr system 1, pv yields from 4 to 10 at 5 minutes
-        For system 2: 1 pv yield at 16.00
+        For system 1, pv yields from 4 to 10 at 5 minutes. Last one at 09.55
+        For system 2: 1 pv yield at 04.00
     """
 
     pv_system_sql_1: PVSystemSQL = PVSystem(

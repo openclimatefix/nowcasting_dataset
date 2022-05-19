@@ -45,23 +45,42 @@ def get_metadata_from_database() -> pd.DataFrame:
     return pv_systems_df
 
 
-def get_pv_power_from_database(history_duration: timedelta) -> pd.DataFrame:
+def get_pv_power_from_database(
+    history_duration: timedelta, interpolate_minutes: int, load_extra_minutes: int
+) -> pd.DataFrame:
     """
     Get pv power from database
 
-    Returns: pandas data frame with the following columns
-    - pv systems indexes
+    Args:
+        history_duration: a timedelta of how many minutes to load in the past
+        interpolate_minutes: how many minutes we should interpolate the data froward for
+        load_extra_minutes: the extra minutes we should load, in order to load more data.
+            This is because some data from a site lags significantly behind 'now'
+
+    Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
 
     """
+
+    logger.info("Loading PV data from database")
+    logger.debug(f"{history_duration=} {interpolate_minutes=} {load_extra_minutes=}")
+
+    extra_duration = timedelta(minutes=load_extra_minutes)
+    now = datetime.now(tz=timezone.utc)
+    start_utc = now - history_duration
+    start_utc_extra = start_utc - extra_duration
+
+    # create empty dataframe with 5 mins periods
+    empty_df = pd.DataFrame(index=pd.date_range(start=start_utc_extra, end=now, freq="5T"))
 
     # make database connection
     url = os.getenv("DB_URL_PV")
     db_connection = DatabaseConnection(url=url, base=Base_PV)
 
     with db_connection.get_session() as session:
-        start_utc = datetime.now(tz=timezone.utc) - history_duration
-        pv_yields: List[PVYieldSQL] = get_pv_yield(session=session, start_utc=start_utc)
+        pv_yields: List[PVYieldSQL] = get_pv_yield(session=session, start_utc=start_utc_extra)
+
+        logger.debug(f"Found {len(pv_yields)} PV yields from the database")
 
         pv_yields_df = pd.DataFrame(
             [(PVYield.from_orm(pv_yield)).__dict__ for pv_yield in pv_yields]
@@ -72,9 +91,10 @@ def get_pv_power_from_database(history_duration: timedelta) -> pd.DataFrame:
     else:
         logger.debug(f"Found {len(pv_yields_df)} pv yields")
 
-    # get the system id from 'pv_system_id=xxxx provider=.....'
-    print(pv_yields_df.columns)
-    print(pv_yields_df["pv_system"])
+    if len(pv_yields_df) == 0:
+        return pv_yields_df
+
+        # get the system id from 'pv_system_id=xxxx provider=.....'
     pv_yields_df["pv_system_id"] = (
         pv_yields_df["pv_system"].astype(str).str.split(" ").str[0].str.split("=").str[-1]
     )
@@ -90,7 +110,16 @@ def get_pv_power_from_database(history_duration: timedelta) -> pd.DataFrame:
 
     pv_yields_df.columns = encode_label(pv_yields_df.columns, label="pvoutput")
 
-    # interpolate in between, maximum 30 mins
-    pv_yields_df.interpolate(limit=3, limit_area="inside", inplace=True)
+    # interpolate in between, maximum 'live_interpolate_minutes' mins
+    # note data is in 5 minutes chunks
+    pv_yields_df = empty_df.join(pv_yields_df)
+    limit = int(interpolate_minutes / 5)
+    if limit > 0:
+        pv_yields_df.interpolate(limit=limit, inplace=True)
+
+    # filter out the extra minutes loaded
+    logger.debug(f"{len(pv_yields_df)} of datetimes before filter on {start_utc}")
+    pv_yields_df = pv_yields_df[pv_yields_df.index >= start_utc]
+    logger.debug(f"{len(pv_yields_df)} of datetimes after filter on {start_utc}")
 
     return pv_yields_df

@@ -46,7 +46,7 @@ def get_metadata_from_database() -> pd.DataFrame:
 
 
 def get_pv_power_from_database(
-    history_duration: timedelta, interpolate_minutes: int = 30, load_extra_minutes: int = 60
+    history_duration: timedelta, interpolate_minutes: int, load_extra_minutes: int
 ) -> pd.DataFrame:
     """
     Get pv power from database
@@ -80,7 +80,7 @@ def get_pv_power_from_database(
     with db_connection.get_session() as session:
         pv_yields: List[PVYieldSQL] = get_pv_yield(session=session, start_utc=start_utc_extra)
 
-        logger.debug(f"Found {len(pv_yields)} from database")
+        logger.debug(f"Found {len(pv_yields)} PV yields from the database")
 
         pv_yields_df = pd.DataFrame(
             [(PVYield.from_orm(pv_yield)).__dict__ for pv_yield in pv_yields]

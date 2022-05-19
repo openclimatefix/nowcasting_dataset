@@ -51,13 +51,13 @@ def get_pv_power_from_database(
     """
     Get pv power from database
 
-    :param history_duration: a timedelta of how many minutes to load in the past
-    :param interpolate_minutes: how many minutes we should interpolate the data froward for
-    :param load_extra_minutes: the extra minutes we should load, in order to load more data.
-        This is because some data from a site lags significantly behind 'now'
+    Args:
+        history_duration: a timedelta of how many minutes to load in the past
+        interpolate_minutes: how many minutes we should interpolate the data froward for
+        load_extra_minutes: the extra minutes we should load, in order to load more data.
+            This is because some data from a site lags significantly behind 'now'
 
-    Returns: pandas data frame with the following columns
-    - pv systems indexes
+    Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
 
     """

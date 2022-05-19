@@ -80,6 +80,8 @@ def get_pv_power_from_database(
     with db_connection.get_session() as session:
         pv_yields: List[PVYieldSQL] = get_pv_yield(session=session, start_utc=start_utc_extra)
 
+        logger.debug(f"Found {len(pv_yields)} from database")
+
         pv_yields_df = pd.DataFrame(
             [(PVYield.from_orm(pv_yield)).__dict__ for pv_yield in pv_yields]
         )
@@ -116,6 +118,8 @@ def get_pv_power_from_database(
         pv_yields_df.interpolate(limit=limit, inplace=True)
 
     # filter out the extra minutes loaded
+    logger.debug(f"{len(pv_yields_df)} of datetimes before filter on {start_utc}")
     pv_yields_df = pv_yields_df[pv_yields_df.index >= start_utc]
+    logger.debug(f"{len(pv_yields_df)} of datetimes after filter on {start_utc}")
 
     return pv_yields_df

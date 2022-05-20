@@ -66,7 +66,7 @@ def get_pv_power_from_database(
     logger.debug(f"{history_duration=} {interpolate_minutes=} {load_extra_minutes=}")
 
     extra_duration = timedelta(minutes=load_extra_minutes)
-    now = datetime.now(tz=timezone.utc)
+    now = pd.to_datetime(datetime.now(tz=timezone.utc)).ceil("5T")
     start_utc = now - history_duration
     start_utc_extra = start_utc - extra_duration
 
@@ -86,7 +86,7 @@ def get_pv_power_from_database(
             [(PVYield.from_orm(pv_yield)).__dict__ for pv_yield in pv_yields]
         )
 
-    if len(pv_yields_df):
+    if len(pv_yields_df) == 0:
         logger.warning("Found no pv yields, this might cause an error")
     else:
         logger.debug(f"Found {len(pv_yields_df)} pv yields")

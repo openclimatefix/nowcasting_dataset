@@ -35,7 +35,7 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
     )
 
 
-@freeze_time("2022-01-01 10:55:00")
+@freeze_time("2022-01-01 10:54:59")
 def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
     """Get pv power from database, test out get extra minutes and interpolate"""
 

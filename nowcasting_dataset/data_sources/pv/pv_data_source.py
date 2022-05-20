@@ -225,7 +225,10 @@ class PVDataSource(ImageDataSource):
         logger.debug(f"Found {len(self.pv_power.columns)} pv power pv system ids")
 
         # get the max generation / capacity for each system
-        self.pv_capacity = pv_power.max()
+        if not self.is_live:
+            self.pv_capacity = pv_power.max()
+        else:
+            self.pv_capacity = self.pv_metadata["installed_capacity_kw"]
 
     def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> tuple[pd.DataFrame]:
         # TODO: Cache this?

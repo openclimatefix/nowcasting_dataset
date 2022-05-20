@@ -39,6 +39,11 @@ def get_metadata_from_database() -> pd.DataFrame:
             [(PVSystem.from_orm(pv_system)).__dict__ for pv_system in pv_systems]
         )
 
+    if len(pv_systems_df) == 0:
+        return pd.DataFrame(
+            columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
+        )
+
     pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label="pvoutput")
     pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
@@ -92,7 +97,7 @@ def get_pv_power_from_database(
         logger.debug(f"Found {len(pv_yields_df)} pv yields")
 
     if len(pv_yields_df) == 0:
-        return pv_yields_df
+        return pd.DataFrame(columns=["pv_system_id"])
 
         # get the system id from 'pv_system_id=xxxx provider=.....'
     pv_yields_df["pv_system_id"] = (

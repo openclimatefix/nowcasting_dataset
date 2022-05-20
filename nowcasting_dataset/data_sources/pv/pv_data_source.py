@@ -215,8 +215,9 @@ class PVDataSource(ImageDataSource):
         # Resample to 5-minutely and interpolate up to 15 minutes ahead.
         # TODO: Issue #301: Give users the option to NOT resample (because Perceiver IO
         # doesn't need all the data to be perfectly aligned).
-        pv_power = pv_power.resample("5T").interpolate(method="time", limit=3)
-        pv_power.dropna(axis="index", how="all", inplace=True)
+        if len(pv_power) > 0:
+            pv_power = pv_power.resample("5T").interpolate(method="time", limit=3)
+            pv_power.dropna(axis="index", how="all", inplace=True)
         # self.pv_power = dd.from_pandas(pv_power, npartitions=3)
         print("pv_power = {:,.1f} MB".format(pv_power.values.nbytes / 1e6))
         self.pv_power = pv_power
@@ -518,6 +519,10 @@ def drop_pv_systems_which_produce_overnight(pv_power: pd.DataFrame) -> pd.DataFr
     Args:
         pv_power: Normalised to [0, 1].
     """
+
+    if len(pv_power) == 0:
+        return pv_power
+
     # TODO: Of these bad systems, 24647, 42656, 42807, 43081, 51247, 59919
     # might have some salvagable data?
     NIGHT_YIELD_THRESHOLD = 0.4

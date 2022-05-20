@@ -51,6 +51,30 @@ def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
     assert pv_power.isna().sum().sum() == 6  # the last 30 mins is still nans
 
 
+def test_get_pv_power_from_database_no_data():
+    """Get pv power from database"""
+
+    _ = PVDataSource(
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
+        meters_per_pixel=2000,
+        is_live=True,
+        files_groups=[
+            PVFiles(
+                pv_filename="not needed",
+                pv_metadata_filename="not needed",
+                label="pvoutput",
+            )
+        ],
+        start_datetime=datetime.fromisoformat("2022-04-26 00:00:00.000"),
+        end_datetime=datetime.fromisoformat("2022-04-27 00:00:00.000"),
+        load_azimuth_and_elevation=False,
+        load_from_gcs=False,
+    )
+
+
 @freeze_time("2022-01-01 05:00")
 def test_get_example_and_batch(pv_yields_and_systems):
     """Test PVDataSource with data source from database"""

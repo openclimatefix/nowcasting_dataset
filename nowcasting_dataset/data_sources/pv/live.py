@@ -40,7 +40,7 @@ def get_metadata_from_database() -> pd.DataFrame:
         )
 
     pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label="pvoutput")
-    pv_systems_df = pv_systems_df[["latitude", "longitude"]]
+    pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
     return pv_systems_df
 

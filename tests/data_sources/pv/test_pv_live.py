@@ -80,5 +80,9 @@ def test_get_example_and_batch(pv_yields_and_systems):
 
     locations = pv_data_source.get_locations(pv_data_source.pv_power.index)
     assert len(locations) == 7  # 30 minutes at 5 mins, inclusive
+    assert (
+        pv_data_source.pv_capacity.iloc[0]
+        == pv_yields_and_systems["pv_systems"][0].installed_capacity_kw
+    )
 
     _ = pv_data_source.get_example(location=locations[0])

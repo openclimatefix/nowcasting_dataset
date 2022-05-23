@@ -5,7 +5,15 @@ from datetime import datetime
 
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models import PVSystem, PVSystemSQL, PVYield
+from nowcasting_datamodel.models import (
+    GSPYield,
+    Location,
+    LocationSQL,
+    PVSystem,
+    PVSystemSQL,
+    PVYield,
+)
+from nowcasting_datamodel.models.base import Base_Forecast
 from nowcasting_datamodel.models.pv import Base_PV
 
 """
@@ -15,29 +23,32 @@ https://gist.github.com/kissgyorgy/e2365f25a213de44b9a2 helped me get going
 
 
 @pytest.fixture
-def db_connection_pv():
+def db_connection():
     """Create data connection"""
 
     with tempfile.NamedTemporaryFile(suffix=".db") as temp:
         url = f"sqlite:///{temp.name}"
         os.environ["DB_URL_PV"] = url
+        os.environ["DB_URL"] = url
 
         connection = DatabaseConnection(url=url, base=Base_PV)
         Base_PV.metadata.create_all(connection.engine)
+        Base_Forecast.metadata.create_all(connection.engine)
 
         yield connection
 
         Base_PV.metadata.drop_all(connection.engine)
+        Base_Forecast.metadata.create_all(connection.engine)
 
 
 @pytest.fixture(scope="function", autouse=True)
-def db_session_pv(db_connection_pv):
+def db_session(db_connection):
     """Creates a new database session for a test."""
 
-    connection = db_connection_pv.engine.connect()
+    connection = db_connection.engine.connect()
     t = connection.begin()
 
-    with db_connection_pv.get_session() as s:
+    with db_connection.get_session() as s:
         s.begin()
         yield s
         s.rollback()
@@ -47,7 +58,7 @@ def db_session_pv(db_connection_pv):
 
 
 @pytest.fixture()
-def pv_yields_and_systems(db_session_pv):
+def pv_yields_and_systems(db_session):
     """Create pv yields and systems
 
     Pv systems: Two systems
@@ -88,13 +99,39 @@ def pv_yields_and_systems(db_session_pv):
     pv_yield_sqls.append(pv_yield_4)
 
     # add to database
-    db_session_pv.add_all(pv_yield_sqls)
-    db_session_pv.add(pv_system_sql_1)
-    db_session_pv.add(pv_system_sql_2)
+    db_session.add_all(pv_yield_sqls)
+    db_session.add(pv_system_sql_1)
+    db_session.add(pv_system_sql_2)
 
-    db_session_pv.commit()
+    db_session.commit()
 
     return {
         "pv_yields": pv_yield_sqls,
         "pv_systems": [pv_system_sql_1, pv_system_sql_2],
+    }
+
+
+@pytest.fixture()
+def gsp_yields(db_session):
+    """Make fake GSP data"""
+
+    gsp_sql_1: LocationSQL = Location(gsp_id=1, label="GSP_1", installed_capacity_mw=1).to_orm()
+
+    gsp_yield_sqls = []
+    for hour in range(0, 2):
+        for minute in range(0, 60, 30):
+            gsp_yield_1 = GSPYield(
+                datetime_utc=datetime(2022, 1, 1, hour, minute), solar_generation_kw=hour + minute
+            )
+            gsp_yield_1_sql = gsp_yield_1.to_orm()
+            gsp_yield_1_sql.location = gsp_sql_1
+            gsp_yield_sqls.append(gsp_yield_1_sql)
+
+    # add to database
+    db_session.add_all(gsp_yield_sqls)
+    db_session.commit()
+
+    return {
+        "gsp_yields": gsp_yield_sqls,
+        "gsp_systems": [gsp_sql_1],
     }

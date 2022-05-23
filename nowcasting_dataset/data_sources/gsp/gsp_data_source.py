@@ -18,6 +18,7 @@ from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
 from nowcasting_dataset.data_sources.data_source import ImageDataSource
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.gsp.live import get_gsp_power_from_database
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from nowcasting_dataset.square import get_bounding_box_mask
@@ -63,6 +64,7 @@ class GSPDataSource(ImageDataSource):
     northern_boundary_osgb: Optional[float] = 1_036_975
     # Only load metadata
     metadata_only: bool = False
+    is_live: bool = False
 
     def __post_init__(
         self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
@@ -76,7 +78,8 @@ class GSPDataSource(ImageDataSource):
 
     def check_input_paths_exist(self) -> None:
         """Check input paths exist.  If not, raise a FileNotFoundError."""
-        nd_fs_utils.check_path_exists(self.zarr_path)
+        if not self.is_live:
+            nd_fs_utils.check_path_exists(self.zarr_path)
 
     @property
     def sample_period_minutes(self) -> int:
@@ -103,9 +106,14 @@ class GSPDataSource(ImageDataSource):
 
         if not self.metadata_only:
             # load gsp data from file / gcp
-            self.gsp_power, self.gsp_capacity = load_solar_gsp_data(
-                self.zarr_path, start_dt=self.start_datetime, end_dt=self.end_datetime
-            )
+            if self.is_live:
+                self.gsp_power, self.gsp_capacity = get_gsp_power_from_database(
+                    history_duration=self.history_duration
+                )
+            else:
+                self.gsp_power, self.gsp_capacity = load_solar_gsp_data(
+                    self.zarr_path, start_dt=self.start_datetime, end_dt=self.end_datetime
+                )
 
             # drop any gsp below a threshold mw. This is to get rid of any small GSP where
             # predicting the solar output will be harder.
@@ -219,7 +227,7 @@ class GSPDataSource(ImageDataSource):
 
         """
 
-        logger.info("Getting one location for each datetime")
+        logger.info(f"Getting one location for each datetime {self.gsp_power}")
 
         total_gsp_nan_count = self.gsp_power.isna().sum().sum()
         if total_gsp_nan_count == 0:
@@ -519,6 +527,9 @@ def drop_gsp_by_threshold(
 
     Returns: power data and metadata
     """
+    if len(gsp_power) == 0:
+        return gsp_power, meta_data
+
     maximum_gsp = gsp_power.max()
 
     keep_index = maximum_gsp > threshold_mw
@@ -553,6 +564,9 @@ def drop_gsp_north_of_boundary(
     Returns: power data and metadata
     """
 
+    if len(gsp_power) == 0:
+        return gsp_power, meta_data
+
     keep_index = meta_data.location_y < northern_boundary_osgb
     filtered_meta_data = meta_data.loc[keep_index]
     filtered_gsp_ids = filtered_meta_data.gsp_id
@@ -586,7 +600,7 @@ def load_solar_gsp_data(
         start_dt: the start datetime, which to trim the data to
         end_dt: the end datetime, which to trim the data to
 
-    Returns: dataframe of pv data
+    Returns: dataframe of gsp data
 
     """
     logger.debug(f"Loading Solar GSP Data from {zarr_path} from {start_dt} to {end_dt}")

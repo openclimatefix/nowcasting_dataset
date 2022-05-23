@@ -235,7 +235,7 @@ class PVDataSource(ImageDataSource):
         # TODO: Cache this?
         start_dt = self._get_start_dt(t0_datetime_utc)
         end_dt = self._get_end_dt(t0_datetime_utc)
-        del t0_datetime_utc  # t0 is not used in the rest of this method!
+
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
         selected_pv_capacity = self.pv_capacity[selected_pv_power.columns]
 
@@ -247,6 +247,11 @@ class PVDataSource(ImageDataSource):
 
         selected_pv_power = selected_pv_power.loc[:, pv_power_zero_or_above_flag]
         selected_pv_capacity = selected_pv_capacity.loc[pv_power_zero_or_above_flag]
+
+        # is live, and no values, add a row of nans
+        if (len(selected_pv_power) == 0) and self.is_live:
+            selected_pv_power = selected_pv_power.append([pd.DataFrame(index=[t0_datetime_utc])])
+            selected_pv_capacity = selected_pv_capacity.append([pd.Series(index=[t0_datetime_utc])])
 
         return selected_pv_power, selected_pv_capacity
 

@@ -21,4 +21,4 @@ pathy
 opencv-contrib-python-headless
 gitpython
 pyresample
-nowcasting_datamodel==1.0.2
+nowcasting_datamodel==1.0.3

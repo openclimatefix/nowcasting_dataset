@@ -5,11 +5,13 @@ import pandas as pd
 from freezegun import freeze_time
 
 from nowcasting_dataset.config.model import PVFiles
+from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.pv.live import (
     get_metadata_from_database,
     get_pv_power_from_database,
 )
 from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
+from nowcasting_dataset.data_sources.pv.pv_model import PV
 
 
 def test_get_metadata_from_database(pv_yields_and_systems):
@@ -51,10 +53,11 @@ def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
     assert pv_power.isna().sum().sum() == 6  # the last 30 mins is still nans
 
 
+@freeze_time("2022-01-01 05:00")
 def test_get_pv_power_from_database_no_data():
     """Get pv power from database"""
 
-    _ = PVDataSource(
+    pv_data_source = PVDataSource(
         history_minutes=30,
         forecast_minutes=60,
         image_size_pixels_height=64,
@@ -72,7 +75,14 @@ def test_get_pv_power_from_database_no_data():
         end_datetime=datetime.fromisoformat("2022-04-27 00:00:00.000"),
         load_azimuth_and_elevation=False,
         load_from_gcs=False,
+        get_center=False,
     )
+
+    location = SpaceTimeLocation(
+        t0_datetime_utc=datetime(2022, 1, 1, 5), x_center_osgb=1234, y_center_osgb=555
+    )
+    d = PV(pv_data_source.get_batch(locations=[location]))
+    PV.validate(d)
 
 
 @freeze_time("2022-01-01 05:00")

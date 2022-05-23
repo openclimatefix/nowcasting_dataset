@@ -65,6 +65,8 @@ class GSPDataSource(ImageDataSource):
     # Only load metadata
     metadata_only: bool = False
     is_live: bool = False
+    live_interpolate_minutes: int = 60
+    live_load_extra_minutes: int = 60
 
     def __post_init__(
         self, image_size_pixels_height: int, image_size_pixels_width: int, meters_per_pixel: int
@@ -108,7 +110,9 @@ class GSPDataSource(ImageDataSource):
             # load gsp data from file / gcp
             if self.is_live:
                 self.gsp_power, self.gsp_capacity = get_gsp_power_from_database(
-                    history_duration=self.history_duration
+                    history_duration=self.history_duration,
+                    interpolate_minutes=self.live_interpolate_minutes,
+                    load_extra_minutes=self.live_load_extra_minutes,
                 )
             else:
                 self.gsp_power, self.gsp_capacity = load_solar_gsp_data(

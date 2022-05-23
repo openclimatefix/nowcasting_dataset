@@ -14,7 +14,9 @@ from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLoc
 def test_get_pv_power_from_database(gsp_yields, db_session):
     """Get pv power from database"""
 
-    gsp_power, gsp_capacity = get_gsp_power_from_database(history_duration=timedelta(hours=1))
+    gsp_power, gsp_capacity = get_gsp_power_from_database(
+        history_duration=timedelta(hours=1), interpolate_minutes=30, load_extra_minutes=0
+    )
 
     assert len(gsp_power) == 3  # 1 hours at 30 mins + 1
     assert len(gsp_power.columns) == 1

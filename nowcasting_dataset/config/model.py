@@ -437,6 +437,20 @@ class GSP(DataSourceMixin, StartEndDatetimeMixin):
     gsp_meters_per_pixel: int = METERS_PER_PIXEL_FIELD
     metadata_only: bool = Field(False, description="Option to only load metadata.")
 
+    is_live: bool = Field(
+        False, description="Option if to use live data from the nowcasting GSP/Forecast database"
+    )
+
+    live_interpolate_minutes: int = Field(
+        60, description="The number of minutes we allow GSP data to be interpolated"
+    )
+    live_load_extra_minutes: int = Field(
+        60,
+        description="The number of extra minutes in the past we should load. Then the recent "
+        "values can be interpolated, and the extra minutes removed. This is "
+        "because some live data takes ~1 hour to come in.",
+    )
+
     @validator("history_minutes")
     def history_minutes_divide_by_30(cls, v):
         """Validate 'history_minutes'"""

@@ -12,6 +12,7 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 import xarray as xr
+from scipy.spatial.distance import cdist
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset.consts import DEFAULT_N_GSP_PER_EXAMPLE
@@ -429,11 +430,15 @@ class GSPDataSource(ImageDataSource):
             # TODO: Implement finding GSP closest to x_center_osgb,
             # y_center_osgb.  This will probably be quite slow, so always
             # try finding an exact match first (which is super-fast).
-            raise NotImplementedError(
-                "Not yet implemented the ability to find GSP *nearest*"
-                " (but not at the identical location to) x_center_osgb and"
-                " y_center_osgb."
+
+            mat = cdist(
+                self.metadata[["location_x", "location_y"]],
+                [[x_center_osgb, y_center_osgb]],
+                metric="euclidean",
             )
+            closest_gsp = np.argmin(mat[:, 0])
+            # This is the closest GSP ID then
+            gsp_ids = [self.metadata.iloc[closest_gsp].gsp_id]
 
         gsp_ids = gsp_ids_with_data_for_timeslice.intersection(gsp_ids)
 

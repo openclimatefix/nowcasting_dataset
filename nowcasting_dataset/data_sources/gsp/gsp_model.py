@@ -22,7 +22,7 @@ class GSP(DataSourceOutput):
     def model_validation(cls, v):
         """Check that all values are non NaNs"""
         # Fill NaNs with Zeros
-        v["power_mw"] = v["power_mw"].fillna(0.0)
+        v["power_mw"] = v.check_nan_and_fill_warning(data=v.power_mw)
         v.check_nan_and_inf(data=v.power_mw)
         v.check_dataset_greater_than_or_equal_to(data=v.power_mw, min_value=0)
 

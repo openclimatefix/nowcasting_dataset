@@ -483,6 +483,15 @@ class Sun(DataSourceMixin):
         "gs://solar-pv-nowcasting-data/Sun/v1/sun.zarr/",
         description="Path to the Sun data source i.e Azimuth and Elevation",
     )
+    load_live: bool = Field(
+        False, description="Option to load sun data on the fly, rather than from file"
+    )
+
+    elevation_limit: int = Field(
+        10,
+        description="The limit to the elevations for examples. "
+        "Datetimes below this limits will be ignored",
+    )
 
 
 class InputData(Base):

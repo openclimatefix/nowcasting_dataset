@@ -127,14 +127,16 @@ class SunDataSource(DataSource):
     def datetime_index(self) -> pd.DatetimeIndex:
         """Get datetimes where elevation >= 10"""
 
-        if not self.load_live:
-            # get the lat and lon from london
-            latitude = 51
-            longitude = 0
+        # get the lat and lon from london
+        latitude = 51
+        longitude = 0
 
+        if not self.load_live:
             datestamps = self.elevation.index
         else:
-            datestamps = pd.date_range(datetime(2019, 1, 1), datetime(2020, 1, 1), frew="5T")
+            datestamps = pd.date_range(
+                datetime(2019, 1, 1), datetime(2019, 12, 31, 23, 55), freq="5T"
+            )
 
         # get elevation for all datetimes
         azimuth_elevation = calculate_azimuth_and_elevation_angle(
@@ -152,7 +154,7 @@ class SunDataSource(DataSource):
             f"out of {len(azimuth_elevation)} as elevation is < 10"
         )
 
-        datetimes = self.elevation[mask].index
+        datetimes = datestamps[mask]
 
         # Sun data is only for 2019, so to expand on these by
         # repeating data from 2014 to 2023

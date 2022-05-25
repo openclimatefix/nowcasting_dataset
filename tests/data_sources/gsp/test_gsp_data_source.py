@@ -126,6 +126,39 @@ def test_gsp_pv_data_source_get_example():
     assert pd.Timestamp(example.time[0].values) >= start_dt
 
 
+def test_gsp_pv_data_source_get_example_with_close_location():
+    """Test GSP example"""
+    local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."
+
+    start_dt = datetime(2020, 4, 1)
+    end_dt = datetime(2020, 4, 1)
+
+    gsp = GSPDataSource(
+        zarr_path=f"{local_path}/tests/data/gsp/test.zarr",
+        start_datetime=datetime(2020, 4, 1),
+        end_datetime=datetime(2020, 4, 2),
+        history_minutes=30,
+        forecast_minutes=60,
+        image_size_pixels_height=64,
+        image_size_pixels_width=64,
+        meters_per_pixel=2000,
+    )
+
+    locations = gsp.get_locations(t0_datetimes_utc=gsp.gsp_power.index[0:10])
+    test_location = locations[0]
+
+    test_location.x_center_osgb = test_location.x_center_osgb + 100
+    test_location.y_center_osgb = test_location.y_center_osgb - 75
+
+    example = gsp.get_example(location=locations[0])
+
+    assert len(example.id) == len(example.power_mw[0])
+    assert len(example.x_osgb) == len(example.y_osgb)
+    assert len(example.x_osgb) > 0
+    assert pd.Timestamp(example.time[0].values) <= end_dt
+    assert pd.Timestamp(example.time[0].values) >= start_dt
+
+
 def test_gsp_pv_data_source_get_batch():
     """Test GSP batch"""
     local_path = os.path.dirname(nowcasting_dataset.__file__) + "/.."

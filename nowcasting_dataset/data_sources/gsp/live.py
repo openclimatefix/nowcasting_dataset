@@ -10,6 +10,8 @@ from nowcasting_datamodel.models.base import Base_Forecast
 from nowcasting_datamodel.models.gsp import GSPYield, GSPYieldSQL, Location
 from nowcasting_datamodel.read.read_gsp import get_gsp_yield
 
+from nowcasting_dataset.consts import N_GSPS
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +54,7 @@ def get_gsp_power_from_database(
         gsp_yields: List[GSPYieldSQL] = get_gsp_yield(
             session=session,
             start_datetime_utc=start_utc_extra - timedelta(seconds=1),
-            gsp_ids=list(range(1, 10)),
+            gsp_ids=list(range(1, N_GSPS + 1)),
         )
 
         logger.debug(f"Found {len(gsp_yields)} GSP yields from the database")

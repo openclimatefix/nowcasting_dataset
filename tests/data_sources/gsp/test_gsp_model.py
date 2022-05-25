@@ -3,6 +3,7 @@ import os
 import tempfile
 
 import numpy as np
+import pytest
 
 from nowcasting_dataset.data_sources.fake.batch import gsp_fake
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
@@ -46,7 +47,8 @@ def test_gsp_validation(configuration):  # noqa: D103
     GSP.model_validation(gsp)
 
     gsp.power_mw[0, 0] = np.nan
-    GSP.model_validation(gsp)
+    with pytest.raises(Exception):
+        GSP.model_validation(gsp)
 
 
 def test_gsp_save(configuration):  # noqa: D103

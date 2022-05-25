@@ -21,8 +21,8 @@ def test_datasource_output_validation(configuration):  # noqa: D103
 
     # nan error
     gsp.power_mw[0, 0] = np.nan
-    # with pytest.raises(Exception):
-    GSP.model_validation(gsp)
+    with pytest.raises(Exception):
+        GSP.model_validation(gsp)
 
     # inf error
     gsp.power_mw[0, 0] = np.inf

@@ -126,7 +126,7 @@ class GSPDataSource(ImageDataSource):
                 self.gsp_power, self.metadata, threshold_mw=self.threshold_mw
             )
 
-            if self.northern_boundary_osgb is not None:
+            if (self.northern_boundary_osgb is not None) and (not self.is_live):
                 self.gsp_power, self.metadata = drop_gsp_north_of_boundary(
                     self.gsp_power,
                     self.metadata,
@@ -485,6 +485,12 @@ class GSPDataSource(ImageDataSource):
         gsp_ids = self.metadata[mask].gsp_id
         gsp_ids = gsp_ids_with_data_for_timeslice.intersection(gsp_ids)
 
+        if len(gsp_ids) == 0:
+            logger.warning(
+                f"Did not find any gsps for ({x_center_osgb=},{y_center_osgb=}). "
+                f"The bounding box was {bounding_box},"
+                f"all of x are {x} all of y are {y},"
+            )
         assert len(gsp_ids) > 0
         return gsp_ids
 
@@ -536,6 +542,9 @@ def drop_gsp_by_threshold(
 
     Returns: power data and metadata
     """
+
+    logger.debug(f"Filtering GSP data on threshold {threshold_mw}")
+
     if len(gsp_power) == 0:
         return gsp_power, meta_data
 

@@ -7,9 +7,9 @@ input_data:
   #---------------------- GSP -------------------
   gsp:
     gsp_zarr_path: /mnt/storage_b/data/ocf/solar_pv_nowcasting/nowcasting_dataset_pipeline/PV/GSP/v3/pv_gsp.zarr
-    history_minutes: 90
-    forecast_minutes: 360
-    log_level: "INFO"
+    history_minutes: 120
+    forecast_minutes: 480
+    log_level: "ERROR"
 
   #---------------------- NWP -------------------
   nwp:

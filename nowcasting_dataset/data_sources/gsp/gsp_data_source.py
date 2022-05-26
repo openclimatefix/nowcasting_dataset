@@ -538,7 +538,8 @@ def drop_gsp_by_threshold(
     Args:
         gsp_power: GSP power data
         meta_data: the GSP meta data
-        threshold_mw: the threshold where we only taken GSP with a maximum power, above this value.
+        threshold_mw: the threshold where we only taken GSP with a maximum power,
+        above (or equal) this value.
 
     Returns: power data and metadata
     """
@@ -550,7 +551,7 @@ def drop_gsp_by_threshold(
 
     maximum_gsp = gsp_power.max()
 
-    keep_index = maximum_gsp > threshold_mw
+    keep_index = maximum_gsp >= threshold_mw
 
     dropped_gsp_names = meta_data.loc[keep_index[~keep_index].index].gsp_name
 

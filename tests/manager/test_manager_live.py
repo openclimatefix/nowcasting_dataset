@@ -1,7 +1,7 @@
 """Test Manager Live."""
 import os
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -10,6 +10,7 @@ import pytest
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
 from nowcasting_dataset.dataset.split.split import SplitMethod
 from nowcasting_dataset.manager.manager_live import ManagerLive
+from nowcasting_dataset.time import floor_minutes_dt
 
 
 def test_sample_spatial_and_temporal_locations_for_examples(
@@ -183,7 +184,44 @@ def test_run_error_data_source_which_defines_geospatial_locations(test_configura
         manager.initialize_data_sources()
 
 
-def test_run(test_configuration_filename):
+def test_run_just_gsp(test_configuration_filename, gsp_yields_and_systems):
+    """Test to initialize data sources and get batches"""
+
+    manager = ManagerLive()
+    manager.load_yaml_configuration(filename=test_configuration_filename)
+
+    # adjust config
+    manager.config.input_data.gsp.is_live = True
+    manager.config.input_data.gsp.history_minutes = 120
+
+    manager.initialize_data_sources(names_of_selected_data_sources=["gsp"])
+
+    with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
+
+        manager.config.output_data.filepath = Path(dst_path)
+        manager.local_temp_path = Path(local_temp_path)
+
+        manager.create_files_specifying_spatial_and_temporal_locations_of_each_example(
+            t0_datetime=floor_minutes_dt(datetime.now(tz=timezone.utc))
+        )  # noqa 101
+
+        manager.create_batches()
+
+        with tempfile.TemporaryDirectory() as local_temp_path_save:
+            manager.save_batch(batch_idx=0, path=local_temp_path_save)
+            assert os.path.exists(f"{local_temp_path_save}/gsp/000000.nc")
+
+            import xarray as xr
+
+            from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+
+            gsp = xr.load_dataset(f"{local_temp_path_save}/gsp/000000.nc", engine="h5netcdf")
+            gsp = GSP(gsp)
+            assert len(gsp.time.values[0]) == 5
+            assert gsp.time.values[0, -1] == floor_minutes_dt(datetime.utcnow())
+
+
+def test_run(test_configuration_filename, gsp_yields_and_systems):
     """Test to initialize data sources and get batches"""
 
     manager = ManagerLive()
@@ -191,7 +229,6 @@ def test_run(test_configuration_filename):
     manager.initialize_data_sources(names_of_selected_data_sources=["gsp", "nwp"])
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 

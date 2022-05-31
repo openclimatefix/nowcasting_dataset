@@ -1,10 +1,7 @@
 """ functions for testing pv live """
-import os
-import tempfile
 from datetime import datetime
 
 import pytest
-from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models import (
     GSPYield,
     Location,
@@ -13,48 +10,11 @@ from nowcasting_datamodel.models import (
     PVSystemSQL,
     PVYield,
 )
-from nowcasting_datamodel.models.base import Base_Forecast
-from nowcasting_datamodel.models.pv import Base_PV
 
 """
 This is a bit complicated and sensitive to change
 https://gist.github.com/kissgyorgy/e2365f25a213de44b9a2 helped me get going
 """
-
-
-@pytest.fixture
-def db_connection():
-    """Create data connection"""
-
-    with tempfile.NamedTemporaryFile(suffix=".db") as temp:
-        url = f"sqlite:///{temp.name}"
-        os.environ["DB_URL_PV"] = url
-        os.environ["DB_URL"] = url
-
-        connection = DatabaseConnection(url=url, base=Base_PV)
-        Base_PV.metadata.create_all(connection.engine)
-        Base_Forecast.metadata.create_all(connection.engine)
-
-        yield connection
-
-        Base_PV.metadata.drop_all(connection.engine)
-        Base_Forecast.metadata.create_all(connection.engine)
-
-
-@pytest.fixture(scope="function", autouse=True)
-def db_session(db_connection):
-    """Creates a new database session for a test."""
-
-    connection = db_connection.engine.connect()
-    t = connection.begin()
-
-    with db_connection.get_session() as s:
-        s.begin()
-        yield s
-        s.rollback()
-
-    t.rollback()
-    connection.close()
 
 
 @pytest.fixture()
@@ -118,7 +78,7 @@ def gsp_yields(db_session):
     gsp_sql_1: LocationSQL = Location(gsp_id=1, label="GSP_1", installed_capacity_mw=1).to_orm()
 
     gsp_yield_sqls = []
-    for hour in range(0, 2):
+    for hour in range(0, 4):
         for minute in range(0, 60, 30):
             gsp_yield_1 = GSPYield(
                 datetime_utc=datetime(2022, 1, 1, hour, minute), solar_generation_kw=hour + minute

@@ -36,7 +36,7 @@ def get_gsp_power_from_database(
     logger.debug(f"{history_duration=}")
 
     extra_duration = timedelta(minutes=load_extra_minutes)
-    now = pd.to_datetime(datetime.now(tz=timezone.utc)).ceil("30T")
+    now = pd.to_datetime(datetime.now(tz=timezone.utc)).floor("30T")
     start_utc = now - history_duration
     start_utc_extra = start_utc - extra_duration
 
@@ -109,10 +109,10 @@ def get_gsp_power_from_database(
     limit = int(interpolate_minutes / 30)
     if limit > 0:
         gsp_power_df.interpolate(
-            limit=limit, inplace=True, method="slinear", fill_value="extrapolate"
+            limit=limit, inplace=True, method="cubic", fill_value="extrapolate"
         )
         gsp_capacity_df.interpolate(
-            limit=limit, inplace=True, method="slinear", fill_value="extrapolate"
+            limit=limit, inplace=True, method="cubic", fill_value="extrapolate"
         )
 
     # filter out the extra minutes loaded

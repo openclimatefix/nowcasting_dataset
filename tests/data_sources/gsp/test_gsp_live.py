@@ -51,13 +51,13 @@ def test_get_pv_power_from_database_no_data():
         _ = gsp_data_source.get_batch(locations=[location])
 
 
-@freeze_time("2022-01-01 01:00")
+@freeze_time("2022-01-01 03:10")
 def test_get_example_and_batch(gsp_yields):
     """Test GSPDataSource with data source from database"""
 
     gsp_data_source = GSPDataSource(
-        history_minutes=60,
-        forecast_minutes=60,
+        history_minutes=120,
+        forecast_minutes=480,
         image_size_pixels_height=64,
         image_size_pixels_width=64,
         meters_per_pixel=2000,
@@ -71,10 +71,14 @@ def test_get_example_and_batch(gsp_yields):
     assert len(gsp_data_source.metadata) > 0
 
     locations = gsp_data_source.get_locations(gsp_data_source.gsp_power.index)
-    assert len(locations) == 3  # 60 minutes at 3 mins, inclusive
+    assert len(locations) == 5  # 120 minutes at 30 mins, inclusive
     assert (
         gsp_data_source.gsp_capacity[1].iloc[0]
         == gsp_yields["gsp_systems"][0].installed_capacity_mw
     )
 
-    _ = gsp_data_source.get_example(location=locations[0])
+    location = locations[0]
+    location.t0_datetime_utc = datetime(2022, 1, 1, 3, tzinfo=timezone.utc)
+
+    example = gsp_data_source.get_example(location=location)
+    example.time.values[-1] == datetime(2022, 1, 1, 3)

@@ -51,7 +51,7 @@ def test_get_pv_power_from_database_no_data():
         _ = gsp_data_source.get_batch(locations=[location])
 
 
-@freeze_time("2022-01-01 01:00")
+@freeze_time("2022-01-01 03:00")
 def test_get_example_and_batch(gsp_yields):
     """Test GSPDataSource with data source from database"""
 

@@ -118,7 +118,7 @@ def gsp_yields(db_session):
     gsp_sql_1: LocationSQL = Location(gsp_id=1, label="GSP_1", installed_capacity_mw=1).to_orm()
 
     gsp_yield_sqls = []
-    for hour in range(0, 2):
+    for hour in range(0, 4):
         for minute in range(0, 60, 30):
             gsp_yield_1 = GSPYield(
                 datetime_utc=datetime(2022, 1, 1, hour, minute), solar_generation_kw=hour + minute

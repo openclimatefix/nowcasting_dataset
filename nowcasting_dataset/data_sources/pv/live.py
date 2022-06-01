@@ -126,11 +126,11 @@ def get_pv_power_from_database(
     limit = int(interpolate_minutes / 5)
     if limit > 0:
         try:
-            pv_yields_df.interpolate(limit=limit, inplace=True, method="cubic")
+            pv_yields_df.interpolate(limit=limit, inplace=True)
         except Exception as e:
             logger.exception(e)
             logger.debug(pv_yields_df)
-            raise Exception(f"Could not do cubic interpolate with limit {limit}")
+            raise Exception(f"Could not do interpolate with limit {limit}")
 
     # filter out the extra minutes loaded
     logger.debug(f"{len(pv_yields_df)} of datetimes before filter on {start_utc}")

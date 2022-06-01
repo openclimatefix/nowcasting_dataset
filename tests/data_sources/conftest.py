@@ -1,5 +1,5 @@
 """ functions for testing pv live """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from nowcasting_datamodel.models import (
@@ -54,9 +54,14 @@ def pv_yields_and_systems(db_session):
             pv_yield_1.pv_system = pv_system_sql_1
             pv_yield_sqls.append(pv_yield_1)
 
-    pv_yield_4 = PVYield(datetime_utc=datetime(2022, 1, 1, 4), solar_generation_kw=4).to_orm()
-    pv_yield_4.pv_system = pv_system_sql_2
-    pv_yield_sqls.append(pv_yield_4)
+    # pv system with gaps every 5 mins
+    for minutes in [0, 10, 20, 30]:
+
+        pv_yield_4 = PVYield(
+            datetime_utc=datetime(2022, 1, 1, 4) + timedelta(minutes=minutes), solar_generation_kw=4
+        ).to_orm()
+        pv_yield_4.pv_system = pv_system_sql_2
+        pv_yield_sqls.append(pv_yield_4)
 
     # add to database
     db_session.add_all(pv_yield_sqls)

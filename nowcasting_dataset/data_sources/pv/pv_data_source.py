@@ -266,11 +266,11 @@ class PVDataSource(ImageDataSource):
         # to find the pv_system_ids at that exact location.  This is
         # super-fast (a few hundred microseconds).  We use np.isclose
         # instead of the equality operator because floats.
-        pv_system_ids = self.pv_metadata.index[
+        pv_system_ids_at_location = self.pv_metadata.index[
             np.isclose(self.pv_metadata.location_x, x_center_osgb)
             & np.isclose(self.pv_metadata.location_y, y_center_osgb)
         ]
-        if len(pv_system_ids) == 0:
+        if len(pv_system_ids_at_location) == 0:
             # TODO: Implement finding PV systems closest to x_center_osgb,
             # y_center_osgb.  This will probably be quite slow, so always
             # try finding an exact match first (which is super-fast).
@@ -280,8 +280,13 @@ class PVDataSource(ImageDataSource):
                 " y_center_osgb."
             )
 
-        pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(pv_system_ids)
-        assert len(pv_system_ids) > 0
+        pv_system_ids = pv_system_ids_with_data_for_timeslice.intersection(
+            pv_system_ids_at_location
+        )
+        if len(pv_system_ids) == 0:
+            logger.debug(pv_system_ids_at_location)
+            logger.debug(pv_system_ids_with_data_for_timeslice)
+            assert len(pv_system_ids) > 0
 
         # Select just one PV system (the locations in PVOutput.org are quite
         # approximate, so it's quite common to have multiple PV systems
@@ -463,6 +468,9 @@ class PVDataSource(ImageDataSource):
                     id_type="pv_system",
                 )
             )
+
+        # sort locations by id
+        locations = sorted(locations, key=lambda d: d.id)
 
         return locations
 

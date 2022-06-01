@@ -2,7 +2,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 from nowcasting_datamodel.connection import DatabaseConnection
@@ -51,7 +51,10 @@ def get_metadata_from_database() -> pd.DataFrame:
 
 
 def get_pv_power_from_database(
-    history_duration: timedelta, interpolate_minutes: int, load_extra_minutes: int
+    history_duration: timedelta,
+    interpolate_minutes: int,
+    load_extra_minutes: int,
+    load_extra_minutes_and_keep: Optional[int] = 30,
 ) -> pd.DataFrame:
     """
     Get pv power from database
@@ -60,7 +63,9 @@ def get_pv_power_from_database(
         history_duration: a timedelta of how many minutes to load in the past
         interpolate_minutes: how many minutes we should interpolate the data froward for
         load_extra_minutes: the extra minutes we should load, in order to load more data.
-            This is because some data from a site lags significantly behind 'now'
+            This is because some data from a site lags significantly behind 'now'.
+            These extra minutes are not kept but used to interpolate results.
+        load_extra_minutes_and_keep: extra minutes to load, but also keep this data.
 
     Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
@@ -72,7 +77,7 @@ def get_pv_power_from_database(
 
     extra_duration = timedelta(minutes=load_extra_minutes)
     now = pd.to_datetime(datetime.now(tz=timezone.utc)).ceil("5T")
-    start_utc = now - history_duration
+    start_utc = now - history_duration - timedelta(minutes=load_extra_minutes_and_keep)
     start_utc_extra = start_utc - extra_duration
 
     # create empty dataframe with 5 mins periods
@@ -120,7 +125,12 @@ def get_pv_power_from_database(
     pv_yields_df = empty_df.join(pv_yields_df)
     limit = int(interpolate_minutes / 5)
     if limit > 0:
-        pv_yields_df.interpolate(limit=limit, inplace=True)
+        try:
+            pv_yields_df.interpolate(limit=limit, inplace=True, method="cubic")
+        except Exception as e:
+            logger.exception(e)
+            logger.debug(pv_yields_df)
+            raise Exception(f"Could not do cubic interpolate with limit {limit}")
 
     # filter out the extra minutes loaded
     logger.debug(f"{len(pv_yields_df)} of datetimes before filter on {start_utc}")

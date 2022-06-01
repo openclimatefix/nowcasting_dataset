@@ -95,7 +95,7 @@ def test_get_pv_power_from_database_no_data():
 
 
 @freeze_time("2022-01-01 05:15")
-def test_get_example_and_batch(pv_yields_and_systems):
+def test_get_example(pv_yields_and_systems):
     """Test PVDataSource with data source from database"""
 
     pv_data_source = PVDataSource(

@@ -18,7 +18,7 @@ def test_get_metadata_from_database(pv_yields_and_systems):
     """Test get meteadata from database"""
     meteadata = get_metadata_from_database()
 
-    assert len(meteadata) == 2
+    assert len(meteadata) == 3
 
 
 @freeze_time("2022-01-01 05:00")

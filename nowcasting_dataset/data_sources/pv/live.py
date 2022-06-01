@@ -120,13 +120,17 @@ def get_pv_power_from_database(
 
     pv_yields_df.columns = encode_label(pv_yields_df.columns, label="pvoutput")
 
+    # we are going interpolate using 'quadratic' method and we need at least 3 data points,
+    # therefore we drop system wiht less than 3 nans
+    pv_yields_df = pv_yields_df.loc[:, pv_yields_df.notnull().sum() >= 3]
+
     # interpolate in between, maximum 'live_interpolate_minutes' mins
     # note data is in 5 minutes chunks
     pv_yields_df = empty_df.join(pv_yields_df)
     limit = int(interpolate_minutes / 5)
     if limit > 0:
         try:
-            pv_yields_df.interpolate(limit=limit, inplace=True)
+            pv_yields_df.interpolate(limit=limit, inplace=True, method="quadratic")
         except Exception as e:
             logger.exception(e)
             logger.debug(pv_yields_df)

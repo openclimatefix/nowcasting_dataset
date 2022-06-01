@@ -43,6 +43,14 @@ def pv_yields_and_systems(db_session):
         latitude=56,
         installed_capacity_kw=124,
     ).to_orm()
+    pv_system_sql_3: PVSystemSQL = PVSystem(
+        pv_system_id=3,
+        provider="pvoutput.org",
+        status_interval_minutes=5,
+        longitude=0,
+        latitude=57,
+        installed_capacity_kw=124,
+    ).to_orm()
 
     pv_yield_sqls = []
     for hour in range(4, 10):
@@ -62,6 +70,13 @@ def pv_yields_and_systems(db_session):
         ).to_orm()
         pv_yield_4.pv_system = pv_system_sql_2
         pv_yield_sqls.append(pv_yield_4)
+
+    # add a system with only on pv yield
+    pv_yield_5 = PVYield(
+        datetime_utc=datetime(2022, 1, 1, 4) + timedelta(minutes=minutes), solar_generation_kw=4
+    ).to_orm()
+    pv_yield_5.pv_system = pv_system_sql_3
+    pv_yield_sqls.append(pv_yield_5)
 
     # add to database
     db_session.add_all(pv_yield_sqls)

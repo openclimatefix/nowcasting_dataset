@@ -725,7 +725,9 @@ def set_git_commit(configuration: Configuration):
     Returns: configuration object with git information
 
     """
+
     repo = git.Repo(search_parent_directories=True)
+    git.refresh("/usr/bin/git")
 
     git_details = Git(
         hash=repo.head.object.hexsha,

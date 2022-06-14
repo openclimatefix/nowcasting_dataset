@@ -67,6 +67,23 @@ def test_yaml_save():
         _ = load_yaml_configuration(filename)
 
 
+def test_yaml_load_env():
+    """
+    Check a configuration can be loaded with an env var
+    """
+
+    filename = os.path.join(
+        os.path.dirname(nowcasting_dataset.__file__), "../tests/config", "test.yaml"
+    )
+
+    os.environ["PATH"] = "example_path"
+
+    # check the file can be loaded
+    config_load = load_yaml_configuration(filename)
+
+    assert "example_path" in config_load.general.description
+
+
 def test_extra_field():
     """
     Check a extra parameters in config causes error

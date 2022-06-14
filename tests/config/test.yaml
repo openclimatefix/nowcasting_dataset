@@ -1,5 +1,5 @@
 general:
-  description: example configuration
+  description: !ENV example configuration with env ${PATH} # noqa
   name: example
 git: null
 input_data:

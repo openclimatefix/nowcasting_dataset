@@ -11,7 +11,6 @@ repos:
       # list of supported hooks: https://pre-commit.com/hooks.html
       - id: trailing-whitespace
       - id: end-of-file-fixer
-      - id: check-yaml
       - id: debug-statements
       - id: detect-private-key
 

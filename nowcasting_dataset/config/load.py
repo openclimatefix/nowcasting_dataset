@@ -3,8 +3,8 @@ import logging
 from typing import Union
 
 import fsspec
-import yaml
 from pathy import Pathy
+from pyaml_env import parse_config
 
 from nowcasting_dataset.config.model import Configuration
 
@@ -24,7 +24,9 @@ def load_yaml_configuration(filename: Union[str, Pathy]) -> Configuration:
     """
     # load the file to a dictionary
     with fsspec.open(filename, mode="r") as stream:
-        configuration = yaml.safe_load(stream)
+        configuration = parse_config(data=stream)
+        # this means we can load ENVs in the yaml file
+
     # turn into pydantic class
     configuration = Configuration(**configuration)
 

@@ -128,7 +128,7 @@ class SatelliteDataSource(ZarrDataSource):
                 # file name is xxxxxx.zarr or xxxxx.zarr.zip,
                 zarr_path_15 = str(self.zarr_path).replace(".zarr", "_15.zarr")
 
-                self.logger.debug(f"There going to load {zarr_path_15} and resample")
+                self.logger.debug(f"Now going to load {zarr_path_15} and resample")
                 data_array = open_sat_data(
                     zarr_path=zarr_path_15,
                     consolidated=self.consolidated,

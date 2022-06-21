@@ -9,6 +9,8 @@ from nowcasting_datamodel.models import (
     PVSystem,
     PVSystemSQL,
     PVYield,
+    pv_output,
+    solar_sheffield_passiv,
 )
 
 """
@@ -35,6 +37,14 @@ def pv_yields_and_systems(db_session):
         latitude=55,
         installed_capacity_kw=123,
     ).to_orm()
+    pv_system_sql_1_ss: PVSystemSQL = PVSystem(
+        pv_system_id=1,
+        provider=solar_sheffield_passiv,
+        status_interval_minutes=5,
+        longitude=0,
+        latitude=57,
+        installed_capacity_kw=124,
+    ).to_orm()
     pv_system_sql_2: PVSystemSQL = PVSystem(
         pv_system_id=2,
         provider="pvoutput.org",
@@ -45,7 +55,7 @@ def pv_yields_and_systems(db_session):
     ).to_orm()
     pv_system_sql_3: PVSystemSQL = PVSystem(
         pv_system_id=3,
-        provider="pvoutput.org",
+        provider=pv_output,
         status_interval_minutes=5,
         longitude=0,
         latitude=57,
@@ -61,6 +71,13 @@ def pv_yields_and_systems(db_session):
             ).to_orm()
             pv_yield_1.pv_system = pv_system_sql_1
             pv_yield_sqls.append(pv_yield_1)
+
+            pv_yield_1_ss = PVYield(
+                datetime_utc=datetime(2022, 1, 1, hour, minute),
+                solar_generation_kw=hour + minute / 100,
+            ).to_orm()
+            pv_yield_1_ss.pv_system = pv_system_sql_1_ss
+            pv_yield_sqls.append(pv_yield_1_ss)
 
     # pv system with gaps every 5 mins
     for minutes in [0, 10, 20, 30]:

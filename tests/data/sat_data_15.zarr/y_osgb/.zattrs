@@ -1,0 +1,9 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "y_geostationary",
+        "x_geostationary"
+    ],
+    "coordinate_reference_system": "OSGB",
+    "name": "Northing",
+    "units": "meter"
+}

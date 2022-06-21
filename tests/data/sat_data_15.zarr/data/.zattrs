@@ -1,0 +1,30 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time",
+        "y_geostationary",
+        "x_geostationary",
+        "channels"
+    ],
+    "_satpy_id": "!!python/object/apply:satpy.dataset.dataid._unpickle\n- calibration:\n    enum:\n    - reflectance\n    - brightness_temperature\n    - radiance\n    - counts\n    transitive: true\n  modifiers:\n    default: !!python/object/new:satpy.dataset.dataid.ModifierTuple\n    - !!python/tuple []\n    type: !!python/name:satpy.dataset.dataid.ModifierTuple ''\n  name:\n    required: true\n  resolution:\n    transitive: false\n  wavelength:\n    type: !!python/name:satpy.dataset.dataid.WavelengthRange ''\n- calibration: reflectance\n  modifiers: !!python/object/new:satpy.dataset.dataid.ModifierTuple\n  - !!python/tuple []\n  name: VIS006\n  resolution: 3000.403165817\n  wavelength: !!python/object/new:satpy.dataset.dataid.WavelengthRange\n  - 0.56\n  - 0.635\n  - 0.71\n  - \"\\xB5m\"\n",
+    "ancillary_variables": [],
+    "area": "msg_seviri_rss_3km:\n  description: MSG SEVIRI Rapid Scanning Service area definition with 3 km resolution\n  projection:\n    proj: geos\n    lon_0: 9.5\n    h: 35785831\n    x_0: 0\n    y_0: 0\n    a: 6378169\n    rf: 295.488065897014\n    no_defs: null\n    type: crs\n  shape:\n    height: 298\n    width: 615\n  area_extent:\n    lower_left_xy: [28503.830075263977, 5090183.970808983]\n    upper_right_xy: [-1816744.1169023514, 4196063.827395439]\n    units: m\n",
+    "calibration": "reflectance",
+    "coordinates": "x_osgb y_osgb",
+    "georef_offset_corrected": "True",
+    "modifiers": [],
+    "name": "VIS006",
+    "orbital_parameters": "projection_altitude: 35785831.0\nprojection_latitude: 0.0\nprojection_longitude: 9.5\nsatellite_actual_altitude: 35785318.36137774\nsatellite_actual_latitude: 0.93420926835795\nsatellite_actual_longitude: 9.32427158542414\nsatellite_nominal_latitude: 0.0\nsatellite_nominal_longitude: 9.5\n",
+    "platform_name": "Meteosat-10",
+    "reader": "seviri_l1b_native",
+    "resolution": 3000.403165817,
+    "sensor": "seviri",
+    "standard_name": "toa_bidirectional_reflectance",
+    "sun_earth_distance_correction_applied": "True",
+    "sun_earth_distance_correction_factor": 1.0282367454433767,
+    "wavelength": [
+        0.56,
+        0.635,
+        0.71,
+        "\u00b5m"
+    ]
+}

@@ -2,7 +2,7 @@
 import itertools
 import logging
 from dataclasses import InitVar, dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import partial
 from numbers import Number
 from typing import Callable, Iterable, Optional
@@ -117,6 +117,28 @@ class SatelliteDataSource(ZarrDataSource):
         # doesn't disappear while its being used
         if self.is_live:
             data_array = data_array.load()
+
+            # 1 month a year, and 2 days a month the 5 minute satellite data is down,
+            # but the 15 minutes data is still there, so lets check if we need to load that
+
+            latest_time = pd.to_datetime(data_array.time[-1].values)
+            if latest_time < datetime.utcnow() - timedelta(hours=1):
+                self.logger.debug(f"last datesatmp is {latest_time}, which is more than 1 hour ago")
+                # create new filename with _15 on the end
+                # file name is xxxxxx.zarr or xxxxx.zarr.zip,
+                zarr_path_15 = str(self.zarr_path).replace(".zarr", "_15.zarr")
+
+                self.logger.debug(f"Now going to load {zarr_path_15} and resample")
+                data_array = open_sat_data(
+                    zarr_path=zarr_path_15,
+                    consolidated=self.consolidated,
+                    logger=self.logger,
+                    sample_period_minutes=self.sample_period_minutes,
+                )
+
+                data_array = data_array.load()
+                data_array = data_array.resample(time="5T").interpolate("linear")
+
         return data_array
 
     @staticmethod

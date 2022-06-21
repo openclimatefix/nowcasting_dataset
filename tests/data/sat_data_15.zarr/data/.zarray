@@ -1,0 +1,23 @@
+{
+    "chunks": [
+        3,
+        75,
+        308,
+        1
+    ],
+    "compressor": {
+        "id": "bz2",
+        "level": 5
+    },
+    "dtype": "<f8",
+    "fill_value": "NaN",
+    "filters": null,
+    "order": "C",
+    "shape": [
+        9,
+        298,
+        615,
+        1
+    ],
+    "zarr_format": 2
+}

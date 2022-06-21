@@ -11,7 +11,7 @@ def encode_label(indexes: List[str], label: str) -> List[str]:
     The new encoding must be integers and unique.
     It would be useful if the indexes can read and deciphered by humans.
     This is done by times the original index by 10
-    and adding 1 for passive or 2 for other lables
+    and adding 1 for passiv or 2 for other lables
 
     Args:
         indexes: list of indexes

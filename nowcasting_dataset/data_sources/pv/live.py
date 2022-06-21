@@ -129,6 +129,27 @@ def get_pv_power_from_database(
         pv_yields_df["pv_system"].astype(str).str.split(" ").str[0].str.split("=").str[-1]
     )
 
+    pv_yields_df["provider"] = (
+        pv_yields_df["pv_system"]
+        .astype(str)
+        .str.split(" ")
+        .str[1]
+        .str.split("=")
+        .str[1]
+        .str.replace("'", "")
+    )
+
+    # encode pv system id
+    for provider in pv_output, solar_sheffield_passiv:
+        idx = pv_yields_df["provider"] == provider
+        if provider == pv_output:
+            label = "pvoutput"
+        else:
+            label = "passiv"
+        pv_yields_df.loc[idx, "pv_system_id"] = encode_label(
+            pv_yields_df.loc[idx, "pv_system_id"], label=label
+        )
+
     # pivot on
     pv_yields_df = pv_yields_df[["datetime_utc", "pv_system_id", "solar_generation_kw"]]
     pv_yields_df.drop_duplicates(
@@ -137,8 +158,6 @@ def get_pv_power_from_database(
     pv_yields_df = pv_yields_df.pivot(
         index="datetime_utc", columns="pv_system_id", values="solar_generation_kw"
     )
-
-    pv_yields_df.columns = encode_label(pv_yields_df.columns, label="pvoutput")
 
     # we are going interpolate using 'quadratic' method and we need at least 3 data points,
     # therefore we drop system wiht less than 3 nans

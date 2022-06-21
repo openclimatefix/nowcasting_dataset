@@ -32,8 +32,8 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
     )
 
     assert len(pv_power) == 19  # 1.5 hours at 5 mins = 6*12
-    assert len(pv_power.columns) == 2
-    assert pv_power.columns[0] == "11"
+    assert len(pv_power.columns) == 3
+    assert pv_power.columns[0] == "10"
     assert (
         pd.to_datetime(pv_power.index[0]).isoformat()
         == datetime(2022, 1, 1, 3, 30, tzinfo=timezone.utc).isoformat()
@@ -59,7 +59,7 @@ def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
         load_extra_minutes_and_keep=30,
     )
     assert len(pv_power) == 19  # 1.5 hours at 5 mins = 12
-    assert pv_power.isna().sum().sum() == 12  # the last 1 hour is still nans
+    assert pv_power.isna().sum().sum() == 24  # the last 1 hour is still nans, for 2 pv systems
 
 
 @freeze_time("2022-01-01 05:00")
@@ -91,6 +91,7 @@ def test_get_pv_power_from_database_no_data():
         t0_datetime_utc=datetime(2022, 1, 1, 5), x_center_osgb=1234, y_center_osgb=555
     )
     d = PV(pv_data_source.get_batch(locations=[location]))
+
     PV.validate(d)
 
 

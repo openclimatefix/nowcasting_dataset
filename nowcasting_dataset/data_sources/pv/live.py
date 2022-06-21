@@ -7,7 +7,14 @@ from typing import List, Optional
 import pandas as pd
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_PV
-from nowcasting_datamodel.models.pv import PVSystem, PVSystemSQL, PVYield, PVYieldSQL
+from nowcasting_datamodel.models.pv import (
+    PVSystem,
+    PVSystemSQL,
+    PVYield,
+    PVYieldSQL,
+    pv_output,
+    solar_sheffield_passiv,
+)
 from nowcasting_datamodel.read.read_pv import get_pv_systems, get_pv_yield
 
 from nowcasting_dataset.data_sources.pv.utils import encode_label
@@ -30,24 +37,35 @@ def get_metadata_from_database() -> pd.DataFrame:
     url = os.getenv("DB_URL_PV")
     db_connection = DatabaseConnection(url=url, base=Base_PV)
 
-    with db_connection.get_session() as session:
-        # read pv systems
-        pv_systems: List[PVSystemSQL] = get_pv_systems(session=session)
+    pv_system_all_df = []
+    for provider in [pv_output, solar_sheffield_passiv]:
 
-        # format locations
-        pv_systems_df = pd.DataFrame(
-            [(PVSystem.from_orm(pv_system)).__dict__ for pv_system in pv_systems]
-        )
+        with db_connection.get_session() as session:
+            # read pv systems
+            pv_systems: List[PVSystemSQL] = get_pv_systems(session=session, provider=provider)
 
-    if len(pv_systems_df) == 0:
-        return pd.DataFrame(
-            columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
-        )
+            # format locations
+            pv_systems_df = pd.DataFrame(
+                [(PVSystem.from_orm(pv_system)).__dict__ for pv_system in pv_systems]
+            )
 
-    pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label="pvoutput")
-    pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
+        if len(pv_systems_df) == 0:
+            return pd.DataFrame(
+                columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
+            )
 
-    return pv_systems_df
+        if provider == pv_output:
+            label = "pvoutput"
+        else:
+            label = "passiv"
+        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=label)
+        pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
+
+        pv_system_all_df.append(pv_systems_df)
+
+    pv_system_all_df = pd.concat(pv_system_all_df)
+
+    return pv_system_all_df
 
 
 def get_pv_power_from_database(

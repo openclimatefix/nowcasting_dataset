@@ -22,7 +22,7 @@ from nowcasting_dataset.data_sources.pv.utils import encode_label
 logger = logging.getLogger(__name__)
 
 
-def get_metadata_from_database() -> pd.DataFrame:
+def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
     """
     Get metadata from database
 
@@ -33,12 +33,15 @@ def get_metadata_from_database() -> pd.DataFrame:
         The index is the pv_system_id
     """
 
+    if providers is None:
+        providers = [pv_output, solar_sheffield_passiv]
+
     # make database connection
     url = os.getenv("DB_URL_PV")
     db_connection = DatabaseConnection(url=url, base=Base_PV)
 
     pv_system_all_df = []
-    for provider in [pv_output, solar_sheffield_passiv]:
+    for provider in providers:
 
         with db_connection.get_session() as session:
             # read pv systems
@@ -161,7 +164,9 @@ def get_pv_power_from_database(
 
     # we are going interpolate using 'quadratic' method and we need at least 3 data points,
     # Lets make sure we have double that, therefore we drop system with less than 6 nans
+    N = len(pv_yields_df)
     pv_yields_df = pv_yields_df.loc[:, pv_yields_df.notnull().sum() >= 6]
+    logger.debug(f"Have dropped {len(pv_yields_df) - N} PV systems, as they don't have enough data")
 
     # interpolate in between, maximum 'live_interpolate_minutes' mins
     # note data is in 5 minutes chunks

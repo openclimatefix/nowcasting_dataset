@@ -19,6 +19,7 @@ from typing import List, Optional, Union
 import git
 import numpy as np
 import pandas as pd
+from nowcasting_datamodel.models.pv import providers
 from pathy import Pathy
 from pydantic import BaseModel, Field, root_validator, validator
 
@@ -27,7 +28,6 @@ from nowcasting_dataset.consts import (
     DEFAULT_N_GSP_PER_EXAMPLE,
     DEFAULT_N_PV_SYSTEMS_PER_EXAMPLE,
     NWP_VARIABLE_NAMES,
-    PV_PROVIDERS,
     SAT_VARIABLE_NAMES,
 )
 from nowcasting_dataset.dataset.split import split
@@ -193,7 +193,7 @@ class PVFiles(BaseModel):
     @validator("label")
     def v_label0(cls, v):
         """Validate 'label'"""
-        assert v in PV_PROVIDERS
+        assert v in providers
         return v
 
 

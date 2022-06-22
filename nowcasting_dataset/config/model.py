@@ -193,7 +193,10 @@ class PVFiles(BaseModel):
     @validator("label")
     def v_label0(cls, v):
         """Validate 'label'"""
-        assert v in providers
+        if v not in providers:
+            message = f"provider {v} not in {providers}"
+            logger.error(message)
+            raise Exception(message)
         return v
 
 

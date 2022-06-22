@@ -32,7 +32,7 @@ def test_get_pv_power_from_database(pv_yields_and_systems):
     )
 
     assert len(pv_power) == 19  # 1.5 hours at 5 mins = 6*12
-    assert len(pv_power.columns) == 3
+    assert len(pv_power.columns) == 2
     assert pv_power.columns[0] == "10"
     assert (
         pd.to_datetime(pv_power.index[0]).isoformat()

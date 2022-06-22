@@ -124,7 +124,7 @@ def get_pv_power_from_database(
     if len(pv_yields_df) == 0:
         return pd.DataFrame(columns=["pv_system_id"])
 
-        # get the system id from 'pv_system_id=xxxx provider=.....'
+    # get the system id from 'pv_system_id=xxxx provider=.....'
     pv_yields_df["pv_system_id"] = (
         pv_yields_df["pv_system"].astype(str).str.split(" ").str[0].str.split("=").str[-1]
     )
@@ -160,8 +160,8 @@ def get_pv_power_from_database(
     )
 
     # we are going interpolate using 'quadratic' method and we need at least 3 data points,
-    # therefore we drop system wiht less than 3 nans
-    pv_yields_df = pv_yields_df.loc[:, pv_yields_df.notnull().sum() >= 3]
+    # Lets make sure we have double that, therefore we drop system with less than 6 nans
+    pv_yields_df = pv_yields_df.loc[:, pv_yields_df.notnull().sum() >= 6]
 
     # interpolate in between, maximum 'live_interpolate_minutes' mins
     # note data is in 5 minutes chunks

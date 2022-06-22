@@ -12,6 +12,7 @@ import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
+from nowcasting_datamodel.models.pv import pv_output, solar_sheffield_passiv
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
@@ -110,9 +111,9 @@ class PVDataSource(ImageDataSource):
                 metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
 
                 # filter for zero capacity
-                if pv_files.label == "pvoutput":
+                if pv_files.label == pv_output:
                     metadata = metadata[metadata["system_size_watts"] > 0]
-                elif pv_files.label == "passiv":
+                elif pv_files.label == solar_sheffield_passiv:
                     metadata = metadata[metadata["kwp"] > 0]
 
                 pv_metadata.append(metadata)
@@ -186,7 +187,7 @@ class PVDataSource(ImageDataSource):
 
         # A bit of hand-crafted cleaning
         bad_pvputput_indexes = [30248]
-        bad_pvputput_indexes = encode_label(bad_pvputput_indexes, label="pvoutput")
+        bad_pvputput_indexes = encode_label(bad_pvputput_indexes, label=pv_output)
         for bad_index in bad_pvputput_indexes:
             if bad_index in pv_power.columns:
                 pv_power[bad_index]["2018-10-29":"2019-01-03"] = np.NaN

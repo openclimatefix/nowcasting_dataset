@@ -1,7 +1,7 @@
 """ Util functions for PV data source"""
 from typing import List
 
-from nowcasting_dataset.consts import PV_PROVIDERS
+from nowcasting_datamodel.models.pv import providers
 
 
 def encode_label(indexes: List[str], label: str) -> List[str]:
@@ -15,15 +15,15 @@ def encode_label(indexes: List[str], label: str) -> List[str]:
 
     Args:
         indexes: list of indexes
-        label: either 'passiv' or 'pvoutput'
+        label: either 'solar_sheffield_passiv' or 'pvoutput.org'
 
     Returns: list of indexes encoded by label
     """
-    assert label in PV_PROVIDERS
+    assert label in providers
     # this encoding does work if the number of pv providers is more than 10
-    assert len(PV_PROVIDERS) < 10
+    assert len(providers) < 10
 
-    label_index = PV_PROVIDERS.index(label)
+    label_index = providers.index(label)
     new_index = [str(int(col) * 10 + label_index) for col in indexes]
 
     return new_index

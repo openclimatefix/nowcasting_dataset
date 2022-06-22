@@ -57,11 +57,7 @@ def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
                 columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
             )
 
-        if provider == pv_output:
-            label = "pvoutput"
-        else:
-            label = "passiv"
-        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=label)
+        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
         pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
         pv_system_all_df.append(pv_systems_df)
@@ -145,12 +141,9 @@ def get_pv_power_from_database(
     # encode pv system id
     for provider in pv_output, solar_sheffield_passiv:
         idx = pv_yields_df["provider"] == provider
-        if provider == pv_output:
-            label = "pvoutput"
-        else:
-            label = "passiv"
+
         pv_yields_df.loc[idx, "pv_system_id"] = encode_label(
-            pv_yields_df.loc[idx, "pv_system_id"], label=label
+            pv_yields_df.loc[idx, "pv_system_id"], label=provider
         )
 
     # pivot on

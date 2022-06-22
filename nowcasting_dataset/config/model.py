@@ -19,7 +19,7 @@ from typing import List, Optional, Union
 import git
 import numpy as np
 import pandas as pd
-from nowcasting_datamodel.models.pv import providers
+from nowcasting_datamodel.models.pv import providers, pv_output, solar_sheffield_passiv
 from pathy import Pathy
 from pydantic import BaseModel, Field, root_validator, validator
 
@@ -188,7 +188,7 @@ class PVFiles(BaseModel):
         description="Tthe CSV files describing each PV system.",
     )
 
-    label: str = Field("pvoutput", description="Label of where the pv data came from")
+    label: str = Field(pv_output, description="Label of where the pv data came from")
 
     @validator("label")
     def v_label0(cls, v):
@@ -250,7 +250,7 @@ class PV(DataSourceMixin, StartEndDatetimeMixin):
                 "Loading pv files the old way, and moving them the new way. "
                 "Please update configuration file"
             )
-            label = "pvoutput" if "pvoutput" in v.pv_filename.lower() else "passiv"
+            label = pv_output if "pvoutput" in v.pv_filename.lower() else solar_sheffield_passiv
             pv_file = PVFiles(
                 pv_filename=v.pv_filename, pv_metadata_filename=v.pv_metadata_filename, label=label
             )

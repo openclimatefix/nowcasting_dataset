@@ -137,6 +137,7 @@ class SatelliteDataSource(ZarrDataSource):
                 )
 
                 data_array = data_array.load()
+                self.logger.debug("Resampling 15 minute data to 5 mins")
                 data_array = data_array.resample(time="5T").interpolate("linear")
 
         return data_array

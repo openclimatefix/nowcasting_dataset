@@ -456,6 +456,8 @@ def open_sat_data(
             combine="nested",
         )
 
+    logger.debug("Formatting Satellite data")
+
     # Rename
     # These renamings will no longer be necessary when the Zarr uses the 'correct' names,
     # see https://github.com/openclimatefix/Satip/issues/66
@@ -478,11 +480,14 @@ def open_sat_data(
     # reindex satellite to 15 mins data
     datetime_index = pd.DatetimeIndex(data_array["time"])
     if sample_period_minutes != 5:
+        logger.debug(f"Resampling satellite data to {sample_period_minutes=}")
         time_mask = datetime_index.minute % sample_period_minutes == 0
         data_array = data_array.sel(time=time_mask)
 
     # Sanity check!
     assert datetime_index.is_unique
     assert datetime_index.is_monotonic_increasing
+
+    logger.debug("Opening satellite data: %s: done", zarr_path)
 
     return data_array

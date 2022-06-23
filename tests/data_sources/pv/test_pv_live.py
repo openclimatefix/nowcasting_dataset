@@ -77,7 +77,7 @@ def test_get_pv_power_from_database_no_data():
             PVFiles(
                 pv_filename="not needed",
                 pv_metadata_filename="not needed",
-                label="pvoutput",
+                label="pvoutput.org",
             )
         ],
         start_datetime=datetime.fromisoformat("2022-04-26 00:00:00.000"),
@@ -110,7 +110,7 @@ def test_get_example(pv_yields_and_systems):
             PVFiles(
                 pv_filename="not needed",
                 pv_metadata_filename="not needed",
-                label="pvoutput",
+                label="pvoutput.org",
             )
         ],
         start_datetime=datetime.fromisoformat("2022-04-26 00:00:00.000"),

@@ -80,7 +80,7 @@ Download PV timeseries data from PVOutput.org using
 
 ### OCF uk_pv dataset
 
-PV solar generation data from the UK. This dataset contains data from 1311 PV systems from 2018-01-01 to 2021-10-27. The time series of solar generation is in 5 minutes chunks. This data is collected from live PV systems in the UK. We have obfuscated the location of the PV systems for privacy. 
+PV solar generation data from the UK. This dataset contains data from 1311 PV systems from 2018-01-01 to 2021-10-27. The time series of solar generation is in 5 minutes chunks. This data is collected from live PV systems in the UK. We have obfuscated the location of the PV systems for privacy.
 
 ![](./docs/uk_pv_locations.jpg)
 

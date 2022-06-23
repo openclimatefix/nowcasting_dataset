@@ -72,6 +72,7 @@ def get_pv_power_from_database(
     interpolate_minutes: int,
     load_extra_minutes: int,
     load_extra_minutes_and_keep: Optional[int] = 30,
+    providers: List[str] = None,
 ) -> pd.DataFrame:
     """
     Get pv power from database
@@ -83,6 +84,7 @@ def get_pv_power_from_database(
             This is because some data from a site lags significantly behind 'now'.
             These extra minutes are not kept but used to interpolate results.
         load_extra_minutes_and_keep: extra minutes to load, but also keep this data.
+        providers: optional list of providers
 
     Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
@@ -91,6 +93,9 @@ def get_pv_power_from_database(
 
     logger.info("Loading PV data from database")
     logger.debug(f"{history_duration=} {interpolate_minutes=} {load_extra_minutes=}")
+
+    if providers is None:
+        providers = [pv_output, solar_sheffield_passiv]
 
     extra_duration = timedelta(minutes=load_extra_minutes)
     now = pd.to_datetime(datetime.now(tz=timezone.utc)).ceil("5T")
@@ -106,7 +111,7 @@ def get_pv_power_from_database(
 
     with db_connection.get_session() as session:
         pv_yields: List[PVYieldSQL] = get_pv_yield(
-            session=session, start_utc=start_utc_extra, correct_data=True
+            session=session, start_utc=start_utc_extra, correct_data=True, providers=providers
         )
 
         logger.debug(f"Found {len(pv_yields)} PV yields from the database")

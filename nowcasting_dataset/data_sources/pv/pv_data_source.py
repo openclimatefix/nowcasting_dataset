@@ -62,6 +62,9 @@ class PVDataSource(ImageDataSource):
         if type(self.files_groups[0]) == dict:
             self.files_groups = [PVFiles(**files) for files in self.files_groups]
 
+        # providers
+        self.providers = [file.label for file in self.files_groups]
+
         super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
 
         self.rng = np.random.default_rng()
@@ -120,7 +123,7 @@ class PVDataSource(ImageDataSource):
             pv_metadata = pd.concat(pv_metadata)
 
         else:
-            pv_metadata = get_metadata_from_database()
+            pv_metadata = get_metadata_from_database(providers=self.providers)
 
             logger.debug(f"Found {len(pv_metadata)} pv systems from database")
 
@@ -179,6 +182,7 @@ class PVDataSource(ImageDataSource):
                 history_duration=self.history_duration,
                 interpolate_minutes=self.live_interpolate_minutes,
                 load_extra_minutes=self.live_load_extra_minutes,
+                providers=self.providers,
             )
             logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
             logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")

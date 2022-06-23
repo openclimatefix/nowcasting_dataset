@@ -12,6 +12,7 @@ import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
+from nowcasting_datamodel.models.pv import pv_output, solar_sheffield_passiv
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
 from nowcasting_dataset import geospatial
@@ -60,6 +61,9 @@ class PVDataSource(ImageDataSource):
 
         if type(self.files_groups[0]) == dict:
             self.files_groups = [PVFiles(**files) for files in self.files_groups]
+
+        # providers
+        self.providers = [file.label for file in self.files_groups]
 
         super().__post_init__(image_size_pixels_height, image_size_pixels_width, meters_per_pixel)
 
@@ -110,16 +114,16 @@ class PVDataSource(ImageDataSource):
                 metadata.index = encode_label(indexes=metadata.index, label=pv_files.label)
 
                 # filter for zero capacity
-                if pv_files.label == "pvoutput":
+                if pv_files.label == pv_output:
                     metadata = metadata[metadata["system_size_watts"] > 0]
-                elif pv_files.label == "passiv":
+                elif pv_files.label == solar_sheffield_passiv:
                     metadata = metadata[metadata["kwp"] > 0]
 
                 pv_metadata.append(metadata)
             pv_metadata = pd.concat(pv_metadata)
 
         else:
-            pv_metadata = get_metadata_from_database()
+            pv_metadata = get_metadata_from_database(providers=self.providers)
 
             logger.debug(f"Found {len(pv_metadata)} pv systems from database")
 
@@ -178,6 +182,7 @@ class PVDataSource(ImageDataSource):
                 history_duration=self.history_duration,
                 interpolate_minutes=self.live_interpolate_minutes,
                 load_extra_minutes=self.live_load_extra_minutes,
+                providers=self.providers,
             )
             logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
             logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
@@ -186,7 +191,7 @@ class PVDataSource(ImageDataSource):
 
         # A bit of hand-crafted cleaning
         bad_pvputput_indexes = [30248]
-        bad_pvputput_indexes = encode_label(bad_pvputput_indexes, label="pvoutput")
+        bad_pvputput_indexes = encode_label(bad_pvputput_indexes, label=pv_output)
         for bad_index in bad_pvputput_indexes:
             if bad_index in pv_power.columns:
                 pv_power[bad_index]["2018-10-29":"2019-01-03"] = np.NaN

@@ -5,6 +5,7 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+from nowcasting_datamodel.models.pv import solar_sheffield_passiv
 
 import nowcasting_dataset
 from nowcasting_dataset.config.model import PVFiles
@@ -53,7 +54,7 @@ def test_get_example_and_batch():  # noqa: D103
             PVFiles(
                 pv_filename=PV_DATA_FILENAME,
                 pv_metadata_filename=PV_METADATA_FILENAME,
-                label="passiv",
+                label=solar_sheffield_passiv,
             )
         ],
         start_datetime=datetime.fromisoformat("2020-04-01 00:00:00.000"),

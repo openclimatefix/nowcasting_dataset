@@ -13,7 +13,7 @@ input_data:
     nwp_zarr_path: tests/data/nwp_data/test.zarr
   pv:
     pv_files_groups:
-      - label: passiv
+      - label: sheffield_solar_passiv
         pv_filename: tests/data/pv_data/test.nc
         pv_metadata_filename: tests/data/pv_metadata/UK_PV_metadata.csv
   satellite:

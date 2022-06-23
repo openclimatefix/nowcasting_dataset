@@ -22,7 +22,7 @@ from nowcasting_dataset.data_sources.pv.utils import encode_label
 logger = logging.getLogger(__name__)
 
 
-def get_metadata_from_database() -> pd.DataFrame:
+def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
     """
     Get metadata from database
 
@@ -33,12 +33,15 @@ def get_metadata_from_database() -> pd.DataFrame:
         The index is the pv_system_id
     """
 
+    if providers is None:
+        providers = [pv_output, solar_sheffield_passiv]
+
     # make database connection
     url = os.getenv("DB_URL_PV")
     db_connection = DatabaseConnection(url=url, base=Base_PV)
 
     pv_system_all_df = []
-    for provider in [pv_output, solar_sheffield_passiv]:
+    for provider in providers:
 
         with db_connection.get_session() as session:
             # read pv systems
@@ -54,11 +57,7 @@ def get_metadata_from_database() -> pd.DataFrame:
                 columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
             )
 
-        if provider == pv_output:
-            label = "pvoutput"
-        else:
-            label = "passiv"
-        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=label)
+        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
         pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
         pv_system_all_df.append(pv_systems_df)
@@ -73,6 +72,7 @@ def get_pv_power_from_database(
     interpolate_minutes: int,
     load_extra_minutes: int,
     load_extra_minutes_and_keep: Optional[int] = 30,
+    providers: List[str] = None,
 ) -> pd.DataFrame:
     """
     Get pv power from database
@@ -84,6 +84,7 @@ def get_pv_power_from_database(
             This is because some data from a site lags significantly behind 'now'.
             These extra minutes are not kept but used to interpolate results.
         load_extra_minutes_and_keep: extra minutes to load, but also keep this data.
+        providers: optional list of providers
 
     Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
@@ -92,6 +93,9 @@ def get_pv_power_from_database(
 
     logger.info("Loading PV data from database")
     logger.debug(f"{history_duration=} {interpolate_minutes=} {load_extra_minutes=}")
+
+    if providers is None:
+        providers = [pv_output, solar_sheffield_passiv]
 
     extra_duration = timedelta(minutes=load_extra_minutes)
     now = pd.to_datetime(datetime.now(tz=timezone.utc)).ceil("5T")
@@ -107,7 +111,7 @@ def get_pv_power_from_database(
 
     with db_connection.get_session() as session:
         pv_yields: List[PVYieldSQL] = get_pv_yield(
-            session=session, start_utc=start_utc_extra, correct_data=True
+            session=session, start_utc=start_utc_extra, correct_data=True, providers=providers
         )
 
         logger.debug(f"Found {len(pv_yields)} PV yields from the database")
@@ -142,12 +146,9 @@ def get_pv_power_from_database(
     # encode pv system id
     for provider in pv_output, solar_sheffield_passiv:
         idx = pv_yields_df["provider"] == provider
-        if provider == pv_output:
-            label = "pvoutput"
-        else:
-            label = "passiv"
+
         pv_yields_df.loc[idx, "pv_system_id"] = encode_label(
-            pv_yields_df.loc[idx, "pv_system_id"], label=label
+            pv_yields_df.loc[idx, "pv_system_id"], label=provider
         )
 
     # pivot on
@@ -161,7 +162,9 @@ def get_pv_power_from_database(
 
     # we are going interpolate using 'quadratic' method and we need at least 3 data points,
     # Lets make sure we have double that, therefore we drop system with less than 6 nans
+    N = len(pv_yields_df)
     pv_yields_df = pv_yields_df.loc[:, pv_yields_df.notnull().sum() >= 6]
+    logger.debug(f"Have dropped {len(pv_yields_df) - N} PV systems, as they don't have enough data")
 
     # interpolate in between, maximum 'live_interpolate_minutes' mins
     # note data is in 5 minutes chunks

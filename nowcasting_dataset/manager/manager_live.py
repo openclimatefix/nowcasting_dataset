@@ -123,6 +123,11 @@ class ManagerLive(ManagerBase):
             t0_datetimes_utc=pd.DatetimeIndex([t0_datetime])
         )
 
+        assert len(locations) > 0, Exception(
+            f"Tried to get locations for {t0_datetime=} but couldnt get any."
+            f"The data source was {self.data_source_which_defines_geospatial_locations}"
+        )
+
         # reduce locations to n_examples
         if n_examples is not None:
             locations = locations[:n_examples]

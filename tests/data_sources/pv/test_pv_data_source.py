@@ -63,7 +63,6 @@ def test_get_example_and_batch():  # noqa: D103
         load_from_gcs=False,
     )
 
-    print(pv_data_source.pv_metadata["kwp"])
     assert pv_data_source.pv_metadata["kwp"].min() > 0
 
     locations = pv_data_source.get_locations(pv_data_source.pv_power.index)

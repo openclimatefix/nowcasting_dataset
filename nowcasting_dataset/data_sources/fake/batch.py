@@ -553,7 +553,6 @@ def create_image_array(
         size_x=image_size_pixels_width,
         x_center_osgb=x_center_osgb,
         y_center_osgb=y_center_osgb,
-        two_dimensional=nwp_or_satellite == "satellite",
     )
 
     time = pd.date_range(end=t0_datetime_utc, freq=freq, periods=history_seq_length + 1).union(

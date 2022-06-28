@@ -560,7 +560,7 @@ def create_image_array(
         pd.date_range(start=t0_datetime_utc, freq=freq, periods=seq_length - history_seq_length)
     )
 
-    # First, define coords which are common between NWP and satellite:
+    # First, define coords which are common between NWP and satellite.
     # (Don't worry about the order of the dims. That will be defined using the `dims` arg
     # to the `xr.DataArray` constructor.)
     coords = {"time": time, "channels": np.array(channels)}

@@ -564,26 +564,30 @@ def create_image_array(
     # (Don't worry about the order of the dims. That will be defined using the `dims` arg
     # to the `xr.DataArray` constructor.)
     coords = {"time": time, "channels": np.array(channels)}
+
+    # Now define coords and dims specific to nwp or satellite.
     if nwp_or_satellite == "nwp":
-        coords["y_osgb"] = y_osgb
-        coords["x_osgb"] = x_osgb
+        dims = ("time", "y_osgb", "x_osgb", "channels")
+        coords["y_osgb"] = ("y_osgb", y_osgb)
+        coords["x_osgb"] = ("x_osgb", x_osgb)
     elif nwp_or_satellite == "satellite":
-        coords["y_osgb"] = (("y", "x"), y_osgb)
-        coords["x_osgb"] = (("y", "x"), x_osgb)
+        dims = ("time", "y_geostationary", "x_geostationary", "channels")
+        coords["y_osgb"] = (("y_geostationary", "x_geostationary"), y_osgb)
+        coords["x_osgb"] = (("y_geostationary", "x_geostationary"), x_osgb)
     else:
         raise ValueError(
             f"nwp_or_satellite must be either 'nwp' or 'satellite', not '{nwp_or_satellite}'"
         )
 
     image_data_array = xr.DataArray(
-        abs(  # to make sure average is about 100
+        data=abs(  # to make sure average is about 100
             np.random.uniform(
                 0,
                 200,
                 size=(seq_length, image_size_pixels_height, image_size_pixels_width, len(channels)),
             )
         ),
-        dims=("time", "y", "x", "channels"),
+        dims=dims,
         coords=coords,
         name="data",
     )  # Fake data for testing!

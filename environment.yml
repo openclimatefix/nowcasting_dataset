@@ -41,3 +41,5 @@ dependencies:
 
   - pip:
       - git+https://github.com/SheffieldSolar/PV_Live-API
+      - pyaml_env
+      - nowcasting_datamodel

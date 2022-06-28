@@ -560,34 +560,33 @@ def create_image_array(
         pd.date_range(start=t0_datetime_utc, freq=freq, periods=seq_length - history_seq_length)
     )
 
-    # First, define coords which are common between NWP and satellite:
-    # (Don't worry about the order of the dims. That will be defined using the `dims` arg
-    # to the `xr.DataArray` constructor.)
-    coords = {"time": time, "channels": np.array(channels)}
-
-    # Now define coords and dims specific to nwp or satellite.
     if nwp_or_satellite == "nwp":
-        dims = ("time", "y_osgb", "x_osgb", "channels")
-        coords["y_osgb"] = ("y_osgb", y_osgb)
-        coords["x_osgb"] = ("x_osgb", x_osgb)
+        coords = (
+            ("time", time),
+            ("x_osgb", x_osgb),
+            ("y_osgb", y_osgb),
+            ("channels", np.array(channels)),
+        )
     elif nwp_or_satellite == "satellite":
-        dims = ("time", "y_geostationary", "x_geostationary", "channels")
-        coords["y_osgb"] = (("y_geostationary", "x_geostationary"), y_osgb)
-        coords["x_osgb"] = (("y_geostationary", "x_geostationary"), x_osgb)
+        coords = (
+            ("time", time),
+            ("y_geostationary", y_osgb),
+            ("x_geostationary", x_osgb),
+            ("channels", np.array(channels)),
+        )
     else:
         raise ValueError(
             f"nwp_or_satellite must be either 'nwp' or 'satellite', not '{nwp_or_satellite}'"
         )
 
     image_data_array = xr.DataArray(
-        data=abs(  # to make sure average is about 100
+        abs(  # to make sure average is about 100
             np.random.uniform(
                 0,
                 200,
                 size=(seq_length, image_size_pixels_height, image_size_pixels_width, len(channels)),
             )
         ),
-        dims=dims,
         coords=coords,
         name="data",
     )  # Fake data for testing!

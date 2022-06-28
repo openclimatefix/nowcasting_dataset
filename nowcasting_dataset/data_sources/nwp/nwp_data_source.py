@@ -126,6 +126,8 @@ class NWPDataSource(ZarrDataSource):
         end_hourly = end_dt.ceil("H")
 
         # TODO: Issue #398: Use NWP init time closest to t0.
+        # TODO: This could be simplified (and sped up?) by using
+        # `data.sel(inti_time=start_hourly, method="pad")`. See RawNWPDataSource._get_time_slice.
         init_time_i = np.searchsorted(self.data.init_time, start_hourly.to_numpy(), side="right")
         init_time_i -= 1  # Because searchsorted() gives the index to the entry _after_.
         init_time = self.data.init_time.values[init_time_i]

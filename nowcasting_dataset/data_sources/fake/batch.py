@@ -373,8 +373,8 @@ def hrv_satellite_fake(
             nwp_or_satellite="satellite",
             seq_length=seq_length_5,
             history_seq_length=history_seq_length,
-            image_size_pixels_height=image_size_pixels_height * 3,  # HRV images are 3x other images
-            image_size_pixels_width=image_size_pixels_width * 3,  # HRV images are 3x other images
+            image_size_pixels_height=image_size_pixels_height,
+            image_size_pixels_width=image_size_pixels_width,
             channels=SAT_VARIABLE_NAMES[0:1],
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],

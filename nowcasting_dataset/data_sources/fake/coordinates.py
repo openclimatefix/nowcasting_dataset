@@ -1,6 +1,7 @@
 """ Functions to make fake coordinates """
 
-from typing import List, Optional
+from numbers import Number
+from typing import Optional
 
 import numpy as np
 
@@ -8,9 +9,9 @@ from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
 def create_random_point_coordinates_osgb(
-    size: int, x_center_osgb: Optional = None, y_center_osgb: Optional = None
+    size: int, x_center_osgb: Optional[Number] = None, y_center_osgb: Optional[Number] = None
 ):
-    """Make random coords [OSGB] for pv site, or gsp"""
+    """Make random coords [OSGB] for pv site, or gsp."""
     # this is about 100KM
     HUNDRED_KILOMETERS = 10**5
     x = np.random.randint(0, HUNDRED_KILOMETERS, size)
@@ -19,26 +20,25 @@ def create_random_point_coordinates_osgb(
     return add_uk_centroid_osgb(x, y, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb)
 
 
-def make_random_image_coords_osgb(
+def make_image_coords_osgb(
     size_y: int,
     size_x: int,
-    x_center_osgb: Optional = None,
-    y_center_osgb: Optional = None,
-    km_spacing: Optional[int] = 4,
-):
+    x_center_osgb: Optional[Number] = None,
+    y_center_osgb: Optional[Number] = None,
+    km_spacing: int = 4,
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Make random coords for image. These are ranges for the pixels
+    Make coords for image. These are ranges for the pixels.
 
     Args:
         size_y: The size of the coordinates to make in height
-        size_x: The size of teh coordinates to make in width
+        size_x: The size of the coordinates to make in width
         x_center_osgb: center coordinates for x (in osgb)
         y_center_osgb: center coordinates for y (in osgb)
         km_spacing: the km spacing between the coordinates.
 
-    Returns: X,Y random coordinates [OSGB]
+    Returns: X,Y coordinates [OSGB]
     """
-
     ONE_KILOMETER = 10**3
 
     # 4 kilometer spacing seemed about right for real satellite images
@@ -50,8 +50,8 @@ def make_random_image_coords_osgb(
     )
 
 
-def make_random_x_and_y_osgb_centers(batch_size: int) -> (List[int], List[int]):
-    """Make X and Y OSGB centers"""
+def make_random_x_and_y_osgb_centers(batch_size: int) -> tuple[list[int], list[int]]:
+    """Make X and Y OSGB centers."""
     lat = np.random.uniform(51, 55, batch_size)
     lon = np.random.uniform(-2.5, 0.5, batch_size)
     x_centers_osgb, y_centers_osgb = lat_lon_to_osgb(lat=lat, lon=lon)
@@ -62,21 +62,21 @@ def make_random_x_and_y_osgb_centers(batch_size: int) -> (List[int], List[int]):
 def add_uk_centroid_osgb(
     x,
     y,
-    x_center_osgb: Optional = None,
-    y_center_osgb: Optional = None,
+    x_center_osgb: Optional[Number] = None,
+    y_center_osgb: Optional[Number] = None,
     first_value_center: bool = True,
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Add an OSGB value to make in center of UK
 
     Args:
-        x: random values, OSGB
-        y: random values, OSGB
+        x: OSGB coord values
+        y: OSGB coord values
         y_center_osgb: TODO
         x_center_osgb: TODO
         first_value_center: TODO
 
-    Returns: X,Y random coordinates [OSGB]
+    Returns: X,Y coordinates [OSGB]
     """
 
     if (x_center_osgb is None) and (y_center_osgb is None):

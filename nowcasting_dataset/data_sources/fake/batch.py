@@ -13,7 +13,7 @@ from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.fake.coordinates import (
     create_random_point_coordinates_osgb,
-    make_random_image_coords_osgb,
+    make_image_coords_osgb,
     make_random_x_and_y_osgb_centers,
 )
 from nowcasting_dataset.data_sources.fake.utils import (
@@ -503,7 +503,7 @@ def topographic_fake(
     xr_arrays = []
     for i in range(batch_size):
 
-        x, y = make_random_image_coords_osgb(
+        x, y = make_image_coords_osgb(
             size_x=image_size_pixels_width,
             size_y=image_size_pixels_height,
             x_center_osgb=x_centers_osgb[i],
@@ -547,7 +547,7 @@ def create_image_array(
     if t0_datetime_utc is None:
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
-    x, y = make_random_image_coords_osgb(
+    x, y = make_image_coords_osgb(
         size_y=image_size_pixels_height,
         size_x=image_size_pixels_width,
         x_center_osgb=x_center_osgb,

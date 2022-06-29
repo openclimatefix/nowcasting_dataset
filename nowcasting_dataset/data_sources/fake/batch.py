@@ -3,7 +3,7 @@
 Wanted to keep this out of the testing frame works, as other repos, might want to use this
 """
 
-import datetime
+from datetime import datetime
 from numbers import Number
 from typing import Optional, Sequence
 
@@ -540,7 +540,7 @@ def create_image_array(
     image_size_pixels_width: int = 64,
     channels: Sequence[str] = SAT_VARIABLE_NAMES,
     freq: str = "5T",
-    t0_datetime_utc: Optional[datetime.datetime] = None,
+    t0_datetime_utc: Optional[datetime] = None,
     x_center_osgb: Optional[Number] = None,
     y_center_osgb: Optional[Number] = None,
 ) -> xr.DataArray:

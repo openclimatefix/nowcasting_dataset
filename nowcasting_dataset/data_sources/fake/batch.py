@@ -36,7 +36,7 @@ from nowcasting_dataset.dataset.xr_utils import (
     convert_coordinates_to_indexes_for_list_datasets,
     join_list_dataset_to_batch_dataset,
 )
-from nowcasting_dataset.geospatial import lat_lon_to_osgb
+from nowcasting_dataset.geospatial import lat_lon_to_osgb, osgb_to_geostationary
 
 
 def make_fake_batch(configuration: Configuration, temporally_align_examples: bool = False) -> dict:
@@ -578,6 +578,12 @@ def create_image_array(
         dims = ("time", "y_geostationary", "x_geostationary", "channels")
         coords["y_osgb"] = (("y_geostationary", "x_geostationary"), y_osgb)
         coords["x_osgb"] = (("y_geostationary", "x_geostationary"), x_osgb)
+
+        # Compute fake geostationary coords by converting one row or one column of OSGB coords
+        # to geostationary. Remember that `x_osgb` and `y_osgb` are both 2D, of shape (y, x).
+        x_geostationary, y_geostationary = osgb_to_geostationary(x=x_osgb[0, :], y=y_osgb[:, 0])
+        coords["y_geostationary"] = y_geostationary
+        coords["x_geostationary"] = x_geostationary
     else:
         raise ValueError(
             f"nwp_or_satellite must be either 'nwp' or 'satellite', not '{nwp_or_satellite}'"

@@ -1,13 +1,14 @@
 """ Geospatial functions """
 from datetime import datetime
 from numbers import Number
-from typing import List, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import pvlib
 import pyproj
 import xarray as xr
+from pyresample.area_config import load_area_from_string
 
 # OSGB is also called "OSGB 1936 / British National Grid -- United
 # Kingdom Ordnance Survey".  OSGB is used in many UK electricity
@@ -20,6 +21,30 @@ OSGB = 27700
 # latitude and longitude.
 WGS84 = 4326
 WGS84_CRS = f"EPSG:{WGS84}"
+
+EUMETSAT_MSG_SEVIRI_AREA_DEF = """
+msg_seviri_rss_1km:
+  description: MSG SEVIRI Rapid Scanning Service area definition with 1 km resolution
+  projection:
+    proj: geos
+    lon_0: 9.5
+    h: 35785831
+    x_0: 0
+    y_0: 0
+    a: 6378169
+    rf: 295.488065897014
+    no_defs: null
+    type: crs
+  shape:
+    height: 891
+    width: 1843
+  area_extent:
+    lower_left_xy: [28503.828942775726, 5088183.4998726845]
+    upper_right_xy: [-1814743.776023388, 4197063.795030117]
+    units: m
+"""
+
+_T_NUM_OR_ARRAY = Union[Number, np.ndarray, Sequence[Number]]
 
 
 class Transformers:
@@ -34,6 +59,7 @@ class Transformers:
         """Init"""
         self._osgb_to_lat_lon = None
         self._lat_lon_to_osgb = None
+        self._osgb_to_geostationary = None
         self.make_transformers()
 
     def make_transformers(self):
@@ -44,6 +70,11 @@ class Transformers:
         """
         self._osgb_to_lat_lon = pyproj.Transformer.from_crs(crs_from=OSGB, crs_to=WGS84)
         self._lat_lon_to_osgb = pyproj.Transformer.from_crs(crs_from=WGS84, crs_to=OSGB)
+        geostationary_area_def = load_area_from_string(EUMETSAT_MSG_SEVIRI_AREA_DEF)
+        geostationary_crs = geostationary_area_def.crs
+        self._osgb_to_geostationary = pyproj.Transformer.from_crs(
+            crs_from=OSGB, crs_to=geostationary_crs
+        )
 
     @property
     def osgb_to_lat_lon(self):
@@ -54,6 +85,11 @@ class Transformers:
     def lat_lon_to_osgb(self):
         """lat-lon to OSGB property"""
         return self._lat_lon_to_osgb
+
+    @property
+    def osgb_to_geostationary(self):
+        """Convert from OSGB to geostationary coordinates."""
+        return self._osgb_to_geostationary
 
 
 # make the transformers
@@ -94,6 +130,21 @@ def lat_lon_to_osgb(lat: Number, lon: Number) -> Tuple[Number, Number]:
 
     """
     return transformers.lat_lon_to_osgb.transform(lat, lon)
+
+
+def osgb_to_geostationary(
+    x: _T_NUM_OR_ARRAY, y: _T_NUM_OR_ARRAY
+) -> tuple[_T_NUM_OR_ARRAY, _T_NUM_OR_ARRAY]:
+    """
+    Change OSGB coordinates to geostationary.
+
+    Args:
+        x: OSGB east-west.
+        y: OSGB north-south.
+
+    Return: 2-tuple of geostationary x, y.
+    """
+    return transformers.osgb_to_geostationary.transform(x, y)
 
 
 def calculate_azimuth_and_elevation_angle(

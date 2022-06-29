@@ -5,6 +5,12 @@ import pandas as pd
 from nowcasting_dataset import geospatial
 
 
+def _get_random_osgb_coords_for_tests() -> tuple[np.ndarray, np.ndarray]:
+    x_osgb = np.random.randint(0, 100, 10)
+    y_osgb = np.random.randint(0, 100, 10)
+    return x_osgb, y_osgb
+
+
 def test_osgb_to_lat_lon():
     """
     Test to check transform function is working correctly
@@ -43,8 +49,7 @@ def test_calculate_azimuth_and_elevation_angle():
 
 def test_get_osgb_center_from_osgb():
     """Test get OSGB center"""
-    x_osgb = np.random.randint(0, 100, 10)
-    y_osgb = np.random.randint(0, 100, 10)
+    x_osgb, y_osgb = _get_random_osgb_coords_for_tests()
 
     x, y = geospatial.get_osgb_center_from_list_of_x_and_y_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
 
@@ -54,10 +59,16 @@ def test_get_osgb_center_from_osgb():
 
 def test_get_lat_lon_center_from_osgb():
     """Test get lat lon center"""
-    x_osgb = np.random.randint(0, 100, 10)
-    y_osgb = np.random.randint(0, 100, 10)
+    x_osgb, y_osgb = _get_random_osgb_coords_for_tests()
 
     x, y = geospatial.get_lat_lon_center_from_list_of_x_and_y_osgb(x_osgb=x_osgb, y_osgb=y_osgb)
 
     assert 49 < x < 50
     assert -8 < y < -7
+
+
+def test_osgb_to_geostationary():  # noqa: D103
+    x_osgb, y_osgb = _get_random_osgb_coords_for_tests()
+    x_geos, y_geos = geospatial.osgb_to_geostationary(x=x_osgb, y=y_osgb)
+    assert (-1133332 <= x_geos).all() and (x_geos <= -1133226).all()
+    assert (4511163 <= y_geos).all() and (x_geos <= 4511222).all()

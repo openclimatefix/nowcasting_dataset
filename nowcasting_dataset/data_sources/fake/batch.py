@@ -3,7 +3,9 @@
 Wanted to keep this out of the testing frame works, as other repos, might want to use this
 """
 
-from typing import Optional
+from datetime import datetime
+from numbers import Number
+from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -13,7 +15,7 @@ from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.fake.coordinates import (
     create_random_point_coordinates_osgb,
-    make_random_image_coords_osgb,
+    make_image_coords_osgb,
     make_random_x_and_y_osgb_centers,
 )
 from nowcasting_dataset.data_sources.fake.utils import (
@@ -503,7 +505,7 @@ def topographic_fake(
     xr_arrays = []
     for i in range(batch_size):
 
-        x, y = make_random_image_coords_osgb(
+        x, y = make_image_coords_osgb(
             size_x=image_size_pixels_width,
             size_y=image_size_pixels_height,
             x_center_osgb=x_centers_osgb[i],
@@ -531,23 +533,22 @@ def topographic_fake(
 
 
 def create_image_array(
-    nwp_or_satellite="nwp",
-    seq_length=19,
-    history_seq_length=5,
-    image_size_pixels_height=64,
-    image_size_pixels_width=64,
-    channels=SAT_VARIABLE_NAMES,
-    freq="5T",
-    t0_datetime_utc: Optional = None,
-    x_center_osgb: Optional = None,
-    y_center_osgb: Optional = None,
-):
-    """Create Satellite or NWP fake image data"""
-
+    nwp_or_satellite: str = "nwp",
+    seq_length: int = 19,
+    history_seq_length: int = 5,
+    image_size_pixels_height: int = 64,
+    image_size_pixels_width: int = 64,
+    channels: Sequence[str] = SAT_VARIABLE_NAMES,
+    freq: str = "5T",
+    t0_datetime_utc: Optional[datetime] = None,
+    x_center_osgb: Optional[Number] = None,
+    y_center_osgb: Optional[Number] = None,
+) -> xr.DataArray:
+    """Create Satellite or NWP fake image data."""
     if t0_datetime_utc is None:
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
-    x, y = make_random_image_coords_osgb(
+    x_osgb, y_osgb = make_image_coords_osgb(
         size_y=image_size_pixels_height,
         size_x=image_size_pixels_width,
         x_center_osgb=x_center_osgb,
@@ -559,12 +560,17 @@ def create_image_array(
     )
 
     if nwp_or_satellite == "nwp":
-        coords = (("time", time), ("x_osgb", x), ("y_osgb", y), ("channels", np.array(channels)))
+        coords = (
+            ("time", time),
+            ("x_osgb", x_osgb),
+            ("y_osgb", y_osgb),
+            ("channels", np.array(channels)),
+        )
     elif nwp_or_satellite == "satellite":
         coords = (
             ("time", time),
-            ("y_geostationary", y),
-            ("x_geostationary", x),
+            ("y_geostationary", y_osgb),
+            ("x_geostationary", x_osgb),
             ("channels", np.array(channels)),
         )
     else:

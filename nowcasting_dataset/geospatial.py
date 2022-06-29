@@ -1,5 +1,5 @@
 """ Geospatial functions """
-import datetime
+from datetime import datetime
 from numbers import Number
 from typing import List, Tuple, Union
 
@@ -97,7 +97,7 @@ def lat_lon_to_osgb(lat: Number, lon: Number) -> Tuple[Number, Number]:
 
 
 def calculate_azimuth_and_elevation_angle(
-    latitude: float, longitude: float, datestamps: [datetime]
+    latitude: float, longitude: float, datestamps: list[datetime]
 ) -> pd.DataFrame:
     """
     Calculation the azimuth angle, and the elevation angle for several datetamps.

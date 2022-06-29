@@ -13,6 +13,7 @@ from nowcasting_dataset.data_sources.pv.live import (
 )
 from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
 from nowcasting_dataset.data_sources.pv.pv_model import PV
+from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 
 def test_get_metadata_from_database(pv_yields_and_systems):
@@ -35,6 +36,15 @@ def test_get_pv_power_from_database_no_pv_yields(db_session):
         installed_capacity_kw=123,
     ).to_orm()
     db_session.add(pv_system_sql_1)
+    pv_system_sql_2: PVSystemSQL = PVSystem(
+        pv_system_id=2,
+        provider=pv_output,
+        status_interval_minutes=5,
+        longitude=0,
+        latitude=55,
+        installed_capacity_kw=123,
+    ).to_orm()
+    db_session.add(pv_system_sql_2)
     db_session.commit()
 
     """Get pv power from database"""
@@ -46,7 +56,7 @@ def test_get_pv_power_from_database_no_pv_yields(db_session):
     )
 
     assert len(pv_power) == 19  # 1.5 hours at 5 mins = 6*5
-    assert len(pv_power.columns) == 1
+    assert len(pv_power.columns) == 2
     assert pv_power.columns[0] == "10"
     assert (
         pd.to_datetime(pv_power.index[0]).isoformat()
@@ -98,8 +108,20 @@ def test_get_pv_power_from_database_interpolate(pv_yields_and_systems):
 
 
 @freeze_time("2022-01-01 05:00")
-def test_get_pv_power_from_database_no_data():
+def test_get_pv_power_from_database_no_data(db_session):
     """Get pv power from database"""
+
+    # add one system
+    pv_system_sql_1: PVSystemSQL = PVSystem(
+        pv_system_id=1,
+        provider=pv_output,
+        status_interval_minutes=5,
+        longitude=0,
+        latitude=55,
+        installed_capacity_kw=123,
+    ).to_orm()
+    db_session.add(pv_system_sql_1)
+    db_session.commit()
 
     pv_data_source = PVDataSource(
         history_minutes=30,
@@ -122,12 +144,18 @@ def test_get_pv_power_from_database_no_data():
         get_center=False,
     )
 
+    x_osgb, y_osgb = lat_lon_to_osgb(lat=55, lon=0)
+
+    assert len(pv_data_source.pv_power) > 0
+
     location = SpaceTimeLocation(
-        t0_datetime_utc=datetime(2022, 1, 1, 5), x_center_osgb=1234, y_center_osgb=555
+        t0_datetime_utc=datetime(2022, 1, 1, 5), x_center_osgb=x_osgb, y_center_osgb=y_osgb
     )
     d = PV(pv_data_source.get_batch(locations=[location]))
 
     PV.validate(d)
+
+    assert d.power_mw.shape == (1, 7, 2048)
 
 
 @freeze_time("2022-01-01 05:15")

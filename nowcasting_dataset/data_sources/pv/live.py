@@ -43,6 +43,8 @@ def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
     pv_system_all_df = []
     for provider in providers:
 
+        logger.debug(f"Get PV systems from database for {provider}")
+
         with db_connection.get_session() as session:
             # read pv systems
             pv_systems: List[PVSystemSQL] = get_pv_systems(session=session, provider=provider)
@@ -53,16 +55,18 @@ def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
             )
 
         if len(pv_systems_df) == 0:
-            return pd.DataFrame(
+            pv_systems_df = pd.DataFrame(
                 columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
             )
-
-        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
-        pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
+        else:
+            pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
+            pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
         pv_system_all_df.append(pv_systems_df)
 
     pv_system_all_df = pd.concat(pv_system_all_df)
+
+    logger.debug(f"Found {len(pv_system_all_df)} pv systems")
 
     return pv_system_all_df
 
@@ -126,7 +130,13 @@ def get_pv_power_from_database(
         logger.debug(f"Found {len(pv_yields_df)} pv yields")
 
     if len(pv_yields_df) == 0:
-        return pd.DataFrame(columns=["pv_system_id"])
+
+        # create array of nans
+        pv_systems = get_metadata_from_database(providers=providers)
+        columns = pv_systems.index
+        index = pd.date_range(start=start_utc, end=now, freq="5T")
+
+        return pd.DataFrame(columns=columns, index=index)
 
     # get the system id from 'pv_system_id=xxxx provider=.....'
     pv_yields_df["pv_system_id"] = (

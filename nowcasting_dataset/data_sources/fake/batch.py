@@ -548,12 +548,16 @@ def create_image_array(
     if t0_datetime_utc is None:
         t0_datetime_utc = make_t0_datetimes_utc(batch_size=1)[0]
 
+    # We want the OSGB coords to be 2D for satellite data:
+    two_dimensional_osgb_coords = nwp_or_satellite == "satellite"
+
+    # Get OSB coords:
     x_osgb, y_osgb = make_image_coords_osgb(
         size_y=image_size_pixels_height,
         size_x=image_size_pixels_width,
         x_center_osgb=x_center_osgb,
         y_center_osgb=y_center_osgb,
-        two_dimensional=nwp_or_satellite == "satellite",
+        two_dimensional=two_dimensional_osgb_coords,
     )
 
     time = pd.date_range(end=t0_datetime_utc, freq=freq, periods=history_seq_length + 1).union(

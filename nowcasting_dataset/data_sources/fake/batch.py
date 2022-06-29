@@ -579,11 +579,13 @@ def create_image_array(
         coords["y_osgb"] = (("y_geostationary", "x_geostationary"), y_osgb)
         coords["x_osgb"] = (("y_geostationary", "x_geostationary"), x_osgb)
 
-        # Compute fake geostationary coords by converting one row or one column of OSGB coords
-        # to geostationary. Remember that `x_osgb` and `y_osgb` are both 2D, of shape (y, x).
-        x_geostationary, y_geostationary = osgb_to_geostationary(x=x_osgb[0, :], y=y_osgb[:, 0])
-        coords["y_geostationary"] = y_geostationary
-        coords["x_geostationary"] = x_geostationary
+        # Compute fake geostationary coords by converting the OSGB coords to geostationary,
+        # and then selecting one row or one column from the converted coords (because the
+        # geostationary coords are each 1D). Remember that `x_osgb` and `y_osgb` are
+        # both 2D, of shape (y, x).
+        x_geostationary, y_geostationary = osgb_to_geostationary(x=x_osgb, y=y_osgb)
+        coords["y_geostationary"] = y_geostationary[:, 0]
+        coords["x_geostationary"] = x_geostationary[0, :]
     else:
         raise ValueError(
             f"nwp_or_satellite must be either 'nwp' or 'satellite', not '{nwp_or_satellite}'"

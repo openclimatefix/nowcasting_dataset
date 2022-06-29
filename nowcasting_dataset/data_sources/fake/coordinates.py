@@ -26,6 +26,7 @@ def make_image_coords_osgb(
     x_center_osgb: Optional[Number] = None,
     y_center_osgb: Optional[Number] = None,
     km_spacing: int = 4,
+    two_dimensional: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Make coords for image. These are ranges for the pixels.
@@ -36,14 +37,25 @@ def make_image_coords_osgb(
         x_center_osgb: center coordinates for x (in osgb)
         y_center_osgb: center coordinates for y (in osgb)
         km_spacing: the km spacing between the coordinates.
+        two_dimensional: If True, then each coord array will be 2D.
+            This is useful because the real satellite data has 2D OSGB coords.
 
     Returns: X,Y coordinates [OSGB]
+        These are each 1D if `two_dimensional` is False.
+        If `two_dimensional` is True then both are of shape (size_y, size_x)
     """
     ONE_KILOMETER = 10**3
 
     # 4 kilometer spacing seemed about right for real satellite images
     x = km_spacing * ONE_KILOMETER * np.array((range(0, size_x)))
     y = km_spacing * ONE_KILOMETER * np.array((range(size_y, 0, -1)))
+
+    if two_dimensional:
+        x = np.tile(x, (size_y, 1))
+
+        # By default, `np.tile` prepends an axis. We want to append an axis:
+        y = np.expand_dims(y, axis=1)
+        y = np.tile(y, (1, size_x))
 
     return add_uk_centroid_osgb(
         x, y, x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb, first_value_center=False

@@ -18,6 +18,7 @@ from nowcasting_datamodel.models.pv import (
 from nowcasting_datamodel.read.read_pv import get_pv_systems, get_pv_yield
 
 from nowcasting_dataset.data_sources.pv.utils import encode_label
+from nowcasting_dataset.geospatial import calculate_azimuth_and_elevation_angle
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,8 @@ def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
     pv_system_all_df = []
     for provider in providers:
 
+        logger.debug(f"Get PV systems from database for {provider}")
+
         with db_connection.get_session() as session:
             # read pv systems
             pv_systems: List[PVSystemSQL] = get_pv_systems(session=session, provider=provider)
@@ -53,16 +56,18 @@ def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
             )
 
         if len(pv_systems_df) == 0:
-            return pd.DataFrame(
+            pv_systems_df = pd.DataFrame(
                 columns=["pv_system_id", "latitude", "longitude", "installed_capacity_kw"]
             )
-
-        pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
-        pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
+        else:
+            pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
+            pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
         pv_system_all_df.append(pv_systems_df)
 
     pv_system_all_df = pd.concat(pv_system_all_df)
+
+    logger.debug(f"Found {len(pv_system_all_df)} pv systems")
 
     return pv_system_all_df
 
@@ -73,6 +78,7 @@ def get_pv_power_from_database(
     load_extra_minutes: int,
     load_extra_minutes_and_keep: Optional[int] = 30,
     providers: List[str] = None,
+    sun_elevation_limit: Optional[int] = -10,
 ) -> pd.DataFrame:
     """
     Get pv power from database
@@ -85,6 +91,8 @@ def get_pv_power_from_database(
             These extra minutes are not kept but used to interpolate results.
         load_extra_minutes_and_keep: extra minutes to load, but also keep this data.
         providers: optional list of providers
+        sun_elevation_limit: If there is no data, we create an array of nans.
+            If the elevation is below this limit, we change the first pv system data to 0.0s.
 
     Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
@@ -126,7 +134,27 @@ def get_pv_power_from_database(
         logger.debug(f"Found {len(pv_yields_df)} pv yields")
 
     if len(pv_yields_df) == 0:
-        return pd.DataFrame(columns=["pv_system_id"])
+
+        # create array of nans
+        pv_systems = get_metadata_from_database(providers=providers)
+        columns = pv_systems.index
+        index = pd.date_range(start=start_utc, end=now, freq="5T")
+
+        data = pd.DataFrame(columns=columns, index=index)
+        data = data.apply(pd.to_numeric)
+
+        # For one pv system, lets fill with zeros if the elevation is below 10
+        # This helps keep the right shape of data for ml. We could do all pv systems,
+        # but we infact only need 1
+        pv_system = pv_systems.iloc[0]
+        sun = calculate_azimuth_and_elevation_angle(
+            latitude=pv_system.latitude, longitude=pv_system.longitude, datestamps=index
+        )
+
+        mask = sun["elevation"] < sun_elevation_limit
+        data.iloc[mask, 0] = 0.0
+
+        return data
 
     # get the system id from 'pv_system_id=xxxx provider=.....'
     pv_yields_df["pv_system_id"] = (

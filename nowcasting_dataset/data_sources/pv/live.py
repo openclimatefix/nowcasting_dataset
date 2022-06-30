@@ -232,7 +232,7 @@ def create_empty_pv_data(
     number_pv_systems_to_fill = min(len(pv_systems.index), 10)
     logger.debug(
         f"Getting sun elevations for and datestamps {index} "
-        f"for {len(number_pv_systems_to_fill)} pv systems"
+        f"for {number_pv_systems_to_fill} pv systems"
     )
     # This seems to take about 1 seconds per 100 systems
     for i in range(number_pv_systems_to_fill):

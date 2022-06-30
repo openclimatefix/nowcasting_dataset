@@ -222,17 +222,20 @@ def create_empty_pv_data(
     index = pd.date_range(start=start_utc, end=end_utc, freq="5T")
     data = pd.DataFrame(columns=columns, index=index)
     data = data.apply(pd.to_numeric)
-    # For all pv system, lets fill with zeros if the elevation is below {sun_elevation_limit}
+
+    # For ~10 pv system, lets fill with zeros if the elevation is below {sun_elevation_limit}
     # This helps keep the right shape of data for ml.
     logger.debug(
-        f"Getting sun elevations for and datestamps {index} for {len(pv_systems)} pv systems"
-    )
-    logger.debug(
-        f"For the all pv system, is the sun elevation is below {sun_elevation_limit}, "
+        f"For the first 10 pv system, is the sun elevation is below {sun_elevation_limit}, "
         f"then we set pv yield values to 0."
     )
+    number_pv_systems_to_fill = min(len(pv_systems.index), 10)
+    logger.debug(
+        f"Getting sun elevations for and datestamps {index} "
+        f"for {len(number_pv_systems_to_fill)} pv systems"
+    )
     # This seems to take about 1 seconds per 100 systems
-    for i in range(len(pv_systems.index)):
+    for i in range(number_pv_systems_to_fill):
         pv_system = pv_systems.iloc[i]
 
         sun = calculate_azimuth_and_elevation_angle(
@@ -241,5 +244,5 @@ def create_empty_pv_data(
 
         mask = sun["elevation"] < sun_elevation_limit
         data.iloc[mask, i] = 0.0
-    logger.debug(f"Finished adding zeros to pv data " f"for elevation below {sun_elevation_limit}")
+    logger.debug(f"Finished adding zeros to pv data for elevation below {sun_elevation_limit}")
     return data

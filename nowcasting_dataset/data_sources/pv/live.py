@@ -136,6 +136,7 @@ def get_pv_power_from_database(
     if len(pv_yields_df) == 0:
 
         # create array of nans
+        logger.debug("Adding arrange of nans to pv data")
         pv_systems = get_metadata_from_database(providers=providers)
         columns = pv_systems.index
         index = pd.date_range(start=start_utc, end=now, freq="5T")
@@ -147,11 +148,21 @@ def get_pv_power_from_database(
         # This helps keep the right shape of data for ml. We could do all pv systems,
         # but we infact only need 1
         pv_system = pv_systems.iloc[0]
+        logger.debug(
+            f"Getting sun elevations for lat {pv_system.latitude}, "
+            f"lon {pv_system.longitude} "
+            f"and datestamps {index}"
+        )
         sun = calculate_azimuth_and_elevation_angle(
             latitude=pv_system.latitude, longitude=pv_system.longitude, datestamps=index
         )
 
+        logger.debug(
+            f"For the first pv system, is the sun elevation is below {sun_elevation_limit}, "
+            f"then we set pv yield values to 0."
+        )
         mask = sun["elevation"] < sun_elevation_limit
+        logger.debug(f"We will set {sum(mask)} values to 0")
         data.iloc[mask, 0] = 0.0
 
         return data

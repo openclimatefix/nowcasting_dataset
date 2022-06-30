@@ -78,7 +78,6 @@ def get_pv_power_from_database(
     load_extra_minutes: int,
     load_extra_minutes_and_keep: Optional[int] = 30,
     providers: List[str] = None,
-    sun_elevation_limit: Optional[int] = -10,
 ) -> pd.DataFrame:
     """
     Get pv power from database
@@ -91,8 +90,6 @@ def get_pv_power_from_database(
             These extra minutes are not kept but used to interpolate results.
         load_extra_minutes_and_keep: extra minutes to load, but also keep this data.
         providers: optional list of providers
-        sun_elevation_limit: If there is no data, we create an array of nans.
-            If the elevation is below this limit, we change the first pv system data to 0.0s.
 
     Returns:pandas data frame with the following columns pv systems indexes
     The index is the datetime
@@ -135,24 +132,7 @@ def get_pv_power_from_database(
 
     if len(pv_yields_df) == 0:
 
-        # create array of nans
-        pv_systems = get_metadata_from_database(providers=providers)
-        columns = pv_systems.index
-        index = pd.date_range(start=start_utc, end=now, freq="5T")
-
-        data = pd.DataFrame(columns=columns, index=index)
-        data = data.apply(pd.to_numeric)
-
-        # For one pv system, lets fill with zeros if the elevation is below 10
-        # This helps keep the right shape of data for ml. We could do all pv systems,
-        # but we infact only need 1
-        pv_system = pv_systems.iloc[0]
-        sun = calculate_azimuth_and_elevation_angle(
-            latitude=pv_system.latitude, longitude=pv_system.longitude, datestamps=index
-        )
-
-        mask = sun["elevation"] < sun_elevation_limit
-        data.iloc[mask, 0] = 0.0
+        data = create_empty_pv_data(end_utc=now, providers=providers, start_utc=start_utc)
 
         return data
 
@@ -212,3 +192,57 @@ def get_pv_power_from_database(
     logger.debug(f"{len(pv_yields_df)} of datetimes after filter on {start_utc}")
 
     return pv_yields_df
+
+
+def create_empty_pv_data(
+    end_utc: datetime,
+    providers: List[str],
+    start_utc: datetime,
+    sun_elevation_limit: Optional[int] = -10,
+):
+    """
+    The idea is to create an array of nans for pv data.
+
+    If the sun elevation is below a given value, then the nans are filled to 0
+
+    Args:
+        end_utc: end datetime of fake data
+        start_utc: start datetime of fake data
+        providers: optional list of providers
+        sun_elevation_limit: If there is no data, we create an array of nans.
+            If the elevation is below this limit, we change the first pv system data to 0.0s.
+
+    Returns: dataframe of pv yields
+    """
+
+    # create array of nans
+    logger.debug("Adding arrange of nans to pv data")
+    pv_systems = get_metadata_from_database(providers=providers)
+    columns = pv_systems.index
+    index = pd.date_range(start=start_utc, end=end_utc, freq="5T")
+    data = pd.DataFrame(columns=columns, index=index)
+    data = data.apply(pd.to_numeric)
+
+    # For ~10 pv system, lets fill with zeros if the elevation is below {sun_elevation_limit}
+    # This helps keep the right shape of data for ml.
+    logger.debug(
+        f"For the first 10 pv system, is the sun elevation is below {sun_elevation_limit}, "
+        f"then we set pv yield values to 0."
+    )
+    number_pv_systems_to_fill = min(len(pv_systems.index), 10)
+    logger.debug(
+        f"Getting sun elevations for and datestamps {index} "
+        f"for {number_pv_systems_to_fill} pv systems"
+    )
+    # This seems to take about 1 seconds per 100 systems
+    for i in range(number_pv_systems_to_fill):
+        pv_system = pv_systems.iloc[i]
+
+        sun = calculate_azimuth_and_elevation_angle(
+            latitude=pv_system.latitude, longitude=pv_system.longitude, datestamps=index
+        )
+
+        mask = sun["elevation"] < sun_elevation_limit
+        data.iloc[mask, i] = 0.0
+    logger.debug(f"Finished adding zeros to pv data for elevation below {sun_elevation_limit}")
+    return data

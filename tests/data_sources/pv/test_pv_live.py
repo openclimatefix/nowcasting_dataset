@@ -23,7 +23,7 @@ def test_get_metadata_from_database(pv_yields_and_systems):
     assert len(meteadata) == 4
 
 
-@freeze_time("2022-01-01 05:00")
+@freeze_time("2022-01-01 08:00")
 def test_get_pv_power_from_database_no_pv_yields(db_session):
     """Test that nans are return when there are no pv yields in the database"""
 
@@ -60,9 +60,10 @@ def test_get_pv_power_from_database_no_pv_yields(db_session):
     assert pv_power.columns[0] == "10"
     assert (
         pd.to_datetime(pv_power.index[0]).isoformat()
-        == datetime(2022, 1, 1, 3, 30, tzinfo=timezone.utc).isoformat()
+        == datetime(2022, 1, 1, 6, 30, tzinfo=timezone.utc).isoformat()
     )
-    assert pv_power.isna().sum().sum() == 19
+    # some values have been filled with 0.0
+    assert pv_power.isna().sum().sum() == 22
 
 
 @freeze_time("2022-01-01 05:00")

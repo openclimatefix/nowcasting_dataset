@@ -200,8 +200,13 @@ class PVDataSource(ImageDataSource):
         pv_power.dropna(axis="columns", how="all", inplace=True)
         pv_power.dropna(axis="index", how="all", inplace=True)
 
-        logger.debug(f"Found {len(pv_power)} pv power datetimes from database ")
-        logger.debug(f"Found {len(pv_power.columns)} pv power pv system ids from database")
+        logger.debug(
+            f"Found {len(pv_power)} pv power datetimes from database (after dropping nans) "
+        )
+        logger.debug(
+            f"Found {len(pv_power.columns)} pv power pv system ids from database "
+            f"(after dropping nans)"
+        )
 
         # drop systems with over night power
         # TODO: Fix bug!
@@ -227,8 +232,10 @@ class PVDataSource(ImageDataSource):
         print("pv_power = {:,.1f} MB".format(pv_power.values.nbytes / 1e6))
         self.pv_power = pv_power
 
-        logger.debug(f"Found {len(self.pv_power)} pv power datetimes")
-        logger.debug(f"Found {len(self.pv_power.columns)} pv power pv system ids")
+        logger.debug(f"Found {len(self.pv_power)} pv power datetimes (after interpolating)")
+        logger.debug(
+            f"Found {len(self.pv_power.columns)} pv power pv system ids (after interpolating)"
+        )
 
         # get the max generation / capacity for each system
         if not self.is_live:

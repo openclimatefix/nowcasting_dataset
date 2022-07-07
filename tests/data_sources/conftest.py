@@ -35,7 +35,7 @@ def pv_yields_and_systems(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=55,
-        installed_capacity_kw=123,
+        ml_capacity_kw=123,
     ).to_orm()
     pv_system_sql_1_ss: PVSystemSQL = PVSystem(
         pv_system_id=1,
@@ -43,7 +43,7 @@ def pv_yields_and_systems(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=57,
-        installed_capacity_kw=124,
+        ml_capacity_kw=124,
     ).to_orm()
     pv_system_sql_2: PVSystemSQL = PVSystem(
         pv_system_id=2,
@@ -51,7 +51,7 @@ def pv_yields_and_systems(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=56,
-        installed_capacity_kw=124,
+        ml_capacity_kw=124,
     ).to_orm()
     pv_system_sql_3: PVSystemSQL = PVSystem(
         pv_system_id=3,
@@ -59,7 +59,7 @@ def pv_yields_and_systems(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=57,
-        installed_capacity_kw=124,
+        ml_capacity_kw=124,
     ).to_orm()
 
     pv_yield_sqls = []

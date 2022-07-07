@@ -33,7 +33,7 @@ def test_get_pv_power_from_database_no_pv_yields(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=55,
-        installed_capacity_kw=123,
+        ml_capacity_kw=123,
     ).to_orm()
     db_session.add(pv_system_sql_1)
     pv_system_sql_2: PVSystemSQL = PVSystem(
@@ -42,7 +42,7 @@ def test_get_pv_power_from_database_no_pv_yields(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=55,
-        installed_capacity_kw=123,
+        ml_capacity_kw=123,
     ).to_orm()
     db_session.add(pv_system_sql_2)
     db_session.commit()
@@ -119,7 +119,7 @@ def test_get_pv_power_from_database_no_data(db_session):
         status_interval_minutes=5,
         longitude=0,
         latitude=55,
-        installed_capacity_kw=123,
+        ml_capacity_kw=123,
     ).to_orm()
     db_session.add(pv_system_sql_1)
     db_session.commit()
@@ -190,8 +190,7 @@ def test_get_example(pv_yields_and_systems):
     assert len(locations) == 13  # 1 hour at 5 mins, inclusive,
     # loads slightly more than 30 mins history
     assert (
-        pv_data_source.pv_capacity.iloc[0]
-        == pv_yields_and_systems["pv_systems"][0].installed_capacity_kw
+        pv_data_source.pv_capacity.iloc[0] == pv_yields_and_systems["pv_systems"][0].ml_capacity_kw
     )
 
     location = locations[0]

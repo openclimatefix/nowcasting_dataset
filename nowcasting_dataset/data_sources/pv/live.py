@@ -61,6 +61,7 @@ def get_metadata_from_database(providers: List[str] = None) -> pd.DataFrame:
             )
         else:
             pv_systems_df.index = encode_label(pv_systems_df["pv_system_id"], label=provider)
+            pv_systems_df["installed_capacity_kw"] = pv_systems_df["ml_capacity_kw"]
             pv_systems_df = pv_systems_df[["latitude", "longitude", "installed_capacity_kw"]]
 
         pv_system_all_df.append(pv_systems_df)

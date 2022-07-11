@@ -118,7 +118,7 @@ class Metadata(BaseModel):
             metadata_df = pd.read_csv(filename)
 
             metadata_df_extra = pd.DataFrame(metadata_dict)
-            metadata_df = metadata_df.append(metadata_df_extra)
+            metadata_df = pd.concat([metadata_df, metadata_df_extra])
 
         metadata_df.to_csv(filename, index=False)
 

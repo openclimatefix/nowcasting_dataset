@@ -182,7 +182,7 @@ class Batch(BaseModel):
                 rename_dict = {"x_coords": "x_osgb", "y_coords": "y_osgb"}
                 for key, item in rename_dict.items():
                     if hasattr(batch_dict["gsp"], key):
-                        batch_dict["gsp"] = batch_dict["pv"].rename({key: item})
+                        batch_dict["gsp"] = batch_dict["gsp"].rename({key: item})
 
             # legacy PV
             if "pv" in batch_dict.keys():

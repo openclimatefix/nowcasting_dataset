@@ -137,13 +137,14 @@ def get_all_filenames_in_path(path: Union[str, Path]) -> List[str]:
     return filesystem.ls(path)
 
 
-def download_to_local(remote_filename: str, local_filename: str):
+def download_to_local(remote_filename: str, local_filename: str, override: bool = True):
     """
     Download file from gcs.
 
     Args:
         remote_filename: the file name, should start with gs:// or s3://
         local_filename: the local filename
+        override: download the file, even if it exists
     """
     _LOG.debug(f"Downloading from GCP {remote_filename} to {local_filename}")
 
@@ -152,8 +153,8 @@ def download_to_local(remote_filename: str, local_filename: str):
     local_filename = str(local_filename)
 
     filesystem = get_filesystem(remote_filename)
-    if check_path_exists(local_filename):
-        _LOG.debug(f"File {local_filename} already exsits, so not downloading")
+    if filesystem.exists(local_filename) and not override:
+        _LOG.debug(f"File {local_filename} already exists, so not downloading")
     else:
         try:
             filesystem.get(remote_filename, local_filename)

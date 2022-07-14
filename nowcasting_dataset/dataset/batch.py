@@ -261,6 +261,7 @@ class Batch(BaseModel):
             f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}",
             local_filename=f"{metadata_path}/"
             f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}",
+            override=False,
         )
 
         return Batch.load_netcdf(

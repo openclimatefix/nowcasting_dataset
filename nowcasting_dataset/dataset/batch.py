@@ -164,26 +164,31 @@ class Batch(BaseModel):
         if legacy_data:
             # legacy GSP
             if "gsp" in batch_dict.keys():
-                batch_dict["gsp"] = batch_dict["gsp"].rename(
-                    {"x_coords": "x_osgb", "y_coords": "y_osgb"}
-                )
+                rename_dict = {"x_coords": "x_osgb", "y_coords": "y_osgb"}
+                for key, item in rename_dict.items():
+                    if hasattr(batch_dict["gsp"], key):
+                        batch_dict["gsp"] = batch_dict["pv"].rename({key: item})
 
             # legacy PV
             if "pv" in batch_dict.keys():
-                batch_dict["pv"] = batch_dict["pv"].rename(
-                    {"x_coords": "x_osgb", "y_coords": "y_osgb"}
-                )
+                pv_rename_dict = {"x_coords": "x_osgb", "y_coords": "y_osgb"}
+                for key, item in pv_rename_dict.items():
+                    if hasattr(batch_dict["pv"], key):
+                        batch_dict["pv"] = batch_dict["pv"].rename({key: item})
 
             # legacy NWP
             if "nwp" in batch_dict.keys():
-                batch_dict["nwp"] = batch_dict["nwp"].rename(
-                    {
-                        "x_index": "x_osgb_index",
-                        "y_index": "y_osgb_index",
-                        "x": "x_osgb",
-                        "y": "y_osgb",
-                    }
-                )
+
+                nwp_rename_dict = {
+                    "x_index": "x_osgb_index",
+                    "y_index": "y_osgb_index",
+                    "x": "x_osgb",
+                    "y": "y_osgb",
+                }
+
+                for key, item in nwp_rename_dict.items():
+                    if hasattr(batch_dict["nwp"], key):
+                        batch_dict["nwp"] = batch_dict["nwp"].rename({key: item})
 
         try:
             batch = Batch(**batch_dict)

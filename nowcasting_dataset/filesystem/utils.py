@@ -153,7 +153,8 @@ def download_to_local(remote_filename: str, local_filename: str, override: bool 
     local_filename = str(local_filename)
 
     filesystem = get_filesystem(remote_filename)
-    if filesystem.exists(local_filename) and not override:
+    filesystem_local = get_filesystem(local_filename)
+    if filesystem_local.exists(local_filename) and not override:
         _LOG.debug(f"File {local_filename} already exists, so not downloading")
     else:
         try:

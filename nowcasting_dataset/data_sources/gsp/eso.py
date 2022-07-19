@@ -169,6 +169,7 @@ def get_gsp_shape_from_eso(
 
             # TODO is this right?
             # latest geo json does not have region id in it, so add this for the moment
+            shape_gpd.sort_values("GSPs", inplace=True)
             shape_gpd["RegionID"] = range(0, len(shape_gpd))
 
     if save_local_file:

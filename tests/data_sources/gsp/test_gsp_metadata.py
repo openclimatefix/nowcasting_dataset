@@ -19,9 +19,9 @@ def test_get_gsp_metadata_from_eso():
 
     assert isinstance(metadata, pd.DataFrame)
     assert len(metadata) > 100
-    assert "gnode_name" in metadata.columns
-    assert "gnode_lat" in metadata.columns
-    assert "gnode_lon" in metadata.columns
+    assert "gsp_id" in metadata.columns
+    # assert "gnode_lat" in metadata.columns
+    # assert "gnode_lon" in metadata.columns
 
 
 def test_get_pv_gsp_shape():

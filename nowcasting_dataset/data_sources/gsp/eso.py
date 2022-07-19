@@ -69,25 +69,24 @@ def get_gsp_metadata_from_eso(
         # rename the columns to full name
         logger.debug("loading local file for ESO metadata:done")
     else:
-        # call ESO website. There is a possibility that this API will be replaced and its unclear if
-        # this original API will will stay operational
-        url = (
-            "https://data.nationalgrideso.com/api/3/action/datastore_search?"
-            "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
-        )
+        # we now get this from pvlive
+        url = "https://api0.solar.sheffield.ac.uk/pvlive/api/v4/gsp_list"
         # TODO need to replace this, but not quite sure what it will be for the moment.
         with urllib.request.urlopen(url) as fileobj:
             d = json.loads(fileobj.read())
 
         # make dataframe
-        results = d["result"]["records"]
-        metadata = pd.DataFrame(results)
+        metadata = pd.DataFrame(data=d["data"], columns=d["meta"])
 
         # drop duplicates
         metadata = metadata.drop_duplicates(subset=["gsp_id"])
 
-        # drop any nans in the gsp is column
+        # drop any nans in the gsp is column, and drop National row
         metadata = metadata[metadata["gsp_id"].notnull()]
+        metadata = metadata[metadata["gsp_id"] > 0]
+
+        # add in region id
+        metadata["region_id"] = metadata["gsp_id"]
 
     if save_local_file:
         # save file

@@ -112,8 +112,21 @@ class Batch(BaseModel):
         local_netcdf_path: Union[Path, str],
         batch_idx: int,
         data_sources_names: Optional[list[str]] = None,
+        metadata_path: Optional[str] = None,
     ) -> Batch:
-        """Load batch from netcdf file"""
+        """
+        Load batch from netcdf file
+
+        Args:
+            local_netcdf_path: The path where the batch is stores
+            batch_idx: which batch idx to load
+            data_sources_names: which data sources to load, if None, all are laoded.
+            metadata_path: the path where the metadata file is saved,
+                if None, the 'local_netcdf_path' is used.
+
+        Returns: batch object
+        """
+
         if data_sources_names is None:
             data_sources_names = Example.__fields__.keys()
 
@@ -156,7 +169,9 @@ class Batch(BaseModel):
 
         # load metadata
         batch_size = len(batch_dict[list(data_sources_names)[0]].example)
-        metadata = load_from_csv(path=local_netcdf_path, batch_size=batch_size, batch_idx=batch_idx)
+        if metadata_path is None:
+            metadata_path = local_netcdf_path
+        metadata = load_from_csv(path=metadata_path, batch_size=batch_size, batch_idx=batch_idx)
         batch_dict["metadata"] = metadata.dict()
 
         # quick options to turn on when using legacy data e.g v15
@@ -164,26 +179,31 @@ class Batch(BaseModel):
         if legacy_data:
             # legacy GSP
             if "gsp" in batch_dict.keys():
-                batch_dict["gsp"] = batch_dict["gsp"].rename(
-                    {"x_coords": "x_osgb", "y_coords": "y_osgb"}
-                )
+                rename_dict = {"x_coords": "x_osgb", "y_coords": "y_osgb"}
+                for key, item in rename_dict.items():
+                    if hasattr(batch_dict["gsp"], key):
+                        batch_dict["gsp"] = batch_dict["gsp"].rename({key: item})
 
             # legacy PV
             if "pv" in batch_dict.keys():
-                batch_dict["pv"] = batch_dict["pv"].rename(
-                    {"x_coords": "x_osgb", "y_coords": "y_osgb"}
-                )
+                pv_rename_dict = {"x_coords": "x_osgb", "y_coords": "y_osgb"}
+                for key, item in pv_rename_dict.items():
+                    if hasattr(batch_dict["pv"], key):
+                        batch_dict["pv"] = batch_dict["pv"].rename({key: item})
 
             # legacy NWP
             if "nwp" in batch_dict.keys():
-                batch_dict["nwp"] = batch_dict["nwp"].rename(
-                    {
-                        "x_index": "x_osgb_index",
-                        "y_index": "y_osgb_index",
-                        "x": "x_osgb",
-                        "y": "y_osgb",
-                    }
-                )
+
+                nwp_rename_dict = {
+                    "x_index": "x_osgb_index",
+                    "y_index": "y_osgb_index",
+                    "x": "x_osgb",
+                    "y": "y_osgb",
+                }
+
+                for key, item in nwp_rename_dict.items():
+                    if hasattr(batch_dict["nwp"], key):
+                        batch_dict["nwp"] = batch_dict["nwp"].rename({key: item})
 
         try:
             batch = Batch(**batch_dict)
@@ -198,7 +218,11 @@ class Batch(BaseModel):
 
     @staticmethod
     def download_batch_and_load_batch(
-        batch_idx, tmp_path: str, src_path: str, data_sources_names: Optional[List[str]] = None
+        batch_idx,
+        tmp_path: str,
+        src_path: str,
+        data_sources_names: Optional[List[str]] = None,
+        metadata_path: Optional[str] = None,
     ) -> Batch:
         """
         Download batch from src to temp
@@ -208,10 +232,12 @@ class Batch(BaseModel):
             data_sources_names: list of data source names
             tmp_path: the temporary path, where files are downloaded to
             src_path: the path where files are downloaded from
+            metadata_path: the path where the metadata file is saved,
+                if None, the 'tmp_path' is used.
 
         Returns: batch object
-
         """
+
         if data_sources_names is None:
             data_sources_names = list(Example.__fields__.keys())
 
@@ -228,15 +254,21 @@ class Batch(BaseModel):
             )
 
         # download locations file
+        if metadata_path is None:
+            metadata_path = tmp_path
         download_to_local(
             remote_filename=f"{src_path}/"
             f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}",
-            local_filename=f"{tmp_path}/"
+            local_filename=f"{metadata_path}/"
             f"{SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME}",
+            override=False,
         )
 
         return Batch.load_netcdf(
-            local_netcdf_path=tmp_path, batch_idx=batch_idx, data_sources_names=data_sources_names
+            local_netcdf_path=tmp_path,
+            batch_idx=batch_idx,
+            data_sources_names=data_sources_names,
+            metadata_path=metadata_path,
         )
 
 

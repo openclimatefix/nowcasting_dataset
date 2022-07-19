@@ -170,6 +170,7 @@ def get_gsp_shape_from_eso(
             # TODO is this right?
             # latest geo json does not have region id in it, so add this for the moment
             shape_gpd.sort_values("GSPs", inplace=True)
+            shape_gpd.reset_index(inplace=True, drop=True)
             shape_gpd["RegionID"] = range(0, len(shape_gpd))
 
     if save_local_file:
@@ -188,13 +189,13 @@ def get_gsp_shape_from_eso(
     if join_duplicates:
         logger.debug("Removing duplicates by joining geometry together")
 
-        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["RegionID"]).copy()
-        duplicated_raw = shape_gpd[shape_gpd["RegionID"].duplicated()]
+        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["GSPs"]).copy()
+        duplicated_raw = shape_gpd[shape_gpd["GSPs"].duplicated()]
 
         for _, duplicate in duplicated_raw.iterrows():
             # find index in data set with no duplicates
             index_other = shape_gpd_no_duplicates[
-                shape_gpd_no_duplicates["RegionID"] == duplicate.RegionID
+                shape_gpd_no_duplicates["GSPs"] == duplicate.RegionID
             ].index
 
             # join geometries together
@@ -205,6 +206,11 @@ def get_gsp_shape_from_eso(
             shape_gpd_no_duplicates.loc[index_other, "geometry"] = new_geometry
 
         shape_gpd = shape_gpd_no_duplicates
+
+        # sort after removing duplicates
+        shape_gpd.sort_values("GSPs", inplace=True)
+        shape_gpd.reset_index(inplace=True, drop=True)
+        shape_gpd["RegionID"] = range(0, len(shape_gpd))
 
     return shape_gpd
 

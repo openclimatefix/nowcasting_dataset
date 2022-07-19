@@ -60,7 +60,7 @@ class ManagerLive(ManagerBase):
 
         Args:
             t0_datetime: The datetime for the batch
-            n_gsps: the number of gsps we want to make, this is defaulted to N_GSPS=338
+            n_gsps: the number of gsps we want to make, this is defaulted to N_GSPS=317
 
         Returns: Nothing
         """

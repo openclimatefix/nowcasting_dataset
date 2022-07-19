@@ -146,7 +146,7 @@ gsp_power.to_zarr(f"{local_path}/tests/data/gsp/test.zarr", mode="w", encoding=e
 # SUN
 #####################
 
-filename = "gs://solar-pv-nowcasting-data/Sun/v1/sun.zarr/"
+filename = "gs://solar-pv-nowcasting-data/Sun/v3/sun.zarr/"
 # filename = "./scripts/sun.zarr"
 
 # open file

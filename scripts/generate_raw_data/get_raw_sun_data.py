@@ -25,12 +25,14 @@ from pathy import Pathy
 import nowcasting_dataset
 from nowcasting_dataset.config import load_yaml_configuration
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
-from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
+
+# from nowcasting_dataset.data_sources.pv.pv_data_source import PVDataSource
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
     get_azimuth_and_elevation,
     save_to_zarr,
 )
-from nowcasting_dataset.geospatial import lat_lon_to_osgb
+
+# from nowcasting_dataset.geospatial import lat_lon_to_osgb
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -51,17 +53,18 @@ datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T")
 
 # PV metadata
 
-pv = PVDataSource(
-    history_minutes=30,
-    forecast_minutes=60,
-    files_groups=config.input_data.pv.pv_files_groups,
-    start_datetime=datetime(2010, 1, 1),
-    end_datetime=datetime(2030, 1, 2),
-    image_size_pixels=128,
-    meters_per_pixel=2000,
-)
-
-pv_x, pv_y = lat_lon_to_osgb(pv.pv_metadata["latitude"], pv.pv_metadata["longitude"])
+# pv = PVDataSource(
+#     history_minutes=30,
+#     forecast_minutes=60,
+#     files_groups=config.input_data.pv.pv_files_groups,
+#     start_datetime=datetime(2010, 1, 1),
+#     end_datetime=datetime(2030, 1, 2),
+#     image_size_pixels_width=128,
+#     image_size_pixels_height=128,
+#     meters_per_pixel=2000,
+# )
+#
+# pv_x, pv_y = lat_lon_to_osgb(pv.pv_metadata["latitude"], pv.pv_metadata["longitude"])
 
 # GSP Metadata
 gsp_metadata = get_gsp_metadata_from_eso()
@@ -70,8 +73,8 @@ gsp_x = gsp_metadata["centroid_x"]
 gsp_y = gsp_metadata["centroid_y"]
 
 # join all sites together
-x_centers = list(pv_x) + list(gsp_x.values)
-y_centers = list(pv_y) + list(gsp_y.values)
+x_centers = list(gsp_x.values)
+y_centers = list(gsp_y.values)
 
 # make d
 azimuth, elevation = get_azimuth_and_elevation(

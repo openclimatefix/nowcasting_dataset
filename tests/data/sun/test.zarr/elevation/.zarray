@@ -1,7 +1,7 @@
 {
     "chunks": [
-        1643,
-        198
+        6571,
+        40
     ],
     "compressor": {
         "blocksize": 0,
@@ -10,13 +10,13 @@
         "id": "blosc",
         "shuffle": 1
     },
-    "dtype": "<i8",
-    "fill_value": null,
+    "dtype": "<f4",
+    "fill_value": "NaN",
     "filters": null,
     "order": "C",
     "shape": [
         289,
-        6320
+        316
     ],
     "zarr_format": 2
 }

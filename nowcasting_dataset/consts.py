@@ -30,7 +30,7 @@ GSP_YIELD = "gsp_yield"
 GSP_X_COORDS = "gsp_x_coords"
 GSP_Y_COORDS = "gsp_y_coords"
 GSP_DATETIME_INDEX = "gsp_datetime_index"
-N_GSPS = 338
+N_GSPS = 317
 
 DEFAULT_N_GSP_PER_EXAMPLE = 32
 OBJECT_AT_CENTER = "object_at_center"

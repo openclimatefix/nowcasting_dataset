@@ -35,24 +35,7 @@ def test_get_pv_gsp_shape():
 
     assert isinstance(gsp_shapes, gpd.GeoDataFrame)
     assert "RegionID" in gsp_shapes.columns
-    assert "RegionName" in gsp_shapes.columns
-    assert "geometry" in gsp_shapes.columns
-
-
-def test_get_pv_gsp_shape_duplicates():
-    """
-    Test to get the gsp metadata from eso. This should take ~1 second.
-
-    Do not remove duplicate region enteries
-    """
-
-    gsp_shapes = get_gsp_shape_from_eso(join_duplicates=False)
-
-    assert gsp_shapes["RegionID"].is_unique is False
-
-    assert isinstance(gsp_shapes, gpd.GeoDataFrame)
-    assert "RegionID" in gsp_shapes.columns
-    assert "RegionName" in gsp_shapes.columns
+    # assert "RegionName" in gsp_shapes.columns
     assert "geometry" in gsp_shapes.columns
 
 

@@ -17,8 +17,8 @@ def test_get_example(test_data_folder):  # noqa 103
 
     sun_data_source = SunDataSource(zarr_path=zarr_path, history_minutes=30, forecast_minutes=60)
 
-    x = 256895.63164759654
-    y = 666180.3018829626
+    x = 313426.7079934548
+    y = 714293.2122848628
     start_dt = pd.Timestamp("2020-04-01 12:00:00.000")
 
     example = sun_data_source.get_example(
@@ -34,8 +34,8 @@ def test_get_example_different_year(test_data_folder):  # noqa 103
 
     sun_data_source = SunDataSource(zarr_path=zarr_path, history_minutes=30, forecast_minutes=60)
 
-    x = 256895.63164759654
-    y = 666180.3018829626
+    x = 313426.7079934548
+    y = 714293.2122848628
     start_dt = pd.Timestamp("2021-04-01 12:00:00.000")
 
     example = sun_data_source.get_example(

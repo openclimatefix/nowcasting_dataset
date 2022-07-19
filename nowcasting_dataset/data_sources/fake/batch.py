@@ -122,7 +122,7 @@ def gsp_fake(
             t0_datetime_utc=t0_datetimes_utc[i],
             x_center_osgb=x_centers_osgb[i],
             y_center_osgb=y_centers_osgb[i],
-            id_limit=338,
+            id_limit=317,
         )
         for i in range(batch_size)
     ]

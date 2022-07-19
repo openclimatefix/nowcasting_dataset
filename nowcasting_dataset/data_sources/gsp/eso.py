@@ -75,6 +75,7 @@ def get_gsp_metadata_from_eso(
             "https://data.nationalgrideso.com/api/3/action/datastore_search?"
             "resource_id=bbe2cc72-a6c6-46e6-8f4e-48b879467368&limit=400"
         )
+        # TODO need to replace this, but not quite sure what it will be for the moment.
         with urllib.request.urlopen(url) as fileobj:
             d = json.loads(fileobj.read())
 
@@ -148,7 +149,7 @@ def get_gsp_shape_from_eso(
         # if this original API will stay operational.
         url = (
             "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
-            "resource/a3ed5711-407a-42a9-a63a-011615eea7e0/download/gsp_regions_20181031.geojson"
+            "resource/08534dae-5408-4e31-8639-b579c8f1c50b/download/gsp_regions_20220314.geojson"
         )
 
         with urlopen(url) as response:
@@ -166,6 +167,12 @@ def get_gsp_shape_from_eso(
             # However when plotting it may be useful to project to WGS84
             # i.e shape_gpd = shape_gpd.to_crs(WGS84_CRS)
 
+            # TODO is this right?
+            # latest geo json does not have region id in it, so add this for the moment
+            shape_gpd.sort_values("GSPs", inplace=True)
+            shape_gpd.reset_index(inplace=True, drop=True)
+            shape_gpd["RegionID"] = range(0, len(shape_gpd))
+
     if save_local_file:
 
         # rename the columns to less than 10 characters
@@ -182,13 +189,13 @@ def get_gsp_shape_from_eso(
     if join_duplicates:
         logger.debug("Removing duplicates by joining geometry together")
 
-        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["RegionID"]).copy()
-        duplicated_raw = shape_gpd[shape_gpd["RegionID"].duplicated()]
+        shape_gpd_no_duplicates = shape_gpd.drop_duplicates(subset=["GSPs"]).copy()
+        duplicated_raw = shape_gpd[shape_gpd["GSPs"].duplicated()]
 
         for _, duplicate in duplicated_raw.iterrows():
             # find index in data set with no duplicates
             index_other = shape_gpd_no_duplicates[
-                shape_gpd_no_duplicates["RegionID"] == duplicate.RegionID
+                shape_gpd_no_duplicates["GSPs"] == duplicate.RegionID
             ].index
 
             # join geometries together
@@ -199,6 +206,11 @@ def get_gsp_shape_from_eso(
             shape_gpd_no_duplicates.loc[index_other, "geometry"] = new_geometry
 
         shape_gpd = shape_gpd_no_duplicates
+
+        # sort after removing duplicates
+        shape_gpd.sort_values("GSPs", inplace=True)
+        shape_gpd.reset_index(inplace=True, drop=True)
+        shape_gpd["RegionID"] = range(0, len(shape_gpd))
 
     return shape_gpd
 

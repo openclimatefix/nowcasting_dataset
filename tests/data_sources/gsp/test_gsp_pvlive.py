@@ -58,7 +58,7 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp():
 
     assert isinstance(gsp_pv_df, pd.DataFrame)
     print(gsp_pv_df)
-    assert len(gsp_pv_df) == (48 * 30)
+    assert len(gsp_pv_df) == (48 * 30 + 1)
     # 30 days in january,
     assert "datetime_gmt" in gsp_pv_df.columns
     assert "generation_mw" in gsp_pv_df.columns
@@ -89,4 +89,4 @@ def test_get_installed_capacity():
 
     assert len(installed_capacity) == 3
     assert "installedcapacity_mwp" == installed_capacity.name
-    assert installed_capacity.iloc[0] == 177.0772
+    assert installed_capacity.iloc[0] == 13861.203

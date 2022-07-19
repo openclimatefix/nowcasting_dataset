@@ -15,8 +15,8 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day():
     Test that one gsp system data can be loaded, just for one day
     """
 
-    start = datetime(2021, 1, 1, tzinfo=pytz.utc)
-    end = datetime(2021, 1, 2, tzinfo=pytz.utc)
+    start = datetime(2022, 7, 17, tzinfo=pytz.utc)
+    end = datetime(2022, 7, 18, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, number_of_gsp=1)
 
@@ -32,8 +32,8 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp_one_day_not_normalised():
     """
 
     # pick a summer day
-    start = datetime(2021, 6, 21, tzinfo=pytz.utc)
-    end = datetime(2021, 6, 22, tzinfo=pytz.utc)
+    start = datetime(2022, 7, 17, tzinfo=pytz.utc)
+    end = datetime(2022, 7, 18, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(
         start=start, end=end, number_of_gsp=1, normalize_data=False
@@ -51,14 +51,15 @@ def test_load_gsp_raw_data_from_pvlive_one_gsp():
     Test that one gsp system data can be loaded
     """
 
-    start = datetime(2021, 1, 1, tzinfo=pytz.utc)
-    end = datetime(2021, 3, 1, tzinfo=pytz.utc)
+    start = datetime(2022, 1, 1, tzinfo=pytz.utc)
+    end = datetime(2022, 1, 31, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, number_of_gsp=1)
 
     assert isinstance(gsp_pv_df, pd.DataFrame)
-    assert len(gsp_pv_df) == (48 * 59 + 1)
-    # 30 days in january, 29 days in february, plus one for the first timestamp in march
+    print(gsp_pv_df)
+    assert len(gsp_pv_df) == (48 * 30)
+    # 30 days in january,
     assert "datetime_gmt" in gsp_pv_df.columns
     assert "generation_mw" in gsp_pv_df.columns
 
@@ -68,8 +69,8 @@ def test_load_gsp_raw_data_from_pvlive_many_gsp():
     Test that one gsp system data can be loaded
     """
 
-    start = datetime(2021, 1, 1, tzinfo=pytz.utc)
-    end = datetime(2021, 1, 2, tzinfo=pytz.utc)
+    start = datetime(2022, 7, 17, tzinfo=pytz.utc)
+    end = datetime(2022, 7, 18, tzinfo=pytz.utc)
 
     gsp_pv_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, number_of_gsp=3)
 
@@ -88,4 +89,4 @@ def test_get_installed_capacity():
 
     assert len(installed_capacity) == 3
     assert "installedcapacity_mwp" == installed_capacity.name
-    assert installed_capacity.iloc[0] == 342.02623
+    assert installed_capacity.iloc[0] == 177.0772

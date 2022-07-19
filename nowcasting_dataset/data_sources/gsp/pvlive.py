@@ -114,7 +114,7 @@ def load_pv_gsp_raw_data_from_pvlive(
 
 
 def get_installed_capacity(
-    start: Optional[datetime] = datetime(2021, 1, 1, tzinfo=pytz.utc),
+    start: Optional[datetime] = datetime(2022, 7, 19, tzinfo=pytz.utc),
     maximum_number_of_gsp: Optional[int] = None,
 ) -> pd.Series:
     """

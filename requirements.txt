@@ -21,6 +21,6 @@ pathy
 opencv-contrib-python-headless
 gitpython
 pyresample
-nowcasting_datamodel==1.1.10
+nowcasting_datamodel==1.1.17
 scipy
 pyaml_env

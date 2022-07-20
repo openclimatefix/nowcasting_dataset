@@ -55,6 +55,7 @@ def get_gsp_power_from_database(
             session=session,
             start_datetime_utc=start_utc_extra - timedelta(seconds=1),
             gsp_ids=list(range(1, N_GSPS + 1)),
+            filter_nans=False,
         )
 
         logger.debug(f"Found {len(gsp_yields)} GSP yields from the database")
@@ -71,6 +72,7 @@ def get_gsp_power_from_database(
             gsp_yields_dict.append(gsp_yield_dict)
 
         gsp_yields_df = pd.DataFrame(gsp_yields_dict)
+        gsp_yields_df.fillna(0, inplace=True)
 
         logger.debug(gsp_yields_df.columns)
 

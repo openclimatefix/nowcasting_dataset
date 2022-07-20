@@ -170,7 +170,7 @@ def get_gsp_shape_from_eso(
             # latest geo json does not have region id in it, so add this for the moment
             shape_gpd.sort_values("GSPs", inplace=True)
             shape_gpd.reset_index(inplace=True, drop=True)
-            shape_gpd["RegionID"] = range(0, len(shape_gpd))
+            shape_gpd["RegionID"] = range(1, len(shape_gpd) + 1)
 
     if save_local_file:
 
@@ -209,7 +209,7 @@ def get_gsp_shape_from_eso(
         # sort after removing duplicates
         shape_gpd.sort_values("GSPs", inplace=True)
         shape_gpd.reset_index(inplace=True, drop=True)
-        shape_gpd["RegionID"] = range(0, len(shape_gpd))
+        shape_gpd["RegionID"] = range(1, len(shape_gpd) + 1)
 
     return shape_gpd
 

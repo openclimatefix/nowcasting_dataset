@@ -194,7 +194,7 @@ def get_gsp_shape_from_eso(
         for _, duplicate in duplicated_raw.iterrows():
             # find index in data set with no duplicates
             index_other = shape_gpd_no_duplicates[
-                shape_gpd_no_duplicates["GSPs"] == duplicate.RegionID
+                shape_gpd_no_duplicates["GSPs"] == duplicate.GSPs
             ].index
 
             # join geometries together

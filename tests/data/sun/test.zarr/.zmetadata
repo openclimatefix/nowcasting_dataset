@@ -22,7 +22,7 @@
             "order": "C",
             "shape": [
                 289,
-                316
+                317
             ],
             "zarr_format": 2
         },
@@ -50,7 +50,7 @@
             "order": "C",
             "shape": [
                 289,
-                316
+                317
             ],
             "zarr_format": 2
         },
@@ -62,7 +62,7 @@
         },
         "locations/.zarray": {
             "chunks": [
-                316
+                317
             ],
             "compressor": {
                 "blocksize": 0,
@@ -76,7 +76,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                316
+                317
             ],
             "zarr_format": 2
         },

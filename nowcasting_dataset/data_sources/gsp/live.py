@@ -67,7 +67,7 @@ def get_gsp_power_from_database(
 
             gsp_yield_dict = gsp_yield.__dict__
             gsp_yield_dict["installed_capacity_mw"] = location.installed_capacity_mw
-            gsp_yield_dict["solar_generation_mw"] = gsp_yield_dict["solar_generation_kw"] * 1000
+            gsp_yield_dict["solar_generation_mw"] = gsp_yield_dict["solar_generation_kw"] / 1000
             gsp_yield_dict["gsp_id"] = location.gsp_id
             gsp_yields_dict.append(gsp_yield_dict)
 

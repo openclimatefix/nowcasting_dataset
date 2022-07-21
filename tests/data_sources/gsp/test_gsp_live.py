@@ -25,6 +25,8 @@ def test_get_pv_power_from_database(gsp_yields, db_session):
         pd.to_datetime(gsp_power.index[0]).isoformat()
         == datetime(2022, 1, 1, 0, 0, tzinfo=timezone.utc).isoformat()
     )
+    assert gsp_power.max().max() < 1
+    # this because units have changed from kw to mw
 
 
 @freeze_time("2022-01-01 05:00")

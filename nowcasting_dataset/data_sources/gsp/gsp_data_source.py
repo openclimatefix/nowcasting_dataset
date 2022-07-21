@@ -486,12 +486,13 @@ class GSPDataSource(ImageDataSource):
         gsp_ids = gsp_ids_with_data_for_timeslice.intersection(gsp_ids)
 
         if len(gsp_ids) == 0:
-            logger.warning(
+            message = (
                 f"Did not find any gsps for ({x_center_osgb=},{y_center_osgb=}). "
                 f"The bounding box was {bounding_box},"
                 f"all of x are {x} all of y are {y},"
             )
-        assert len(gsp_ids) > 0
+            logger.error(message)
+        assert len(gsp_ids) > 0, Exception(message)
         return gsp_ids
 
     def _get_time_slice(self, t0_datetime_utc: pd.Timestamp) -> [pd.DataFrame]:

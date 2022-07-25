@@ -80,7 +80,10 @@ class SunDataSource(DataSource):
                 & np.isclose(locations[:, 1], y_center_osgb)
             ]
             # lets make sure there is atleast one
-            assert len(location) > 0
+            assert len(location) > 0, (
+                f"Could not find any locations for {location}. "
+                f"The sun data source locations are {locations}"
+            )
             # Take the first location, and x and y coordinates are the first and center entries in
             # this array.
             location = location[0]

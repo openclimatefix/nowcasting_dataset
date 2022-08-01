@@ -34,7 +34,7 @@ def get_list_of_gsp_ids(
 
     # setup pv Live class, although here we are getting historic data
     pvl = PVLive()
-    gsp_ids = pvl.ggd_lookup
+    gsp_ids = pvl.gsp_list
 
     if not return_national:
         gsp_ids = gsp_ids[gsp_ids["gsp_id"] != 0]

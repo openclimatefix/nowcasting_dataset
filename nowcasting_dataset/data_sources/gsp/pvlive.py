@@ -2,18 +2,55 @@
 import logging
 from concurrent import futures
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 import pytz
 from pvlive_api import PVLive
 from tqdm import tqdm
 
-from nowcasting_dataset.data_sources.gsp.eso import get_list_of_gsp_ids
-
 logger = logging.getLogger(__name__)
 
 CHUNK_DURATION = timedelta(days=30)
+
+
+def get_list_of_gsp_ids(
+    maximum_number_of_gsp: Optional[int] = None,
+    return_dataframe: bool = False,
+    return_national: bool = True,
+) -> Union[List[int], pd.DataFrame]:
+    """
+    Get list of gsp ids from ESO metadata
+
+    Args:
+        maximum_number_of_gsp: Truncate list of GSPs to be no larger than this number of GSPs.
+            Set to None to disable truncation.
+        return_dataframe: Return as a dataframr with columns 'gsp_id', 'gsp_name', 'pes_id'
+        return_national: Return gsp_id=0 in ths data
+
+    Returns:  list of gsp ids
+
+    """
+
+    # setup pv Live class, although here we are getting historic data
+    pvl = PVLive()
+    gsp_ids = pvl.gsp_list
+
+    if not return_national:
+        gsp_ids = gsp_ids[gsp_ids["gsp_id"] != 0]
+
+    # adjust number of gsp_ids
+    if maximum_number_of_gsp is None:
+        maximum_number_of_gsp = len(gsp_ids)
+    if maximum_number_of_gsp > len(gsp_ids):
+        logger.warning(f"Only {len(gsp_ids)} gsp available to load")
+    if maximum_number_of_gsp < len(gsp_ids):
+        gsp_ids = gsp_ids[0:maximum_number_of_gsp]
+
+    if return_dataframe:
+        return gsp_ids
+    else:
+        return list(gsp_ids["gsp_id"])
 
 
 def load_pv_gsp_raw_data_from_pvlive(

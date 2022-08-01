@@ -8,22 +8,19 @@ ESO - Electricity System Operator. General information can be found here
 
 get_gsp_metadata_from_eso: gets the gsp metadata
 get_gsp_shape_from_eso: gets the shape of the gsp regions
-get_list_of_gsp_ids: gets a list of gsp_ids, by using 'get_gsp_metadata_from_eso'
 
 Peter Dudfield
 2021-09-13
 """
 
-import json
 import logging
 import os
-import urllib
-from typing import List, Optional
 from urllib.request import urlopen
 
 import geopandas as gpd
 import pandas as pd
 
+from nowcasting_dataset.data_sources.gsp.pvlive import get_list_of_gsp_ids
 from nowcasting_dataset.geospatial import osgb_to_lat_lon
 
 logger = logging.getLogger(__name__)
@@ -70,13 +67,7 @@ def get_gsp_metadata_from_eso(
         logger.debug("loading local file for ESO metadata:done")
     else:
         # we now get this from pvlive
-        url = "https://api0.solar.sheffield.ac.uk/pvlive/api/v4/gsp_list"
-        # TODO need to replace this, but not quite sure what it will be for the moment.
-        with urllib.request.urlopen(url) as fileobj:
-            d = json.loads(fileobj.read())
-
-        # make dataframe
-        metadata = pd.DataFrame(data=d["data"], columns=d["meta"])
+        metadata = get_list_of_gsp_ids(return_dataframe=True, return_national=False)
 
         # drop duplicates
         metadata = metadata.drop_duplicates(subset=["gsp_id"])
@@ -212,36 +203,3 @@ def get_gsp_shape_from_eso(
         shape_gpd["RegionID"] = range(1, len(shape_gpd) + 1)
 
     return shape_gpd
-
-
-def get_list_of_gsp_ids(maximum_number_of_gsp: Optional[int] = None) -> List[int]:
-    """
-    Get list of gsp ids from ESO metadata
-
-    Args:
-        maximum_number_of_gsp: Truncate list of GSPs to be no larger than this number of GSPs.
-            Set to None to disable truncation.
-
-    Returns:  list of gsp ids
-
-    """
-    # get a lit of gsp ids
-    metadata = get_gsp_metadata_from_eso(calculate_centroid=False)
-
-    # get rid of nans, and duplicates
-    metadata = metadata[~metadata["gsp_id"].isna()]
-    metadata.drop_duplicates(subset=["gsp_id"], inplace=True)
-
-    # make into list
-    gsp_ids = metadata["gsp_id"].to_list()
-    gsp_ids = [int(gsp_id) for gsp_id in gsp_ids]
-
-    # adjust number of gsp_ids
-    if maximum_number_of_gsp is None:
-        maximum_number_of_gsp = len(metadata)
-    if maximum_number_of_gsp > len(metadata):
-        logger.warning(f"Only {len(metadata)} gsp available to load")
-    if maximum_number_of_gsp < len(metadata):
-        gsp_ids = gsp_ids[0:maximum_number_of_gsp]
-
-    return gsp_ids

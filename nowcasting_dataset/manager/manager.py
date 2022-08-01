@@ -82,11 +82,14 @@ class Manager(ManagerBase):
     def create_files_specifying_spatial_and_temporal_locations_of_each_example_if_necessary(
         self,
     ) -> None:
-        """Creates CSV files specifying the locations of each example if those files don't exist yet.
+        """Creates CSV files specifying the locations of each example
+
+         This only happens if those files don't exist yet.
 
         Creates one file per split, in this location:
 
-        `<output_data.filepath> / <split_name> / spatial_and_temporal_locations_of_each_example.csv`
+        `<output_data.filepath> / <split_name> /
+        spatial_and_temporal_locations_of_each_example.csv`
 
         Creates the output directory if it does not exist.
 

@@ -7,8 +7,8 @@ import pytest
 import nowcasting_dataset
 from nowcasting_dataset import consts
 from nowcasting_dataset.config.load import load_yaml_configuration
-from nowcasting_dataset.data_sources import SatelliteDataSource
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
+from nowcasting_dataset.data_sources.satellite.satellite_data_source import SatelliteDataSource
 
 pytest.IMAGE_SIZE_PIXELS = 128
 

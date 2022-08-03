@@ -10,7 +10,7 @@ import pandas as pd
 import xarray as xr
 
 import nowcasting_dataset.filesystem.utils as nd_fs_utils
-from nowcasting_dataset.data_sources import DataSource
+from nowcasting_dataset.data_sources.data_source import DataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.optical_flow.format_images import crop_center, remap_image
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow

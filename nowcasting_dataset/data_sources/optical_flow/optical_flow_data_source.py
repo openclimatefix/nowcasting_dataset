@@ -82,7 +82,10 @@ class OpticalFlowDataSource(DataSource):
         super().__post_init__()
 
         # Get round circular import problem
-        from nowcasting_dataset.data_sources import HRVSatelliteDataSource, SatelliteDataSource
+        from nowcasting_dataset.data_sources.satellite.satellite_data_source import (
+            HRVSatelliteDataSource,
+            SatelliteDataSource,
+        )
 
         _MAP_SATELLITE_DATA_SOURCE_NAME_TO_CLASS = {
             "HRVSatelliteDataSource": HRVSatelliteDataSource,

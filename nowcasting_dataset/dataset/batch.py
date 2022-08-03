@@ -13,9 +13,9 @@ from pydantic import BaseModel
 
 from nowcasting_dataset.config.model import Configuration
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-from nowcasting_dataset.data_sources import MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.data_sources.fake.batch import make_fake_batch
 from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
+from nowcasting_dataset.data_sources.map import MAP_DATA_SOURCE_NAME_TO_CLASS
 from nowcasting_dataset.data_sources.metadata.metadata_model import Metadata, load_from_csv
 from nowcasting_dataset.data_sources.nwp.nwp_model import NWP
 from nowcasting_dataset.data_sources.optical_flow.optical_flow_model import OpticalFlow

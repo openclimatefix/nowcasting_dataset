@@ -3,8 +3,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from nowcasting_dataset.data_sources import TopographicDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
+from nowcasting_dataset.data_sources.topographic.topographic_data_source import (
+    TopographicDataSource,
+)
 
 
 @pytest.mark.parametrize(

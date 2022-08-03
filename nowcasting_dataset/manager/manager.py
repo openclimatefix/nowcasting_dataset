@@ -12,7 +12,7 @@ import nowcasting_dataset.time as nd_time
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
 from nowcasting_dataset.consts import SPATIAL_AND_TEMPORAL_LOCATIONS_OF_EACH_EXAMPLE_FILENAME
-from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES
+from nowcasting_dataset.data_sources.map import ALL_DATA_SOURCE_NAMES
 from nowcasting_dataset.data_sources.metadata.metadata_model import (
     Metadata,
     SpaceTimeLocation,

@@ -6,7 +6,7 @@ from typing import Optional
 
 import nowcasting_dataset.utils as nd_utils
 from nowcasting_dataset import config
-from nowcasting_dataset.data_sources import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
+from nowcasting_dataset.data_sources.map import ALL_DATA_SOURCE_NAMES, MAP_DATA_SOURCE_NAME_TO_CLASS
 
 logger = logging.getLogger(__name__)
 

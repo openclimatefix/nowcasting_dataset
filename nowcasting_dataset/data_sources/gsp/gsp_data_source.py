@@ -549,6 +549,10 @@ def drop_gsp_by_threshold(
 
     if len(gsp_power) == 0:
         return gsp_power, meta_data
+    
+    # There is an extra GSP in the new data, GSP ID 0 for the national forecast,
+    # which is not in the metadata, so dropping here
+    gsp_power = gsp_power.drop(columns=0)
 
     maximum_gsp = gsp_power.max()
 

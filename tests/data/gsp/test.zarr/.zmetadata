@@ -6,7 +6,7 @@
         },
         "datetime_gmt/.zarray": {
             "chunks": [
-                25201
+                37657
             ],
             "compressor": {
                 "blocksize": 0,
@@ -29,7 +29,7 @@
                 "datetime_gmt"
             ],
             "calendar": "proleptic_gregorian",
-            "units": "minutes since 2016-01-01"
+            "units": "minutes since 2014-01-01"
         },
         "generation_mw/.zarray": {
             "chunks": [
@@ -70,7 +70,7 @@
                 "id": "blosc",
                 "shuffle": 1
             },
-            "dtype": "<U2",
+            "dtype": "<U21",
             "fill_value": null,
             "filters": null,
             "order": "C",

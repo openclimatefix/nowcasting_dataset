@@ -757,7 +757,7 @@ def create_metadata_dataset() -> xr.Dataset:
     """Create fake metadata dataset"""
     d = {
         "dims": ("t0_dt",),
-        "data": pd.date_range("2021-01-01", freq="5T", periods=1) + pd.Timedelta("30T"),
+        "data": pd.date_range("2023-01-01", freq="5T", periods=1) + pd.Timedelta("30T"),
     }
 
     data = (xr.DataArray.from_dict(d)).to_dataset(name="data")

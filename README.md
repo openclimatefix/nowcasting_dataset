@@ -63,6 +63,15 @@ To output debug logs while running the tests then run `py.test --log-cli-level=1
 
 To test using the full dataset on Google Cloud, add the `--use_cloud_data` switch.
 
+## docker
+
+Test using a docker file and database
+
+```
+docker stop $(docker ps -a -q)
+docker-compose -f test-docker-compose.yml build
+docker-compose -f test-docker-compose.yml run dataset
+```
 
 ## Downloading data
 

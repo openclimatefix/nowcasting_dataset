@@ -4,14 +4,13 @@ from datetime import datetime, timedelta
 import pytest
 from nowcasting_datamodel.models import (
     GSPYield,
-    Location,
-    LocationSQL,
     PVSystem,
     PVSystemSQL,
     PVYield,
     pv_output,
     solar_sheffield_passiv,
 )
+from nowcasting_datamodel.read.read import get_location
 
 """
 This is a bit complicated and sensitive to change
@@ -112,7 +111,8 @@ def pv_yields_and_systems(db_session):
 def gsp_yields(db_session):
     """Make fake GSP data"""
 
-    gsp_sql_1: LocationSQL = Location(gsp_id=1, label="GSP_1", installed_capacity_mw=1).to_orm()
+    gsp_sql_1 = get_location(gsp_id=1, label="GSP_1", session=db_session)
+    gsp_sql_1.installed_capacity_mw = 1
 
     gsp_yield_sqls = []
     for hour in range(0, 4):

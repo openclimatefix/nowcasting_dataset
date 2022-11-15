@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:14.5
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+
+  dataset:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        TESTING: 1
+    environment:
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
+      - GIT_PYTHON_REFRESH=quiet
+      - LOG_LEVEL=DEBUG
+    command: >
+      bash -c "pytest --cov=./nowcasting_dataset
+      && coverage report -m
+      && coverage xml
+      && cp .coverage ./tests/
+      && cp coverage.xml ./tests/"
+    depends_on:
+      - "postgres"
+    volumes:
+      - ./tests/:/app/tests
+      - ./nowcasting_dataset/:/app/nowcasting_dataset

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import pytest
 from freezegun import freeze_time
+from nowcasting_datamodel.models.gsp import GSPYieldSQL
 
 from nowcasting_dataset.data_sources.gsp.gsp_data_source import GSPDataSource
 from nowcasting_dataset.data_sources.gsp.live import get_gsp_power_from_database
@@ -30,8 +31,12 @@ def test_get_pv_power_from_database(gsp_yields, db_session):
 
 
 @freeze_time("2022-01-01 05:00")
-def test_get_pv_power_from_database_no_data():
+def test_get_pv_power_from_database_no_data(db_session):
     """Get gsp power from database"""
+
+    # remove all data points
+    db_session.query(GSPYieldSQL).delete()
+    db_session.commit()
 
     gsp_data_source = GSPDataSource(
         history_minutes=30,

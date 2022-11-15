@@ -1,6 +1,5 @@
 """ Fixtures for tests """
 import os
-import tempfile
 from datetime import datetime, timedelta
 
 import pytest
@@ -59,19 +58,18 @@ def gsp_yields_and_systems(db_session):
 def db_connection():
     """Create data connection"""
 
-    with tempfile.NamedTemporaryFile(suffix=".db") as temp:
-        url = f"sqlite:///{temp.name}"
-        os.environ["DB_URL_PV"] = url
-        os.environ["DB_URL"] = url
+    url = os.getenv("DB_URL", "sqlite:///test.db")
+    os.environ["DB_URL_PV"] = url
+    os.environ["DB_URL"] = url
 
-        connection = DatabaseConnection(url=url, base=Base_PV)
-        Base_PV.metadata.create_all(connection.engine)
-        Base_Forecast.metadata.create_all(connection.engine)
+    connection = DatabaseConnection(url=url, base=Base_PV)
+    Base_PV.metadata.create_all(connection.engine)
+    Base_Forecast.metadata.create_all(connection.engine)
 
-        yield connection
+    yield connection
 
-        Base_PV.metadata.drop_all(connection.engine)
-        Base_Forecast.metadata.create_all(connection.engine)
+    Base_PV.metadata.drop_all(connection.engine)
+    Base_Forecast.metadata.create_all(connection.engine)
 
 
 @pytest.fixture(scope="function", autouse=True)

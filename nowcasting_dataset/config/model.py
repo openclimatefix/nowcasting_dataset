@@ -729,15 +729,19 @@ def set_git_commit(configuration: Configuration):
 
     """
 
-    repo = git.Repo(search_parent_directories=True)
-    git.refresh("/usr/bin/git")
+    try:
+        repo = git.Repo(search_parent_directories=True)
+        git.refresh("/usr/bin/git")
 
-    git_details = Git(
-        hash=repo.head.object.hexsha,
-        committed_date=datetime.fromtimestamp(repo.head.object.committed_date),
-        message=repo.head.object.message,
-    )
+        git_details = Git(
+            hash=repo.head.object.hexsha,
+            committed_date=datetime.fromtimestamp(repo.head.object.committed_date),
+            message=repo.head.object.message,
+        )
 
-    configuration.git = git_details
+        configuration.git = git_details
+    except Exception as e:
+        logger.warning(e)
+        logger.warning("Could not set git details")
 
     return configuration

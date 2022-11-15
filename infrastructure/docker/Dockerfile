@@ -12,6 +12,7 @@ RUN apt-get install git -y
 COPY setup.py app/setup.py
 COPY README.md app/README.md
 COPY requirements.txt app/requirements.txt
+COPY extra-requirements.txt app/extra-requirements.txt
 RUN pip install git+https://github.com/SheffieldSolar/PV_Live-API#pvlive_api
 
 

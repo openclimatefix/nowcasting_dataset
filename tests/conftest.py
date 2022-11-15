@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models import Base_Forecast, Base_PV, GSPYield, Location, LocationSQL
+from nowcasting_datamodel.models import Base_Forecast, Base_PV, GSPYield
+from nowcasting_datamodel.read.read import get_location
 
 from nowcasting_dataset.time import floor_minutes_dt
 
@@ -23,11 +24,9 @@ def gsp_yields_and_systems(db_session):
     gsp_yield_sqls = []
     locations = []
     for i in range(317):
-        location_sql_1: LocationSQL = Location(
-            gsp_id=i + 1,
-            label=f"GSP_{i+1}",
-            installed_capacity_mw=123.0,
-        ).to_orm()
+
+        location_sql_1 = get_location(session=db_session, gsp_id=i + 1, label=f"GSP_{i+1}")
+        location_sql_1.installed_capacity_mw = 123.0
 
         t0_datetime_utc = floor_minutes_dt(datetime.utcnow()) - timedelta(hours=3)
 

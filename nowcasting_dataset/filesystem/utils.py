@@ -27,7 +27,7 @@ def get_filesystem(path: Union[str, Path]) -> fsspec.AbstractFileSystem:
 
     It is safe for `path` to include wildcards in the final filename.
     """
-    path = Pathy(path)
+    path = Pathy.fluid(path)
     return fsspec.open(path.parent).fs
 
 

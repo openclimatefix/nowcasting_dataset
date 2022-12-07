@@ -108,6 +108,14 @@ class SatelliteDataSource(ZarrDataSource):
         ).transform
 
     def _open_data(self) -> xr.DataArray:
+        """
+        Open the satellite data
+
+        Will try to open 15 minute data if
+        1. 5 min data file does nto exists
+        2. last time stamp is greater than an hour from now
+
+        """
 
         use_15_minute_data = False
         filesystem = get_filesystem(self.zarr_path)

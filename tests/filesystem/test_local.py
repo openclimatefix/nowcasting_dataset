@@ -68,7 +68,7 @@ def test_get_maximum_batch_id():
     file2 = "000001.nc"
 
     with tempfile.TemporaryDirectory() as tmpdirname:
-        local_path = Pathy(tmpdirname)
+        local_path = Pathy.fluid(tmpdirname)
         search_path = local_path / "*.nc"
 
         assert get_maximum_batch_id(path=local_path) == -1

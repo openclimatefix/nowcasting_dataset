@@ -147,16 +147,16 @@ class SatelliteDataSource(ZarrDataSource):
             if self.is_live:
                 data_array = data_array.load()
 
-            # 1 month a year, and 2 days a month the 5 minute satellite data is down,
-            # but the 15 minutes data is still there, so lets check if we need to load that
+                # 1 month a year, and 2 days a month the 5 minute satellite data is down,
+                # but the 15 minutes data is still there, so lets check if we need to load that
 
-            latest_time = pd.to_datetime(data_array.time[-1].values)
-            if latest_time < datetime.utcnow() - timedelta(hours=1):
-                self.logger.debug(
-                    f"last datesatmp is {latest_time}, which is more than 1 hour ago. "
-                    f"Will try to load 15 minute data"
-                )
-                use_15_minute_data = True
+                latest_time = pd.to_datetime(data_array.time[-1].values)
+                if latest_time < datetime.utcnow() - timedelta(hours=1):
+                    self.logger.debug(
+                        f"last datesatmp is {latest_time}, which is more than 1 hour ago. "
+                        f"Will try to load 15 minute data"
+                    )
+                    use_15_minute_data = True
 
         else:
             self.logger.debug(

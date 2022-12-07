@@ -26,7 +26,7 @@ def save_yaml_configuration(
     # Note that we make the object json'able first, so that it can be saved to a yaml file
     d = json.loads(configuration.json())
     if filename is None:
-        filename = Pathy(configuration.output_data.filepath) / "configuration.yaml"
+        filename = Pathy.fluid(configuration.output_data.filepath) / "configuration.yaml"
     logger.info(f"Saving configuration to {filename}")
 
     # save to a yaml file

@@ -14,11 +14,13 @@ import pyproj
 import pyresample
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
 from nowcasting_dataset.data_sources.metadata.metadata_model import SpaceTimeLocation
 from nowcasting_dataset.data_sources.satellite.satellite_model import Satellite
+from nowcasting_dataset.filesystem.utils import get_filesystem
 from nowcasting_dataset.geospatial import OSGB
 from nowcasting_dataset.utils import drop_duplicate_times, drop_non_monotonic_increasing, is_sorted
 
@@ -68,10 +70,25 @@ class SatelliteDataSource(ZarrDataSource):
 
         self._osgb_to_geostationary: Callable = None
 
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+
+        self.logger.debug(self.zarr_path)
+        try:
+            nd_fs_utils.check_path_exists(self.zarr_path)
+        except Exception:
+            self.logger.debug(f"Could not find {self.zarr_path} so checking {self.zarr_path_15}")
+            nd_fs_utils.check_path_exists(self.zarr_path_15)
+
     @property
     def sample_period_minutes(self) -> int:
         """Override the default sample minutes"""
         return self.time_resolution_minutes
+
+    @property
+    def zarr_path_15(self) -> str:
+        """Make zarr 15 minute data path"""
+        return str(self.zarr_path).replace(".zarr", "_15.zarr")
 
     def open(self) -> None:
         """
@@ -107,38 +124,62 @@ class SatelliteDataSource(ZarrDataSource):
         ).transform
 
     def _open_data(self) -> xr.DataArray:
-        data_array = open_sat_data(
-            zarr_path=self.zarr_path,
-            consolidated=self.consolidated,
-            logger=self.logger,
-            sample_period_minutes=self.sample_period_minutes,
-        )
-        # If live, then load into memory so the data
-        # doesn't disappear while its being used
-        if self.is_live:
-            data_array = data_array.load()
+        """
+        Open the satellite data
 
-            # 1 month a year, and 2 days a month the 5 minute satellite data is down,
-            # but the 15 minutes data is still there, so lets check if we need to load that
+        Will try to open 15 minute data if
+        1. 5 min data file does nto exists
+        2. last time stamp is greater than an hour from now
 
-            latest_time = pd.to_datetime(data_array.time[-1].values)
-            if latest_time < datetime.utcnow() - timedelta(hours=1):
-                self.logger.debug(f"last datesatmp is {latest_time}, which is more than 1 hour ago")
-                # create new filename with _15 on the end
-                # file name is xxxxxx.zarr or xxxxx.zarr.zip,
-                zarr_path_15 = str(self.zarr_path).replace(".zarr", "_15.zarr")
+        """
 
-                self.logger.debug(f"Now going to load {zarr_path_15} and resample")
-                data_array = open_sat_data(
-                    zarr_path=zarr_path_15,
-                    consolidated=self.consolidated,
-                    logger=self.logger,
-                    sample_period_minutes=self.sample_period_minutes,
-                )
-
+        use_15_minute_data = False
+        filesystem = get_filesystem(self.zarr_path)
+        if filesystem.exists(self.zarr_path):
+            data_array = open_sat_data(
+                zarr_path=self.zarr_path,
+                consolidated=self.consolidated,
+                logger=self.logger,
+                sample_period_minutes=self.sample_period_minutes,
+            )
+            # If live, then load into memory so the data
+            # doesn't disappear while its being used
+            if self.is_live:
                 data_array = data_array.load()
-                self.logger.debug("Resampling 15 minute data to 5 mins")
-                data_array = data_array.resample(time="5T").interpolate("linear")
+
+                # 1 month a year, and 2 days a month the 5 minute satellite data is down,
+                # but the 15 minutes data is still there, so lets check if we need to load that
+
+                latest_time = pd.to_datetime(data_array.time[-1].values)
+                if latest_time < datetime.utcnow() - timedelta(hours=1):
+                    self.logger.debug(
+                        f"last datesatmp is {latest_time}, which is more than 1 hour ago. "
+                        f"Will try to load 15 minute data"
+                    )
+                    use_15_minute_data = True
+
+        else:
+            self.logger.debug(
+                f"File does not exist {self.zarr_path}" f"Will try to load 15 minute data"
+            )
+            use_15_minute_data = True
+
+        if use_15_minute_data:
+            # create new filename with   on the end
+            # file name is xxxxxx.zarr or xxxxx.zarr.zip,
+            # zarr_path_15 = str(self.zarr_path).replace(".zarr", "_15.zarr")
+
+            self.logger.debug(f"Now going to load {self.zarr_path_15} and resample")
+            data_array = open_sat_data(
+                zarr_path=self.zarr_path_15,
+                consolidated=self.consolidated,
+                logger=self.logger,
+                sample_period_minutes=self.sample_period_minutes,
+            )
+
+            data_array = data_array.load()
+            self.logger.debug("Resampling 15 minute data to 5 mins")
+            data_array = data_array.resample(time="5T").interpolate("linear")
 
         return data_array
 

@@ -592,7 +592,7 @@ class OutputData(Base):
     """Output data model"""
 
     filepath: Union[str, Pathy] = Field(
-        Pathy("gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/"),
+        Pathy.fluid("gs://solar-pv-nowcasting-data/prepared_ML_training_data/v7/"),
         description=(
             "Where the data is saved to.  If this is running on the cloud then should include"
             " 'gs://' or 's3://'"
@@ -602,7 +602,7 @@ class OutputData(Base):
     @validator("filepath")
     def filepath_pathy(cls, v):
         """Make sure filepath is a Pathy object"""
-        return Pathy(v)
+        return Pathy.fluid(v)
 
 
 class Process(Base):
@@ -700,7 +700,7 @@ class Configuration(Base):
 
     def set_base_path(self, base_path: str):
         """Append base_path to all paths. Mostly used for testing."""
-        base_path = Pathy(base_path)
+        base_path = Pathy.fluid(base_path)
         path_attrs = [
             "pv.pv_filename",
             "pv.pv_metadata_filename",

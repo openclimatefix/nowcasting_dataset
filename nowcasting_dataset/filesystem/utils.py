@@ -67,7 +67,7 @@ def get_maximum_batch_id(path: Pathy) -> int:
     # to find the last filename, instead of having to convert all filenames to int.
     filenames = np.sort(filenames)
     last_filename = filenames[-1]
-    last_filename = Pathy(last_filename)
+    last_filename = Pathy.fluid(last_filename)
     last_filename_stem = last_filename.stem
     maximum_batch_id = int(last_filename_stem)
     _LOG.debug(f"Found maximum of batch it of {maximum_batch_id} in {path}")

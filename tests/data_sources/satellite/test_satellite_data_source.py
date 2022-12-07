@@ -193,7 +193,8 @@ def test_wrong_sample_period(sat_filename):
     """Test that a error is raise when the time_resolution_minutes is not divisible by 5"""
     with pytest.raises(Exception):
         _ = SatelliteDataSource(
-            image_size_pixels=pytest.IMAGE_SIZE_PIXELS,
+            image_size_pixels_height=pytest.IMAGE_SIZE_PIXELS,
+            image_size_pixels_width=pytest.IMAGE_SIZE_PIXELS,
             zarr_path=sat_filename,
             history_minutes=0,
             forecast_minutes=15,

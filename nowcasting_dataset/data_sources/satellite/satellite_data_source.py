@@ -14,6 +14,7 @@ import pyproj
 import pyresample
 import xarray as xr
 
+import nowcasting_dataset.filesystem.utils as nd_fs_utils
 import nowcasting_dataset.time as nd_time
 from nowcasting_dataset.consts import SAT_VARIABLE_NAMES
 from nowcasting_dataset.data_sources.data_source import ZarrDataSource
@@ -69,10 +70,25 @@ class SatelliteDataSource(ZarrDataSource):
 
         self._osgb_to_geostationary: Callable = None
 
+    def check_input_paths_exist(self) -> None:
+        """Check input paths exist.  If not, raise a FileNotFoundError."""
+
+        self.logger.debug(self.zarr_path)
+        try:
+            nd_fs_utils.check_path_exists(self.zarr_path)
+        except Exception:
+            self.logger.debug(f"Could not find {self.zarr_path} so checking {self.zarr_path_15}")
+            nd_fs_utils.check_path_exists(self.zarr_path_15)
+
     @property
     def sample_period_minutes(self) -> int:
         """Override the default sample minutes"""
         return self.time_resolution_minutes
+
+    @property
+    def zarr_path_15(self) -> str:
+        """Make zarr 15 minute data path"""
+        return str(self.zarr_path).replace(".zarr", "_15.zarr")
 
     def open(self) -> None:
         """
@@ -151,11 +167,11 @@ class SatelliteDataSource(ZarrDataSource):
         if use_15_minute_data:
             # create new filename with   on the end
             # file name is xxxxxx.zarr or xxxxx.zarr.zip,
-            zarr_path_15 = str(self.zarr_path).replace(".zarr", "_15.zarr")
+            # zarr_path_15 = str(self.zarr_path).replace(".zarr", "_15.zarr")
 
-            self.logger.debug(f"Now going to load {zarr_path_15} and resample")
+            self.logger.debug(f"Now going to load {self.zarr_path_15} and resample")
             data_array = open_sat_data(
-                zarr_path=zarr_path_15,
+                zarr_path=self.zarr_path_15,
                 consolidated=self.consolidated,
                 logger=self.logger,
                 sample_period_minutes=self.sample_period_minutes,

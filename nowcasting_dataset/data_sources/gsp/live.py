@@ -36,7 +36,7 @@ def get_gsp_power_from_database(
     logger.debug(f"{history_duration=}")
 
     extra_duration = timedelta(minutes=load_extra_minutes)
-    now = pd.to_datetime(datetime.now(tz=timezone.utc)).floor("30T")
+    now = pd.to_datetime(datetime.now(tz=timezone.utc)).ceil("30T")
     start_utc = now - history_duration
     start_utc_extra = start_utc - extra_duration
 

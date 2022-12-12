@@ -85,7 +85,8 @@ def test_get_example_and_batch(gsp_yields):
     )
 
     location = locations[0]
-    location.t0_datetime_utc = datetime(2022, 1, 1, 3, tzinfo=timezone.utc)
+    location.t0_datetime_utc = datetime(2022, 1, 1, 3, 0, 5, tzinfo=timezone.utc)
 
     example = gsp_data_source.get_example(location=location)
-    example.time.values[-1] == datetime(2022, 1, 1, 3)
+    assert len(example.time) == 5
+    assert example.time.values[-1] == pd.to_datetime(datetime(2022, 1, 1, 3, 30))

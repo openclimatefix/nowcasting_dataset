@@ -248,6 +248,8 @@ class PVDataSource(ImageDataSource):
         start_dt = self._get_start_dt(t0_datetime_utc)
         end_dt = self._get_end_dt(t0_datetime_utc)
 
+        logger.debug(f"Select PV power from {start_dt} to {end_dt}")
+
         selected_pv_power = self.pv_power.loc[start_dt:end_dt].dropna(axis="columns", how="any")
         selected_pv_capacity = self.pv_capacity[selected_pv_power.columns]
 

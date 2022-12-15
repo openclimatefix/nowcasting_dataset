@@ -201,6 +201,8 @@ class SatelliteDataSource(ZarrDataSource):
         start_floor = start_dt.floor(f"{self.sample_period_minutes}T")
         end_floor = end_dt.floor(f"{self.sample_period_minutes}T")
 
+        _LOG.debug(f"Getting Satellite data from {start_floor} to {end_floor}")
+
         data = self.data.sel(time=slice(start_floor, end_floor))
         assert type(data) == xr.DataArray
 

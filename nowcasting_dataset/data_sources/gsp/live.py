@@ -122,6 +122,7 @@ def get_gsp_power_from_database(
     gsp_power_df = gsp_power_df[gsp_power_df.index >= start_utc]
     gsp_capacity_df = gsp_capacity_df[gsp_capacity_df.index >= start_utc]
     logger.debug(f"{len(gsp_power_df)} of datetimes after filter on {start_utc}")
+    logger.debug(f"{gsp_power_df=}")
 
     # clip values to 0, this just stops any interpolation going below zero
     gsp_power_df.clip(lower=0, inplace=True)

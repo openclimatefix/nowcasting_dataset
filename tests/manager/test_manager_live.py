@@ -220,7 +220,7 @@ def test_run_just_gsp(test_configuration_filename, gsp_yields_and_systems):
             gsp = xr.load_dataset(f"{local_temp_path_save}/gsp/000000.nc", engine="h5netcdf")
             gsp = GSP(gsp)
             assert len(gsp.time.values[0]) == 5
-            assert pd.to_datetime(gsp.time.values[0, -1]) == pd.Timestamp(datetime.utcnow()).ceil(
+            assert pd.to_datetime(gsp.time.values[0, -1]) == pd.Timestamp(datetime.utcnow()).floor(
                 "30T"
             )
 

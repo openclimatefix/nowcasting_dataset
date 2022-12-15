@@ -125,6 +125,8 @@ class NWPDataSource(ZarrDataSource):
         start_hourly = start_dt.floor("H")
         end_hourly = end_dt.ceil("H")
 
+        _LOG.debug(f"Getting NWP data from {start_hourly} to {end_hourly}")
+
         # TODO: Issue #398: Use NWP init time closest to t0.
         # TODO: This could be simplified (and sped up?) by using
         # `data.sel(inti_time=start_hourly, method="pad")`. See RawNWPDataSource._get_time_slice.

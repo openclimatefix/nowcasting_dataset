@@ -516,6 +516,7 @@ class GSPDataSource(ImageDataSource):
         # If t0 is 12.45 and history duration is 1 hours, then start_dt will be 11.45.
         # But we need to collect data at 11.30, 12.00, and 12.30
         start_dt = pd.to_datetime(start_dt).floor("30T")
+        logger.debug(f"Will be getting data from {start_dt} to {end_dt}")
 
         # select power and capacity for certain times
         power = self.gsp_power.loc[start_dt:end_dt]

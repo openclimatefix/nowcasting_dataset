@@ -192,6 +192,8 @@ def get_pv_power_from_database(
     pv_yields_df = pv_yields_df[pv_yields_df.index >= start_utc]
     logger.debug(f"{len(pv_yields_df)} of datetimes after filter on {start_utc}")
 
+    logger.debug(f"{pv_yields_df=}")
+
     return pv_yields_df
 
 

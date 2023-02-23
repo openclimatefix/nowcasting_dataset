@@ -28,7 +28,7 @@ class NWPDataSource(ZarrDataSource):
             y is top-to-bottom (after reversing the `y` index in open_nwp()).
         consolidated: Whether or not the Zarr store is consolidated.
         channels: The NWP forecast parameters to load. If None then don't filter.
-            See:  http://cedadocs.ceda.ac.uk/1334/1/uk_model_data_sheet_lores1.pdf
+            See:  https://zenodo.org/record/7357056
             All of these params are "instant" (i.e. a snapshot at the target time,
             not accumulated over some time period).  The available params are:
                 cdcb  : Height of lowest cloud base > 3 oktas, in meters above surface.

@@ -12,6 +12,7 @@ pyproj
 pytest
 coverage<6.3
 pytest-cov
+ocf_blosc2
 jedi
 mypy
 pydantic

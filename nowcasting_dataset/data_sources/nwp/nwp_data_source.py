@@ -8,7 +8,7 @@ import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
-from ocf_blosc2 import Blosc2
+import ocf_blosc2
 
 from nowcasting_dataset import utils
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES

@@ -23,7 +23,6 @@ import nowcasting_dataset
 from nowcasting_dataset.data_sources.gsp.eso import get_gsp_metadata_from_eso
 from nowcasting_dataset.data_sources.sun.raw_data_load_save import (
     get_azimuth_and_elevation,
-    save_to_zarr,
 )
 
 # set up

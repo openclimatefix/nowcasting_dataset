@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 import torch
 import xarray as xr
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from nowcasting_dataset.config.model import Configuration
 

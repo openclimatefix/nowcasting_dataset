@@ -3,9 +3,6 @@ import logging
 import os
 import tempfile
 from concurrent import futures
-from pathlib import Path
-
-import gcsfs
 
 from nowcasting_dataset.filesystem.utils import (
     download_to_local,

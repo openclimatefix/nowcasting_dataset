@@ -1,4 +1,3 @@
-import gcsfs
 import xarray as xr
 
 filename = "gs://solar-pv-nowcasting-data/satellite/EUMETSAT/SEVIRI_RSS/OSGB36/all_zarr_int16_single_timestep.zarr/"

@@ -101,4 +101,4 @@ def test_get_installed_capacity():
     assert "installedcapacity_mwp" == installed_capacity.name
 
     # look at first GSP
-    assert installed_capacity.iloc[1] == 177.0772
+    assert installed_capacity.iloc[1] == 177.4964

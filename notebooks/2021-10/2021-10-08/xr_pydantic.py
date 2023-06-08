@@ -1,11 +1,9 @@
-from typing import List, Union
+from typing import Union
 
 import numpy as np
 import torch
 import xarray as xr
 from pydantic import BaseModel, Field, validator
-
-from nowcasting_dataset.config.model import Configuration
 
 Array = Union[xr.DataArray, np.ndarray, torch.Tensor]
 

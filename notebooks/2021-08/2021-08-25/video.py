@@ -3,7 +3,6 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
-import plotly
 import plotly.graph_objects as go
 
 from nowcasting_dataset.dataset import SAT_MEAN, SAT_STD, NetCDFDataset

@@ -3,7 +3,6 @@ import json
 import plotly.graph_objects as go
 
 from nowcasting_dataset.data_sources.gsp.eso import (
-    get_gsp_metadata_from_eso,
     get_gsp_shape_from_eso,
 )
 

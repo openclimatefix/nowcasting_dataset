@@ -30,7 +30,7 @@ for filenames in [train_filenames, validation_filenames]:
 
             try:
                 rename_file(remote_file=file, new_filename=new_filename)
-            except Exception as e:
+            except Exception:
                 pass
         else:
             print(f"Skipping {filename}")

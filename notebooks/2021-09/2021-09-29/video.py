@@ -71,8 +71,8 @@ fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 fig.update_layout(title="Midday")
 
 # fig.show(renderer="browser")
-fig.write_html(f"midday_fix.html")
-fig.write_image(f"midday_fix.png")
+fig.write_html("midday_fix.html")
+fig.write_image("midday_fix.png")
 
 # make annimation
 frames = []
@@ -147,4 +147,4 @@ fig = go.Figure(
 )
 
 fig.show(renderer="browser")
-fig.write_html(f"video.html")
+fig.write_html("video.html")

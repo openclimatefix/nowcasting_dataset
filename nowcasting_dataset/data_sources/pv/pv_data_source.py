@@ -198,7 +198,8 @@ class PVDataSource(ImageDataSource):
 
         # Drop columns and rows with all NaNs.
         pv_power.dropna(axis="columns", how="all", inplace=True)
-        pv_power.dropna(axis="index", how="all", inplace=True)
+        if not self.is_live:
+            pv_power.dropna(axis="index", how="all", inplace=True)
 
         logger.debug(
             f"Found {len(pv_power)} pv power datetimes from database (after dropping nans) "
@@ -454,7 +455,7 @@ class PVDataSource(ImageDataSource):
         """
         # Set this up as a separate function, so we can cache the result!
         @functools.cache  # functools.cache requires Python >= 3.9
-        def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Index:
+        def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Dtype:
             start_dt = self._get_start_dt(t0_datetime)
             end_dt = self._get_end_dt(t0_datetime)
             available_pv_data = self.pv_power.loc[start_dt:end_dt]

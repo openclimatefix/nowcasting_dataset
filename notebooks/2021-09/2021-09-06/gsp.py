@@ -36,7 +36,7 @@ fig.write_html("gsp.html")
 
 
 # find out if point is in gsp
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
 _pnts = [Point(3, 3), Point(8, 8), Point(0, 51.38)]
 pnts = gpd.GeoDataFrame(geometry=_pnts, index=["A", "B", "C"])

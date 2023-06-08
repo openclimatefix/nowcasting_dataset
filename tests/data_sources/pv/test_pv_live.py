@@ -150,7 +150,9 @@ def test_get_pv_power_from_database_no_data(db_session):
     assert len(pv_data_source.pv_power) > 0
 
     location = SpaceTimeLocation(
-        t0_datetime_utc=datetime(2022, 1, 1, 5), x_center_osgb=x_osgb, y_center_osgb=y_osgb
+        t0_datetime_utc=datetime(2022, 1, 1, 5, tzinfo=timezone.utc),
+        x_center_osgb=x_osgb,
+        y_center_osgb=y_osgb,
     )
     d = PV(pv_data_source.get_batch(locations=[location]))
 
@@ -194,9 +196,11 @@ def test_get_example(pv_yields_and_systems):
     )
 
     location = locations[0]
-    location.t0_datetime_utc = datetime(2022, 1, 1, 5)
+    location.t0_datetime_utc = datetime(2022, 1, 1, 5, tzinfo=timezone.utc)
 
     pv = pv_data_source.get_example(location=location)
     assert len(pv.time) == 7
     assert pd.to_datetime(pv.time.values[0]) == pd.to_datetime(datetime(2022, 1, 1, 4, 30))
-    assert pd.to_datetime(pv.time.values[-1]) == pd.to_datetime(location.t0_datetime_utc)
+    assert pd.to_datetime(pv.time.values[-1]) == pd.to_datetime(
+        location.t0_datetime_utc.replace(tzinfo=None)
+    )

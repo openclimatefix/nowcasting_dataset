@@ -53,9 +53,9 @@ def sat_data_array_to_dataset(sat_xr):
         ds = coord_to_range(ds, dim, prefix="sat")
     ds = ds.rename(
         {
-            "channels": f"sat_channels",
-            "x": f"sat_x",
-            "y": f"sat_y",
+            "channels": "sat_channels",
+            "x": "sat_x",
+            "y": "sat_y",
         }
     )
 

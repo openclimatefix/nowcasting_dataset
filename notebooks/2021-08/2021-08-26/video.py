@@ -3,8 +3,6 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
-import plotly
-import plotly.express as px
 import plotly.graph_objects as go
 
 # get satellite image, currently from https://github.com/openclimatefix/py-staticmaps

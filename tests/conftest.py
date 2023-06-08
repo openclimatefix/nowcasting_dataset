@@ -1,6 +1,6 @@
 """ Fixtures for tests """
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
@@ -28,7 +28,7 @@ def gsp_yields_and_systems(db_session):
         location_sql_1 = get_location(session=db_session, gsp_id=i + 1, label=f"GSP_{i+1}")
         location_sql_1.installed_capacity_mw = 123.0
 
-        t0_datetime_utc = floor_minutes_dt(datetime.utcnow()) - timedelta(hours=3)
+        t0_datetime_utc = floor_minutes_dt(datetime.now(timezone.utc)) - timedelta(hours=3)
 
         gsp_yield_sqls = []
         for hour in range(0, 10):

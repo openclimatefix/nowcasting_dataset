@@ -198,7 +198,8 @@ class PVDataSource(ImageDataSource):
 
         # Drop columns and rows with all NaNs.
         pv_power.dropna(axis="columns", how="all", inplace=True)
-        pv_power.dropna(axis="index", how="all", inplace=True)
+        if not self.is_live:
+            pv_power.dropna(axis="index", how="all", inplace=True)
 
         logger.debug(
             f"Found {len(pv_power)} pv power datetimes from database (after dropping nans) "

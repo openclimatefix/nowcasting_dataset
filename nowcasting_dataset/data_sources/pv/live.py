@@ -117,7 +117,11 @@ def get_pv_power_from_database(
 
     with db_connection.get_session() as session:
         pv_yields: List[PVYieldSQL] = get_pv_yield(
-            session=session, start_utc=start_utc_extra, correct_data=True, providers=providers
+            session=session,
+            start_utc=start_utc_extra,
+            correct_data=True,
+            providers=providers,
+            distinct=True,
         )
 
         logger.debug(f"Found {len(pv_yields)} PV yields from the database")

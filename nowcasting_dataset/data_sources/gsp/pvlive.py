@@ -105,7 +105,7 @@ def load_pv_gsp_raw_data_from_pvlive(
                     end=end_chunk,
                     entity_type="gsp",
                     entity_id=gsp_id,
-                    extra_fields="installedcapacity_mwp",
+                    extra_fields="installedcapacity_mwp,capacity_mwp,updated_gmt",
                     dataframe=True,
                 )
 

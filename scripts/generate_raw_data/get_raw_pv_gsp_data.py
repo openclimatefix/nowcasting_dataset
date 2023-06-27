@@ -29,7 +29,7 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-config_filename = Pathy(nowcasting_dataset.__file__).parent / "config" / "gcp.yaml"
+config_filename = Pathy.fluid(nowcasting_dataset.__file__).parent / "config" / "gcp.yaml"
 config = load_yaml_configuration(config_filename)
 
 start = datetime(2016, 1, 1, tzinfo=pytz.utc)
@@ -42,42 +42,50 @@ config_gsp = {"start": start, "end": end, "gcp_path": gcp_path}
 LOCAL_TEMP_PATH = Path("~/temp/").expanduser()
 delete_all_files_in_temp_path(path=LOCAL_TEMP_PATH)
 
-# get data
-data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, normalize_data=False)
 
-# pivot to index as datetime_gmt, and columns as gsp_id
-data_generation = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
-data_generation_xarray = xr.DataArray(
-    data_generation, name="generation_mw", dims=["datetime_gmt", "gsp_id"]
-)
+def fetch_data():
+    # get data
+    data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, normalize_data=False)
 
-data_capacity = data_df.pivot(
-    index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp"
-)
-data_capacity_xarray = xr.DataArray(
-    data_capacity, name="installedcapacity_mwp", dims=["datetime_gmt", "gsp_id"]
-)
+    # pivot to index as datetime_gmt, and columns as gsp_id
+    data_generation_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
+    data_installedcapacity_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp")
+    data_capacity_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="capacity_mwp")
+    data_updated_gmt_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="updated_gmt")
+    data_xarray = xr.Dataset(
+        data_vars={
+            "generation_mw": (("datetime_gmt", "gsp_id"), data_generation_df),
+            "installedcapacity_mwp": (("datetime_gmt", "gsp_id"), data_installedcapacity_df),
+            "capacity_mwp": (("datetime_gmt", "gsp_id"), data_capacity_df),
+            "updated_gmt": (("datetime_gmt", "gsp_id"), data_updated_gmt_df),
+        },
+        coords={
+            "datetime_gmt": data_generation_df.index,
+            "gsp_id": data_generation_df.columns
+        },
+    )
 
-data_xarray = xr.merge([data_generation_xarray, data_capacity_xarray])
+    # save config to file
+    with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:
+        yaml.dump(config_gsp, f, allow_unicode=True)
 
-# save config to file
-with open(os.path.join(LOCAL_TEMP_PATH, "configuration.yaml"), "w+") as f:
-    yaml.dump(config_gsp, f, allow_unicode=True)
+    # Make encoding
+    encoding = {
+        var: {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)} for var in data_xarray.data_vars
+    }
 
-# Make encoding
-encoding = {
-    var: {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)} for var in data_xarray.data_vars
-}
+    # save data to file
+    data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w", encoding=encoding)
 
-# save data to file
-data_xarray.to_zarr(os.path.join(LOCAL_TEMP_PATH, "pv_gsp.zarr"), mode="w", encoding=encoding)
+    # upload to gcp
+    upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)
 
-# upload to gcp
-upload_and_delete_local_files(dst_path=gcp_path, local_path=LOCAL_TEMP_PATH)
+    # # code to change 'generation_mw' to 'generation_normalised'
+    # data_xarray = xr.open_dataset(gcp_path + '/pv_gsp.zarr', engine="zarr")
+    # data_xarray.__setitem__('gsp_id', [int(gsp_id) for gsp_id in data_xarray.gsp_id])
+    # data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
+    # data_xarray.to_zarr(gcp_path + '/pv_gsp.zarr', mode="w", encoding=encoding)
 
 
-# # code to change 'generation_mw' to 'generation_normalised'
-# data_xarray = xr.open_dataset(gcp_path + '/pv_gsp.zarr', engine="zarr")
-# data_xarray.__setitem__('gsp_id', [int(gsp_id) for gsp_id in data_xarray.gsp_id])
-# data_xarray = data_xarray.rename({"generation_mw": "generation_normalised"})
-# data_xarray.to_zarr(gcp_path + '/pv_gsp.zarr', mode="w", encoding=encoding)
+if __name__ == "__main__":
+    fetch_data()

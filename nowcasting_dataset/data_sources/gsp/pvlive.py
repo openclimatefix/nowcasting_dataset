@@ -87,7 +87,7 @@ def load_pv_gsp_raw_data_from_pvlive(
     # limit the total number of concurrent tasks to be 4, so that we don't hit the pvlive api
     # too much
     future_tasks = []
-    with futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with futures.ThreadPoolExecutor(max_workers=1) as executor:
         for gsp_id in gsp_ids:
 
             # set the first chunk start and end times

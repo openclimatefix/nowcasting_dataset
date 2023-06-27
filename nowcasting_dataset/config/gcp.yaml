@@ -8,7 +8,7 @@ input_data:
   #---------------------- GSP -------------------
   gsp:
     forecast_minutes: 60
-    gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v3/pv_gsp.zarr
+    gsp_zarr_path: gs://solar-pv-nowcasting-data/PV/GSP/v7/pv_gsp.zarr
     history_minutes: 60
 
   #---------------------- NWP -------------------

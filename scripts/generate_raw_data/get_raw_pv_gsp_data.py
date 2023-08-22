@@ -48,10 +48,16 @@ def fetch_data():
     data_df = load_pv_gsp_raw_data_from_pvlive(start=start, end=end, normalize_data=False)
 
     # pivot to index as datetime_gmt, and columns as gsp_id
-    data_generation_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="generation_mw")
-    data_installedcapacity_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp")
+    data_generation_df = data_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="generation_mw"
+    )
+    data_installedcapacity_df = data_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="installedcapacity_mwp"
+    )
     data_capacity_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="capacity_mwp")
-    data_updated_gmt_df = data_df.pivot(index="datetime_gmt", columns="gsp_id", values="updated_gmt")
+    data_updated_gmt_df = data_df.pivot(
+        index="datetime_gmt", columns="gsp_id", values="updated_gmt"
+    )
     data_xarray = xr.Dataset(
         data_vars={
             "generation_mw": (("datetime_gmt", "gsp_id"), data_generation_df),
@@ -59,10 +65,7 @@ def fetch_data():
             "capacity_mwp": (("datetime_gmt", "gsp_id"), data_capacity_df),
             "updated_gmt": (("datetime_gmt", "gsp_id"), data_updated_gmt_df),
         },
-        coords={
-            "datetime_gmt": data_generation_df.index,
-            "gsp_id": data_generation_df.columns
-        },
+        coords={"datetime_gmt": data_generation_df.index, "gsp_id": data_generation_df.columns},
     )
 
     # save config to file
@@ -71,7 +74,8 @@ def fetch_data():
 
     # Make encoding
     encoding = {
-        var: {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)} for var in data_xarray.data_vars
+        var: {"compressor": numcodecs.Blosc(cname="zstd", clevel=5)}
+        for var in data_xarray.data_vars
     }
 
     # save data to file

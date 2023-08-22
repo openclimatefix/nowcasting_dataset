@@ -6,9 +6,9 @@ from typing import Iterable, Optional
 
 import fsspec
 import numpy as np
-import ocf_blosc2  # noqa needed to register blosc2 opening with xarray
 import pandas as pd
 import xarray as xr
+from ocf_blosc2 import Blosc2  # noqa: F401
 
 from nowcasting_dataset import utils
 from nowcasting_dataset.consts import NWP_VARIABLE_NAMES

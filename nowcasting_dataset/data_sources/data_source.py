@@ -445,8 +445,8 @@ class ZarrDataSource(ImageDataSource):
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
         selected_data = selected_data.sel(
-            x_osgb=slice(bounding_box.left, bounding_box.right),
-            y_osgb=slice(bounding_box.top, bounding_box.bottom),
+            x_osgb=slice(int(bounding_box.left), int(bounding_box.right)),
+            y_osgb=slice(int(bounding_box.top), int(bounding_box.bottom)),
         )
 
         # selected_sat_data is likely to have 1 too many pixels in x and y

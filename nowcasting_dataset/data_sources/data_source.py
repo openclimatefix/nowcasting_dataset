@@ -440,14 +440,23 @@ class ZarrDataSource(ImageDataSource):
             f"Getting example for {t0_datetime_utc=},  " f"{x_center_osgb=} and  {y_center_osgb=}"
         )
 
-        selected_data = self._get_time_slice(t0_datetime_utc)
+        selected_data_time = self._get_time_slice(t0_datetime_utc)
         bounding_box = self._rectangle.bounding_box_centered_on(
             x_center_osgb=x_center_osgb, y_center_osgb=y_center_osgb
         )
-        selected_data = selected_data.sel(
-            x_osgb=slice(int(bounding_box.left), int(bounding_box.right)),
-            y_osgb=slice(int(bounding_box.top), int(bounding_box.bottom)),
+        selected_data = selected_data_time.sel(
+            x_osgb=slice(bounding_box.left, bounding_box.right),
+            y_osgb=slice(bounding_box.top, bounding_box.bottom),
         )
+
+        # This is a horrible fix
+        # Sometimes the data has 1 less pixel it. This came around with new nwp-consumer.
+        # This is due the data not being regridded to osgb. Then plan is to move to lat/lon.
+        if selected_data.shape[2] == self._rectangle.size_pixels_height - 1:
+            selected_data = selected_data_time.sel(
+                x_osgb=slice(bounding_box.left, bounding_box.right),
+                y_osgb=slice(bounding_box.top + self.meters_per_pixel, bounding_box.bottom),
+            )
 
         # selected_sat_data is likely to have 1 too many pixels in x and y
         # because sel(x=slice(a, b)) is [a, b], not [a, b).  So trim:

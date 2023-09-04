@@ -12,7 +12,6 @@ duplicated_raw = s[s["RegionID"].duplicated(keep=False)]
 duplicated_raw["Amount"] = range(0, len(duplicated_raw))
 
 for i in range(0, 8, 2):
-
     # just select the first one
     duplicated = duplicated_raw.iloc[i : i + 2]
     shapes_dict = json.loads(duplicated["geometry"].to_json())

@@ -504,7 +504,6 @@ def topographic_fake(
     # make batch of arrays
     xr_arrays = []
     for i in range(batch_size):
-
         x, y = make_image_coords_osgb(
             size_x=image_size_pixels_width,
             size_y=image_size_pixels_height,

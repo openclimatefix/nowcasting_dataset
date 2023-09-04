@@ -89,7 +89,6 @@ def load_pv_gsp_raw_data_from_pvlive(
     future_tasks = []
     with futures.ThreadPoolExecutor(max_workers=1) as executor:
         for gsp_id in gsp_ids:
-
             # set the first chunk start and end times
             start_chunk = first_start_chunk
             end_chunk = first_end_chunk

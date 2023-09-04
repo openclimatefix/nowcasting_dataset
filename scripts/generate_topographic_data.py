@@ -24,7 +24,6 @@ out_dir = "/SRTM_TEMP/"
 upscale_factor = 0.12  # 30m to 250m-ish, just making it small enough files to actually merge
 for f in files:
     with rasterio.open(f) as dataset:
-
         # resample data to target shape
         data = dataset.read(
             out_shape=(

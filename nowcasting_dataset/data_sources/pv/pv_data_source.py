@@ -98,7 +98,6 @@ class PVDataSource(ImageDataSource):
         return PV
 
     def _load_metadata(self):
-
         logger.debug(f"Loading PV metadata from {self.files_groups}")
 
         # collect all metadata together
@@ -155,7 +154,6 @@ class PVDataSource(ImageDataSource):
         logger.debug(f"Found {len(pv_metadata)} pv systems")
 
     def _load_pv_power(self):
-
         logger.debug(f"Loading PV Power data from {self.files_groups}")
 
         if not self.is_live:
@@ -453,6 +451,7 @@ class PVDataSource(ImageDataSource):
         Returns:  x_locations, y_locations. Each has one entry per t0_datetime.
             Locations are in OSGB coordinates.
         """
+
         # Set this up as a separate function, so we can cache the result!
         @functools.cache  # functools.cache requires Python >= 3.9
         def _get_pv_system_ids(t0_datetime: pd.Timestamp) -> pd.Int64Dtype:

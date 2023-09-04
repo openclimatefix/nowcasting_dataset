@@ -20,7 +20,6 @@ validation_filenames = [file for file in validation_filenames if "_" in file.spl
 
 for filenames in [train_filenames, validation_filenames]:
     for file in train_filenames:
-
         print(file)
 
         filename = file.split("/")[-1]

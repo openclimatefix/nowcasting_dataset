@@ -9,7 +9,6 @@ from nowcasting_dataset.utils import coord_to_range
 def get_satellite_xrarray_data_array(
     batch_size, seq_length_5, satellite_image_size_pixels, number_sat_channels=10
 ):
-
     r = np.random.randn(
         # self.batch_size,
         seq_length_5,

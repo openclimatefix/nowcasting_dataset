@@ -90,7 +90,6 @@ def delete_all_files_in_temp_path(path: Union[Path, str], delete_dirs: bool = Fa
     else:
         # loop over folder structure, but only delete files
         for root, dirs, files in filesystem.walk(path):
-
             for f in files:
                 filesystem.rm(f"{root}/{f}")
 

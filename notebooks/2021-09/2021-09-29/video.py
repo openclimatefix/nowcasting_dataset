@@ -41,7 +41,6 @@ midday = pd.Timestamp("2019-06-22 12:00:00")
 
 
 def get_trace(dt):
-
     # plot to check it looks right
     return go.Choroplethmapbox(
         geojson=shapes_dict,
@@ -54,7 +53,6 @@ def get_trace(dt):
 
 
 def get_frame(dt):
-
     # plot to check it looks right
     return go.Choroplethmapbox(
         z=gps_data[dt],

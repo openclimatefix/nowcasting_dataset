@@ -19,7 +19,6 @@ from nowcasting_dataset.filesystem.utils import (
 
 
 def test_check_file_exists():  # noqa: D103
-
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
 
@@ -42,7 +41,6 @@ def test_check_file_exists():  # noqa: D103
 
 
 def test_rename_file():  # noqa: D103
-
     file1 = "test_file1.txt"
     file2 = "test_file2.txt"
 
@@ -91,7 +89,6 @@ def test_get_maximum_batch_id():
 
 
 def test_check_file_exists_wild_card():  # noqa: D103
-
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
 
@@ -114,7 +111,6 @@ def test_check_file_exists_wild_card():  # noqa: D103
 
 
 def test_makedirs():  # noqa: D103
-
     folder_1 = "test_dir_1"
     folder_2 = "test_dir_2"
 
@@ -137,7 +133,6 @@ def test_makedirs():  # noqa: D103
 
 
 def test_delete_local_files():  # noqa: D103
-
     file1 = "test_file1.txt"
     folder1 = "test_dir"
     file2 = "test_dir/test_file2.txt"
@@ -167,7 +162,6 @@ def test_delete_local_files():  # noqa: D103
 
 
 def test_delete_local_files_and_folder():  # noqa: D103
-
     file1 = "test_file1.txt"
     folder1 = "test_dir"
     file2 = "test_dir/test_file2.txt"
@@ -197,7 +191,6 @@ def test_delete_local_files_and_folder():  # noqa: D103
 
 
 def test_download():  # noqa: D103
-
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
     file3 = "test_file3.txt"
@@ -234,7 +227,6 @@ def test_download():  # noqa: D103
 
 
 def test_upload():  # noqa: D103
-
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
     file3 = "test_file3.txt"

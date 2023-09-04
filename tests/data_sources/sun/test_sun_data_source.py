@@ -47,7 +47,6 @@ def test_get_example_different_year(test_data_folder):  # noqa 103
 
 
 def test_get_load_live():  # noqa 103
-
     sun_data_source = SunDataSource(
         zarr_path="", history_minutes=30, forecast_minutes=60, load_live=True
     )

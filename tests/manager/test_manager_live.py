@@ -16,7 +16,6 @@ from nowcasting_dataset.time import floor_minutes_dt
 def test_sample_spatial_and_temporal_locations_for_examples(
     test_configuration_filename, gsp, sun
 ):  # noqa: D103
-
     manager = ManagerLive()
     manager.load_yaml_configuration(filename=test_configuration_filename)
     manager.data_sources = {"gsp": gsp, "sun": sun}
@@ -46,7 +45,6 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example(
     batch_size = manager.config.process.batch_size
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
@@ -79,7 +77,6 @@ def test_create_files_locations_of_each_example_reduced(
     batch_size = manager.config.process.batch_size
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
@@ -109,7 +106,6 @@ def test_batches(test_configuration_filename, sat, gsp):
     gsp.forecast_minutes = 0
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
@@ -139,7 +135,6 @@ def test_batches_not_async(test_configuration_filename, sat, gsp):
     manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
@@ -199,7 +194,6 @@ def test_run_just_gsp(test_configuration_filename, gsp_yields_and_systems):
     manager.initialize_data_sources(names_of_selected_data_sources=["gsp"])
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 

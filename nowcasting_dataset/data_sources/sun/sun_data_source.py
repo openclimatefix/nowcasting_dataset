@@ -69,7 +69,6 @@ class SunDataSource(DataSource):
         end_dt = self._get_end_dt(t0_datetime_utc)
 
         if not self.load_live:
-
             # The names of the columns get truncated when saving, therefore we need to look for the
             # name of the columns near the location we are looking for
             locations = np.array(
@@ -96,7 +95,6 @@ class SunDataSource(DataSource):
             elevation = self.elevation.loc[start_dt:end_dt][name]
 
         else:
-
             latitude, longitude = osgb_to_lat_lon(x=x_center_osgb, y=y_center_osgb)
 
             datestamps = pd.date_range(start=start_dt, end=end_dt, freq="5T").tolist()
@@ -115,7 +113,6 @@ class SunDataSource(DataSource):
         return sun
 
     def _load(self):
-
         logger.info(f"Loading Sun data from {self.zarr_path}")
 
         if not self.load_live:

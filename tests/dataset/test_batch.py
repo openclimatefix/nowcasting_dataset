@@ -27,7 +27,6 @@ def test_model_align_in_time(configuration):  # noqa: D103
 
 
 def test_model_nwp_channels(configuration):  # noqa: D103
-
     configuration.input_data = configuration.input_data.set_all_to_defaults()
     configuration.process.batch_size = 4
     configuration.input_data.nwp.nwp_channels = ["dlwrf"]

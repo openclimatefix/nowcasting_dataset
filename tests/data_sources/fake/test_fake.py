@@ -38,14 +38,12 @@ def test_metadata_fake_gsp():
 
 
 def test_model_no_opticalflow(configuration):  # noqa: D103
-
     configuration.input_data.opticalflow = None
 
     _ = Batch.fake(configuration=configuration)
 
 
 def test_model(configuration):  # noqa: D103
-
     assert configuration.input_data.opticalflow is not None
 
     batch = Batch.fake(configuration=configuration)

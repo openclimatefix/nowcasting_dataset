@@ -10,7 +10,6 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 
 
 def test_gsp_init(configuration):  # noqa: D103
-
     configuration.process.batch_size = 4
     configuration.input_data.gsp.history_minutes = 60
     configuration.input_data.gsp.forecast_minutes = 60
@@ -36,7 +35,6 @@ def test_gsp_normalized(configuration):
 
 
 def test_gsp_validation(configuration):  # noqa: D103
-
     configuration.process.batch_size = 4
     configuration.input_data.gsp.history_minutes = 60
     configuration.input_data.gsp.forecast_minutes = 60
@@ -52,7 +50,6 @@ def test_gsp_validation(configuration):  # noqa: D103
 
 
 def test_gsp_save(configuration):  # noqa: D103
-
     configuration.process.batch_size = 4
     configuration.input_data.gsp.history_minutes = 60
     configuration.input_data.gsp.forecast_minutes = 60

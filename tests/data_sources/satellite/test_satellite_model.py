@@ -35,7 +35,6 @@ def test_satellite_validation():  # noqa: D103
 
 
 def test_satellite_save():  # noqa: D103
-
     with tempfile.TemporaryDirectory() as dirpath:
         satellite_fake().save_netcdf(path=dirpath, batch_i=0)
 

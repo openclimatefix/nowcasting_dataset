@@ -180,6 +180,7 @@ class DummyExecutor(futures.Executor):
 
 def arg_logger(func):
     """A function decorator to log all the args and kwargs passed into a function."""
+
     # Adapted from https://stackoverflow.com/a/23983263/732596
     @wraps(func)
     def inner_func(*args, **kwargs):
@@ -191,6 +192,7 @@ def arg_logger(func):
 
 def exception_logger(func):
     """A function decorator to log exceptions thrown by the inner function."""
+
     # Adapted from
     # www.blog.pythonlibrary.org/2016/06/09/python-how-to-create-an-exception-logging-decorator
     @wraps(func)

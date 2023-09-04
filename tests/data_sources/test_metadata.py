@@ -19,7 +19,6 @@ def test_metadata_save():
     metadata = metadata_fake(10)
 
     with tempfile.TemporaryDirectory() as local_temp_path:
-
         metadata.save_to_csv(path=local_temp_path)
 
 

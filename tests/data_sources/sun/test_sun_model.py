@@ -48,7 +48,6 @@ def test_sun_validation_azimuth(configuration):  # noqa: D103
 
 
 def test_sun_save(configuration):  # noqa: D103
-
     configuration.process.batch_size = 4
     with tempfile.TemporaryDirectory() as dirpath:
         sun = sun_fake(configuration=configuration)

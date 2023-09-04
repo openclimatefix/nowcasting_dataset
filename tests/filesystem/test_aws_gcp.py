@@ -17,7 +17,6 @@ from nowcasting_dataset.filesystem.utils import (
 @pytest.mark.skip("CI does not have access to AWS ro GCP")
 @pytest.mark.parametrize("prefix", ["s3", "gs"])
 def test_aws_upload_and_delete_local_files(prefix):
-
     file1 = "test_file1.txt"
     file2 = "test_dir/test_file2.txt"
 
@@ -49,7 +48,6 @@ def test_aws_upload_and_delete_local_files(prefix):
 @pytest.mark.skip("CI does not have access to AWS ro GCP")
 @pytest.mark.parametrize("prefix", ["s3", "gs"])
 def test_upload_one_file(prefix):
-
     file1 = "test_file1.txt"
     now = datetime.now().isoformat()
     dst_path = f"{prefix}://solar-pv-nowcasting-data/temp_dir_for_unit_tests/{now}"
@@ -75,7 +73,6 @@ def test_upload_one_file(prefix):
 @pytest.mark.skip("CI does not have access to AWS ro GCP")
 @pytest.mark.parametrize("prefix", ["s3", "gs"])
 def test_download_file(prefix):
-
     file1 = "test_file1.txt"
     now = datetime.now().isoformat()
     dst_path = f"{prefix}://solar-pv-nowcasting-data/temp_dir_for_unit_tests/{now}"

@@ -22,7 +22,6 @@ def test_configure_loggers(test_configuration_filename):
     manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as dst_path:
-
         filepath = f"{dst_path}/extra_temp_folder"
         manager.config.output_data.filepath = Path(filepath)
 
@@ -30,7 +29,6 @@ def test_configure_loggers(test_configuration_filename):
 
 
 def test_sample_spatial_and_temporal_locations_for_examples(gsp, sun):  # noqa: D103
-
     manager = Manager()
     manager.data_sources = {"gsp": gsp, "sun": sun}
     manager.data_source_which_defines_geospatial_locations = gsp
@@ -54,7 +52,6 @@ def test_initialize_data_source_with_loggers(test_configuration_filename):
     manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as dst_path:
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.configure_loggers(log_level="DEBUG")
         manager.initialize_data_sources()
@@ -103,7 +100,6 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
     batch_size = manager.config.process.batch_size
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
@@ -141,7 +137,6 @@ def test_create_files_specifying_spatial_and_temporal_locations_of_each_example_
     manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
@@ -163,7 +158,6 @@ def test_error_create_files_specifying_spatial_and_temporal_locations_of_each_ex
     manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
         with pytest.raises(RuntimeError):
@@ -177,7 +171,6 @@ def test_batches(test_configuration_filename_no_hrv, sat, gsp):
     manager.load_yaml_configuration(filename=test_configuration_filename_no_hrv)
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
@@ -222,7 +215,6 @@ def test_save_config(test_configuration_filename):
     manager.load_yaml_configuration(filename=test_configuration_filename)
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         # set local temp path, and dst path
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
@@ -265,7 +257,6 @@ def test_run(test_configuration_filename_no_hrv):
     manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 
@@ -281,7 +272,6 @@ def test_run_overwrite_batches_false(test_configuration_filename_no_hrv):
     manager.initialize_data_sources()
 
     with tempfile.TemporaryDirectory() as local_temp_path, tempfile.TemporaryDirectory() as dst_path:  # noqa 101
-
         manager.config.output_data.filepath = Path(dst_path)
         manager.local_temp_path = Path(local_temp_path)
 

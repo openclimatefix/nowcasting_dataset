@@ -11,7 +11,6 @@ Array = Union[xr.DataArray, np.ndarray, torch.Tensor]
 
 
 class Satellite(BaseModel):
-
     # width: int = Field(..., g=0, description="The width of the satellite image")
     # height: int = Field(..., g=0, description="The width of the satellite image")
     # num_channels: int = Field(..., g=0, description="The width of the satellite image")
@@ -49,7 +48,6 @@ class Satellite(BaseModel):
 
 
 class Batch(BaseModel):
-
     batch_size: int = Field(
         ...,
         g=0,

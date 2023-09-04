@@ -30,7 +30,6 @@ def test_calculate_azimuth_and_elevation():
 
 
 def test_save():
-
     datestamps = pd.to_datetime(pd.date_range("2010-01-01", "2010-01-02", freq="5 min"))
     N = 100
     metadata = pd.DataFrame(index=range(0, N))
@@ -48,7 +47,6 @@ def test_save():
 
 
 def test_load(test_data_folder):
-
     zarr_path = test_data_folder + "/sun/test.zarr"
 
     azimuth, elevation = load_from_zarr(zarr_path=zarr_path)

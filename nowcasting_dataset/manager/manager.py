@@ -273,7 +273,6 @@ class Manager(ManagerBase):
         shuffled_t0_datetimes = pd.DatetimeIndex(shuffled_t0_datetimes)
 
         if get_all_locations:
-
             # note that the returned 'shuffled_t0_datetimes'
             # has duplicate datetimes for each location
             locations = self.data_source_which_defines_geospatial_locations.get_all_locations(
@@ -281,7 +280,6 @@ class Manager(ManagerBase):
             )
 
         else:
-
             locations = self.data_source_which_defines_geospatial_locations.get_locations(
                 shuffled_t0_datetimes
             )
@@ -404,7 +402,6 @@ class Manager(ManagerBase):
                 for worker_id, (data_source_name, data_source) in enumerate(
                     self.data_sources.items()
                 ):
-
                     # Get indexes of first batch and example. And subset locations_for_split.
                     idx_of_first_batch = first_batches_to_create[split_name][data_source_name]
                     idx_of_first_example = idx_of_first_batch * self.config.process.batch_size

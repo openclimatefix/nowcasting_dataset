@@ -186,7 +186,6 @@ class ManagerLive(ManagerBase):
             async_results_from_create_batches = []
             an_error_has_occured = multiprocessing.Event()
             for worker_id, (data_source_name, data_source) in enumerate(self.data_sources.items()):
-
                 # Get indexes of first batch and example. And subset locations_for_split.
                 idx_of_first_batch = 0
                 locations = locations_for_each_example
@@ -226,7 +225,6 @@ class ManagerLive(ManagerBase):
                     # Sometimes when debuggin it is easy to use non async
                     data_source.create_batches(**kwargs_for_create_batches)
                 else:
-
                     async_result = pool.apply_async(
                         data_source.create_batches,
                         kwds=kwargs_for_create_batches,

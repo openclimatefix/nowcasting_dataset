@@ -173,7 +173,6 @@ class GSPDataSource(ImageDataSource):
         if total_gsp_nan_count > 0:
             assert Exception("There are nans in the GSP data. Can't get locations for all GSPs")
         else:
-
             t0_datetimes_utc.name = "t0_datetime_utc"
 
             # get all locations
@@ -236,7 +235,6 @@ class GSPDataSource(ImageDataSource):
 
         total_gsp_nan_count = self.gsp_power.isna().sum().sum()
         if total_gsp_nan_count == 0:
-
             # get random GSP metadata
             indexes = sorted(
                 list(self.rng.integers(low=0, high=len(self.metadata), size=len(t0_datetimes_utc)))
@@ -249,7 +247,6 @@ class GSPDataSource(ImageDataSource):
             ids = list(metadata.index)
 
         else:
-
             logger.warning(
                 "There are some nans in the gsp data, "
                 "so to get x,y locations we have to do a big loop"
@@ -262,7 +259,6 @@ class GSPDataSource(ImageDataSource):
             ids = []
 
             for t0_dt in t0_datetimes_utc:
-
                 # Choose start and end times
                 start_dt = self._get_start_dt(t0_dt)
                 end_dt = self._get_end_dt(t0_dt)
@@ -290,7 +286,6 @@ class GSPDataSource(ImageDataSource):
 
         locations = []
         for i in range(len(x_centers_osgb)):
-
             locations.append(
                 SpaceTimeLocation(
                     t0_datetime_utc=t0_datetimes_utc[i],

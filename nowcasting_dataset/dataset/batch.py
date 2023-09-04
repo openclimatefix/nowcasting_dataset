@@ -137,7 +137,6 @@ class Batch(BaseModel):
 
             # loop over data sources
             for data_source_name in data_sources_names:
-
                 local_netcdf_filename = os.path.join(
                     local_netcdf_path, data_source_name, get_netcdf_filename(batch_idx)
                 )
@@ -193,7 +192,6 @@ class Batch(BaseModel):
 
             # legacy NWP
             if "nwp" in batch_dict.keys():
-
                 nwp_rename_dict = {
                     "x_index": "x_osgb_index",
                     "y_index": "y_osgb_index",

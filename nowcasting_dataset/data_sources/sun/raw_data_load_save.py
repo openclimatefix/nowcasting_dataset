@@ -49,16 +49,13 @@ def get_azimuth_and_elevation(
     names = []
     # loop over locations and find azimuth and elevation angles,
     with futures.ThreadPoolExecutor() as executor:
-
         logger.debug("Setting up jobs")
 
         # Submit tasks to the executor.
         future_azimuth_and_elevation_per_location = []
         for i in tqdm(range(len(x_centers))):
-
             name = x_y_to_name(x_centers[i], y_centers[i])
             if name not in names:
-
                 lat, lon = geospatial.osgb_to_lat_lon(x=x_centers[i], y=y_centers[i])
 
                 future_azimuth_and_elevation = executor.submit(

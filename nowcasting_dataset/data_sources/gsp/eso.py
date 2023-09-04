@@ -164,7 +164,6 @@ def get_gsp_shape_from_eso(
             shape_gpd["RegionID"] = range(1, len(shape_gpd) + 1)
 
     if save_local_file:
-
         # rename the columns to less than 10 characters
         shape_gpd_to_save = shape_gpd.copy()
         shape_gpd_to_save.rename(columns=rename_save_columns, inplace=True)

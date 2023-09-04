@@ -24,7 +24,6 @@ def gsp_yields_and_systems(db_session):
     gsp_yield_sqls = []
     locations = []
     for i in range(317):
-
         location_sql_1 = get_location(session=db_session, gsp_id=i + 1, label=f"GSP_{i+1}")
         location_sql_1.installed_capacity_mw = 123.0
 

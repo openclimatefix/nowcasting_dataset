@@ -82,7 +82,6 @@ class DataSource:
     def _get_start_dt(
         self, t0_datetime_utc: Union[pd.Timestamp, pd.DatetimeIndex]
     ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-
         return t0_datetime_utc - self.history_duration
 
     def _get_end_dt(

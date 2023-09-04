@@ -37,7 +37,6 @@ def test_pv_normalized(configuration):
 
 
 def test_get_example_and_batch():  # noqa: D103
-
     path = os.path.dirname(nowcasting_dataset.__file__)
 
     # Solar PV data (test data)

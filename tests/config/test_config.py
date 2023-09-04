@@ -53,7 +53,6 @@ def test_yaml_save():
     """
 
     with tempfile.NamedTemporaryFile(suffix=".yaml") as fp:
-
         filename = fp.name
 
         # check that temp file cant be loaded

@@ -15,7 +15,6 @@ shape_data_raw["Amount"] = 0
 
 # for index in range(0, len(shape_data_raw)):
 for index in range(140, 150):
-
     # just select the first one
     shape_data = shape_data_raw.iloc[index : index + 1]
     shapes_dict = json.loads(shape_data["geometry"].to_json())

@@ -80,7 +80,6 @@ def pv_yields_and_systems(db_session):
 
     # pv system with gaps every 5 mins
     for minutes in [0, 10, 20, 30]:
-
         pv_yield_4 = PVYield(
             datetime_utc=datetime(2022, 1, 1, 4) + timedelta(minutes=minutes), solar_generation_kw=4
         ).to_orm()

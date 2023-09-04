@@ -24,7 +24,6 @@ def test_optical_flow_validation():  # noqa: D103
 
 
 def test_optical_flow_save():  # noqa: D103
-
     with tempfile.TemporaryDirectory() as dirpath:
         optical_flow_fake().save_netcdf(path=dirpath, batch_i=0)
 

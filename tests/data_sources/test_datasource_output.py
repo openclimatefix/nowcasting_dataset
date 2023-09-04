@@ -9,7 +9,6 @@ from nowcasting_dataset.data_sources.gsp.gsp_model import GSP
 
 
 def test_datasource_output_validation(configuration):  # noqa: D103
-
     configuration.process.batch_size = 2
     configuration.input_data.gsp.history_minutes = 60
     configuration.input_data.gsp.forecast_minutes = 60

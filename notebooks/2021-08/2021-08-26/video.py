@@ -88,7 +88,6 @@ trace_map = go.Image(z=map)
 channel_indexes = [1, 9, 8]
 satellite_data = []
 for channel_index in channel_indexes:
-
     # renormalize
     satellite_data.append(
         data["sat_data"][batch_index, :, :, :, channel_index] * SAT_STD.values[channel_index]

@@ -25,7 +25,6 @@ class Satellite(BaseModel):
 
 
 class Batch(BaseModel):
-
     batch_size: int = 0
     satellite: Satellite
 

@@ -114,7 +114,6 @@ class Metadata(BaseModel):
             metadata_df = pd.DataFrame(metadata_dict)
 
         else:
-
             metadata_df = pd.read_csv(filename)
 
             metadata_df_extra = pd.DataFrame(metadata_dict)

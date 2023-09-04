@@ -85,7 +85,6 @@ def split_method(
         test_periods = unique_periods[unique_periods["modulo"].isin(test_indexes)]["period"]
 
     elif method == "random":
-
         # randomly sort indexes
         rng = np.random.default_rng(seed)
         unique_periods_in_dataset = rng.permutation(unique_periods_in_dataset)
@@ -108,7 +107,6 @@ def split_method(
         test_periods = pd.to_datetime(unique_periods_in_dataset[validation_test_split:])
 
     elif method == "specific":
-
         train_periods = unique_periods_in_dataset[
             unique_periods_in_dataset.isin(train_test_validation_specific.train)
         ]

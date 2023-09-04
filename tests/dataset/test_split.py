@@ -7,7 +7,6 @@ from nowcasting_dataset.dataset.split.split import SplitMethod, split_data
 
 
 def test_split_same():
-
     datetimes = pd.date_range("2021-01-01", "2021-01-02", freq="5T")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.SAME)
@@ -18,7 +17,6 @@ def test_split_same():
 
 
 def test_split_day():
-
     datetimes = pd.date_range("2021-01-01", "2021-02-01", freq="5T")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.DAY)
@@ -42,7 +40,6 @@ def test_split_day():
 
 
 def test_split_day_every_5():
-
     datetimes = pd.date_range("2021-01-01", "2021-01-02", freq="5T")
     datetimes = datetimes.append(pd.date_range("2021-01-06", "2021-01-07", freq="5T"))
     datetimes = datetimes.append(pd.date_range("2021-01-11", "2021-01-12", freq="5T"))
@@ -74,7 +71,6 @@ def test_split_day_every_5():
 
 
 def test_split_day_random():
-
     datetimes = pd.date_range("2021-01-01", "2021-12-31 23:59:00", freq="5T")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.DAY_RANDOM)
@@ -103,7 +99,6 @@ def test_split_day_random():
 
 
 def test_split_year():
-
     datetimes = pd.date_range("2014-01-01", "2021-01-01", freq="MS")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.YEAR_SPECIFIC)
@@ -131,7 +126,6 @@ def test_split_year():
 
 
 def test_split_day_specific():
-
     datetimes = pd.date_range("2021-01-01", "2021-01-10", freq="D")
 
     train_test_validation_specific = TrainValidationTestSpecific(
@@ -164,7 +158,6 @@ def test_split_day_specific():
 
 
 def test_split_year_error():
-
     with pytest.raises(Exception):
         TrainValidationTestSpecific(train=[2015, 2016], validation=[2016], test=[2017])
 
@@ -176,7 +169,6 @@ def test_split_year_error():
 
 
 def test_split_week():
-
     datetimes = pd.date_range("2021-01-01", "2021-06-01", freq="30T")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.WEEK)
@@ -202,7 +194,6 @@ def test_split_week():
 
 
 def test_split_week_random():
-
     datetimes = pd.date_range("2021-01-04", "2022-01-02", freq="1D")
 
     train, validation, test = split_data(datetimes=datetimes, method=SplitMethod.WEEK_RANDOM)
@@ -231,7 +222,6 @@ def test_split_week_random():
 
 
 def test_split_random_day_test_specific():
-
     datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
 
     train, validation, test = split_data(
@@ -261,7 +251,6 @@ def test_split_random_day_test_specific():
 
 
 def test_split_date():
-
     datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
     train_validation_test_datetime_split = [pd.Timestamp("2020-07-01"), pd.Timestamp("2021-01-01")]
 
@@ -296,7 +285,6 @@ def test_split_date():
 
 
 def test_split_day_random_test_date():
-
     datetimes = pd.date_range("2020-01-01", "2022-01-01", freq="1D")
     train_validation_test_datetime_split = [pd.Timestamp("2020-07-01"), pd.Timestamp("2021-07-01")]
 
